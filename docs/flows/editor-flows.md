@@ -17,24 +17,27 @@
 
 ## Decisions
 - Editors can move content forward but cannot finalize publication decisions.
-- Editors can contribute to source-derived content only when assigned.
+- Editors inherit all `User` capabilities, including source upload and personal submission tracking.
+- Editors can contribute to source-derived content only when the item is owned by them or assigned to them.
 - Manual tree authoring remains part of V1 and is not blocked on source availability.
 
 ## Dependencies
 - Role definitions in [`../product/roles-personas.md`](../product/roles-personas.md).
 - Functional requirements in [`../requirements/functional-spec.md`](../requirements/functional-spec.md).
-- UI behavior in [`../ui/reader-screen-specs.md`](../ui/reader-screen-specs.md) and [`../ui/admin-op-screen-specs.md`](../ui/admin-op-screen-specs.md).
+- UI behavior in [`../ui/user-screen-specs.md`](../ui/user-screen-specs.md) and [`../ui/admin-op-screen-specs.md`](../ui/admin-op-screen-specs.md).
 
 ## Acceptance Criteria
 - Editors can create knowledge structure and contribute to source preparation without needing Admin/Op permissions.
 - Permission boundaries remain clear at each handoff point.
 - Error states are explicit enough for UI and backend handling.
+- Editors cannot modify arbitrary unassigned source work or arbitrary unassigned tree content in V1.
 
 ## Flow 1: Create or Edit Branch
 1. Editor opens branch creation or branch edit flow.
 2. Editor sets branch type, title, summary, and structural metadata.
 3. Editor adds initial nodes or placeholders.
 4. System saves the branch and updates tree navigation and board context.
+5. If the branch is not owned or assigned to the Editor, the system blocks mutation and surfaces the assignment requirement.
 
 ## Flow 2: Create Manual Node
 1. Editor opens a branch or related context.
@@ -62,6 +65,9 @@
 - Editor tries to modify an unassigned correction task:
   - block action
   - show assignment-required state
+- Editor tries to edit an unassigned branch or node:
+  - block action
+  - show ownership-or-assignment-required state
 - Markdown draft fails validation:
   - show validation issues
   - prevent review handoff until fixed
@@ -71,4 +77,4 @@
 - Editors can upload source files.
 - Editors can see their own submissions and assigned source tasks.
 - Editors cannot approve trust, publish to tree, merge nodes, archive nodes, or download original files.
-
+- Editors cannot modify unowned and unassigned source-derived work.

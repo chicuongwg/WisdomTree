@@ -10,12 +10,12 @@
 - Relevant state behavior and decision actions.
 
 ## Out of Scope
-- Reader-centric node reading screens.
+- User-centric node reading screens.
 - Future reviewer/curator role split.
 - Mobile views.
 
 ## Decisions
-- Admin/Op surfaces can be denser and more decision-oriented than reader surfaces.
+- Admin/Op surfaces can be denser and more decision-oriented than user surfaces.
 - Review screens prioritize comparison and traceability over aesthetic minimalism.
 - Publication is a visible workflow stage, not a hidden button on source detail alone.
 
@@ -52,6 +52,7 @@
   - inspect one source item in depth
 - Key regions:
   - metadata and provenance panel
+  - uploader and assignment summary
   - original preview panel
   - raw text
   - corrected text
@@ -59,6 +60,7 @@
   - related branch suggestions
 - Actions:
   - assign
+  - change trust status
   - request changes
   - reject
   - mark unprocessable
@@ -70,6 +72,7 @@
 - Key regions:
   - queue filters
   - decision summary
+  - trust and verification state summary
   - draft comparison preview
 
 ### Publish Review
@@ -79,10 +82,12 @@
   - corrected text vs Markdown draft comparison
   - source excerpt mapping
   - target branch selector or confirmation
+  - accountability chain summary
   - publish decision controls
 - Actions:
   - request changes
-  - approve publish
+  - approve publish as `verified`
+  - approve publish as `unverified`
   - reject publication
 
 ### Board
@@ -109,4 +114,3 @@
 - conflict
 - unprocessable
 - access denied
-

@@ -17,7 +17,7 @@
 - All planning and system specification documents live under `/docs` in the main code repository.
 - Documentation language is English.
 - Flow, state, context, and sequence diagrams use Mermaid.
-- V1 role model is `Reader`, `Editor`, and `Admin/Op`.
+- V1 role model is `User`, `Editor`, and `Admin/Op`.
 - Tree content is modeled separately from source ingestion; details live in [`system/two-repository-architecture.md`](./system/two-repository-architecture.md).
 - The repository is currently in `Phase 0 documentation-complete`; tracked implementation has not started outside `/docs`.
 
@@ -62,7 +62,7 @@
 
 ### Frontend and UX Path
 1. [`product/roles-personas.md`](./product/roles-personas.md)
-2. [`flows/reader-flows.md`](./flows/reader-flows.md)
+2. [`flows/user-flows.md`](./flows/user-flows.md)
 3. [`flows/editor-flows.md`](./flows/editor-flows.md)
 4. [`flows/admin-op-flows.md`](./flows/admin-op-flows.md)
 5. [`ui/ui-principles.md`](./ui/ui-principles.md)
@@ -71,7 +71,7 @@
 8. [`ui/app-layout.md`](./ui/app-layout.md)
 9. [`ui/navigation-model.md`](./ui/navigation-model.md)
 10. [`ui/screen-inventory.md`](./ui/screen-inventory.md)
-11. [`ui/reader-screen-specs.md`](./ui/reader-screen-specs.md)
+11. [`ui/user-screen-specs.md`](./ui/user-screen-specs.md)
 12. [`ui/admin-op-screen-specs.md`](./ui/admin-op-screen-specs.md)
 
 ### Product and Planning Path
@@ -125,7 +125,7 @@
 
 ### Flows
 - [`flows/state-machines.md`](./flows/state-machines.md): source, node, review, and conflict lifecycle diagrams.
-- [`flows/reader-flows.md`](./flows/reader-flows.md): reader discovery and learning paths.
+- [`flows/user-flows.md`](./flows/user-flows.md): user discovery, source intake, and personal submission paths.
 - [`flows/editor-flows.md`](./flows/editor-flows.md): editor creation, upload, and assigned correction flows.
 - [`flows/admin-op-flows.md`](./flows/admin-op-flows.md): operations, review, publish, merge, and admin flows.
 - [`flows/app-user-data-flows.md`](./flows/app-user-data-flows.md): user, app, worker, and data movement flows.
@@ -137,7 +137,7 @@
 - [`ui/screen-inventory.md`](./ui/screen-inventory.md): route inventory with ownership and visibility.
 - [`ui/design-system.md`](./ui/design-system.md): visual direction, tokens, and component behavior intent.
 - [`ui/design-system-governance.md`](./ui/design-system-governance.md): token governance, component maturity, accessibility baseline, and change approval.
-- [`ui/reader-screen-specs.md`](./ui/reader-screen-specs.md): reader-facing screens.
+- [`ui/user-screen-specs.md`](./ui/user-screen-specs.md): user-facing screens, source intake, and personal submission tracking.
 - [`ui/admin-op-screen-specs.md`](./ui/admin-op-screen-specs.md): source, review, publish, board, and admin screens.
 - [`ui/shared-states.md`](./ui/shared-states.md): cross-product state behavior.
 

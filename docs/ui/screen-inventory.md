@@ -15,13 +15,13 @@
 
 ## Decisions
 - Screen inventory is route-oriented and role-aware.
-- Reader flows are primary; Admin/Op screens expand from the same app shell.
-- Editor-specific functionality appears as extensions on top of reader and assigned-work surfaces.
+- User flows are primary; Admin/Op screens expand from the same app shell.
+- Editor-specific functionality appears as extensions on top of user and assigned-work surfaces.
 
 ## Dependencies
 - Navigation model in [`navigation-model.md`](./navigation-model.md).
 - Permissions in [`../requirements/permissions-matrix.md`](../requirements/permissions-matrix.md).
-- Screen behavior in [`reader-screen-specs.md`](./reader-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
+- Screen behavior in [`user-screen-specs.md`](./user-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
 
 ## Acceptance Criteria
 - Every core V1 capability maps to at least one screen.
@@ -32,14 +32,15 @@
 
 | Screen | Route concept | Primary role | Visible to | Module owner |
 | --- | --- | --- | --- | --- |
-| Home | `/` | Reader | Reader, Editor, Admin/Op | Tree |
-| Search | `/search` | Reader | Reader, Editor, Admin/Op | Search |
-| Node Detail | `/tree/node/:id` | Reader | Reader, Editor, Admin/Op | Tree |
-| Branch Hub | `/tree/branch/:id` | Reader | Reader, Editor, Admin/Op | Tree |
-| Graph Explorer | `/graph` | Reader | Reader, Editor, Admin/Op | Search/Graph |
+| Home | `/` | User | User, Editor, Admin/Op | Tree |
+| Search | `/search` | User | User, Editor, Admin/Op | Search |
+| Node Detail | `/tree/node/:id` | User | User, Editor, Admin/Op | Tree |
+| Branch Hub | `/tree/branch/:id` | User | User, Editor, Admin/Op | Tree |
+| Graph Explorer | `/graph` | User | User, Editor, Admin/Op | Search/Graph |
+| Source Intake | `/source/intake` | User | User, Editor, Admin/Op | Source Repo |
+| My Source Submissions | `/source/mine` | User | User, Editor, Admin/Op | Source Repo |
 | Create Branch | `/tree/branch/new` | Editor | Editor, Admin/Op | Tree |
 | Edit Node | `/tree/node/:id/edit` | Editor | Editor, Admin/Op | Tree |
-| My Source Submissions | `/source/mine` | Editor | Editor, Admin/Op | Source Repo |
 | Assigned Source Task | `/source/task/:id` | Editor | Assigned Editor, Admin/Op | Source Repo |
 | Source Inbox | `/source/inbox` | Admin/Op | Admin/Op | Source Repo |
 | Source Detail | `/source/:id` | Admin/Op | Admin/Op | Source Repo |
@@ -50,17 +51,18 @@
 
 ## Screen Grouping
 
-### Reader-Facing Experience
+### User-Facing Experience
 - Home
 - Search
 - Node Detail
 - Branch Hub
 - Graph Explorer
+- Source Intake
+- My Source Submissions
 
 ### Editor Authoring Extension
 - Create Branch
 - Edit Node
-- My Source Submissions
 - Assigned Source Task
 - Board
 
@@ -70,4 +72,3 @@
 - Review Queue
 - Publish Review
 - Admin Console
-

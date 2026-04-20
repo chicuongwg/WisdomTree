@@ -22,7 +22,7 @@
 - UI principles in [`ui-principles.md`](./ui-principles.md).
 - Shared state behavior in [`shared-states.md`](./shared-states.md).
 - Governance rules in [`design-system-governance.md`](./design-system-governance.md).
-- Screen specs in [`reader-screen-specs.md`](./reader-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
+- Screen specs in [`user-screen-specs.md`](./user-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
 
 ## Acceptance Criteria
 - Frontend engineers can derive a coherent component library direction from this file.

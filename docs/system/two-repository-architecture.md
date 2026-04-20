@@ -18,7 +18,7 @@
 ## Decisions
 - The system is split into two logical repositories:
   - `Source Repo`: evidence-first, multi-format, review-driven.
-  - `Knowledge Tree`: curated Markdown-first, graph-friendly, reader-facing.
+  - `Knowledge Tree`: curated Markdown-first, graph-friendly, user-facing.
 - Original files and extraction artifacts live in object storage-backed source storage.
 - Tree Markdown is canonical in PostgreSQL.
 - Tree Markdown is exported one-way into a private Git content repo for backup and validation.

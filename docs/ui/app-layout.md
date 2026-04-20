@@ -24,7 +24,7 @@
 - Screen inventory in [`screen-inventory.md`](./screen-inventory.md).
 
 ## Acceptance Criteria
-- The layout model is general enough to support both reader exploration and admin review work.
+- The layout model is general enough to support both user exploration and admin review work.
 - Screen specs can inherit a shared layout language from this document.
 - The layout does not depend on a future mobile design.
 
@@ -47,9 +47,10 @@
 - Collapsible where necessary, but conceptually always available.
 
 ## Layout Behavior by Surface
-- Reader surfaces:
+- User surfaces:
   - center-heavy
   - relation context in inspector
+  - contribution and submission tracking actions remain lightweight and do not expose full source internals
 - Editor surfaces:
   - add edit controls and template assistance in the canvas
   - preserve context panel for links and trust
@@ -63,4 +64,3 @@ flowchart LR
     A[Navigation and Global Actions] --> B[Main Canvas]
     B --> C[Context and Inspector Panel]
 ```
-

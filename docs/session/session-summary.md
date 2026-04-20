@@ -22,7 +22,7 @@
 - V1 uses two logical repositories: `Source Repo` and `Knowledge Tree`.
 - The Source Repo holds original files and extraction artifacts. The Knowledge Tree holds curated Markdown knowledge.
 - Tree canonical content is stored in PostgreSQL. Source evidence is stored in object storage-backed source storage.
-- Roles for V1 are `Reader`, `Editor`, and `Admin/Op`.
+- Roles for V1 are `User`, `Editor`, and `Admin/Op`.
 
 ## Dependencies
 - Product definition in [`../product/prd.md`](../product/prd.md).
@@ -48,7 +48,7 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 - Desktop and web-first.
 - Small team scale.
 - English documentation, implementation-facing.
-- Reader-first product experience with Editor and Admin/Op extensions.
+- User-first product experience with Editor and Admin/Op extensions.
 - Explicit operating and verification policies exist before tracked implementation begins.
 
 ## Core Architectural Shape
@@ -65,7 +65,7 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 - Accepts Markdown only.
 - Stores curated knowledge nodes and branches.
 - Supports tags, links, graph relations, board context, and verification state.
-- Is the surface Readers primarily interact with.
+- Is the surface Users primarily interact with.
 
 ### Export Layer
 - Tree content exports one-way to a private content Git repo.
@@ -73,22 +73,30 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 - The content repo is not the source of truth.
 
 ## V1 Role Model
-- `Reader`
+- `User`
+  - upload source material
+  - track own submissions
   - discover and consume curated knowledge
 - `Editor`
+  - inherits `User` capabilities
   - create branches and manual nodes
-  - upload source files
-  - work on assigned correction and draft tasks
+  - update owned or assigned tree and source-derived work
 - `Admin/Op`
   - review source material
   - control trust and publish decisions
   - merge, archive, export, and operate the system
 
+## Accountability Chain
+- `User` is the default authenticated uploader role.
+- `Editor` is the content preparation role for owned or assigned updates.
+- `Admin/Op` is the approving and publishing role.
+- The system is expected to preserve all three actor stages in audit and investigation workflows.
+
 ## North-Star Workflow
 1. A source file is uploaded into the Source Repo.
 2. The worker extracts raw text by parsing or OCR.
-3. A human creates corrected text.
-4. The system or a user creates a Markdown draft.
+3. An Editor or Admin/Op creates corrected text.
+4. An Editor or the system creates a Markdown draft.
 5. Admin/Op reviews trust, structure, and provenance.
 6. Approved Markdown is published into the Knowledge Tree.
 7. Search, graph, board, and export projections update.

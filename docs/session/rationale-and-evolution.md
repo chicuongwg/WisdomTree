@@ -39,7 +39,7 @@
 - Why:
   - preserves evidence traceability
   - prevents low-quality OCR output from polluting the graph
-  - gives Readers a cleaner surface
+  - gives Users a cleaner surface
 
 ## Evolution 2: From File/Vault-Centric Thinking to Database-Canonical Tree
 - Early direction:
@@ -55,16 +55,23 @@
   - cleaner permission model
   - still preserves Markdown as the knowledge format
 
-## Evolution 3: From Broad Role Taxonomy to V1 Practical Roles
+## Evolution 3: From Reader-Centric Naming to Accountability-Split Roles
 - Early direction:
   - richer role concepts like viewer, editor, reviewer, admin
+  - a `Reader`-style default role focused mainly on consumption
 - Problem:
   - more granular roles would slow V1 shipping and complicate UI and workflow design
+  - the `Reader` label did not match the product requirement that any authenticated account can upload source material
+  - leakage investigation and mistake tracing needed clearer stage ownership
 - Final decision:
-  - use `Reader`, `Editor`, and `Admin/Op` in V1
+  - use `User`, `Editor`, and `Admin/Op` in V1
+  - let `User` own source submission and personal submission tracking
+  - let `Editor` own only owned-or-assigned content updates
   - keep reviewer/curator/operator split as future work
 - Why:
   - enough separation to keep trust and publish authority clear
+  - clearer accountability from uploader to editor/updater to approver
+  - better naming fit for the actual default authenticated experience
   - fast enough to ship
   - future split can layer on top later
 
@@ -80,15 +87,15 @@
   - lower processing cost
   - less cleanup work before Markdown publication
 
-## Evolution 5: From Single Mixed UI to Reader-First With Admin/Op Depth
+## Evolution 5: From Single Mixed UI to User-First With Admin/Op Depth
 - Early direction:
   - combine all surfaces under a general knowledge manager feel
 - Problem:
-  - reader discovery and admin review have very different density, action, and trust requirements
+  - user discovery and admin review have very different density, action, and trust requirements
 - Final decision:
-  - keep a unified app shell, but design it as Reader-first with a complete Admin/Op workflow inside the same product
+  - keep a unified app shell, but design it as User-first with a complete Admin/Op workflow inside the same product
 - Why:
-  - Readers get a cleaner primary experience
+  - Users get a cleaner primary experience
   - operators still have the tooling depth needed to run the system
   - the app remains coherent rather than fragmenting into separate products
 
@@ -103,4 +110,3 @@
   - speeds up sub-agent startup
   - reduces repeated clarification questions
   - creates a stable handoff pack between planning and implementation agents
-

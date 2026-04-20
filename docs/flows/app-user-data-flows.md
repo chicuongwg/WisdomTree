@@ -34,6 +34,8 @@
 ```mermaid
 sequenceDiagram
     participant U as User
+    participant R as Editor
+    participant O as Admin/Op
     participant A as App/API
     participant S as Source Repo
     participant Q as Queue
@@ -45,15 +47,15 @@ sequenceDiagram
 
     U->>A: Upload source
     A->>S: Store original file
-    A->>D: Create source + version record
+    A->>D: Create source + version record with uploader identity
     A->>Q: Enqueue processing job
     Q->>W: Start parse/OCR
     W->>S: Store raw text and artifacts
     W->>D: Update processing result
-    U->>A: Edit corrected text / draft
-    A->>D: Save correction state
-    U->>A: Approve publish (Admin/Op)
-    A->>D: Create node version
+    R->>A: Edit corrected text / draft for owned or assigned item
+    A->>D: Save correction state with editor identity
+    O->>A: Approve publish
+    A->>D: Create node version with approver identity
     A->>Q: Enqueue reindex and export
     Q->>X: Update search and graph
     Q->>E: Render export
@@ -67,8 +69,8 @@ sequenceDiagram
 - Reflect operational state back to users.
 
 ## User Flow Summary
-- Readers consume tree content.
-- Editors create tree content and contribute to assigned correction work.
+- Users upload source material, track personal submissions, and consume tree content.
+- Editors create tree content and contribute to owned or assigned correction work.
 - Admin/Op finalizes evidence review and publication.
 
 ## Data Flow Summary
@@ -84,6 +86,6 @@ sequenceDiagram
 
 ## Permission Path
 - Source download and global source browsing stay behind Admin/Op authorization.
+- Personal submission views stay scoped to the uploader.
 - Tree reading is broadly available to authenticated users.
-- Assigned work limits which source correction surfaces Editors can modify.
-
+- Owned or assigned work limits which source correction and tree-editing surfaces Editors can modify.

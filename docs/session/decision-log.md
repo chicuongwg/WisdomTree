@@ -32,7 +32,9 @@
 
 ### Product and Scope
 - V1 is a private small-team product, not a public knowledge portal.
-- V1 ships with a practical role model: `Reader`, `Editor`, `Admin/Op`.
+- V1 ships with a practical role model: `User`, `Editor`, `Admin/Op`.
+- `User` is the default authenticated role and owns source submission plus personal submission tracking.
+- `Editor` extends `User` but is limited to owned-or-assigned content updates.
 - V1 includes the core knowledge loop plus a basic board, not a full project management product.
 - Docs are written in English and live under `/docs` in the main repo.
 
@@ -50,6 +52,7 @@
 - Parsing comes first for text-based formats; OCR is fallback or required for image-based material.
 - OCR or weak extraction output must not go directly into the tree.
 - Source trust and node verification are separate state systems.
+- Accountability is tracked across uploader, editor/updater, and approver/publisher actions.
 - Manual nodes start as `no_source`.
 - Manual nodes may later become `verified`.
 - Duplicate concepts are resolved by archive plus redirect, not hard delete.
@@ -63,7 +66,7 @@
 ### UI and Experience
 - Visual direction is `Knowledge atlas`.
 - Layout is `Workspace 3-zone`.
-- Reader flow comes first in information architecture.
+- User flow comes first in information architecture.
 - Admin/Op flow is secondary in navigation but complete in capabilities.
 - Tree editing is `Markdown source + preview`, not WYSIWYG-heavy.
 
@@ -77,8 +80,7 @@
 
 ## Reopen Only With Explicit Product Change
 - Public access model.
-- Role model expansion beyond Reader, Editor, Admin/Op.
+- Role model expansion beyond User, Editor, Admin/Op.
 - Canonical storage moving away from PostgreSQL for tree content.
 - Removing the two-repository split.
 - Making Git export bidirectional.
-

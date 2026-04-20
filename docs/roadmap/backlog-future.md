@@ -33,7 +33,7 @@
 - Wider format handling and better OCR quality support.
 - Advanced analytics for knowledge health, source throughput, and editorial productivity.
 - More sophisticated conflict resolution and merge assistance.
-- Public publishing or external reader portals.
+- Public publishing or external user portals.
 - Multi-tenant organization model.
 - More advanced workflow automation and external integrations.
 

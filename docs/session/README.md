@@ -64,12 +64,12 @@
 ### Fast Path: Start Frontend or UX Work
 1. [`session-summary.md`](./session-summary.md)
 2. [`deep-dive-guide.md`](./deep-dive-guide.md)
-3. [`../flows/reader-flows.md`](../flows/reader-flows.md)
+3. [`../flows/user-flows.md`](../flows/user-flows.md)
 4. [`../flows/admin-op-flows.md`](../flows/admin-op-flows.md)
 5. [`../ui/app-layout.md`](../ui/app-layout.md)
 6. [`../ui/design-system.md`](../ui/design-system.md)
 7. [`../ui/design-system-governance.md`](../ui/design-system-governance.md)
-8. [`../ui/reader-screen-specs.md`](../ui/reader-screen-specs.md)
+8. [`../ui/user-screen-specs.md`](../ui/user-screen-specs.md)
 9. [`../ui/admin-op-screen-specs.md`](../ui/admin-op-screen-specs.md)
 
 ### Fast Path: Start Operations or Recovery Work
@@ -94,4 +94,4 @@
 - [`session-summary.md`](./session-summary.md): shortest practical summary of the current product, architecture, and repo stage.
 - [`decision-log.md`](./decision-log.md): final decisions that should not be reopened casually.
 - [`deep-dive-guide.md`](./deep-dive-guide.md): how to dig deeper by stream and in what order.
-- [`rationale-and-evolution.md`](./rationale-and-evolution.md): how the thinking evolved during the session and why earlier options were rejected.
+- [`rationale-and-evolution.md`](./rationale-and-evolution.md): how the thinking evolved during the session and why earlier options were rejected, including the move from `Reader` to `User`.

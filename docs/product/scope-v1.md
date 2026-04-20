@@ -18,7 +18,7 @@
 - Full reviewer/curator/admin role separation.
 
 ## Decisions
-- V1 ships with `Reader`, `Editor`, and `Admin/Op`.
+- V1 ships with `User`, `Editor`, and `Admin/Op`.
 - Tree authoring and source-driven publication both exist in V1.
 - Source repo supports broad intake but does not promise rich processing for every file type.
 - Unsupported source formats can be stored as `unprocessable` instead of rejected.
@@ -38,6 +38,7 @@
 
 ### Source Repo
 - Upload files from authenticated users.
+- Let authenticated users view the status of their own submissions.
 - Store original source files in object storage.
 - Generate parsed or OCR-based text.
 - Keep raw extracted text immutable.
@@ -55,10 +56,11 @@
 ### Discovery and Navigation
 - Full-text and semantic search across tree and source repository, with clear filters.
 - Dedicated graph surface plus contextual relation views.
-- Reader-facing node pages with branch context, trust badges, and source excerpts.
+- User-facing node pages with branch context, trust badges, and source excerpts.
 
 ### Workflow and Operations
-- Role-based permissions for Reader, Editor, and Admin/Op.
+- Role-based permissions for User, Editor, and Admin/Op.
+- Editor updates are limited to owned or assigned source and tree work.
 - Review inbox for source correction, trust checks, and publication approval.
 - Basic task board and achievement log for branch progress and operational follow-up.
 - Notifications for review assignments and publication-relevant events.
@@ -83,4 +85,3 @@
 - Better support for more file types and deeper extraction pipelines.
 - Conflict-resolution improvements beyond manual operator handling.
 - Extended board workflows and richer operational analytics.
-

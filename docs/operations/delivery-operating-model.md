@@ -20,6 +20,7 @@
 - Stream ownership is role-based in docs, even if one person temporarily holds multiple responsibilities in a small team.
 - `Admin/Op` coverage must never depend on one person only.
 - Canonical decisions live in the main `/docs` tree; the session pack is a compressed onboarding layer, not a competing source of truth.
+- Accountability for source-driven knowledge must stay traceable across uploader, editor/updater, and approver/publisher stages.
 
 ## Dependencies
 - Product scope in [`../product/scope-v1.md`](../product/scope-v1.md).
@@ -38,7 +39,7 @@
 | --- | --- | --- | --- |
 | Product and scope | Product lead | Technical lead | `product/`, `roadmap/`, `requirements/acceptance-criteria.md` |
 | Backend and worker model | Technical lead | Admin/Op lead | `system/`, `requirements/functional-spec.md`, `requirements/non-functional-requirements.md` |
-| Frontend and UX | Frontend lead | Product lead | `ui/`, `flows/reader-flows.md`, `flows/editor-flows.md`, `flows/admin-op-flows.md` |
+| Frontend and UX | Frontend lead | Product lead | `ui/`, `flows/user-flows.md`, `flows/editor-flows.md`, `flows/admin-op-flows.md` |
 | Operations and recovery | Admin/Op lead | Admin/Op backup | `operations/operating-playbook.md`, `system/deployment-topology.md` |
 | Editorial quality and verification | Admin/Op lead | Product lead | `policy/editorial-verification-policy.md`, `product/glossary.md`, `system/data-model-lifecycle.md` |
 | Design system governance | Frontend lead | Product lead | `ui/design-system.md`, `ui/design-system-governance.md` |
@@ -69,6 +70,7 @@
   - [`../product/roles-personas.md`](../product/roles-personas.md)
   - [`../requirements/permissions-matrix.md`](../requirements/permissions-matrix.md)
   - screen visibility docs and affected flows
+  - policy and acceptance docs when accountability boundaries change
 - Contract or schema-shaping changes must update:
   - [`../system/integration-contracts.md`](../system/integration-contracts.md)
   - [`../system/module-boundaries.md`](../system/module-boundaries.md)

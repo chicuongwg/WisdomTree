@@ -20,6 +20,8 @@
 ## Decisions
 - Source trust and node verification remain separate policies and must not be collapsed into one status.
 - `verified` always requires evidence linkage plus `Admin/Op` review.
+- `Editor` may prepare corrected text and Markdown drafts only for owned or assigned work.
+- `Editor` never changes source trust or node verification state in V1.
 - A manual node may exist and remain useful as `no_source`, but it must not be presented as `verified` without reviewed evidence.
 
 ## Dependencies
@@ -38,6 +40,12 @@
 - Do not overclaim trust. If the evidence chain or review quality is incomplete, prefer `candidate`, `unverified`, or `no_source` over `trusted` or `verified`.
 - Reject only when the source is not fit to support tree publication in V1, not merely because it needs correction work.
 - Merge only true duplicates. Related concepts should remain linked, not collapsed into one node.
+
+## Accountability Boundaries
+- `User` owns source submission and personal submission tracking.
+- `Editor` owns content preparation work on owned or assigned items, including corrected text, Markdown draft refinement, and owned or assigned manual-node updates.
+- `Admin/Op` owns trust decisions, verification, publish approval, merge, archive, export, and recovery-sensitive actions.
+- The audit trail for any publishable item should expose who uploaded it, who edited or updated it, and which `Admin/Op` approved or published it.
 
 ## Source Trust Decision Guide
 
@@ -65,6 +73,7 @@ All of the following must be true before a source-driven publish is approved:
 - The Markdown draft has been compared against corrected text.
 - The target branch or node placement is known.
 - Provenance to the `Source Version` and a usable source excerpt or reference are ready to store.
+- The accountability chain identifies uploader, any editor/updater, and the approving `Admin/Op`.
 - No unresolved conflict, redirect ambiguity, or merge ambiguity remains.
 
 If the source is usable but evidence strength or review depth is still incomplete, `Admin/Op` may publish as `unverified` instead of blocking all publication work.
@@ -72,6 +81,7 @@ If the source is usable but evidence strength or review depth is still incomplet
 ## Manual Node Policy
 - Manual nodes start as `no_source`.
 - Manual nodes may be edited and used in branch structure before evidence exists.
+- Editors may update only owned or assigned manual nodes in V1.
 - Manual nodes stay `no_source` until evidence is attached and reviewed.
 - After evidence is attached, `Admin/Op` may keep the node `unverified` until the evidence chain and provenance presentation are complete.
 - Manual nodes may become `verified` only after evidence attachment, explicit review, and provenance linkage meet the same minimum standard as source-driven content.

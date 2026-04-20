@@ -58,7 +58,7 @@ Read the session pack first. Then pick one stream. Do not jump directly into UI,
 ### Read In This Order
 1. [`session-summary.md`](./session-summary.md)
 2. [`decision-log.md`](./decision-log.md)
-3. [`../flows/reader-flows.md`](../flows/reader-flows.md)
+3. [`../flows/user-flows.md`](../flows/user-flows.md)
 4. [`../flows/editor-flows.md`](../flows/editor-flows.md)
 5. [`../flows/admin-op-flows.md`](../flows/admin-op-flows.md)
 6. [`../ui/ui-principles.md`](../ui/ui-principles.md)
@@ -67,13 +67,14 @@ Read the session pack first. Then pick one stream. Do not jump directly into UI,
 9. [`../ui/app-layout.md`](../ui/app-layout.md)
 10. [`../ui/navigation-model.md`](../ui/navigation-model.md)
 11. [`../ui/screen-inventory.md`](../ui/screen-inventory.md)
-12. [`../ui/reader-screen-specs.md`](../ui/reader-screen-specs.md)
+12. [`../ui/user-screen-specs.md`](../ui/user-screen-specs.md)
 13. [`../ui/admin-op-screen-specs.md`](../ui/admin-op-screen-specs.md)
 14. [`../ui/shared-states.md`](../ui/shared-states.md)
 
 ### Extract These Answers
-- What is the primary reader journey?
-- Which screens are Reader-first vs `Admin/Op`-only?
+- What is the primary user journey?
+- Which screens are User-first vs `Admin/Op`-only?
+- How is accountability split between uploader, editor/updater, and approver?
 - Where must trust, provenance, and graph context appear?
 - Which screens are table-heavy, which are reading surfaces, and which are comparison surfaces?
 - Which governance rules decide whether a component is local, shared, stable, or deprecated?

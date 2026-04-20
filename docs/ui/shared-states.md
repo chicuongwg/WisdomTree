@@ -1,7 +1,7 @@
 # Shared States
 
 ## Purpose
-- Standardize how cross-product states should behave across reader, editor, and Admin/Op surfaces.
+- Standardize how cross-product states should behave across user, editor, and Admin/Op surfaces.
 
 ## In Scope
 - Loading, empty, error, conflict, archived, unprocessable, and access denied.
@@ -15,12 +15,12 @@
 ## Decisions
 - Shared states must be recognizable across the entire app.
 - Each state includes meaning, visible cues, and next-action guidance.
-- Reader and Admin/Op may see different actions for the same state, but the state meaning stays constant.
+- User and Admin/Op may see different actions for the same state, but the state meaning stays constant.
 
 ## Dependencies
 - UI principles in [`ui-principles.md`](./ui-principles.md).
 - State machine definitions in [`../flows/state-machines.md`](../flows/state-machines.md).
-- Screen specs in [`reader-screen-specs.md`](./reader-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
+- Screen specs in [`user-screen-specs.md`](./user-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
 
 ## Acceptance Criteria
 - Every major screen can reuse one of the shared state definitions rather than inventing a new one.

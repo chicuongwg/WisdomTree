@@ -44,13 +44,13 @@
    - corrected text
    - trust state
    - extraction warnings
-5. `Admin/Op` approves continued work, requests changes, rejects, or marks `unprocessable` according to the editorial verification policy.
+5. `Admin/Op` updates trust status as needed, then approves continued work, requests changes, rejects, or marks `unprocessable` according to the editorial verification policy.
 
 ## Flow 2: Approve Markdown Draft
 1. `Admin/Op` opens a ready-for-review draft.
 2. `Admin/Op` compares corrected text and Markdown draft.
 3. `Admin/Op` verifies structure, source mapping, branch placement, and verification readiness according to the editorial verification policy.
-4. `Admin/Op` requests changes or approves publication.
+4. `Admin/Op` sets the intended node verification outcome and then requests changes or approves publication.
 
 ## Flow 3: Publish to Tree
 1. `Admin/Op` approves the draft.

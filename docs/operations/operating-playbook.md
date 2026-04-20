@@ -51,6 +51,7 @@
 - Review `Review Inbox` items older than 7 days.
 - Check whether queue latency or search freshness has crossed warning thresholds.
 - Confirm there is no unresolved publish failure or ambiguous merge outcome.
+- Confirm audit trails remain queryable from uploader to editor/updater to approving `Admin/Op` for recent published items.
 
 ## Weekly Checks
 - Review the [`../product/v1-scorecard.md`](../product/v1-scorecard.md) with the primary and backup `Admin/Op` users.
@@ -132,5 +133,6 @@
 
 ## Post-Incident Review
 - Record incident class, impact, root cause, recovery time, and unresolved follow-up work.
+- Reconstruct and record the uploader, editor/updater, and approver/publisher chain when the incident affects trust, leakage risk, or incorrect publication.
 - Update this playbook when a new failure pattern or missing step is discovered.
 - Update linked requirements or flow documents if the incident exposed a contradiction in the current docs.

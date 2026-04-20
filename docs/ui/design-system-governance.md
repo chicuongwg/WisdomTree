@@ -24,7 +24,7 @@
 ## Dependencies
 - Visual direction in [`design-system.md`](./design-system.md).
 - Shared states in [`shared-states.md`](./shared-states.md).
-- Screen behavior in [`reader-screen-specs.md`](./reader-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
+- Screen behavior in [`user-screen-specs.md`](./user-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
 
 ## Acceptance Criteria
 - Engineers and designers can tell whether a token or component is experimental, reusable, stable, or deprecated.

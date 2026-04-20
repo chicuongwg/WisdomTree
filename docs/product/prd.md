@@ -19,7 +19,7 @@
 - WisdomTree is a private, implementation-first knowledge platform for small teams.
 - The product separates `Source Repo` from `Knowledge Tree`.
 - `Knowledge Tree` is the curated knowledge surface. `Source Repo` is the evidence and ingestion surface.
-- V1 role model is `Reader`, `Editor`, and `Admin/Op`.
+- V1 role model is `User`, `Editor`, and `Admin/Op`.
 - The primary V1 product loop is `Source -> Review -> Publish -> Explore -> Expand`.
 
 ## Dependencies
@@ -49,8 +49,8 @@ WisdomTree solves this by separating evidence ingestion from curated knowledge p
 The qualitative outcomes below define V1 value. Quantitative thresholds, green/yellow/red status, and weekly review cadence live in [`v1-scorecard.md`](./v1-scorecard.md).
 
 - A user can upload source material and see it enter a reviewable ingestion flow within the scorecard guardrails for processing outcome.
-- An assigned operator can correct extracted text, turn it into Markdown, and publish it into the tree within the scorecard guardrails for review-to-publish latency.
-- Readers and editors show recurring weekly activity above the scorecard warning floor.
+- An assigned editor or operator can prepare extracted text, turn it into Markdown, and complete publication within the scorecard guardrails for review-to-publish latency.
+- Users and editors show recurring weekly activity above the scorecard warning floor.
 - The system preserves provenance between a published node and the source evidence that produced it, with source-driven published nodes staying within the scorecard target for evidence linkage completeness.
 - The team can operate the platform with clear roles, auditable actions, documented recovery procedures, and recoverable data.
 
@@ -63,11 +63,11 @@ The qualitative outcomes below define V1 value. Quantitative thresholds, green/y
 4. An operator reviews the corrected text, trust status, and Markdown draft.
 5. The Markdown node is published into the tree with source links, excerpts, and review provenance.
 
-### Workflow 2: Reader Discovery and Expansion
-1. A reader searches the knowledge tree.
-2. The reader opens a node, checks its trust state, links, and related branch.
-3. The reader follows backlinks, tags, or the contextual mini-graph.
-4. The reader identifies a missing concept and creates a branch or requests new source intake.
+### Workflow 2: User Discovery and Expansion
+1. A user searches the knowledge tree.
+2. The user opens a node, checks its trust state, links, and related branch.
+3. The user follows backlinks, tags, or the contextual mini-graph.
+4. The user identifies a missing concept and uploads a source item or requests branch expansion.
 
 ### Workflow 3: Manual Knowledge Authoring
 1. An editor creates a branch or manual node directly in the tree.
@@ -81,6 +81,7 @@ The qualitative outcomes below define V1 value. Quantitative thresholds, green/y
 
 ## Product Principles
 - Separate evidence from curated knowledge.
+- Separate uploader, editor/updater, and approver accountability for source-driven knowledge.
 - Make trust and review visible everywhere.
 - Prefer structured Markdown over opaque rich-text formats.
 - Preserve provenance whenever knowledge is published from sources.

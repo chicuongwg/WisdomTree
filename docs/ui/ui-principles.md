@@ -8,7 +8,7 @@
 - Information hierarchy.
 - Trust visibility.
 - Density target.
-- Experience split across Reader, Editor, and Admin/Op concerns.
+- Experience split across User, Editor, and Admin/Op concerns.
 
 ## Out of Scope
 - Exact component placement.
@@ -65,16 +65,15 @@
   - enough metadata to support research work
   - enough whitespace to preserve readability
   - no over-compressed enterprise admin tables by default
-- Dense views are acceptable in Admin/Op surfaces, but the default reader experience should remain legible.
+- Dense views are acceptable in Admin/Op surfaces, but the default user experience should remain legible.
 
 ## Experience Split
 
-### Reader-Facing Experience
-- Optimize for reading, exploration, relation-following, and branch understanding.
+### User-Facing Experience
+- Optimize for reading, exploration, relation-following, branch understanding, and simple source contribution tracking.
 
 ### Editor Authoring Extension
-- Extend reader surfaces with creation, editing, correction, and draft actions.
+- Extend user surfaces with owned-or-assigned creation, editing, correction, and draft actions.
 
 ### Admin/Op Source-Review-Publish Experience
 - Prioritize queue clarity, comparison views, decision states, and operational traceability.
-

@@ -17,6 +17,7 @@
 - Private-team deployment assumptions allow practical, strong-enough controls rather than enterprise complexity.
 - Backup and restore must be real operational workflows, not informal intentions.
 - Operational readiness must not depend on one `Admin/Op` user only.
+- Auditability must support internal leakage or misuse investigation by reconstructing uploader, editor/updater, and approver/publisher actions.
 
 ## Dependencies
 - Functional scope in [`functional-spec.md`](./functional-spec.md).
@@ -41,6 +42,7 @@
 - The system must record actor, action, target object, timestamp, and outcome for:
   - upload
   - correction edit
+  - manual node edit
   - trust change
   - publish
   - merge
@@ -48,7 +50,12 @@
   - export
   - restore-related administrative actions
   - permission-sensitive admin changes
+- Audit records must distinguish accountability roles at action time:
+  - uploader
+  - editor or updater
+  - approver or publisher
 - Audit records must remain queryable by source, node, branch, and user.
+- The system must support investigation queries that reconstruct the full accountability chain for any published node or source item.
 
 ## Reliability
 - Source intake jobs must be retryable.
@@ -85,6 +92,7 @@
 - All authenticated access must flow through Google OIDC.
 - Sensitive routes require backend authorization, not just UI hiding.
 - Original file downloads are limited to `Admin/Op`.
+- Personal submission views must be scoped by uploader identity and must not leak full Source Repo visibility to baseline users.
 - Object storage access must use server-issued, time-limited access paths or equivalent controlled delivery.
 - Private data must travel over encrypted transport.
 
@@ -109,3 +117,4 @@
 - Core state names must be shared across app, worker, docs, and exported content.
 - Integration boundaries must be explicit enough to replace the OCR worker or export process later without rewriting the entire app.
 - Future role split should not require rethinking the core two-repository model.
+- Permission and audit semantics must remain explicit enough that a future reviewer or curator split can layer on top of the existing accountability chain.

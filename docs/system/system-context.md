@@ -29,7 +29,7 @@
 - The context diagram is consistent with deployment and module documentation.
 
 ## Actors
-- `Reader`
+- `User`
 - `Editor`
 - `Admin/Op`
 - `Google OIDC`
@@ -44,7 +44,7 @@
 
 ```mermaid
 flowchart LR
-    Reader[Reader]
+    User[User]
     Editor[Editor]
     Admin[Admin/Op]
     OIDC[Google OIDC]
@@ -58,7 +58,7 @@ flowchart LR
     CI[GitHub Actions]
     Email[Email Provider]
 
-    Reader --> App
+    User --> App
     Editor --> App
     Admin --> App
     App --> OIDC

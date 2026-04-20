@@ -6,7 +6,7 @@
 ## In Scope
 - Top-level modules.
 - Role-aware navigation.
-- Reader-first flow.
+- User-first flow.
 - Admin/Op secondary flow.
 - Dedicated graph surface and contextual mini-graph.
 
@@ -16,7 +16,7 @@
 - Deep breadcrumb implementation.
 
 ## Decisions
-- Navigation starts with reader discovery and branch exploration.
+- Navigation starts with user discovery and branch exploration.
 - Admin/Op modules remain present but secondary in the global information architecture.
 - Graph is both a dedicated module and a contextual support element.
 - The navigation model should support gradual role growth without restructuring the entire app.
@@ -29,7 +29,7 @@
 ## Acceptance Criteria
 - Top-level navigation can support V1 workflows without hidden, role-specific dead ends.
 - Route ownership is clear enough for frontend implementation.
-- Reader-first structure remains consistent even with Admin/Op capabilities present.
+- User-first structure remains consistent even with Admin/Op capabilities present.
 
 ## Top-Level Information Architecture
 - Home
@@ -37,32 +37,36 @@
 - Tree
 - Branches
 - Graph
+- Source Intake
+- My Submissions
 - Source Inbox
 - Review Queue
 - Board
 - Admin
 
-## Reader-First Navigation
+## User-First Navigation
 - Default entry points:
   - Home
   - Search
   - Tree
   - Branches
   - Graph
-- Reader should not need to think about the source repository to consume knowledge.
+  - Source Intake
+  - My Submissions
+- User should not need to think about the full source repository to consume knowledge, but contribution and submission tracking must stay one click away.
 
 ## Editor Extensions
-- Editors inherit reader navigation plus:
+- Editors inherit user navigation plus:
   - create branch
   - create node
-  - my submissions
   - assigned correction work
+  - owned or assigned edit surfaces
 
 ## Admin/Op Secondary Flow
 - Admin/Op inherits the same shell and gains access to:
   - Source Inbox
   - Review Queue
-  - Publish Queue
+  - Publish Review
   - Admin
   - Operational views inside Board
 
@@ -74,4 +78,3 @@
 - Contextual mini-graph:
   - relation panel on node pages
   - lightweight context on branch and review screens where relevant
-

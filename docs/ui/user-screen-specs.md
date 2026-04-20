@@ -1,10 +1,10 @@
-# Reader Screen Specifications
+# User Screen Specifications
 
 ## Purpose
-- Define screen-by-screen behavior for the reader-facing experience and its editor extensions in V1.
+- Define screen-by-screen behavior for the user-facing experience and its editor extensions in V1.
 
 ## In Scope
-- Reader-facing screens.
+- User-facing screens.
 - Editor authoring extension screens.
 - Empty, loading, error, and permission states relevant to those screens.
 
@@ -14,29 +14,31 @@
 - Mobile-specific layouts.
 
 ## Decisions
-- Reader flow is the default product experience.
-- Editor capabilities extend reader screens rather than forming a separate application.
+- User flow is the default product experience.
+- Editor capabilities extend user screens rather than forming a separate application.
 - Tree editing remains Markdown-first with preview.
+- Source contribution is part of the default authenticated experience, not an editor-only side path.
 
 ## Dependencies
 - Screen inventory in [`screen-inventory.md`](./screen-inventory.md).
-- Reader flows in [`../flows/reader-flows.md`](../flows/reader-flows.md).
+- User flows in [`../flows/user-flows.md`](../flows/user-flows.md).
 - Editor flows in [`../flows/editor-flows.md`](../flows/editor-flows.md).
 
 ## Acceptance Criteria
-- Reader and Editor surfaces are specified clearly enough for implementation.
+- User and Editor surfaces are specified clearly enough for implementation.
 - Shared states are applied consistently across screens.
 - Role-based action visibility is explicit.
 
-## Reader-Facing Experience
+## User-Facing Experience
 
 ### Home
 - Goal:
-  - orient the user toward branches, recent knowledge, and next discovery actions
+  - orient the user toward branches, recent knowledge, contribution entry points, and next discovery actions
 - Key regions:
   - recent branches
   - recently updated verified nodes
   - pending knowledge gaps or suggested topics
+  - contribution CTA for source intake
 - States:
   - empty: no branches or nodes yet
   - loading: skeleton sections
@@ -64,7 +66,7 @@
   - contextual mini-graph
   - related nodes
   - source excerpt and provenance summary
-- Reader actions:
+- User actions:
   - follow links
   - open branch
   - inspect relation context
@@ -86,6 +88,34 @@
   - selected node inspector
   - filters by branch, tag, and relation type
 
+### Source Intake
+- Goal:
+  - let any authenticated user contribute new source material or record a lightweight branch-gap request into the pipeline
+- Key regions:
+  - intake mode selector for source upload vs gap request
+  - upload form
+  - minimal metadata fields
+  - allowed-format guidance
+  - submission result banner
+- States:
+  - empty: no recent uploads
+  - loading: upload in progress
+  - error: failed upload with retry guidance
+
+### My Source Submissions
+- Goal:
+  - let users track only their own source submissions without opening the full Source Repo
+- Columns:
+  - item type
+  - source title
+  - processing state
+  - trust or review state when available
+  - last updated
+  - next expected action
+- Restrictions:
+  - no access to global source browsing
+  - no corrected-text or Markdown-draft editing for baseline `User`
+
 ## Editor Authoring Extension
 
 ### Create Branch
@@ -95,6 +125,7 @@
   - choose branch type
   - fill template scaffold
   - save draft branch
+  - assign ownership or assignment context for later edits
 
 ### Edit Node
 - Mode:
@@ -107,15 +138,7 @@
 - States:
   - no_source badge visible by default for manual nodes
   - validation errors shown inline and in summary
-
-### My Source Submissions
-- Goal:
-  - show submission history without exposing the full source repo
-- Columns:
-  - source title
-  - processing state
-  - last update
-  - next action
+  - access denied when the node is not owned or assigned to the Editor
 
 ### Assigned Source Task
 - Goal:
@@ -127,6 +150,7 @@
   - task status and assignment info
 - Restrictions:
   - cannot approve or publish
+  - cannot open tasks that are not owned or assigned
 
 ## Shared States Applied Here
 - loading
@@ -134,4 +158,3 @@
 - error
 - access denied
 - archived
-
