@@ -24,12 +24,13 @@
 
 ## Dependencies
 - Scope boundaries in [`scope-v1.md`](./scope-v1.md).
+- Quantitative success tracking in [`v1-scorecard.md`](./v1-scorecard.md).
 - Role definitions in [`roles-personas.md`](./roles-personas.md).
 - Core architecture in [`../system/two-repository-architecture.md`](../system/two-repository-architecture.md).
 
 ## Acceptance Criteria
 - Product goals are concrete enough to evaluate feature decisions against them.
-- V1 success can be measured by operational and user outcomes.
+- V1 success can be measured by operational and user outcomes with a linked scorecard.
 - Downstream documents can reference this file without reopening product intent debates.
 
 ## Product Problem
@@ -45,11 +46,13 @@ WisdomTree solves this by separating evidence ingestion from curated knowledge p
 5. Keep the system operable for a small team without enterprise-level process overhead.
 
 ## V1 Success Definition
-- A user can upload source material and see it enter a reviewable ingestion flow.
-- An assigned operator can correct extracted text, turn it into Markdown, and publish it into the tree.
-- A reader can search, inspect trust signals, traverse links, and expand a branch without needing the raw source repository.
-- The system preserves provenance between a published node and the source evidence that produced it.
-- The team can operate the platform with clear roles, auditable actions, and recoverable data.
+The qualitative outcomes below define V1 value. Quantitative thresholds, green/yellow/red status, and weekly review cadence live in [`v1-scorecard.md`](./v1-scorecard.md).
+
+- A user can upload source material and see it enter a reviewable ingestion flow within the scorecard guardrails for processing outcome.
+- An assigned operator can correct extracted text, turn it into Markdown, and publish it into the tree within the scorecard guardrails for review-to-publish latency.
+- Readers and editors show recurring weekly activity above the scorecard warning floor.
+- The system preserves provenance between a published node and the source evidence that produced it, with source-driven published nodes staying within the scorecard target for evidence linkage completeness.
+- The team can operate the platform with clear roles, auditable actions, documented recovery procedures, and recoverable data.
 
 ## North-Star Workflows
 
@@ -82,4 +85,3 @@ WisdomTree solves this by separating evidence ingestion from curated knowledge p
 - Prefer structured Markdown over opaque rich-text formats.
 - Preserve provenance whenever knowledge is published from sources.
 - Keep V1 operationally simple enough for a small team.
-
