@@ -1,7 +1,7 @@
 # Design System
 
 ## Purpose
-- Define the V1 visual and interaction system that screen specifications should reuse consistently.
+- Define the V1 visual and interaction direction that screen specifications should reuse consistently.
 
 ## In Scope
 - Typography, color roles, trust badges, states, spacing, panels, tables, graph primitives, and Markdown presentation rules.
@@ -10,21 +10,29 @@
 - Production-ready component code.
 - Final branding assets.
 - Complete token JSON or CSS variable exports.
+- Token lifecycle, component maturity, accessibility governance, and shared-change approval rules.
 
 ## Decisions
 - The design system supports a `Knowledge atlas` feel with moderate density.
 - Trust and lifecycle states have explicit visual roles.
 - Markdown is structured but editable; the UI should support source editing with preview rather than hide structure behind WYSIWYG complexity.
+- Governance for shared tokens and components lives in a separate companion doc.
 
 ## Dependencies
 - UI principles in [`ui-principles.md`](./ui-principles.md).
 - Shared state behavior in [`shared-states.md`](./shared-states.md).
+- Governance rules in [`design-system-governance.md`](./design-system-governance.md).
 - Screen specs in [`reader-screen-specs.md`](./reader-screen-specs.md) and [`admin-op-screen-specs.md`](./admin-op-screen-specs.md).
 
 ## Acceptance Criteria
 - Frontend engineers can derive a coherent component library direction from this file.
 - Trust, status, and workspace context remain visually consistent across screens.
 - Markdown reading and editing rules are explicit enough for implementation.
+- This file stays focused on design direction rather than shared-component governance.
+
+## Governance Boundary
+- Use this file for visual direction, semantic roles, and interaction intent.
+- Use [`design-system-governance.md`](./design-system-governance.md) for token change rules, component maturity, accessibility baseline, naming, versioning, and broad adoption criteria.
 
 ## Typography
 - Primary text style:
@@ -49,7 +57,7 @@
 
 ## Trust Badges
 - `verified`: strong positive but restrained emphasis
-- `unverified`: cautionary neutral/warning emphasis
+- `unverified`: cautionary neutral or warning emphasis
 - `no_source`: visibly incomplete state
 - `archived`: subdued inactive state
 - `trusted` source: evidence-positive
@@ -101,4 +109,3 @@ Each state should have:
 - Render source references and trust badges near the page header.
 - Preserve readable heading hierarchy.
 - Editing mode should offer live preview and template guidance without removing direct Markdown control.
-
