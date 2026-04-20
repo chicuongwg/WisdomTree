@@ -26,6 +26,7 @@
 
 ## Dependencies
 - Product definition in [`../product/prd.md`](../product/prd.md).
+- Scorecard in [`../product/v1-scorecard.md`](../product/v1-scorecard.md).
 - Scope boundaries in [`../product/scope-v1.md`](../product/scope-v1.md).
 - Architecture in [`../system/two-repository-architecture.md`](../system/two-repository-architecture.md).
 
@@ -33,6 +34,11 @@
 - A new agent can read this document and describe the product, data split, role model, and north-star workflow correctly.
 - The summary aligns with the detailed docs and does not contradict them.
 - The summary is short enough to be used as a startup brief.
+
+## Current Repository Stage
+- The repository is currently in `Phase 0 documentation-complete`.
+- Tracked implementation has not yet started outside `/docs`.
+- The docs define the canonical planning baseline for implementation work that follows.
 
 ## What WisdomTree Is
 WisdomTree is a knowledge management system that separates raw evidence processing from curated knowledge publication. It is designed for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.
@@ -43,6 +49,7 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 - Small team scale.
 - English documentation, implementation-facing.
 - Reader-first product experience with Editor and Admin/Op extensions.
+- Explicit operating and verification policies exist before tracked implementation begins.
 
 ## Core Architectural Shape
 
@@ -103,4 +110,3 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 - Do not treat OCR plain text as publishable tree content by itself.
 - Do not make Git export the canonical authoring surface in V1.
 - Do not expand V1 into public sharing, mobile, or full enterprise role modeling.
-
