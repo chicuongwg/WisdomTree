@@ -1,10 +1,10 @@
 # Non-Functional Requirements
 
 ## Purpose
-- Define operational quality targets for V1 so implementation choices can be judged against reliability, auditability, integrity, security, and maintainability requirements.
+- Define operational quality targets for V1 so implementation choices can be judged against reliability, auditability, integrity, security, maintainability, and operator readiness requirements.
 
 ## In Scope
-- Data integrity, auditability, reliability, backup and restore, search freshness, security baseline, and observability targets.
+- Data integrity, auditability, reliability, backup and restore, search freshness, security baseline, observability, and operator coverage targets.
 - Practical V1 constraints for a small private-team deployment.
 
 ## Out of Scope
@@ -16,16 +16,20 @@
 - V1 prioritizes data integrity, auditability, and operational reliability over maximum throughput.
 - Private-team deployment assumptions allow practical, strong-enough controls rather than enterprise complexity.
 - Backup and restore must be real operational workflows, not informal intentions.
+- Operational readiness must not depend on one `Admin/Op` user only.
 
 ## Dependencies
 - Functional scope in [`functional-spec.md`](./functional-spec.md).
 - Deployment assumptions in [`../system/deployment-topology.md`](../system/deployment-topology.md).
+- Recovery procedures in [`../operations/operating-playbook.md`](../operations/operating-playbook.md).
+- Delivery coverage rules in [`../operations/delivery-operating-model.md`](../operations/delivery-operating-model.md).
 - Acceptance criteria in [`acceptance-criteria.md`](./acceptance-criteria.md).
 
 ## Acceptance Criteria
-- Every listed quality requirement can be mapped to a measurable operational control or test.
+- Every listed quality requirement can be mapped to a measurable operational control, test, or runbook drill.
 - Reliability and recovery expectations are specific enough to guide implementation.
 - Security and audit requirements are strong enough for private team documents.
+- The system exposes enough data to compute the V1 scorecard without a separate analytics platform.
 
 ## Data Integrity
 - Tree Markdown is canonical in the application database and versioned.
@@ -42,6 +46,7 @@
   - merge
   - archive
   - export
+  - restore-related administrative actions
   - permission-sensitive admin changes
 - Audit records must remain queryable by source, node, branch, and user.
 
@@ -50,16 +55,26 @@
 - OCR and parsing failures must end in a visible state, not silent loss.
 - Publish jobs must be idempotent at the application level.
 - Export validation failures must not corrupt canonical tree content.
+- Worker or storage outages must enter a visible degraded mode, not silent queue growth.
 
 ## Backup and Restore
 - Daily backups are required for:
   - application database
   - object storage bucket(s) for source repo
   - content repository remote mirror
+- Recovery point objective (`RPO`) is `24h`.
 - Restore procedures must support recovering:
   - a full environment
   - one source record with versions
   - one tree node with version history
+- Full-environment restore target is `1 business day`.
+- Single source record or single tree node restore target is `4h`.
+- A documented restore drill is required before release readiness sign-off and after major operational change.
+
+## Operational Coverage
+- The active environment must maintain at least two trained users with `Admin/Op` access.
+- One trained `Admin/Op` user acts as the primary operator and one acts as backup coverage.
+- Backup coverage must be able to execute publish, export, and restore procedures without waiting for undocumented knowledge transfer.
 
 ## Search Freshness
 - New publishes should appear in search within 5 minutes of successful indexing.
@@ -69,7 +84,7 @@
 ## Security Baseline
 - All authenticated access must flow through Google OIDC.
 - Sensitive routes require backend authorization, not just UI hiding.
-- Original file downloads are limited to Admin/Op.
+- Original file downloads are limited to `Admin/Op`.
 - Object storage access must use server-issued, time-limited access paths or equivalent controlled delivery.
 - Private data must travel over encrypted transport.
 
@@ -85,11 +100,12 @@
   - publish success rate
   - export validation failure rate
   - queue latency
+  - backlog age over 7 days
   - backup job status
 - Logs must allow correlation from a publish event back to its source version and review action.
+- Observability must be sufficient to compute the V1 scorecard without a separate analytics platform.
 
 ## Maintainability
 - Core state names must be shared across app, worker, docs, and exported content.
 - Integration boundaries must be explicit enough to replace the OCR worker or export process later without rewriting the entire app.
 - Future role split should not require rethinking the core two-repository model.
-

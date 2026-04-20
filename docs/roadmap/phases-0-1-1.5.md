@@ -15,12 +15,14 @@
 
 ## Decisions
 - Delivery is organized into `Phase 0`, `Phase 1`, and `Phase 1.5`.
+- `Phase 0` may be partially complete at the documentation layer before tracked implementation work begins.
 - Phase 1 is the first usable release and must include the full core knowledge loop plus a basic board.
 - Phase 1.5 focuses on hardening, deeper role separation, and better operations rather than changing the architecture.
 
 ## Dependencies
 - Scope in [`../product/scope-v1.md`](../product/scope-v1.md).
 - Functional requirements in [`../requirements/functional-spec.md`](../requirements/functional-spec.md).
+- Operating model in [`../operations/delivery-operating-model.md`](../operations/delivery-operating-model.md).
 - Future backlog in [`backlog-future.md`](./backlog-future.md).
 
 ## Acceptance Criteria
@@ -28,7 +30,13 @@
 - Phase boundaries are specific enough to support planning and implementation sequencing.
 - Phase 1.5 captures known follow-up work without contaminating the V1 scope.
 
+## Current Repo State
+- The repository is currently in `Phase 0 documentation-complete`.
+- The planning docs, scorecard, policy, and recovery playbook are in place before tracked implementation starts.
+- App shell, auth, database structure, source storage, and worker scaffolding are not yet present in this repository.
+
 ## Phase 0: Foundation
+- Complete the documentation layer for glossary, roles, lifecycle vocabulary, operations recovery, verification policy, scorecard, delivery operating model, and design system governance.
 - Establish docs, glossary, roles, and state vocabulary.
 - Set up app shell, auth, and baseline database structure.
 - Implement source storage, upload flow, and job orchestration scaffold.
@@ -36,7 +44,7 @@
 - Establish export and backup strategy.
 
 ## Phase 1: Core Knowledge Loop + Basic Board
-- Complete source intake, OCR/parsing pipeline, corrected text flow, Markdown draft flow, and Admin/Op review.
+- Complete source intake, OCR/parsing pipeline, corrected text flow, Markdown draft flow, and `Admin/Op` review.
 - Complete tree authoring, branching, source-linked publish, search, graph basics, and reader discovery.
 - Ship Editor-assigned correction flow and Reader-facing tree consumption flow.
 - Ship basic board, tasks, and achievement logging.
@@ -48,4 +56,3 @@
 - Improve conflict handling and merge assistance.
 - Improve observability and queue management.
 - Expand supported format quality and operational safeguards.
-
