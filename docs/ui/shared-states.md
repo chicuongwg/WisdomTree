@@ -73,6 +73,8 @@
   - reason category if known
   - operational next action
   - preserved provenance
+- Must not be used for:
+  - `branch-gap request` intake items
 
 ## Access Denied
 - Meaning:
@@ -80,4 +82,6 @@
 - Must include:
   - explicit permission denial message
   - safe next step or return path
-
+- Common cases:
+  - `User` tries to open full Source Repo detail or another person's submission
+  - `Editor` tries to open an unowned or unassigned correction task

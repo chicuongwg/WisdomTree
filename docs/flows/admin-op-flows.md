@@ -34,17 +34,25 @@
 - Merge, archive, trust, and verification decisions have clear UI and state outcomes.
 - Error and permission behaviors are explicit and operationally actionable.
 
-## Flow 1: Review Source
-1. `Admin/Op` opens the review inbox.
-2. `Admin/Op` filters by status, assignee, branch relevance, or processing issues.
-3. `Admin/Op` opens a source item.
-4. `Admin/Op` inspects:
+## Flow 1: Triage Intake Item
+1. `Admin/Op` opens `Source Inbox`.
+2. `Admin/Op` filters by `item_type`, status, assignee, branch relevance, or processing issues.
+3. `Admin/Op` opens an intake item.
+4. If the item is `source_upload`, `Admin/Op` inspects:
    - original file preview
    - raw text
    - corrected text
    - trust state
    - extraction warnings
-5. `Admin/Op` updates trust status as needed, then approves continued work, requests changes, rejects, or marks `unprocessable` according to the editorial verification policy.
+5. If the item is `branch_gap_request`, `Admin/Op` inspects:
+   - request text
+   - requester
+   - suggested branch or topic hint
+   - prior matching knowledge if available
+6. `Admin/Op` updates the intake outcome:
+   - for `source_upload`: continue work, request changes, reject, or mark `unprocessable`
+   - for `branch_gap_request`: triage, convert to branch work, reject, or archive
+7. If the item is converted, the system records the resulting branch or node target and reflects the outcome back into `My Submissions`.
 
 ## Flow 2: Approve Markdown Draft
 1. `Admin/Op` opens a ready-for-review draft.

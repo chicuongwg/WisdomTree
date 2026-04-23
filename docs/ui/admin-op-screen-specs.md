@@ -33,42 +33,51 @@
 
 ### Source Inbox
 - Goal:
-  - triage all incoming source items
+  - triage all incoming intake items
 - Key regions:
-  - filter bar
-  - source table
+  - filter bar with `item_type`, state, assignee, and branch relevance filters
+  - intake table
   - state counts
   - quick assignment or quick open actions
 - Row essentials:
+  - item type
   - title
-  - source lifecycle state
-  - trust state
+  - state
+  - trust state when applicable
   - assignee
   - last updated
   - branch hint
 
 ### Source Detail
 - Goal:
-  - inspect one source item in depth
+  - inspect one intake item in depth with behavior that depends on `item_type`
 - Key regions:
-  - metadata and provenance panel
+  - metadata and provenance or request-context panel
   - uploader and assignment summary
-  - original preview panel
-  - raw text
-  - corrected text
-  - extraction warnings
+  - file-backed detail region:
+    - original preview panel
+    - raw text
+    - corrected text
+    - extraction warnings
+    - trust state
+  - gap-request detail region:
+    - request text
+    - branch hint
+    - triage decision
+    - conversion target
   - related branch suggestions
 - Actions:
-  - assign
-  - change trust status
-  - request changes
-  - reject
-  - mark unprocessable
-  - proceed to draft review
+  - assign when applicable
+  - change trust status for file-backed source items
+  - request changes for file-backed source items
+  - reject the intake item with a recorded outcome
+  - mark unprocessable for file-backed source items
+  - convert to branch work for `branch_gap_request`
+  - proceed to draft review for file-backed source items
 
 ### Review Queue
 - Goal:
-  - central decision surface for pending corrected text and Markdown draft items
+  - central decision surface for file-backed intake items with pending corrected text and Markdown draft review
 - Key regions:
   - queue filters
   - decision summary

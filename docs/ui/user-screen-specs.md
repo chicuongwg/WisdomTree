@@ -90,7 +90,7 @@
 
 ### Source Intake
 - Goal:
-  - let any authenticated user contribute new source material or record a lightweight branch-gap request into the pipeline
+  - let any authenticated user contribute new source material or record a `branch-gap request` into the pipeline
 - Key regions:
   - intake mode selector for source upload vs gap request
   - upload form
@@ -98,16 +98,16 @@
   - allowed-format guidance
   - submission result banner
 - States:
-  - empty: no recent uploads
+  - empty: no recent intake items
   - loading: upload in progress
   - error: failed upload with retry guidance
 
-### My Source Submissions
+### My Submissions
 - Goal:
-  - let users track only their own source submissions without opening the full Source Repo
+  - let users track only their own intake items without opening the full Source Repo
 - Columns:
   - item type
-  - source title
+  - title
   - processing state
   - trust or review state when available
   - last updated

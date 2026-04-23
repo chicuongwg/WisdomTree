@@ -38,7 +38,7 @@
 | Branch Hub | `/tree/branch/:id` | User | User, Editor, Admin/Op | Tree |
 | Graph Explorer | `/graph` | User | User, Editor, Admin/Op | Search/Graph |
 | Source Intake | `/source/intake` | User | User, Editor, Admin/Op | Source Repo |
-| My Source Submissions | `/source/mine` | User | User, Editor, Admin/Op | Source Repo |
+| My Submissions | `/source/mine` | User | User, Editor, Admin/Op | Source Repo |
 | Create Branch | `/tree/branch/new` | Editor | Editor, Admin/Op | Tree |
 | Edit Node | `/tree/node/:id/edit` | Editor | Editor, Admin/Op | Tree |
 | Assigned Source Task | `/source/task/:id` | Editor | Assigned Editor, Admin/Op | Source Repo |
@@ -49,6 +49,10 @@
 | Board | `/board` | Editor | Editor, Admin/Op | Board |
 | Admin Console | `/admin` | Admin/Op | Admin/Op | Admin |
 
+Notes:
+- `My Submissions` is the unified intake history for both file-backed uploads and `branch-gap requests`.
+- `Source Detail` is type-aware and supports both file-backed evidence review and `branch-gap request` triage.
+
 ## Screen Grouping
 
 ### User-Facing Experience
@@ -58,7 +62,7 @@
 - Branch Hub
 - Graph Explorer
 - Source Intake
-- My Source Submissions
+- My Submissions
 
 ### Editor Authoring Extension
 - Create Branch

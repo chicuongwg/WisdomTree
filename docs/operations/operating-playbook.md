@@ -48,7 +48,7 @@
 ## Daily Checks
 - Confirm the latest backup job succeeded and no restore prerequisite is missing.
 - Review failed worker jobs and export failures.
-- Review `Review Inbox` items older than 7 days.
+- Review `Review Queue` items older than 7 days.
 - Check whether queue latency or search freshness has crossed warning thresholds.
 - Confirm there is no unresolved publish failure or ambiguous merge outcome.
 - Confirm audit trails remain queryable from uploader to editor/updater to approving `Admin/Op` for recent published items.
@@ -121,7 +121,7 @@
 2. Restore the latest valid PostgreSQL backup.
 3. Restore object storage from snapshot or replication.
 4. Verify the content repo mirror and export runner access.
-5. Run smoke checks for auth, node detail, source detail, publish queue, and backup status visibility.
+5. Run smoke checks for auth, node detail, source detail, Review Queue, Publish Review, and backup status visibility.
 6. Reopen write operations only after the audit tail and the most recent successful publish reconcile correctly.
 
 ## Recovery Procedure: Single Record Restore

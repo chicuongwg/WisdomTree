@@ -13,7 +13,7 @@
 - Low-level navigation component specs.
 
 ## Decisions
-- `User` is the default authenticated role and combines discovery with lightweight evidence contribution.
+- `User` is the default authenticated role and combines discovery with source contribution and gap reporting.
 - Users see trust state and selected provenance context, but not full source internals.
 - Users can upload source items and view only their own submissions.
 - Graph exploration exists as both a dedicated surface and contextual relation view.
@@ -43,10 +43,10 @@
 
 ## Happy Path 2: Submit Source and Track It
 1. User opens `Source Intake` from the app shell or a contribution CTA.
-2. User either submits a source file or records a lightweight branch-gap request when no file is available yet.
+2. User either submits a source file or records a `branch-gap request` when no file is available yet.
 3. System acknowledges the intake and creates a personal submission record.
 4. User opens `My Submissions` and sees:
-   - source title
+   - item title
    - processing state
    - last updated timestamp
    - whether follow-up from the team is pending
