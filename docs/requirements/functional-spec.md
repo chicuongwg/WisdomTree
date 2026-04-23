@@ -35,13 +35,26 @@
 
 ### User Stories
 - As an authenticated user, I can upload a source file so that the team can extract and review knowledge from it.
-- As a User, I can view the status of my submitted source items.
+- As a User, I can create a `branch-gap request` when I do not have a file yet but know the tree is missing a concept.
+- As a User, I can view the status of my submitted intake items.
 - As an Editor, I can continue follow-up work on my own submissions or items assigned to me when the content needs correction or update.
 - As an Admin/Op, I can inspect source files, raw text, corrected text, provenance, and trust status.
+- As an Admin/Op, I can triage a `branch-gap request` and convert it into branch work without creating a source version.
 - As an Admin/Op, I can classify unsupported files as `unprocessable` without losing the source record.
 
 ### Business Rules
+- Intake history is modeled as a logical `Intake Item` projection shown in `My Submissions` and `Source Inbox`.
+- `Intake Item` exposes at least:
+  - `submission_id`
+  - `item_type`
+  - `title`
+  - `state`
+  - `submitted_by`
+  - `last_updated_at`
+  - `next_action`
 - Every upload creates a source record and a source version.
+- Source intake accepts both file-backed submissions and `branch-gap requests`.
+- `branch-gap requests` are intake items, not `Source` aliases, and do not create `SourceVersion`.
 - Original source files are stored in the Source Repo, not in the Knowledge Tree.
 - Raw extracted text is immutable.
 - Corrected text is editable and versioned.
@@ -53,9 +66,11 @@
 
 ### Acceptance Criteria
 - Upload produces a trackable source item with a stable identifier.
-- Users can see upload outcome and processing state.
+- `branch-gap requests` produce a trackable intake item with an `item_type` visible in `My Submissions`.
+- Users can see the current intake state and next expected action for both file-backed submissions and `branch-gap requests`.
 - Editors can identify which own or assigned items need their follow-up action.
 - Admin/Op can open the source item and inspect evidence artifacts.
+- Admin/Op can triage a `branch-gap request` from `Source Inbox` and convert it into branch work.
 
 ## Capability 2: OCR, Parsing, and Text Correction
 

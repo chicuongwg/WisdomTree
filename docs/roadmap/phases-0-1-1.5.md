@@ -39,14 +39,14 @@
 - Complete the documentation layer for glossary, roles, lifecycle vocabulary, operations recovery, verification policy, scorecard, delivery operating model, and design system governance.
 - Establish docs, glossary, roles, and state vocabulary.
 - Set up app shell, auth, and baseline database structure.
-- Implement source storage, upload flow, and job orchestration scaffold.
+- Implement intake projection, source storage, upload flow, and job orchestration scaffold.
 - Implement tree node and branch core models.
 - Establish export and backup strategy.
 
 ## Phase 1: Core Knowledge Loop + Basic Board
-- Complete source intake, OCR/parsing pipeline, corrected text flow, Markdown draft flow, and `Admin/Op` review.
+- Complete source intake, branch-gap request intake, OCR/parsing pipeline, corrected text flow, Markdown draft flow, and `Admin/Op` review.
 - Complete tree authoring, branching, source-linked publish, search, graph basics, and user discovery.
-- Ship Editor-assigned correction flow and User-facing tree consumption flow.
+- Ship `My Submissions`, Editor-assigned correction flow, and User-facing tree consumption flow.
 - Ship basic board, tasks, and achievement logging.
 - Ship audit, export validation, and operational health surfaces required for usable private-team operation.
 

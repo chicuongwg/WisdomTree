@@ -34,7 +34,8 @@
 
 ## System-Level Release Criteria
 - A user can upload a source file and receive a visible processing state.
-- A user can open personal submissions and see only their own source items and statuses.
+- A user can create a `branch-gap request` and receive a visible intake state.
+- A user can open `My Submissions` and see only their own intake items and statuses.
 - The system can produce raw text, corrected text, and a Markdown draft or clearly indicate failure.
 - An `Admin/Op` can review a source item, approve it, and publish a Markdown node into the tree.
 - A `User` can discover the published node through search, branch navigation, or graph navigation.
@@ -51,10 +52,13 @@
 
 ### Source Repo
 - Supports upload and versioned storage of original files.
+- Supports `branch-gap request` intake without creating a source version.
+- Supports unified `My Submissions` history across file-backed uploads and `branch-gap requests`.
 - Displays source lifecycle state and trust state.
 - Preserves raw text as immutable and corrected text as editable.
 - Supports `unprocessable` state for unsupported or failed formats.
 - Allows authenticated `User` accounts to view only their own submissions.
+- Allows `Admin/Op` to filter `Source Inbox` by `item_type` and triage `branch-gap requests` without sending them into source trust or publish states.
 - Prevents `Editor` accounts from modifying unowned and unassigned source work.
 
 ### Review and Publish
@@ -62,6 +66,7 @@
 - Records reviewer identity and timestamps.
 - Preserves source-to-node provenance during promotion.
 - Publish, reject, and verification decisions align with the editorial verification policy.
+- Keeps `branch-gap requests` outside source trust and `Publish Review`; they are resolved through intake triage outcomes instead.
 - Ensures only `Admin/Op` can approve corrected text, change trust, approve Markdown drafts, and publish.
 
 ### Tree

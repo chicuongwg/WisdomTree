@@ -39,7 +39,7 @@
 | --- | --- | --- |
 | User | Contribute source evidence and consume curated knowledge | Home, Search, Tree, Graph, Source Intake, My Submissions |
 | Editor | Refine owned or assigned knowledge work before final approval | Tree authoring, Branch editor, Assigned source correction |
-| Admin/Op | Operate intake, review, trust, publish, taxonomy, and platform workflows | Source Repo, Review Inbox, Publish, Admin, Board |
+| Admin/Op | Operate intake, review, trust, publish, taxonomy, and platform workflows | Source Inbox, Source Detail, Review Queue, Publish Review, Admin, Board |
 
 ## User Persona
 
@@ -49,7 +49,7 @@
 - Find trustworthy knowledge quickly.
 - Understand how concepts relate to each other.
 - Follow branches to learn a topic progressively.
-- Identify gaps and request new knowledge expansion.
+- Identify gaps and submit `branch-gap requests` for missing knowledge.
 
 ### What Success Looks Like
 - A newly uploaded source item becomes visible in personal submissions with a clear processing state.
@@ -62,8 +62,8 @@
 - Search across tree and source snippets exposed through tree pages.
 - Open graph and branch views.
 - Upload new source items through authenticated intake.
-- View own source submissions, processing states, and follow-up prompts.
-- Create lightweight requests for branch expansion where allowed by product flow.
+- View own submissions, processing states, and follow-up prompts.
+- Create `branch-gap requests` through `Source Intake` when no file is available yet.
 - No access to full source repository.
 - No permission to edit corrected text, Markdown drafts, trust states, or publication outcomes.
 
@@ -84,7 +84,7 @@
 ### Permission Summary
 - Inherits all `User` permissions.
 - Create and edit owned or assigned tree nodes and branches.
-- View own source submissions and assigned correction tasks.
+- View own submissions and assigned correction tasks.
 - Edit corrected text or Markdown draft only for owned or assigned work.
 - Suggest taxonomy changes through content edits, not by changing global trust or verification policy.
 - No final authority for trust approval or publication.
@@ -99,7 +99,7 @@
 - Maintain auditability and platform health.
 
 ### What Success Looks Like
-- Source inbox and publish queue remain controlled.
+- Source Inbox, Review Queue, and Publish Review remain controlled.
 - Trust and lifecycle states are consistent.
 - Operators can trace every published node back to evidence and review history.
 

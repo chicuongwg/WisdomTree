@@ -40,13 +40,14 @@
 | Search source repo items | Limited to exposed snippets only | Own submissions and assigned items | Yes |
 | Open dedicated graph surface | Yes | Yes | Yes |
 | Open source intake | Yes | Yes | Yes |
+| Create branch-gap request | Yes | Yes | Yes |
 | Create branch | No | Yes | Yes |
 | Edit branch metadata | No | Owned or assigned only | Yes |
 | Create manual node | No | Yes | Yes |
 | Edit manual node | No | Owned or assigned only | Yes |
 | View node audit summary | No | Limited to owned or assigned items | Yes |
 | Upload source file | Yes | Yes | Yes |
-| View own source submissions | Yes | Yes | Yes |
+| View own submissions | Yes | Yes | Yes |
 | View all source items | No | No | Yes |
 | Download original source file | No | No | Yes |
 | Edit corrected text when owned or assigned | No | Yes | Yes |
@@ -63,7 +64,7 @@
 | View backup and system health | No | No | Yes |
 
 ## Notes
-- Users may submit new source items directly and track their own submission history, but they do not gain visibility into the full source repository.
+- Users may submit new source items or `branch-gap requests` directly and track their own submission history, but they do not gain visibility into the full source repository.
 - Editors inherit all `User` capabilities and may modify source-derived working content only when the item is owned by them or explicitly assigned to them.
 - Admin/Op is the only role with trust, archive, merge, publish, export, and download-original authority in V1.
 - Audit and incident investigation must be able to distinguish uploader, editor/updater, and approver/publisher actions from this permission model.

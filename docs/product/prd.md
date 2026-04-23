@@ -49,6 +49,7 @@ WisdomTree solves this by separating evidence ingestion from curated knowledge p
 The qualitative outcomes below define V1 value. Quantitative thresholds, green/yellow/red status, and weekly review cadence live in [`v1-scorecard.md`](./v1-scorecard.md).
 
 - A user can upload source material and see it enter a reviewable ingestion flow within the scorecard guardrails for processing outcome.
+- A user can submit a `branch-gap request` and see it enter a reviewable intake flow, alongside file-backed submissions, through `My Submissions` when no file is available.
 - An assigned editor or operator can prepare extracted text, turn it into Markdown, and complete publication within the scorecard guardrails for review-to-publish latency.
 - Users and editors show recurring weekly activity above the scorecard warning floor.
 - The system preserves provenance between a published node and the source evidence that produced it, with source-driven published nodes staying within the scorecard target for evidence linkage completeness.
@@ -57,17 +58,17 @@ The qualitative outcomes below define V1 value. Quantitative thresholds, green/y
 ## North-Star Workflows
 
 ### Workflow 1: Source to Tree Publication
-1. A user uploads a source item into the source inbox.
+1. A user uploads a source item through `Source Intake`.
 2. The system extracts text through parsing or OCR.
-3. An editor or operator corrects the extracted text.
-4. An operator reviews the corrected text, trust status, and Markdown draft.
+3. An `Editor` or `Admin/Op` corrects the extracted text.
+4. An `Admin/Op` reviews the corrected text, trust status, and Markdown draft.
 5. The Markdown node is published into the tree with source links, excerpts, and review provenance.
 
 ### Workflow 2: User Discovery and Expansion
 1. A user searches the knowledge tree.
 2. The user opens a node, checks its trust state, links, and related branch.
 3. The user follows backlinks, tags, or the contextual mini-graph.
-4. The user identifies a missing concept and uploads a source item or requests branch expansion.
+4. The user identifies a missing concept and submits a `branch-gap request` through `Source Intake`.
 
 ### Workflow 3: Manual Knowledge Authoring
 1. An editor creates a branch or manual node directly in the tree.

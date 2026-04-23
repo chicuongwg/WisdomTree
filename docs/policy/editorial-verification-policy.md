@@ -47,6 +47,12 @@
 - `Admin/Op` owns trust decisions, verification, publish approval, merge, archive, export, and recovery-sensitive actions.
 - The audit trail for any publishable item should expose who uploaded it, who edited or updated it, and which `Admin/Op` approved or published it.
 
+## Branch-gap Request Policy
+- `branch-gap requests` are intake items, not source evidence.
+- `branch-gap requests` do not carry source trust state.
+- `branch-gap requests` do not directly qualify a node for `verified` or `unverified` publication.
+- `Admin/Op` may triage a `branch-gap request` into branch work, reject it, or archive it.
+
 ## Source Trust Decision Guide
 
 | Source Trust Status | Use when |

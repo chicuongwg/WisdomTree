@@ -38,6 +38,7 @@
 
 ### Source Repo
 - Upload files from authenticated users.
+- Accept `branch-gap requests` from authenticated users without creating `SourceVersion`.
 - Let authenticated users view the status of their own submissions.
 - Store original source files in object storage.
 - Generate parsed or OCR-based text.
@@ -61,7 +62,7 @@
 ### Workflow and Operations
 - Role-based permissions for User, Editor, and Admin/Op.
 - Editor updates are limited to owned or assigned source and tree work.
-- Review inbox for source correction, trust checks, and publication approval.
+- `Source Inbox` for intake triage and `Review Queue` plus `Publish Review` for source correction, trust checks, and publication approval.
 - Basic task board and achievement log for branch progress and operational follow-up.
 - Notifications for review assignments and publication-relevant events.
 
