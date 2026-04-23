@@ -51,11 +51,30 @@ Interpretation:
 - `uploaded`: source accepted and stored.
 - `processing`: parser or OCR is running.
 - `processed`: raw text or failure artifact exists.
-- `under_correction`: assigned correction work is in progress.
+- `under_correction`: assigned `Editor` or `Admin/Op` correction work is in progress.
 - `ready_for_review`: corrected text and draft are ready for Admin/Op review.
 - `promoted`: at least one tree node was published from the source version.
 - `rejected`: source reviewed but not suitable for publication.
 - `unprocessable`: system cannot produce usable extraction in V1.
+
+## Branch-gap Request Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> submitted
+    submitted --> triaged
+    triaged --> converted_to_branch
+    triaged --> rejected
+    converted_to_branch --> archived
+    rejected --> archived
+```
+
+Interpretation:
+- `submitted`: gap request accepted through `Source Intake`.
+- `triaged`: `Admin/Op` reviewed the request and chose the next step.
+- `converted_to_branch`: the request was turned into branch or node work.
+- `rejected`: the request was reviewed and not accepted for active knowledge work.
+- `archived`: historical record retained after resolution.
 
 ## Node Verification Lifecycle
 
@@ -113,4 +132,3 @@ Interpretation:
 - `resolving`: Admin/Op is selecting the canonical outcome.
 - `resolved`: conflict outcome applied.
 - `archived_conflict`: preserved as historical record after resolution path closes.
-

@@ -31,14 +31,33 @@
 
 ## Core Entities
 
+### Intake Item
+- Logical intake projection used by `Source Intake`, `My Submissions`, and `Source Inbox`.
+- Has shared fields:
+  - `submission_id`
+  - `item_type`
+  - `title`
+  - `state`
+  - `submitted_by`
+  - `last_updated_at`
+  - `next_action`
+- May point to a file-backed `Source` or a non-file-backed `Branch-gap Request`.
+
 ### Source
 - A logical evidence item submitted to the system.
 - May contain many source versions over time.
 - Carries trust status independent from published tree node status.
+- Carries uploader identity and assignment state for accountability.
 
 ### Source Version
 - Immutable representation of one uploaded file and its generated artifacts.
 - Owns original file reference, raw text reference, corrected text version chain, and preview references.
+
+### Branch-gap Request
+- Non-file-backed intake record describing a missing concept, branch gap, or desired expansion.
+- Does not create `SourceVersion`.
+- Does not carry source trust state.
+- May be converted into a branch, a node placeholder, or another tracked knowledge-work item after triage.
 
 ### Markdown Draft
 - Transitional publication artifact built from corrected text.
@@ -53,7 +72,8 @@
 - Immutable snapshot of node content after publish or significant edit.
 
 ### Review Task
-- Actionable item for correction, trust review, publish approval, merge, archive, or operational resolution.
+- Actionable item for source correction, gap triage, publish approval, merge, archive, or operational resolution.
+- Preserves who owns the working step and who approved the outcome.
 
 ### Conflict
 - A state where concurrent or contradictory edits require manual resolution by Admin/Op.
@@ -78,11 +98,19 @@
 ### Source Lifecycle
 - Source version enters as `uploaded`.
 - It becomes `processed` when raw text or explicit extraction failure is available.
-- It becomes `under_correction` when a user is actively working on corrected text.
+- It becomes `under_correction` when an assigned `Editor` or `Admin/Op` is actively working on corrected text.
 - It becomes `ready_for_review` when corrected text and a Markdown draft are available.
 - It becomes `promoted` when at least one tree publication is approved from it.
 - It becomes `rejected` when the source should not produce tree content.
 - It may become `unprocessable` when processing is unsupported or fails irrecoverably.
+
+### Branch-gap Request Lifecycle
+- Branch-gap request enters as `submitted`.
+- It becomes `triaged` when `Admin/Op` reviews the request and decides the next action.
+- It becomes `converted_to_branch` when it creates or links to branch or node work.
+- It becomes `rejected` when the request is not suitable for active knowledge work.
+- It may become `archived` after the triage outcome is historically preserved.
+- `branch_gap_request` never enters `under_correction`, `ready_for_review`, or `promoted`.
 
 ### Node Lifecycle
 - Manual nodes begin as `no_source`.
@@ -100,6 +128,17 @@
 - Conflicts do not auto-merge in V1.
 - Conflicts must preserve both competing versions until Admin/Op resolves them.
 - Resolution must record outcome and chosen canonical version.
+
+## Accountability Rules
+- Every source-derived publication must remain traceable to:
+  - uploader
+  - editor or updater
+  - approving `Admin/Op`
+- Ownership or assignment must be explicit before an `Editor` can mutate corrected text, Markdown draft, or assigned tree content.
+- Every `branch-gap request` must remain traceable to:
+  - `submitted_by`
+  - `triaged_by`
+  - final triage outcome
 
 ## Lifecycle Overview Diagram
 
@@ -127,4 +166,3 @@ flowchart TD
 - Tasks track knowledge workflow work, not general company project management.
 - Achievements can be derived from branch milestones or logged manually.
 - Neither tasks nor achievements override trust or verification states.
-

@@ -48,6 +48,19 @@
   - review and assignment state
 - Optimized for evidence, comparison, review, and promotion readiness.
 
+### Shared Intake Projection
+- `Source Intake`, `My Submissions`, and `Source Inbox` operate over a shared logical `Intake Item` projection.
+- `Intake Item` carries:
+  - `submission_id`
+  - `item_type = source_upload | branch_gap_request`
+  - `title`
+  - `state`
+  - `submitted_by`
+  - `last_updated_at`
+  - `next_action`
+- File-backed intake items link to `Source` and `SourceVersion`.
+- `branch-gap requests` remain non-file-backed intake items and never create `SourceVersion`.
+
 ### Knowledge Tree
 - Accepts Markdown only as curated publishable content.
 - Stores:
@@ -66,6 +79,7 @@
 | Original source file | Source Repo object storage | Downloadable by Admin/Op only |
 | Raw extracted text | Source Repo evidence storage | Immutable |
 | Corrected text | Source Repo evidence storage | Editable, versioned |
+| Branch-gap request | Intake item storage and projection | No `SourceVersion`, no source trust state |
 | Markdown draft | App workflow state until publish | Transitional object |
 | Published node Markdown | PostgreSQL | Canonical tree content |
 | Exported Markdown | Content Repo | Derived backup and validation artifact |
@@ -95,18 +109,27 @@ flowchart LR
 ```
 
 ## Promotion Flow
-1. A source file is uploaded into the Source Repo.
+1. A source file is uploaded through `Source Intake` into the Source Repo.
 2. The worker parses or OCRs the file.
 3. The system stores raw extracted text as immutable evidence.
-4. A user corrects the text into a reviewed plain-text version.
-5. The system or a user creates a Markdown draft from corrected text.
+4. An assigned `Editor` or `Admin/Op` corrects the text into a reviewed plain-text version.
+5. The system or an assigned `Editor` creates a Markdown draft from corrected text.
 6. Admin/Op reviews trust, draft quality, and provenance.
 7. Approved Markdown is published into the Knowledge Tree.
 8. Search and graph projections update.
 9. Tree content exports into the content repo.
 
+## Gap Request Flow
+1. A `branch-gap request` is submitted through `Source Intake`.
+2. The system stores it as an `Intake Item` with `item_type = branch_gap_request`.
+3. `Admin/Op` triages it from `Source Inbox`.
+4. The request is either:
+   - converted into branch or node work
+   - rejected
+   - archived
+5. The resulting decision is reflected back into `My Submissions`.
+
 ## Design Rationale
 - Evidence review and curated knowledge have different quality thresholds and different interaction models.
 - Mixing raw OCR text directly into the tree would weaken trust and make graph quality unstable.
 - Separating repositories keeps the tree cleaner, while still preserving deep traceability to source material.
-

@@ -19,6 +19,7 @@
 - Backend is responsible for enforcing authorization on all protected actions.
 - Worker contracts are asynchronous and job-based.
 - Export remains one-way from app to content repo.
+- `branch-gap requests` are intake items, not file-backed `Source` records.
 
 ## Dependencies
 - Module roles in [`module-boundaries.md`](./module-boundaries.md).
@@ -38,16 +39,22 @@
 
 ### Source Repo
 - `POST /api/source/upload`
+- `POST /api/source/gap-request`
 - `GET /api/source/my-submissions`
 - `GET /api/source/:sourceId`
+- `GET /api/source/gap-request/:requestId`
 - `GET /api/source/:sourceId/version/:versionId`
+- `POST /api/source/gap-request/:requestId/triage`
+- `POST /api/source/gap-request/:requestId/convert`
+- `POST /api/source/gap-request/:requestId/reject`
 - `POST /api/source/:sourceId/version/:versionId/assign`
 - `POST /api/source/:sourceId/version/:versionId/corrected-text`
 - `POST /api/source/:sourceId/version/:versionId/mark-ready-for-review`
 - `POST /api/source/:sourceId/version/:versionId/reject`
 
-### Markdown Draft and Publish
-- `GET /api/publish-queue`
+### Review and Publish
+- `GET /api/review/queue`
+- `GET /api/review/publish/:reviewId`
 - `POST /api/source/:sourceId/version/:versionId/md-draft`
 - `POST /api/source/:sourceId/version/:versionId/approve`
 - `POST /api/source/:sourceId/version/:versionId/publish`
@@ -108,6 +115,7 @@
 
 ## Event Triggers
 - `source.uploaded`
+- `source.gap_requested`
 - `source.processed`
 - `source.processing_failed`
 - `source.ready_for_review`
@@ -124,4 +132,3 @@
 - Content repo receives export commits from the app or export service.
 - GitHub Actions validates exported content on push.
 - Email provider sends review and operational notifications.
-
