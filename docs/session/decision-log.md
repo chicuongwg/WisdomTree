@@ -88,6 +88,7 @@
 
 ### Technology and AI
 - Accepted stack (owner sign-off 2026-07-19): TypeScript full-stack app, Python worker, PostgreSQL, Redis, S3-compatible storage, Google OIDC; see [`../system/tech-stack.md`](../system/tech-stack.md).
+- Framework pin for the demo and onward (2026-07-20): Next.js (App Router) + Drizzle ORM as the TypeScript full-stack implementation; demo scope and dev-mode substitutions in [`../roadmap/demo-brief.md`](../roadmap/demo-brief.md). Delivery is agent-built under a coordinator gate between scaffold and build.
 - Search is PostgreSQL full-text in V1; semantic finding via pgvector plus local embeddings is Phase 1.5.
 - AI is local-only through Ollama with no paid API dependency, and is additive; the system stays fully functional with all external AI disabled.
 - Extracted text is stored as position-referenced chunks to support future embeddings and cited answers without re-extraction.

@@ -176,6 +176,7 @@
 - [`policy/editorial-verification-policy.md`](./policy/editorial-verification-policy.md): publish, verification, reject, merge, and archive decision rules.
 
 ### Roadmap
+- [`roadmap/demo-brief.md`](./roadmap/demo-brief.md): scope, dev-mode substitutions, and acceptance bar for the first runnable demo; the hand-off instruction for a build agent.
 - [`roadmap/phases-0-1-1.5.md`](./roadmap/phases-0-1-1.5.md): phased release plan.
 - [`roadmap/backlog-future.md`](./roadmap/backlog-future.md): deferred items and future expansions.
 
