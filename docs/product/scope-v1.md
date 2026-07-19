@@ -9,6 +9,8 @@
 - Knowledge tree for curated Markdown nodes, branches, links, tags, search, and graph exploration.
 - Basic board and achievement tracking for branch completion and operational work.
 - Export of tree content into a private Git content repository.
+- Physical library catalog and borrow-return circulation for the community library collection.
+- One-way and outbound Google bridges: Drive import, Sheets import, Forms ingestion, and an outbound calendar feed.
 
 ## Out of Scope
 - Public sharing or public read access.

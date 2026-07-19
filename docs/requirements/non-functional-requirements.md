@@ -89,6 +89,13 @@
 - Archive and merge redirects should affect default search visibility within 5 minutes.
 - Source correction status changes should appear in operational search within 2 minutes.
 
+## Google Bridge
+- Every Google bridge is one-way into WisdomTree or outbound; nothing WisdomTree owns is written back to Google in V1.
+- A Google API outage or throttle degrades only the affected bridge and must never block core storage, catalog, or knowledge workflows.
+- Drive and Sheets imports are on-demand or scheduled; Forms polling ingests new rows within 30 minutes of a scheduled poll.
+- Import jobs are idempotent and never leave partial or corrupt records; failures surface as operational follow-up.
+- The Calendar ICS feed requires no per-user Google OAuth and reflects deadline changes within one feed refresh interval.
+
 ## Security Baseline
 - All authenticated access must flow through Google OIDC.
 - Sensitive routes require backend authorization, not just UI hiding.

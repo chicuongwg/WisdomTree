@@ -79,6 +79,12 @@
 - Keep tree reading and manual node authoring available if the app and database remain healthy.
 - Block source-driven publish until source artifacts and provenance references are reachable again.
 
+### Google API Unavailable
+- Treat Drive, Sheets, and Forms bridge failures as `class_3` unless an import is blocking onboarding, in which case escalate to `class_2`.
+- Core storage, catalog, and knowledge workflows continue unaffected; only imports and the calendar feed are delayed.
+- Retry imports after the outage clears; because import jobs are idempotent, replay is safe.
+- Keep any partially reported import visible as an operational follow-up item rather than silently dropping it.
+
 ### Restore Mode
 - Freeze publish, merge, archive, and export triggers until backup integrity is confirmed.
 - Reopen read-only surfaces first, then review surfaces, then write actions.

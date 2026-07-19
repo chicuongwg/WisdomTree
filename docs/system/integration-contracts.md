@@ -107,6 +107,12 @@
 - `GET /api/admin/health`
 - `POST /api/export/tree`
 
+### Google Bridge
+- `POST /api/bridge/drive/import`
+- `POST /api/bridge/sheet/import`
+- `GET /api/bridge/status`
+- `GET /calendar/:token.ics`
+
 ## Worker Job Contracts
 
 ### Source Processing Job
@@ -151,6 +157,17 @@
   - refreshed search projection
   - refreshed graph projection if applicable
 
+### Google Bridge Jobs
+- `ImportDriveJob`:
+  - input: Drive folder id, target space id
+  - output: created source ids, skipped-file report, failure report
+- `ImportSheetJob`:
+  - input: Sheet id, target module (catalog or metrics), column mapping
+  - output: created record ids, validation-failure report
+- `PollFormsSheetJob`:
+  - input: form-linked Sheet id, target module, last watermark
+  - output: ingested rows, new watermark
+
 ## Event Triggers
 - `source.uploaded`
 - `source.stored`
@@ -170,6 +187,10 @@
 - `loan.borrowed`
 - `loan.overdue`
 - `loan.returned`
+- `bridge.drive.imported`
+- `bridge.sheet.imported`
+- `bridge.forms.ingested`
+- `bridge.import.failed`
 
 ## External Integration Assumptions
 - Google OIDC supplies user identity claims consumed by the app.
@@ -177,3 +198,4 @@
 - Content repo receives export commits from the export service only.
 - GitHub Actions validates exported content on push.
 - Email provider sends review and operational notifications.
+- Google bridge integrations are one-way or outbound only; see [`google-bridge.md`](./google-bridge.md).

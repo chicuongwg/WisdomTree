@@ -128,6 +128,7 @@
 - [`system/data-model-lifecycle.md`](./system/data-model-lifecycle.md): entity lifecycle and state rules.
 - [`system/catalog-circulation.md`](./system/catalog-circulation.md): physical library catalog and borrow-return circulation.
 - [`system/integration-contracts.md`](./system/integration-contracts.md): key endpoints, events, and service contracts.
+- [`system/google-bridge.md`](./system/google-bridge.md): one-way and outbound integration with Google Drive, Sheets, Forms, and Calendar.
 - [`system/deployment-topology.md`](./system/deployment-topology.md): runtime topology and deployment plan.
 
 ### Flows

@@ -49,6 +49,8 @@
 - Ship `Library` browsing, space-scoped search and retrieval, and original-file download for space members.
 - Ship `My Submissions`, Editor-assigned correction flow, and User-facing tree consumption flow.
 - Ship document export of nodes to `docx` and `pdf`, and the bilingual Vietnamese/English UI.
+- Ship the physical catalog and borrow-return circulation for the community library.
+- Ship minimal Google bridges: Drive import, Sheets import, Forms ingestion, and the outbound calendar feed.
 - Ship basic board, tasks, and achievement logging.
 - Ship audit, export validation, and operational health surfaces required for usable private-team operation.
 
