@@ -37,6 +37,7 @@
 
 ## Phase 0: Foundation
 - Complete the documentation layer for glossary, roles, lifecycle vocabulary, operations recovery, verification policy, scorecard, delivery operating model, and design system governance.
+- Complete the platform layer and module docs: platform context and module map, catalog and circulation, Google bridge, notifications and comments, technology stack, intake constraints, Vietnamese UI vocabulary, and adoption onboarding.
 - Establish docs, glossary, roles, and state vocabulary.
 - Set up app shell, auth, and baseline database structure.
 - Implement space model, intake projection, source storage, upload flow, `Library` scaffold, and job orchestration scaffold.

@@ -156,6 +156,16 @@
   - selected node inspector
   - filters by branch, tag, and relation type
 
+### Deadlines
+- Goal:
+  - let project members track conference, funding, report, and milestone deadlines across parallel projects
+- Key regions:
+  - upcoming deadlines list sorted by due date, filterable by project
+  - deadline detail with type, due date, linked checklist, and linked documents
+  - calendar-feed subscribe link
+- States:
+  - empty, loading, error, access denied
+
 ### Source Intake
 - Goal:
   - let any authenticated user contribute new source material or record a `branch-gap request` into the pipeline

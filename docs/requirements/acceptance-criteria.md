@@ -98,6 +98,24 @@
 - A digitized source can be linked to its catalog item while both records stay distinct.
 - Catalog and circulation actions record actor and timestamps for audit.
 
+### Notifications and Comments
+- Relevant events notify the right members through their chosen channels (in-app, email, Zalo OA).
+- A member can comment on a source, node, loan ticket, or deadline, and the comment persists with the object.
+- A channel outage delays alerts without blocking the triggering workflow.
+
+### Deadlines
+- A deadline can be created, linked to a project, and surfaced in that project's calendar feed.
+- Members are reminded before a deadline is due.
+
+### Google Bridge
+- A Drive folder imports into a space without modifying the Drive originals.
+- A spreadsheet imports into the catalog or a metrics table, with failed rows reported.
+- The calendar ICS feed is subscribable without per-user Google OAuth.
+- A Google outage degrades only the affected bridge and never blocks core workflows.
+
+### Publishing
+- Only nodes flagged and approved for publication appear on the public Quartz site; nothing else leaks.
+
 ### Operations and Recovery
 - Operational surfaces expose failed jobs, queue age, backup status, and publish failures clearly enough for `Admin/Op`.
 - Restore drill results can be reviewed against the `1 business day` and `4h` recovery targets.

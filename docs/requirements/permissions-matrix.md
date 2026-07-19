@@ -72,6 +72,8 @@
 | Comment on an object the user can see | Yes | Yes | Yes |
 | Keep private notes in a personal space | Yes | Yes | Yes |
 | Set own notification preferences | Yes | Yes | Yes |
+| View project deadlines and subscribe the calendar feed | Project members | Project members | Yes |
+| Create or edit a project deadline | Project members | Project members | Yes |
 | Manage spaces and membership | No | No | Yes |
 | Trigger export | No | No | Yes |
 | View backup and system health | No | No | Yes |

@@ -179,6 +179,7 @@
 - `source.uploaded`
 - `source.stored`
 - `source.gap_requested`
+- `source.assigned`
 - `source.processed`
 - `source.processing_failed`
 - `source.ready_for_review`

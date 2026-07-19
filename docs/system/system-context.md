@@ -33,12 +33,14 @@
 - `Editor`
 - `Admin/Op`
 - `Google OIDC`
+- `Google Drive / Sheets / Forms / Calendar`
 - `Object Storage`
 - `OCR/Parser Worker`
 - `Ollama`
 - `GitHub Actions`
 - `Content Repo`
 - `Email Provider`
+- `Zalo Official Account`
 
 ## Context Diagram
 
@@ -57,6 +59,9 @@ flowchart LR
     Repo[Content Repo]
     CI[GitHub Actions]
     Email[Email Provider]
+    Zalo[Zalo Official Account]
+    GWork[Google Drive / Sheets / Forms]
+    GCal[Google Calendar]
 
     User --> App
     Editor --> App
@@ -72,6 +77,9 @@ flowchart LR
     App --> Repo
     Repo --> CI
     App --> Email
+    App --> Zalo
+    GWork --> App
+    App --> GCal
 ```
 
 ## System Boundary Summary
@@ -83,8 +91,9 @@ flowchart LR
   - Search, graph, audit, board, and notifications
 - Outside but required:
   - Google OIDC for identity
+  - Google Drive, Sheets, and Forms as one-way import sources, and Google Calendar as an outbound feed target
   - Object storage for source files and evidence artifacts
   - OCR/AI worker host
-  - GitHub Actions for exported content validation
-  - Email provider for notifications
+  - GitHub Actions for exported content validation and Quartz publishing
+  - Email provider and Zalo Official Account for notifications
 

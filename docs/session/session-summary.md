@@ -123,4 +123,4 @@ Storage and knowledge are the core, but the target is a four-pillar team platfor
 - Do not gate storage availability behind extraction or review; `stored` items stay retrievable by space members.
 - Do not treat OCR plain text as publishable tree content by itself.
 - Do not make Git export the canonical authoring surface in V1.
-- Do not expand V1 into public sharing, mobile, or full enterprise role modeling.
+- Do not expand V1 into public interactive access, mobile, or full enterprise role modeling. Selective, read-only Quartz publishing of approved nodes is a Phase 1.5 candidate, not V1; see the amendment in [`decision-log.md`](./decision-log.md).

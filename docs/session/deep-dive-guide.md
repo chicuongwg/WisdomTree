@@ -38,13 +38,15 @@ Read the session pack first. Then pick one stream. Do not jump directly into UI,
 ### Read In This Order
 1. [`session-summary.md`](./session-summary.md)
 2. [`decision-log.md`](./decision-log.md)
-3. [`../system/two-repository-architecture.md`](../system/two-repository-architecture.md)
-4. [`../system/module-boundaries.md`](../system/module-boundaries.md)
-5. [`../system/data-model-lifecycle.md`](../system/data-model-lifecycle.md)
-6. [`../system/integration-contracts.md`](../system/integration-contracts.md)
-7. [`../requirements/functional-spec.md`](../requirements/functional-spec.md)
-8. [`../requirements/non-functional-requirements.md`](../requirements/non-functional-requirements.md)
-9. [`../operations/operating-playbook.md`](../operations/operating-playbook.md)
+3. [`../platform/module-map.md`](../platform/module-map.md)
+4. [`../system/two-repository-architecture.md`](../system/two-repository-architecture.md)
+5. [`../system/module-boundaries.md`](../system/module-boundaries.md)
+6. [`../system/data-model-lifecycle.md`](../system/data-model-lifecycle.md)
+7. [`../system/integration-contracts.md`](../system/integration-contracts.md)
+8. [`../system/tech-stack.md`](../system/tech-stack.md)
+9. [`../requirements/functional-spec.md`](../requirements/functional-spec.md)
+10. [`../requirements/non-functional-requirements.md`](../requirements/non-functional-requirements.md)
+11. [`../operations/operating-playbook.md`](../operations/operating-playbook.md)
 
 ### Extract These Answers
 - What data belongs to Source Repo vs Knowledge Tree?

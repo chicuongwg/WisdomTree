@@ -55,8 +55,9 @@
 ### Backend and Worker Path
 1. [`requirements/functional-spec.md`](./requirements/functional-spec.md)
 2. [`requirements/permissions-matrix.md`](./requirements/permissions-matrix.md)
-3. [`system/module-boundaries.md`](./system/module-boundaries.md)
-4. [`system/data-model-lifecycle.md`](./system/data-model-lifecycle.md)
+3. [`platform/module-map.md`](./platform/module-map.md)
+4. [`system/module-boundaries.md`](./system/module-boundaries.md)
+5. [`system/data-model-lifecycle.md`](./system/data-model-lifecycle.md)
 5. [`system/integration-contracts.md`](./system/integration-contracts.md)
 6. [`requirements/non-functional-requirements.md`](./requirements/non-functional-requirements.md)
 7. [`operations/operating-playbook.md`](./operations/operating-playbook.md)

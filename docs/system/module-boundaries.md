@@ -31,16 +31,21 @@
 
 ## Module Responsibility Map
 
+At platform scope, [`../platform/module-map.md`](../platform/module-map.md) is the authoritative module list; the table below is the storage-and-knowledge view extended with the platform modules.
+
 | Module | Primary responsibility | Canonical data owned |
 | --- | --- | --- |
 | Web App + API | User interaction, workflow orchestration, authorization, tree editing, review actions | Tree nodes, branches, spaces and membership, roles, tasks, audit, workflow state |
 | Source Repo | Team storage home for originals and extracted artifacts, scoped by spaces | Original files, raw text blobs, corrected text blobs, previews |
+| Catalog | Physical library inventory of book copies | Catalog items |
+| Circulation | Borrow and return workflow for physical items | Loan tickets |
 | OCR/Parser Worker | Parsing, OCR, AI draft generation, document rendering, extraction jobs | Generated artifacts before app acceptance |
 | Search/Graph | Query surface for tree and operational source discovery | Search index projections and graph projections |
-| Export Service | Publish tree snapshots into the content repo | Export jobs and export manifests |
+| Google Bridge | One-way and outbound integration with Drive, Sheets, Forms, and Calendar | Import job state, external-object mappings, calendar tokens |
+| Export Service | Publish tree snapshots into the content repo; render documents | Export jobs and export manifests |
 | Auth | Identity and session claims | Role assignment and session state |
-| Notifications | In-app and email alerts | Notification records and delivery state |
-| Board / Ops | Knowledge workflow tracking | Tasks, milestones, achievements |
+| Notifications | In-app, email, and Zalo OA alerts; object-anchored comments | Notification records, delivery state, comments |
+| PM / Board | Knowledge workflow tracking and the deadline registry | Tasks, milestones, achievements, deadlines |
 
 ## Ownership Rules
 - Only the Web App + API may finalize:

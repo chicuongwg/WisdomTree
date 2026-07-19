@@ -249,7 +249,7 @@
 ### Business Rules
 - V1 uses Google OIDC for sign-in.
 - Role-based access controls all major product surfaces.
-- Notification channels are in-app plus email.
+- Notification channels are in-app, email, and Zalo Official Account; see Capability 12 and [`../system/notifications.md`](../system/notifications.md).
 - Permissions must be consistent across routing, API, and UI action visibility.
 
 ### Acceptance Criteria

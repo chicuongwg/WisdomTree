@@ -100,6 +100,8 @@
 
 ## Phase 0 Planning Exit Criteria
 - The main docs index includes `Operations`, `Policy`, `V1 scorecard`, and `Design system governance`.
+- The main docs index includes the platform layer (`platform/`) and the platform modules: catalog and circulation, Google bridge, notifications and comments, and the technology stack.
+- The four-pillar scope is documented without contradicting the storage-and-knowledge core, and the open technical decisions (stack, AI policy, ownership, conflict handling, intake limits) are closed.
 - Onboarding docs clearly state that the repo is `Phase 0 documentation-complete` and not yet implementation-started.
 - The operating playbook has been reviewed by the primary and backup `Admin/Op` users.
 - The editorial verification policy has been reviewed against common publish, reject, and merge scenarios.
