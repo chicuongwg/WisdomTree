@@ -13,7 +13,7 @@
 - One-way and outbound Google bridges: Drive import, Sheets import, Forms ingestion, and an outbound calendar feed.
 
 ## Out of Scope
-- Public sharing or public read access.
+- Public interactive access to the app. Selective, read-only publishing of approved nodes via a Quartz-class static site is a Phase 1.5 candidate, not general public access.
 - Full mobile experience.
 - Rich Google Drive-class source preview for every format.
 - Real-time collaborative editing.
@@ -93,6 +93,7 @@
 - Per-file access control lists beyond space membership.
 
 ## Phase 1.5 Candidates
+- Selective, read-only public publishing of approved nodes via a Quartz-class static site built from the content repo.
 - Split `Admin/Op` into `Reviewer`, `Curator`, and `Operator`.
 - Richer source preview and comparison tools.
 - Better support for more file types and deeper extraction pipelines.

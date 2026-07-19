@@ -23,6 +23,7 @@
 - Original files and extraction artifacts live in object storage-backed source storage.
 - Tree Markdown is canonical in PostgreSQL.
 - Tree Markdown is exported one-way into a private Git content repo for backup and validation.
+- Selected, approved nodes flagged `publish: true` are built into a read-only Quartz-class public site from that content repo, in CI, without changing canonical state.
 - Plain text from OCR is evidence material, not publishable tree content by itself.
 
 ## Dependencies

@@ -55,6 +55,7 @@
 - Ship audit, export validation, and operational health surfaces required for usable private-team operation.
 
 ## Phase 1.5: Hardening and Role Refinement
+- Add selective, read-only public publishing of approved nodes via a Quartz-class static site from the content repo.
 - Separate `Admin/Op` concerns into clearer role-ready workflows.
 - Improve source preview and correction ergonomics.
 - Improve conflict handling and merge assistance.

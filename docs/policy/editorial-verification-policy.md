@@ -102,6 +102,13 @@ Reject the source when one or more of the following is true:
 
 Do not reject a source only because it requires normal human correction or because it should publish as `unverified` rather than `verified`. Rejection closes curation work only; the stored file remains available to its space members in `Library`.
 
+## Public Publishing Rules
+- Public web publishing through Quartz is selective and read-only; it is not general public access to the tree.
+- A node may be flagged `publish: true` only after it has passed `Admin/Op` review; drafts and `no_source` nodes are never published publicly.
+- A content admin sets and approves the public flag; the flag is an editorial decision, not an automatic consequence of publishing into the tree.
+- Removing the flag or archiving the node removes it from the next public build.
+- Nothing outside the flagged, approved set appears on the public site.
+
 ## Merge and Archive Quality Rules
 - Merge only when two nodes represent the same canonical concept, not when they are merely related or overlapping.
 - Choose the canonical node based on stronger evidence linkage, clearer title and structure, and better branch fit.

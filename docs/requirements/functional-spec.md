@@ -222,12 +222,15 @@
 - Export occurs on meaningful publish or change events.
 - Validation checks front matter, schema conformance, and link integrity.
 - Document export renders node Markdown through a Pandoc-class converter into derived `docx`/`pdf` artifacts; rendered documents never mutate canonical content.
+- Public web publishing is selective and read-only: only nodes flagged `publish: true` in front matter and approved for publication are built into a Quartz-class static site from the content repo.
+- Publishing runs in the content repo's CI, not the app runtime; the app database stays canonical.
 
 ### Acceptance Criteria
 - Export jobs can run without changing the canonical tree state.
 - Validation failures create an operational follow-up signal.
 - Exported content is traceable back to node versions.
 - A published node can be exported to `docx` and `pdf`.
+- Only nodes flagged and approved for publication appear on the public Quartz site; unflagged nodes never leak.
 
 ## Capability 10: Authentication, Authorization, and Notification
 

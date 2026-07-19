@@ -94,8 +94,11 @@
 - GitHub Actions validates exported content.
 - Daily backup plus manual restore is part of V1, not optional hardening.
 
+## Amended Decisions
+- 2026-07-19: the earlier "no public sharing" stance is amended. V1 still has no public interactive access, but selective, read-only publishing of `Admin/Op`-approved nodes flagged `publish: true`, built into a Quartz-class static site from the content repo, is a Phase 1.5 candidate. Rationale: the platform's publishing pillar needs a low-risk path to share vetted knowledge without opening the app.
+
 ## Reopen Only With Explicit Product Change
-- Public access model.
+- Public interactive access to the app (distinct from the selective read-only Quartz publishing amended above).
 - Storage-first ordering and space-based storage access scoping.
 - Build core, integrate ecosystem strategy and the no-new-accounts constraint.
 - Local-only AI with no paid API dependency.
