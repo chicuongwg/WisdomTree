@@ -193,22 +193,28 @@
 - Audit history exists for upload, correction, trust update, publish, merge, archive, and export actions.
 - Trust state is visible wherever a user makes content consumption decisions.
 
-## Capability 8: Board and Achievements
+## Capability 8: Board, Deadlines, and Achievements
 
 ### User Stories
 - As an Editor, I can track work required to complete a branch.
 - As an Admin/Op, I can assign and close operational tasks related to source review and publication.
 - As a User, I can see branch progress signals without entering the source workflow.
+- As a project member, I can register a deadline for a conference, funding round, report, or milestone so the team keeps up with parallel projects.
+- As a project member, I can subscribe my project's deadlines into my own calendar and be reminded before they are due.
 
 ### Business Rules
 - V1 board scope is limited to knowledge workflow and branch completion.
 - Achievements can be auto-derived from milestone completion and added manually when needed.
 - Board state must not replace node verification or source trust state.
+- A `Deadline` belongs to one project or space, may link a checklist and documents, and drives reminders at its configured offsets.
+- Deadlines surface through the outbound ICS calendar feed and never gate storage, catalog, or knowledge workflows.
 
 ### Acceptance Criteria
 - Branches can show checklist completion and milestone progress.
 - Tasks can be created, assigned, and completed.
 - Achievement logs reflect meaningful progress events.
+- A deadline can be created, linked to a project, and appears in that project's calendar feed.
+- Members receive reminders before a deadline is due through their chosen channels.
 
 ## Capability 9: Export and Validation
 

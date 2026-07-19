@@ -108,6 +108,9 @@
 - `POST /api/tasks`
 - `PATCH /api/tasks/:taskId`
 - `POST /api/achievements`
+- `GET /api/deadlines`
+- `POST /api/deadlines`
+- `PATCH /api/deadlines/:deadlineId`
 - `GET /api/admin/health`
 - `POST /api/export/tree`
 
@@ -197,6 +200,8 @@
 - `bridge.import.failed`
 - `comment.created`
 - `notification.dispatched`
+- `deadline.created`
+- `deadline.approaching`
 
 ## External Integration Assumptions
 - Google OIDC supplies user identity claims consumed by the app.

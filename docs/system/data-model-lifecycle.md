@@ -89,6 +89,19 @@
 - Actionable item for source correction, gap triage, publish approval, merge, archive, or operational resolution.
 - Preserves who owns the working step and who approved the outcome.
 
+### Deadline
+- A first-class date-bound commitment for a project: a conference, funding round, report, or milestone.
+- Fields:
+  - `deadline_id`
+  - `title`
+  - `type`: `conference`, `funding`, `report`, or `milestone`.
+  - `due_at`
+  - `project` or space link
+  - `checklist`: optional linked tasks
+  - `linked_documents`: optional references to sources or nodes
+  - `reminder_offsets`: when to alert before `due_at`
+- Surfaces through the outbound ICS calendar feed and drives reminders; see [`google-bridge.md`](./google-bridge.md) and [`notifications.md`](./notifications.md).
+
 ### Conflict
 - A state where concurrent or contradictory edits require manual resolution by Admin/Op.
 
@@ -192,3 +205,9 @@ flowchart TD
 - Tasks track knowledge workflow work, not general company project management.
 - Achievements can be derived from branch milestones or logged manually.
 - Neither tasks nor achievements override trust or verification states.
+
+## Deadline Rules
+- A deadline belongs to one project or space and may link a checklist of tasks and related documents.
+- Deadlines drive reminders at their `reminder_offsets` and appear in the project's ICS feed.
+- The team runs many parallel projects with conference and funding deadlines; the registry is a lightweight tracker, not a full project scheduler.
+- Deadlines never gate storage, catalog, or knowledge workflows.

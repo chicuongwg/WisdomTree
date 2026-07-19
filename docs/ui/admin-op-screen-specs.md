@@ -107,6 +107,16 @@
   - branch progress view
   - achievement log summary
 
+### Deadlines
+- Goal:
+  - let project members track conference, funding, report, and milestone deadlines across parallel projects
+- Key regions:
+  - upcoming deadlines list sorted by due date, filterable by project
+  - deadline detail with type, due date, linked checklist, and linked documents
+  - calendar-feed subscribe link
+- States:
+  - empty, loading, error, access denied
+
 ### Librarian Desk
 - Goal:
   - let Admin/Op run the physical library: manage the catalog and handle borrow-return circulation

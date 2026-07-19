@@ -52,6 +52,7 @@
 | Review Queue | `/review` | Admin/Op | Admin/Op | Review |
 | Publish Review | `/review/publish/:id` | Admin/Op | Admin/Op | Review |
 | Board | `/board` | Editor | Editor, Admin/Op | Board |
+| Deadlines | `/deadlines` | User | Project members, Admin/Op | Board |
 | Admin Console | `/admin` | Admin/Op | Admin/Op | Admin |
 
 Notes:

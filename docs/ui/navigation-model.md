@@ -44,6 +44,7 @@
 - Source Inbox
 - Review Queue
 - Board
+- Deadlines
 - Admin
 
 ## User-First Navigation
