@@ -20,6 +20,8 @@
 - Information density target is `Medium`.
 - The UI is structured around a workspace with navigation, content canvas, and contextual inspection.
 - Trust state is a first-class visual signal, not secondary metadata.
+- The default experience must be usable by non-technical team members without training; storing and retrieving a file must feel as simple as a familiar shared drive.
+- The UI is bilingual Vietnamese/English with Vietnamese as the default.
 
 ## Dependencies
 - Product goals in [`../product/prd.md`](../product/prd.md).
@@ -38,6 +40,7 @@
 
 ## Information Hierarchy
 - Primary:
+  - stored file access and retrieval actions
   - node content
   - branch context
   - trust state

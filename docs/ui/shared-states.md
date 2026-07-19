@@ -73,6 +73,7 @@
   - reason category if known
   - operational next action
   - preserved provenance
+  - continued `Library` availability of the stored file
 - Must not be used for:
   - `branch-gap request` intake items
 
@@ -83,5 +84,5 @@
   - explicit permission denial message
   - safe next step or return path
 - Common cases:
-  - `User` tries to open full Source Repo detail or another person's submission
+  - `User` tries to open a stored item from a space they do not belong to or another person's submission workflow detail
   - `Editor` tries to open an unowned or unassigned correction task

@@ -39,6 +39,8 @@
 | Graph Explorer | `/graph` | User | User, Editor, Admin/Op | Search/Graph |
 | Source Intake | `/source/intake` | User | User, Editor, Admin/Op | Source Repo |
 | My Submissions | `/source/mine` | User | User, Editor, Admin/Op | Source Repo |
+| Library | `/library` | User | User, Editor, Admin/Op | Source Repo |
+| Stored Item Detail | `/library/:id` | User | Space members, Admin/Op | Source Repo |
 | Create Branch | `/tree/branch/new` | Editor | Editor, Admin/Op | Tree |
 | Edit Node | `/tree/node/:id/edit` | Editor | Editor, Admin/Op | Tree |
 | Assigned Source Task | `/source/task/:id` | Editor | Assigned Editor, Admin/Op | Source Repo |
@@ -52,12 +54,15 @@
 Notes:
 - `My Submissions` is the unified intake history for both file-backed uploads and `branch-gap requests`.
 - `Source Detail` is type-aware and supports both file-backed evidence review and `branch-gap request` triage.
+- `Library` and `Stored Item Detail` are space-scoped: they list and open only items from the viewer's spaces. `Stored Item Detail` is the member view (metadata, preview, download) and never exposes operational review internals.
 
 ## Screen Grouping
 
 ### User-Facing Experience
 - Home
 - Search
+- Library
+- Stored Item Detail
 - Node Detail
 - Branch Hub
 - Graph Explorer

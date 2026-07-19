@@ -16,7 +16,7 @@
 - Deep breadcrumb implementation.
 
 ## Decisions
-- Navigation starts with user discovery and branch exploration.
+- Navigation starts with storage access (`Library`, `Source Intake`) and user discovery.
 - Admin/Op modules remain present but secondary in the global information architecture.
 - Graph is both a dedicated module and a contextual support element.
 - The navigation model should support gradual role growth without restructuring the entire app.
@@ -34,6 +34,7 @@
 ## Top-Level Information Architecture
 - Home
 - Search
+- Library
 - Tree
 - Branches
 - Graph
@@ -48,12 +49,14 @@
 - Default entry points:
   - Home
   - Search
+  - Library
   - Tree
   - Branches
   - Graph
   - Source Intake
   - My Submissions
-- User should not need to think about the full source repository to consume knowledge, but contribution and submission tracking must stay one click away.
+- Storage comes first: `Library` and `Source Intake` must stay one click away, and a user should reach a stored file in their spaces within two navigation steps.
+- Operational review internals stay out of the default user path; users never need them to store, find, or consume knowledge.
 
 ## Editor Extensions
 - Editors inherit user navigation plus:

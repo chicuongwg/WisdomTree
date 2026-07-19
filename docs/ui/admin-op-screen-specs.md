@@ -111,6 +111,7 @@
 - Goal:
   - hold operational and system-level controls
 - Key regions:
+  - space and membership management
   - taxonomy management
   - export status
   - backup summary

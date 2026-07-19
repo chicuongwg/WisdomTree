@@ -57,6 +57,32 @@
   - branch and node type visible
   - archived hidden by default
 
+### Library
+- Goal:
+  - let space members browse and retrieve stored team files, replacing scattered Excel/Docs folders
+- Key regions:
+  - space switcher or space filter
+  - stored item list with type, title, space, uploader, stored date, and extraction status
+  - search and filter bar
+  - quick download action
+- States:
+  - empty: no stored items in this space yet, with upload CTA
+  - loading: list skeleton
+  - error: recoverable fetch failure
+  - access denied: space the user does not belong to
+
+### Stored Item Detail
+- Goal:
+  - let a space member inspect and retrieve one stored item without operational review internals
+- Key regions:
+  - title, space, uploader, and stored date
+  - preview or extraction summary when available
+  - download original action
+  - links to published nodes derived from this source when they exist
+- Restrictions:
+  - no trust or review controls
+  - no corrected-text or Markdown-draft editing
+
 ### Node Detail
 - Goal:
   - present the node as the primary reading surface
@@ -70,6 +96,7 @@
   - follow links
   - open branch
   - inspect relation context
+  - export the node to `docx` or `pdf`
 
 ### Branch Hub
 - Goal:
@@ -93,6 +120,7 @@
   - let any authenticated user contribute new source material or record a `branch-gap request` into the pipeline
 - Key regions:
   - intake mode selector for source upload vs gap request
+  - target space selector limited to member spaces
   - upload form
   - minimal metadata fields
   - allowed-format guidance
@@ -104,7 +132,7 @@
 
 ### My Submissions
 - Goal:
-  - let users track only their own intake items without opening the full Source Repo
+  - let users track only their own intake items; browsing stored team files happens in `Library`
 - Columns:
   - item type
   - title
