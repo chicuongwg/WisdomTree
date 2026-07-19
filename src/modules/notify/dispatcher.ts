@@ -14,6 +14,10 @@ const NOTIFY_EVENTS: Record<string, (payload: Record<string, unknown>) => { user
   "loan.borrowed": (p) => (typeof p.borrowerId === "string" ? { userId: p.borrowerId } : null),
   "loan.returned": (p) => (typeof p.borrowerId === "string" ? { userId: p.borrowerId } : null),
   "loan.declined": (p) => (typeof p.borrowerId === "string" ? { userId: p.borrowerId } : null),
+  // Knowledge module (docs/system/notifications.md matrix):
+  // published node → uploader (in-app); assignment → assigned editor (in-app).
+  "tree.node.published": (p) => (typeof p.uploaderId === "string" ? { userId: p.uploaderId } : null),
+  "source.assigned": (p) => (typeof p.assigneeId === "string" ? { userId: p.assigneeId } : null),
 };
 
 export async function dispatchOutbox(): Promise<void> {

@@ -1,0 +1,141 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { T, verificationLabel } from "@/lib/vi";
+
+type NodeInput = {
+  id: string;
+  title: string;
+  contentMd: string;
+  verification: string;
+  publish: boolean;
+  version: number;
+  tags: string[];
+};
+
+/**
+ * Edit Node editor: Markdown source with optimistic locking. The PATCH sends
+ * expectedVersion captured at load; a concurrent save surfaces the contract
+ * 409 message and offers a reload. The verification select (Admin/Op only)
+ * exposes the state-machine transitions, incl. verified→unverified downgrade.
+ */
+export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const [title, setTitle] = useState(node.title);
+  const [contentMd, setContentMd] = useState(node.contentMd);
+  const [tagsText, setTagsText] = useState(node.tags.join(", "));
+  const [verification, setVerification] = useState(node.verification);
+  const [publish, setPublish] = useState(node.publish);
+
+  const verificationOptions: Record<string, string[]> = {
+    no_source: ["no_source", "unverified", "archived"],
+    unverified: ["unverified", "verified", "archived"],
+    verified: ["verified", "unverified", "archived"],
+    archived: ["archived"],
+  };
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    setConflict(false);
+    const res = await fetch(`/api/tree/nodes/${node.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        contentMd,
+        tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
+        expectedVersion: node.version,
+        ...(isAdmin ? { verification, publish } : {}),
+      }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { message?: string; code?: string } | null;
+      setError(body?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setConflict(res.status === 409 && body?.code === "version_conflict");
+      setBusy(false);
+      return;
+    }
+    router.push(`/tree/node/${node.id}`);
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      {error && (
+        <p className="error-text">
+          {error}{" "}
+          {conflict && (
+            <button type="button" className="secondary" onClick={() => router.refresh()}>
+              Tải lại phiên bản mới
+            </button>
+          )}
+        </p>
+      )}
+      <div className="field">
+        <label htmlFor="node-title">{T.title}</label>
+        <input id="node-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+      </div>
+      <div className="split">
+        <div className="field" style={{ maxWidth: "none" }}>
+          <label htmlFor="node-content">{T.contentMd}</label>
+          <textarea
+            id="node-content"
+            className="editor"
+            value={contentMd}
+            onChange={(e) => setContentMd(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <p className="muted" style={{ marginTop: 0 }}>{T.preview}</p>
+          <pre className="raw-text" aria-label={T.preview}>{contentMd}</pre>
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor="node-tags">{T.tags} (phân cách bằng dấu phẩy)</label>
+        <input id="node-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
+      </div>
+      {isAdmin && (
+        <>
+          <div className="field">
+            <label htmlFor="node-verification">{T.verificationLabelTitle}</label>
+            <select
+              id="node-verification"
+              value={verification}
+              onChange={(e) => setVerification(e.target.value)}
+            >
+              {verificationOptions[node.verification].map((v) => (
+                <option key={v} value={v}>
+                  {verificationLabel[v]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="checkbox-row">
+            <input
+              id="node-publish"
+              type="checkbox"
+              checked={publish}
+              disabled={verification !== "verified"}
+              onChange={(e) => setPublish(e.target.checked)}
+            />
+            <label htmlFor="node-publish">
+              {T.publish} công khai (chỉ áp dụng cho trang Đã thẩm định)
+            </label>
+          </div>
+        </>
+      )}
+      <p>
+        <button type="submit" disabled={busy}>
+          {busy ? T.loading : T.save}
+        </button>
+      </p>
+    </form>
+  );
+}

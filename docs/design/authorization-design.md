@@ -113,6 +113,14 @@ Permission keys are `module.action`. "Roles" lists the minimum roles allowed; sc
 | `export.tree.trigger` | Trigger export | admin_op | global |
 | `ops.health.read` | View backup and system health | admin_op | global |
 
+Addendum (2026-07-20, found during the knowledge-module build — capabilities implied by the flows but missing explicit keys):
+
+| Permission key | Capability | Roles | Scope |
+| --- | --- | --- | --- |
+| `storage.curation.assign` | Assign curation work to an editor | admin_op | global |
+| `storage.gap.triage` | Triage, convert, reject, or archive a branch-gap request | admin_op | global |
+| `review.queue.read` | Open the review queue and publish-review workbench | admin_op | global |
+
 Notes:
 
 - "Editor plus assigned items" in source search means: the space filter is a union of member spaces and sources with an active assignment to the actor.

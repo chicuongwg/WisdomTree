@@ -4,16 +4,20 @@ import { db } from "@/db";
 import { notifications } from "@/modules/notify/schema";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listLibrary } from "@/modules/storage/service";
+import { myAssignedTasks } from "@/modules/storage/curation";
 import { myTickets } from "@/modules/circulation/service";
-import { extractionLabel, loanStateLabel, T } from "@/lib/vi";
+import { curationStateLabel, extractionLabel, loanStateLabel, T } from "@/lib/vi";
 
 // Screen: Home (`/` — screen-inventory.md)
 export default async function Home() {
   const user = await requireUser();
   const actor = toPrincipal(user);
-  const [recent, tickets, notes] = await Promise.all([
+  const [recent, tickets, assigned, notes] = await Promise.all([
     listLibrary(actor, {}),
     myTickets(actor),
+    user.role === "editor" || user.role === "admin_op"
+      ? myAssignedTasks(actor)
+      : Promise.resolve([]),
     db
       .select()
       .from(notifications)
@@ -52,6 +56,19 @@ export default async function Home() {
             ))}
           </ul>
         </div>
+        {assigned.length > 0 && (
+          <div className="panel">
+            <h2 style={{ marginTop: 0 }}>{T.assignedTask}</h2>
+            <ul>
+              {assigned.slice(0, 5).map((a) => (
+                <li key={a.curation.id}>
+                  <Link href={`/source/task/${a.sourceId}`}>{a.title}</Link>{" "}
+                  <span className="badge muted">{curationStateLabel[a.curation.state]}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="panel">
           <h2 style={{ marginTop: 0 }}>{T.notifications}</h2>
           {notes.length === 0 && <p className="muted">{T.empty}</p>}

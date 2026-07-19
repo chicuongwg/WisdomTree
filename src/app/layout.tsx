@@ -22,11 +22,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </Link>
           {user && (
             <nav>
+              <Link href="/tree">{T.tree}</Link>
               <Link href="/library">{T.library}</Link>
               <Link href="/source/intake">{T.sourceIntake}</Link>
               <Link href="/source/mine">{T.mySubmissions}</Link>
               <Link href="/catalog">{T.catalog}</Link>
-              {user.role === "admin_op" && <Link href="/catalog/admin">{T.librarianDesk}</Link>}
+              {user.role === "admin_op" && (
+                <>
+                  <Link href="/source/inbox">{T.sourceInbox}</Link>
+                  <Link href="/review">{T.reviewQueue}</Link>
+                  <Link href="/catalog/admin">{T.librarianDesk}</Link>
+                </>
+              )}
             </nav>
           )}
           {user && (

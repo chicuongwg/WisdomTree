@@ -11,8 +11,9 @@ export interface ExtractionWorker {
 
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { sourceVersions } from "./schema";
+import { sourceVersions, textChunks } from "./schema";
 import { emitOutbox } from "../audit/service";
+import { objectStore } from "./object-store";
 
 const DELAY_MS = Number(process.env.EXTRACTION_STUB_DELAY_MS ?? 8000);
 
@@ -50,6 +51,33 @@ class StubExtractionWorker implements ExtractionWorker {
       if (!version || version.extractionStatus !== "pending") return;
 
       const ok = EXTRACTABLE.has(version.mimeType);
+
+      // Plain-text formats really extract in the demo: paragraph chunks feed
+      // Library search and the publish excerpt mapping (excerptChunkIds).
+      if (ok && (version.mimeType === "text/plain" || version.mimeType === "text/markdown")) {
+        const { body } = await objectStore
+          .get(version.originalObjectKey)
+          .catch(() => ({ body: Buffer.alloc(0) }));
+        const paragraphs = body
+          .toString("utf8")
+          .split(/\r?\n\s*\r?\n/)
+          .map((p) => p.trim())
+          .filter(Boolean)
+          .slice(0, 50);
+        for (let i = 0; i < paragraphs.length; i++) {
+          await tx
+            .insert(textChunks)
+            .values({
+              sourceVersionId,
+              position: i,
+              refType: "paragraph",
+              refLabel: `¶ ${i + 1}`,
+              content: paragraphs[i],
+            })
+            .onConflictDoNothing();
+        }
+      }
+
       await tx
         .update(sourceVersions)
         .set({

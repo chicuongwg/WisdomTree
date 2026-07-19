@@ -7,7 +7,7 @@ import type { Role } from "./schema";
 // checks. This is the demo subset of the permission catalog; keys and scope
 // qualifiers are verbatim from the catalog table.
 
-type Scope = "global" | "space" | "self";
+type Scope = "global" | "space" | "self" | "owned-or-assigned";
 
 const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   "storage.intake.open": { roles: ["user", "editor", "admin_op"], scope: "global" },
@@ -21,6 +21,26 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   "circulation.loan.manage": { roles: ["admin_op"], scope: "global" },
   "catalog.item.manage": { roles: ["admin_op"], scope: "global" },
   "storage.space.manage": { roles: ["admin_op"], scope: "global" },
+  // --- Knowledge module (authorization-design.md § Permission Catalog) ---
+  "knowledge.node.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "knowledge.search": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "knowledge.branch.create": { roles: ["editor", "admin_op"], scope: "global" },
+  "knowledge.branch.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
+  "knowledge.node.create": { roles: ["editor", "admin_op"], scope: "global" },
+  "knowledge.node.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
+  "knowledge.publish": { roles: ["admin_op"], scope: "global" },
+  "knowledge.node.merge": { roles: ["admin_op"], scope: "global" },
+  "knowledge.archive": { roles: ["admin_op"], scope: "global" },
+  "storage.corrected.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
+  "storage.draft.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
+  "review.corrected.approve": { roles: ["admin_op"], scope: "global" },
+  "review.draft.approve": { roles: ["admin_op"], scope: "global" },
+  "storage.source.read_all": { roles: ["admin_op"], scope: "global" },
+  // Not in the catalog table verbatim: curation assignment and gap triage are
+  // Admin/Op flows (sequence-diagrams.md Flow 2, admin-op-flows.md); keyed
+  // here as module.action pending a catalog addendum — flagged in the report.
+  "storage.curation.assign": { roles: ["admin_op"], scope: "global" },
+  "storage.gap.triage": { roles: ["admin_op"], scope: "global" },
 };
 
 export type PermissionKey = keyof typeof CATALOG;
@@ -30,6 +50,11 @@ export type ResourceRef = {
   spaceId?: string;
   /** For self scope: the record's owning user id. */
   userId?: string;
+  /**
+   * For owned-or-assigned scope: created_by / submitted_by plus any active
+   * assignment (authorization-design.md enforcement pipeline step 3).
+   */
+  ownerIds?: Array<string | null | undefined>;
   /** Reads throw 404 on scope failure (no existence leak); writes throw 403. */
   kind: "read" | "write";
 };
@@ -50,6 +75,9 @@ export function authorize(actor: Principal | null, permission: PermissionKey, re
       return actor;
     case "self":
       if (resource.userId !== actor.userId) throw denial;
+      return actor;
+    case "owned-or-assigned":
+      if (!resource.ownerIds?.includes(actor.userId)) throw denial;
       return actor;
   }
 }

@@ -36,6 +36,49 @@ export const T = {
   loading: "Đang tải…",
   empty: "Chưa có mục nào.",
   notifications: "Thông báo",
+  // Knowledge tree terms (vocabulary-vi.md § Term Map)
+  tree: "Cây tri thức",
+  node: "Trang tri thức",
+  branch: "Chuyên đề",
+  markdownDraft: "Bản thảo",
+  publish: "Xuất bản",
+  reviewQueue: "Hàng chờ duyệt",
+  publishReview: "Duyệt xuất bản",
+  correctedText: "Văn bản đã hiệu đính", // NEW
+  rawText: "Văn bản trích xuất", // NEW
+  sourceInbox: "Tiếp nhận tư liệu", // NEW
+  assignedTask: "Việc được giao", // NEW
+  provenance: "Nguồn dẫn", // NEW
+  relatedNodes: "Trang liên quan", // NEW
+  tags: "Thẻ", // NEW
+  branchName: "Tên chuyên đề", // NEW
+  createBranch: "Tạo chuyên đề", // NEW
+  editNode: "Sửa trang tri thức", // NEW
+  save: "Lưu", // NEW
+  saveDraft: "Lưu bản thảo", // NEW
+  markReady: "Gửi duyệt", // NEW
+  assign: "Giao việc", // NEW
+  assignee: "Người phụ trách", // NEW
+  reject: "Không dùng",
+  requestChanges: "Yêu cầu chỉnh sửa", // NEW
+  publishVerified: "Xuất bản (Đã thẩm định)", // NEW
+  publishUnverified: "Xuất bản (Chưa thẩm định)", // NEW
+  archive: "Lưu trữ", // NEW
+  merge: "Gộp trang", // NEW
+  mergedNotice: "Trang này đã được gộp vào một trang chuẩn.", // NEW
+  openCanonical: "Mở trang chuẩn", // NEW
+  verificationLabelTitle: "Mức thẩm định", // NEW
+  excerpts: "Trích đoạn dẫn chứng", // NEW
+  nodeCount: "Số trang tri thức", // NEW
+  lastUpdated: "Cập nhật lần cuối", // NEW
+  state: "Trạng thái", // NEW
+  taskType: "Loại việc", // NEW
+  openItem: "Mở", // NEW
+  triage: "Tiếp nhận", // NEW
+  convertToBranch: "Chuyển thành chuyên đề", // NEW
+  contentMd: "Nội dung (Markdown)", // NEW
+  suggestedBranch: "Chuyên đề đề xuất", // NEW
+  preview: "Xem trước", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from
@@ -76,6 +119,46 @@ export const itemStatusLabel: Record<string, string> = {
   borrowed: "Đang được mượn", // NEW
   lost: "Thất lạc", // NEW
   repair: "Đang sửa chữa", // NEW
+};
+
+// Verification labels come verbatim from vocabulary-vi.md § Term Map.
+export const verificationLabel: Record<string, string> = {
+  no_source: "Chưa có nguồn dẫn",
+  unverified: "Chưa thẩm định",
+  verified: "Đã thẩm định",
+  archived: "Đã lưu trữ",
+};
+
+export const curationStateLabel: Record<string, string> = {
+  under_correction: "Đang hiệu đính", // NEW
+  ready_for_review: "Chờ duyệt xuất bản", // NEW
+  promoted: "Đã xuất bản", // NEW
+  rejected: "Không dùng",
+};
+
+export const reviewStateLabel: Record<string, string> = {
+  queued: "Đang chờ", // NEW
+  assigned: "Đã giao", // NEW
+  in_review: "Đang duyệt", // NEW
+  changes_requested: "Cần chỉnh sửa", // NEW
+  approved: "Đã duyệt", // NEW
+  rejected: "Không dùng",
+};
+
+export const reviewTaskTypeLabel: Record<string, string> = {
+  correction: "Hiệu đính", // NEW
+  gap_triage: "Tiếp nhận đề xuất", // NEW
+  publish: "Xuất bản",
+  merge: "Gộp trang", // NEW
+  archive: "Lưu trữ", // NEW
+  operational: "Vận hành", // NEW
+};
+
+export const linkTypeLabel: Record<string, string> = {
+  related: "Liên quan", // NEW
+  supports: "Bổ trợ", // NEW
+  contrasts: "Đối chiếu", // NEW
+  part_of: "Thuộc về", // NEW
 };
 
 export const roleLabel: Record<string, string> = {

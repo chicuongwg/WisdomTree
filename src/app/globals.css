@@ -96,3 +96,39 @@ button:disabled { opacity: 0.5; cursor: default; }
 .error-text { color: var(--danger); margin: 0.5rem 0; }
 .muted { color: var(--muted); }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+
+/* Knowledge module surfaces (medium density, workspace 3-zone) */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.with-side { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1.25rem; align-items: start; }
+@media (max-width: 56rem) {
+  .split, .with-side { grid-template-columns: 1fr; }
+}
+
+/* Verification trust states (vocabulary-vi.md) */
+.badge.verified { background: var(--accent-soft); color: var(--accent); }
+.badge.unverified { background: var(--warn-soft); color: var(--warn); }
+.badge.no_source { background: #ececec; color: var(--muted); }
+.badge.archived { background: var(--danger-soft); color: var(--danger); }
+
+.md-content { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 1.25rem 1.5rem; overflow-x: auto; }
+.md-content h1 { font-size: 1.25rem; }
+.md-content h2 { font-size: 1.05rem; }
+.md-content h3 { font-size: 0.95rem; }
+.md-content p { margin: 0.6rem 0; }
+.md-content ul { margin: 0.5rem 0; padding-left: 1.4rem; }
+
+pre.raw-text { white-space: pre-wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1rem; font: inherit; margin: 0; }
+textarea.editor { width: 100%; min-height: 14rem; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 0.9rem; line-height: 1.5; }
+
+.stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.stat-row .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.9rem; font-size: 0.9rem; }
+.stat-row .stat strong { display: block; font-size: 1.15rem; }
+
+/* Accessibility floor: keyboard focus is always visible */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.notice { background: var(--warn-soft); border: 1px solid var(--warn); color: var(--warn); border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1rem; }
+.checkbox-row { display: flex; gap: 0.5rem; align-items: baseline; margin: 0.25rem 0; }

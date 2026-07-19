@@ -28,7 +28,11 @@ async function main() {
   try {
     await client.query("BEGIN");
     await client.query(
-      `TRUNCATE loan_tickets, catalog_items, text_chunks, source_versions, sources,
+      `TRUNCATE loan_tickets, catalog_items,
+                promotions, tree_node_versions, node_links, node_tags, tags,
+                tree_nodes, branches, review_tasks, conflicts,
+                curations, corrected_texts, markdown_drafts,
+                text_chunks, source_versions, sources,
                 branch_gap_requests, notifications, audit_events, outbox_events,
                 space_members, spaces, users CASCADE`,
     );
@@ -112,6 +116,7 @@ async function main() {
 
     await mkdir(FILE_STORAGE_DIR, { recursive: true });
     let chunkSeed = 0;
+    const sourceByTitle: Record<string, { sourceId: string; versionId: string; chunkIds: string[] }> = {};
     for (const def of sourceDefs) {
       const sourceId = randomUUID();
       const versionId = randomUUID();
@@ -156,16 +161,165 @@ async function main() {
         versionId,
         sourceId,
       ]);
+      const chunkIds: string[] = [];
       if (def.extraction === "processed") {
         for (let i = 0; i < 2; i++) {
-          await client.query(
+          const { rows: chunk } = await client.query(
             `INSERT INTO text_chunks (source_version_id, position, ref_type, ref_label, content)
-             VALUES ($1,$2,'paragraph',$3,$4)`,
+             VALUES ($1,$2,'paragraph',$3,$4) RETURNING id`,
             [versionId, i, `¶ ${i + 1}`, `Đoạn trích mẫu ${++chunkSeed} của "${def.title}".`],
           );
+          chunkIds.push(chunk[0].id);
         }
       }
+      sourceByTitle[def.title] = { sourceId, versionId, chunkIds };
     }
+
+    // --- Knowledge tree: 2 branches, 4 published nodes (mixed verification,
+    // incl. one no_source manual), provenance promotions for the
+    // source-driven ones, and 1 curation mid-flow so /review is non-empty ---
+    const branchFolk = randomUUID();
+    const branchHistory = randomUUID();
+    await client.query(
+      `INSERT INTO branches (id, name, description, created_by) VALUES
+         ($1,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.',$3),
+         ($2,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.',$3)`,
+      [branchFolk, branchHistory, minh.id],
+    );
+
+    type NodeDef = {
+      branch: string;
+      title: string;
+      slug: string;
+      verification: "no_source" | "unverified" | "verified";
+      publish: boolean;
+      fromSource?: string; // sourceDefs title → promotion provenance
+      contentMd: string;
+    };
+    const nodeDefs: NodeDef[] = [
+      {
+        branch: branchHistory,
+        title: "Kết quả khảo sát thực địa 2025",
+        slug: "ket-qua-khao-sat-thuc-dia-2025",
+        verification: "verified",
+        publish: true,
+        fromSource: "Báo cáo khảo sát thực địa 2025",
+        contentMd:
+          "# Kết quả khảo sát thực địa 2025\n\nTổng hợp các phát hiện chính từ đợt khảo sát thực địa năm 2025.\n\n- Ghi nhận **12 địa điểm** có giá trị tư liệu.\n- Phỏng vấn 34 người dân địa phương.\n\n## Kết luận\n\nCần số hóa toàn bộ tư liệu viết tay trước mùa mưa.",
+      },
+      {
+        branch: branchFolk,
+        title: "Tri thức dân gian qua phỏng vấn người dân",
+        slug: "tri-thuc-dan-gian-qua-phong-van",
+        verification: "verified",
+        publish: false,
+        fromSource: "Tổng hợp phỏng vấn người dân",
+        contentMd:
+          "# Tri thức dân gian qua phỏng vấn người dân\n\nCác mảng tri thức truyền miệng thu thập được qua chuỗi phỏng vấn.\n\n- Kinh nghiệm canh tác theo con nước.\n- Bài thuốc dân gian từ cây quanh nhà.",
+      },
+      {
+        branch: branchHistory,
+        title: "Ghi chép các cuộc họp cộng đồng",
+        slug: "ghi-chep-cac-cuoc-hop-cong-dong",
+        verification: "unverified",
+        publish: false,
+        fromSource: "Biên bản họp nhóm tháng 6",
+        contentMd:
+          "# Ghi chép các cuộc họp cộng đồng\n\nTóm tắt biên bản họp nhóm tháng 6, chờ đối chiếu thêm nguồn.\n\n- Thống nhất lịch số hóa tư liệu.\n- Phân công người phụ trách từng kho.",
+      },
+      {
+        branch: branchFolk,
+        title: "Lễ hội đình làng: phác thảo ban đầu",
+        slug: "le-hoi-dinh-lang-phac-thao-ban-dau",
+        verification: "no_source",
+        publish: false,
+        contentMd:
+          "# Lễ hội đình làng: phác thảo ban đầu\n\nTrang tạo thủ công, chưa gắn tư liệu dẫn chứng.\n\n- Cần bổ sung ảnh chụp và lời kể của người cao tuổi.",
+      },
+    ];
+    for (const def of nodeDefs) {
+      const nodeId = randomUUID();
+      await client.query(
+        `INSERT INTO tree_nodes (id, branch_id, title, slug, content_md, verification, publish, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [nodeId, def.branch, def.title, def.slug, def.contentMd, def.verification, def.publish, minh.id],
+      );
+      const { rows: nodeVersion } = await client.query(
+        `INSERT INTO tree_node_versions (node_id, seq, content_md, verification, created_by, change_summary)
+         VALUES ($1,1,$2,$3,$4,$5) RETURNING id`,
+        [
+          nodeId,
+          def.contentMd,
+          def.verification,
+          def.fromSource ? huong.id : minh.id,
+          def.fromSource ? `Xuất bản từ tư liệu "${def.fromSource}"` : "Tạo trang thủ công",
+        ],
+      );
+      if (def.fromSource) {
+        const src = sourceByTitle[def.fromSource];
+        await client.query(
+          `INSERT INTO promotions (source_version_id, node_version_id, approved_by, excerpt_chunk_ids)
+           VALUES ($1,$2,$3,$4)`,
+          [src.versionId, nodeVersion[0].id, huong.id, src.chunkIds.length ? src.chunkIds : null],
+        );
+        await client.query(
+          `INSERT INTO curations (source_version_id, state, assigned_to, nominated_by)
+           VALUES ($1,'promoted',$2,$3)`,
+          [src.versionId, minh.id, huong.id],
+        );
+      }
+    }
+
+    // 1 curation mid-flow: ready_for_review with corrected text + draft, and
+    // the matching review task queue entries (Flow 2), so /review has work.
+    const midFlow = sourceByTitle["Danh mục tài liệu tham khảo"];
+    await client.query(
+      `INSERT INTO curations (source_version_id, state, assigned_to, nominated_by)
+       VALUES ($1,'ready_for_review',$2,$3)`,
+      [midFlow.versionId, minh.id, huong.id],
+    );
+    await client.query(`UPDATE sources SET assigned_to = $1 WHERE id = $2`, [
+      minh.id,
+      midFlow.sourceId,
+    ]);
+    await client.query(
+      `INSERT INTO corrected_texts (source_version_id, seq, content, edited_by)
+       VALUES ($1,1,$2,$3)`,
+      [
+        midFlow.versionId,
+        "Danh mục tài liệu tham khảo (bản hiệu đính): 1. Địa chí vùng; 2. Hồi ký người cao tuổi; 3. Bản đồ cổ.",
+        minh.id,
+      ],
+    );
+    await client.query(
+      `INSERT INTO markdown_drafts (source_version_id, content_md, suggested_branch_id, created_by)
+       VALUES ($1,$2,$3,$4)`,
+      [
+        midFlow.versionId,
+        "# Danh mục tài liệu tham khảo\n\nDanh mục nguồn nền tảng cho các chuyên đề lịch sử địa phương.\n\n- Địa chí vùng\n- Hồi ký người cao tuổi\n- Bản đồ cổ",
+        branchHistory,
+        minh.id,
+      ],
+    );
+    await client.query(
+      `INSERT INTO review_tasks (task_type, target_type, target_id, state, assigned_to, created_by, resolved_by)
+       VALUES ('correction','source_version',$1,'approved',$2,$3,$2)`,
+      [midFlow.versionId, minh.id, huong.id],
+    );
+    await client.query(
+      `INSERT INTO review_tasks (task_type, target_type, target_id, state, created_by)
+       VALUES ('publish','source_version',$1,'queued',$2)`,
+      [midFlow.versionId, minh.id],
+    );
+
+    // 1 branch-gap request so Source Inbox triage has a gap-request item.
+    await client.query(
+      `INSERT INTO branch_gap_requests (title, description, state, submitted_by)
+       VALUES ('Đề xuất chuyên đề nghề thủ công truyền thống',
+               'Chưa thấy chuyên đề về nghề đan lát và dệt chiếu của vùng.',
+               'submitted',$1)`,
+      [lan.id],
+    );
 
     // --- ~20 catalog items in the library space, 1 active loan ---
     const catalogTitles: Array<[string, string]> = [
@@ -213,7 +367,10 @@ async function main() {
     await client.query(`UPDATE catalog_items SET status = 'borrowed' WHERE id = $1`, [borrowedItem]);
 
     await client.query("COMMIT");
-    console.log("Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan.");
+    console.log(
+      "Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan, " +
+        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 1 curation ready_for_review (queue non-empty), 1 gap request.",
+    );
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
