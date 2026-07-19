@@ -22,6 +22,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <header className="topbar">
           <Link href="/" className="brand">
+            <span className="brand-mark" aria-hidden="true">
+              WT
+            </span>
             {T.appName}
           </Link>
           {user && (
