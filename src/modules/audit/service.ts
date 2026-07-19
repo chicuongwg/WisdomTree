@@ -7,7 +7,12 @@ import type { Principal } from "../auth/dev-auth";
 // transaction as the mutation — database-schema.md conventions, demo-brief
 // acceptance criteria. Services call these two helpers inside their tx.
 
-export type Accountability = "uploader" | "editor_updater" | "approver_publisher" | "operator";
+export type Accountability =
+  | "uploader"
+  | "editor_updater"
+  | "approver_publisher"
+  | "operator"
+  | "member"; // baseline member actions (loan requests, comments) — gate-2 ruling
 
 export async function recordAudit(
   tx: Tx,

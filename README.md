@@ -78,27 +78,30 @@ search projections) and their tables arrive with V1, not the demo.
 Flagged per the brief's "any mismatch is a defect" rule — each is a deliberate
 subset consequence, none changes a name, type, or state:
 
-1. `branch_gap_requests.converted_branch_id` / `converted_node_id` are plain
-   uuid columns without their FK constraints — the referenced `branches` /
-   `tree_nodes` tables are knowledge-module (out of demo scope). Constraints
-   are added when those tables land.
-2. `catalog_items.import_id` likewise lacks its FK to `bridge_imports`
-   (bridge-google is out of demo scope).
+1. ~~`branch_gap_requests.converted_branch_id` / `converted_node_id` are plain
+   uuid columns without their FK constraints~~ — **resolved by migration 0001**:
+   the knowledge tables now exist and both FK constraints are in place.
+2. ~~`catalog_items.import_id` likewise lacks its FK to `bridge_imports`~~ —
+   **resolved by migration 0001**: `bridge_imports` now exists and the FK is
+   in place.
 3. `text_chunks` / `audit_events` immutability is enforced by trigger only;
    the second layer (revoking UPDATE/DELETE grants from a dedicated app role)
    needs a separate DB role, deferred to V1 deployment.
 4. The tsvector columns use an `immutable_unaccent()` wrapper because raw
    `unaccent()` is not IMMUTABLE and cannot appear in a generated column —
    standard PostgreSQL practice, same semantics as the doc.
-5. `notification_deliveries` / `notification_preferences` are omitted: the
-   demo's notify substitution is "in-app records only", so only
-   `notifications` is needed.
-6. The cross-cutting `jobs` table is omitted (added at coordinator review):
-   the demo's extraction substitution is an in-process stub with no durable
-   job state; the table lands in V1 with the real worker.
+5. ~~`notification_deliveries` / `notification_preferences` are omitted~~ —
+   **resolved by migration 0001**: both tables now exist per the schema doc;
+   the demo dispatcher still writes only in-app `notifications` until the V1
+   email/Zalo channels land.
+6. ~~The cross-cutting `jobs` table is omitted~~ — **resolved by migration
+   0001**: the table now exists; the demo extraction stub does not yet write
+   to it (the real worker does in V1).
 
 All six deviations reviewed and approved by the coordinator on 2026-07-20
-(gate 1 passed); the FK and grant-revoke items are V1 obligations.
+(gate 1 passed); items 1, 2, 5, and 6 were closed by migration
+`0001_v1_schema_parity.sql`, leaving only the grant-revoke item (3) as a V1
+deployment obligation.
 
 ## Step-2 notes for review
 
@@ -116,10 +119,10 @@ All six deviations reviewed and approved by the coordinator on 2026-07-20
   "Đang mượn", "Quá hạn", "Đã trả"), item statuses ("Sẵn sàng",
   "Đang được mượn", "Thất lạc", "Đang sửa chữa"), role names, and gap-request
   states. Per the vocabulary governance these need approval before V1 ships.
-- **Accountability mapping for circulation**: the audit `accountability` CHECK
-  has no member-circulation stage, so member loan requests audit as
-  `uploader` (the default authenticated member stage per session-summary.md)
-  and librarian actions as `operator` — flagged for confirmation.
+- **Accountability mapping for circulation**: resolved by migration 0001 per
+  the decision-log gate-2 ruling — the audit `accountability` CHECK now
+  includes `member`, borrower-initiated loan actions audit as `member`, and
+  librarian actions as `operator`.
 
 ## Development
 

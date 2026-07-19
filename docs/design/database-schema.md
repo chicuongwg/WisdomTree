@@ -519,7 +519,7 @@ Best-effort with retry: a `failed` delivery after max attempts stays visible in 
 | `id` | bigint | identity PK |
 | `actor_id` | uuid | FK users NOT NULL |
 | `actor_role` | text | NOT NULL — role at action time, denormalized on purpose |
-| `accountability` | text | NOT NULL CHECK IN (`uploader`, `editor_updater`, `approver_publisher`, `operator`) |
+| `accountability` | text | NOT NULL CHECK IN (`uploader`, `editor_updater`, `approver_publisher`, `operator`, `member`) (`member` added per decision-log gate-2 ruling, 2026-07-20) |
 | `action` | text | NOT NULL — e.g. `source.upload`, `trust.change`, `node.publish`, `node.merge`, `export.trigger`, `space.member.add`, `restore.execute` |
 | `target_type` / `target_id` | text / uuid | NOT NULL |
 | `outcome` | text | NOT NULL CHECK IN (`success`, `denied`, `failed`) |

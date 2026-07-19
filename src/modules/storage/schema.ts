@@ -104,6 +104,49 @@ export const textChunks = pgTable(
   (t) => [unique().on(t.sourceVersionId, t.position)],
 );
 
+// Each save appends a new row (the corrected text version chain); the latest
+// seq is current. No updates, so no version column.
+export const correctedTexts = pgTable(
+  "corrected_texts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceVersionId: uuid("source_version_id").notNull().references(() => sourceVersions.id),
+    seq: integer("seq").notNull(),
+    content: text("content").notNull(),
+    editedBy: uuid("edited_by").notNull().references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.sourceVersionId, t.seq)],
+);
+
+// Curation is an optional overlay on storage; a stored item with no row here
+// is simply "stored, never nominated".
+export const curations = pgTable("curations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sourceVersionId: uuid("source_version_id").notNull().unique().references(() => sourceVersions.id),
+  state: text("state", {
+    enum: ["under_correction", "ready_for_review", "promoted", "rejected"],
+  }).notNull(),
+  assignedTo: uuid("assigned_to").references(() => users.id),
+  nominatedBy: uuid("nominated_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  version: integer("version").notNull().default(1),
+});
+
+export const markdownDrafts = pgTable("markdown_drafts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sourceVersionId: uuid("source_version_id").notNull().unique().references(() => sourceVersions.id),
+  contentMd: text("content_md").notNull(),
+  // FK to branches lives in the migration; mapped plain here to avoid a
+  // storage ↔ knowledge module import cycle (same pattern as currentVersionId).
+  suggestedBranchId: uuid("suggested_branch_id"),
+  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  version: integer("version").notNull().default(1),
+});
+
 export const branchGapRequests = pgTable("branch_gap_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),

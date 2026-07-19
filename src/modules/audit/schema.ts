@@ -10,7 +10,7 @@ export const auditEvents = pgTable("audit_events", {
   actorId: uuid("actor_id").notNull().references(() => users.id),
   actorRole: text("actor_role").notNull(),
   accountability: text("accountability", {
-    enum: ["uploader", "editor_updater", "approver_publisher", "operator"],
+    enum: ["uploader", "editor_updater", "approver_publisher", "operator", "member"],
   }).notNull(),
   action: text("action").notNull(),
   targetType: text("target_type").notNull(),

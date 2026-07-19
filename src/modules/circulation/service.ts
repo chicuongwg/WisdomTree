@@ -13,8 +13,9 @@ import { dispatchOutbox } from "../notify/dispatcher";
 // Every transition writes the ticket, the item when its status changes,
 // audit_events, and outbox_events in ONE transaction; the outbox stub
 // dispatcher then turns loan events into in-app notifications.
-// Member-initiated actions audit as `uploader` (the default authenticated
-// member stage, session-summary.md); librarian actions audit as `operator`.
+// Borrower-initiated actions audit as `member` (the baseline member stage
+// added by the gate-2 ruling, migration 0001); librarian actions audit as
+// `operator`.
 
 export async function requestLoan(actor: Principal, itemId: string) {
   const [item] = await db.select().from(catalogItems).where(eq(catalogItems.id, itemId));
@@ -33,7 +34,7 @@ export async function requestLoan(actor: Principal, itemId: string) {
       .values({ itemId, borrowerId: actor.userId, requestedAt: new Date() })
       .returning();
     await recordAudit(tx, actor, {
-      accountability: "uploader",
+      accountability: "member",
       action: "loan.request",
       targetType: "loan_ticket",
       targetId: created.id,
