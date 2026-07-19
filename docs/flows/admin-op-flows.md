@@ -50,7 +50,7 @@
    - suggested branch or topic hint
    - prior matching knowledge if available
 6. `Admin/Op` updates the intake outcome:
-   - for `source_upload`: continue work, request changes, reject, or mark `unprocessable`
+   - for `source_upload`: leave it as stored-only, nominate it for curation, request changes, reject it for curation, or record an `unprocessable` extraction outcome; none of these outcomes removes the stored file from `Library`
    - for `branch_gap_request`: triage, convert to branch work, reject, or archive
 7. If the item is converted, the system records the resulting branch or node target and reflects the outcome back into `My Submissions`.
 
@@ -73,8 +73,8 @@
 3. System archives the non-canonical node and creates redirect metadata.
 4. Search and relation views update to prefer the canonical node.
 
-## Flow 5: Taxonomy and Ops
-1. `Admin/Op` reviews tags, branch health, and operational tasks.
+## Flow 5: Taxonomy, Spaces, and Ops
+1. `Admin/Op` reviews tags, branch health, spaces, space membership, and operational tasks.
 2. `Admin/Op` resolves export validation failures, failed jobs, and stale review queue items by following the operating playbook where recovery steps are needed.
 3. `Admin/Op` closes tasks or logs achievements as part of branch progress.
 

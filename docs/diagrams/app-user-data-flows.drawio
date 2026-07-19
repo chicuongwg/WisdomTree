@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-18T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="Page-1">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;WISDOMTREE END-TO-END SEQUENCE&lt;/b&gt; — user actions, backend processing, worker jobs, and Git export (2026-07-18)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2" value="User" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Editor" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="170" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Admin/Op" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="290" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="App/API" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="410" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Source Repo" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="530" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Queue" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="650" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Worker" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="770" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="890" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Search/Graph" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="Export" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="Git Repo" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="100" width="100" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="95" y="160" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="160" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="190" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="575" y="190" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="220" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="935" y="220" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="250" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="695" y="250" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="695" y="280" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="815" y="280" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="815" y="310" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="575" y="310" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="815" y="340" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="32" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="935" y="340" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="215" y="370" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="370" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="37" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="400" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="935" y="400" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="40" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="335" y="430" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="41" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="430" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="43" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="460" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="44" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="935" y="460" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="46" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="455" y="490" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="47" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="695" y="490" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="49" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="695" y="520" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="50" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="520" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="52" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="695" y="550" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="53" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="550" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="55" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="580" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="56" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#CBD5E0;strokeColor=#94A3B8;strokeWidth=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1295" y="580" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="58" value="&lt;b&gt;Assumptions:&lt;/b&gt; Operations occur asynchronously via a job queue. Tree updates automatically trigger search reindexing and markdown snapshot export." style="rounded=1;whiteSpace=wrap;html=1;align=left;spacing=8;fillColor=#FAFAFA;strokeColor=#969696;fontColor=#000000;fontSize=11;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="1120" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="59" value="&lt;b&gt;Legend:&lt;/b&gt; Solid lines denote HTTP API or DB writes. Lifelines show actor and system boundaries." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="690" width="1120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;1. Upload source&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="13" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;2. Store file&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="16" target="17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;3. Create source record&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="19" target="20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;4. Enqueue processing&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="22" target="23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;5. Start OCR/parse&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="25" target="26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;6. Store raw text&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="28" target="29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;7. Update state&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="31" target="32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;8. Correct text / draft&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="34" target="35">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="39" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;9. Save corrected text&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="37" target="38">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="42" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;10. Approve publish&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="40" target="41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="45" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;11. Create node version&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="43" target="44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="48" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;12. Enqueue export&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="46" target="47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;13. Update search index&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="49" target="50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="54" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;14. Render export&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="52" target="53">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="57" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;15. Push markdown&lt;/span&gt;" style="edgeStyle=none;endArrow=blockThin;endFill=1;html=1;rounded=0;strokeWidth=1.2;strokeColor=#404040;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="55" target="56">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

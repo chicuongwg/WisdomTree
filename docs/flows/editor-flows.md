@@ -76,5 +76,5 @@
 - Editors can author tree nodes and branches directly.
 - Editors can upload source files.
 - Editors can see their own submissions and assigned source tasks.
-- Editors cannot approve trust, publish to tree, merge nodes, archive nodes, or download original files.
+- Editors cannot approve trust, publish to tree, merge nodes, or archive nodes; original-file downloads stay within member spaces.
 - Editors cannot modify unowned and unassigned source-derived work.

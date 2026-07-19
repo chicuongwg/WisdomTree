@@ -15,7 +15,7 @@
 ## Decisions
 - `User` is the default authenticated role and combines discovery with source contribution and gap reporting.
 - Users see trust state and selected provenance context, but not full source internals.
-- Users can upload source items and view only their own submissions.
+- Users can upload source items into member spaces, browse and download stored items in those spaces, and view their own submissions.
 - Graph exploration exists as both a dedicated surface and contextual relation view.
 
 ## Dependencies
@@ -27,6 +27,12 @@
 - User workflows support search, branch exploration, trust-aware reading, source intake, and own-submission tracking.
 - Error and permission outcomes are explicit enough to drive UI states.
 - No user flow assumes hidden access to the source repository.
+
+## Happy Path 0: Store and Retrieve a Team File
+1. User opens `Source Intake` and uploads a file into one of their spaces.
+2. System stores the file and marks it `stored`.
+3. A teammate in the same space opens `Library` or search and finds the item by title, metadata, or extracted text.
+4. The teammate opens the stored item, checks its metadata and preview, and downloads the original file.
 
 ## Happy Path 1: Discover Knowledge
 1. User opens the app and lands in a tree-oriented home surface.
@@ -78,13 +84,17 @@ flowchart TD
   - preserve node access
   - display provenance unavailable message rather than hiding trust context entirely
 - Upload processing fails:
-  - preserve the submission record
+  - preserve the submission record and keep the stored file available in `Library`
   - show failure state and next expected action
-  - do not expose internal queue or full source repository details
+  - do not expose internal queue or cross-space repository details
+- Download fails or storage is degraded:
+  - show retry guidance
+  - keep the item visible in `Library` with a degraded notice
 
 ## Permission Path
 - User can see trust and source excerpt metadata on node pages.
-- User can upload source items and open only their own submission list.
-- User cannot open full Source Repo item pages or browse submissions from other users.
-- User cannot approve, publish, merge, archive, or download original files.
+- User can upload source items into member spaces and open their own submission list.
+- User can browse `Library`, search stored items, and download originals within member spaces.
+- User cannot browse, search, or download items in spaces they do not belong to, and cannot open operational review internals or other users' submission workflow detail.
+- User cannot approve, publish, merge, or archive.
 - User cannot edit corrected text or Markdown drafts.

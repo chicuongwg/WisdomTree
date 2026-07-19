@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-18T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="Page-1">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;WISDOMTREE USER HAPPY PATH&lt;/b&gt; — discovery, intake, and submission tracking for default authenticated users (2026-07-18)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2" value="Open app" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Search tree" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="170" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Open node" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="300" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Inspect trust" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Follow link" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="560" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Open branch hub" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="690" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Open Intake" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="820" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="Submit Item" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="950" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Track Status" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="140" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="&lt;b&gt;How to read:&lt;/b&gt; Read Left-to-Right. Users submit either files or gap requests and track their status in My Submissions." style="rounded=1;whiteSpace=wrap;html=1;align=left;spacing=8;fillColor=#FAFAFA;strokeColor=#969696;fontColor=#000000;fontSize=11;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="1120" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="&lt;b&gt;Legend:&lt;/b&gt; ■ Default User Discovery &amp;amp; Intake Traversal Steps" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="1120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="2" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="4" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="5" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="6" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="7" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="8" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="9" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -48,6 +48,7 @@ sequenceDiagram
     U->>A: Upload source
     A->>S: Store original file
     A->>D: Create source + version record with uploader identity
+    A->>D: Mark version stored (visible in Library to space members)
     A->>Q: Enqueue processing job
     Q->>W: Start parse/OCR
     W->>S: Store raw text and artifacts
@@ -74,7 +75,7 @@ sequenceDiagram
 - Admin/Op finalizes evidence review and publication.
 
 ## Data Flow Summary
-- Source evidence enters object storage-backed Source Repo.
+- Source evidence enters object storage-backed Source Repo and becomes available to space members at `stored`; extraction enriches it asynchronously.
 - Workflow state and tree content live in PostgreSQL.
 - Search and graph are projections.
 - Exported Markdown lives downstream in the private content repo.
@@ -85,7 +86,7 @@ sequenceDiagram
 - Export failure creates follow-up work without rolling back the tree node.
 
 ## Permission Path
-- Source download and global source browsing stay behind Admin/Op authorization.
+- Cross-space browsing and cross-space downloads stay behind Admin/Op authorization; in-space browse, search, and download follow space membership.
 - Personal submission views stay scoped to the uploader.
 - Tree reading is broadly available to authenticated users.
 - Owned or assigned work limits which source correction and tree-editing surfaces Editors can modify.
