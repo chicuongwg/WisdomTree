@@ -5,8 +5,9 @@ Storage-first knowledge platform for a small team — a modular monolith built a
 stack pin in [docs/roadmap/demo-brief.md](docs/roadmap/demo-brief.md).
 
 Planning and design docs live under [docs/](docs/README.md); they are the
-canonical baseline. This tree is **step 1 (scaffold)** of the demo brief's
-two-step delivery, awaiting the owner checkpoint before step 2 (build).
+canonical baseline. This tree contains **step 2 (build)** of the demo brief's
+two-step delivery: the in-scope flows (Happy Path 0 + catalog/circulation)
+and the eight demo screens, awaiting the coordinator's acceptance check.
 
 ## Quickstart
 
@@ -27,6 +28,26 @@ npm run dev               # http://localhost:3000
 Seeded per the brief's acceptance criteria: 3 users (User/Editor/Admin-Op),
 2 team spaces (one is the community library) + a personal space per user,
 10 stored sources with mixed extraction states, 20 catalog items, 1 active loan.
+
+Sign-in is the dev-mode user picker (demo substitution): open the app and
+choose a seeded member; V1 swaps in Google OIDC behind the same session shape.
+
+### Acceptance proofs
+
+With the app running (`npm run dev` or `npm run demo`):
+
+```sh
+npm run proofs
+```
+
+Runs the three proofs from the demo brief against the live app — store-first
+(uploaded file visible and downloadable while extraction is `pending`;
+`unprocessable` never removes it), space scoping (non-member reads 404,
+writes 403, at the API not just the UI), and the loan lifecycle
+(request → approve → borrow → return, second request on an active loan 409
+in the contract Error shape) — plus the gate-1 check that every mutation
+wrote `audit_events` and `outbox_events` in the same transaction, and that
+the stub dispatcher produced in-app notifications.
 
 ## Layout
 
@@ -78,6 +99,27 @@ subset consequence, none changes a name, type, or state:
 
 All six deviations reviewed and approved by the coordinator on 2026-07-20
 (gate 1 passed); the FK and grant-revoke items are V1 obligations.
+
+## Step-2 notes for review
+
+- **Screens** (screen-inventory.md routes, Vietnamese-first): `/` Home,
+  `/library`, `/library/:id`, `/source/intake`, `/source/mine`, `/catalog`,
+  `/catalog/:id`, `/catalog/admin`, plus the dev-only `/login` picker.
+- **Dev-only routes** (substitutions, not in openapi.yaml): `POST
+  /api/auth/dev-login` (user picker) and `GET /api/blob/{token}` — the latter
+  stands in for the object-storage host: downloads still 302 through the
+  authorized endpoint to a short-lived signed URL, never a public path.
+- **New Vietnamese UI terms** not yet in `docs/ui/vocabulary-vi.md`, pending
+  humanities review (marked NEW in `src/lib/vi.ts`): extraction
+  `pending`/`processed` ("Đang chờ xử lý"/"Đã xử lý"), trust `unknown`
+  ("Chưa đánh giá"), loan states ("Chờ duyệt", "Đã duyệt", "Từ chối",
+  "Đang mượn", "Quá hạn", "Đã trả"), item statuses ("Sẵn sàng",
+  "Đang được mượn", "Thất lạc", "Đang sửa chữa"), role names, and gap-request
+  states. Per the vocabulary governance these need approval before V1 ships.
+- **Accountability mapping for circulation**: the audit `accountability` CHECK
+  has no member-circulation stage, so member loan requests audit as
+  `uploader` (the default authenticated member stage per session-summary.md)
+  and librarian actions as `operator` — flagged for confirmation.
 
 ## Development
 

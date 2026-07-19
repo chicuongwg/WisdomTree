@@ -65,6 +65,32 @@
 | Unprocessable | Không xử lý được | Extraction failed; file still stored |
 | Access denied | Không có quyền truy cập | Permission denial |
 
+## Proposed Terms (pending humanities review)
+
+Introduced by the demo build (2026-07-20), marked `NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator for the demo, requiring humanities sign-off before V1 ships:
+
+| Internal term | Proposed Vietnamese UI copy |
+| --- | --- |
+| Extraction: pending | Đang chờ xử lý |
+| Extraction: processed | Đã xử lý |
+| Source Trust: unknown | Chưa đánh giá |
+| Gap Request: submitted | Đã gửi |
+| Gap Request: triaged | Đã tiếp nhận |
+| Gap Request: converted_to_branch | Đã chuyển thành chuyên đề |
+| Loan: requested | Chờ duyệt |
+| Loan: approved | Đã duyệt |
+| Loan: declined | Từ chối |
+| Loan: borrowed | Đang mượn |
+| Loan: overdue | Quá hạn |
+| Loan: returned | Đã trả |
+| Item status: available | Sẵn sàng |
+| Item status: borrowed | Đang được mượn |
+| Item status: lost | Thất lạc |
+| Item status: repair | Đang sửa chữa |
+| Role: user | Thành viên |
+| Role: editor | Biên tập viên |
+| Role: admin_op | Quản trị/Vận hành |
+
 ## Governance
 - Engineering may introduce an internal term; the humanities reviewer assigns the Vietnamese UI word before it reaches users.
 - Changes to a shipped Vietnamese term require the humanities reviewer's approval and an update here.

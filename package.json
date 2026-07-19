@@ -12,7 +12,8 @@
     "db:seed": "tsx scripts/db/seed.ts",
     "db:up": "docker compose up -d db",
     "demo": "docker compose up -d db && npm run db:migrate && npm run db:seed && next dev",
-    "gen:api": "openapi-typescript docs/design/openapi.yaml -o src/lib/api-types.ts"
+    "gen:api": "openapi-typescript docs/design/openapi.yaml -o src/lib/api-types.ts",
+    "proofs": "tsx scripts/proofs.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.2",

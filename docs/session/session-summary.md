@@ -36,9 +36,9 @@
 - The summary is short enough to be used as a startup brief.
 
 ## Current Repository Stage
-- The repository is in `Phase 0.5 technical design`: the planning baseline is complete and the accepted tech stack, database schema, OpenAPI contract, core-flow sequences, and authorization design live under [`../design/`](../design/database-schema.md).
-- Tracked implementation has not yet started outside `/docs`.
-- The docs define the canonical planning and design baseline for implementation work that follows.
+- The repository is in `demo-built`: the Phase 0.5 design baseline under [`../design/`](../design/database-schema.md) plus an agent-built, coordinator-verified demo (Happy Path 0 + catalog/circulation) at the repo root per [`../roadmap/demo-brief.md`](../roadmap/demo-brief.md).
+- The demo passed both coordinator gates: scaffold review and the acceptance proofs (store-first, space scoping at the API, loan lifecycle with 409), run independently against the live app.
+- The docs remain the canonical baseline; dev-mode substitutions (user-picker auth, local object store, extraction stub) are demo-only and swap for real services in V1.
 
 ## What WisdomTree Is
 WisdomTree is a storage-first knowledge platform. It gives a small team one intelligent, multi-domain storage home — replacing scattered Excel/Docs storage — and layers curated knowledge publication on top. It separates raw evidence storage and processing from curated knowledge publication, for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.

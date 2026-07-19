@@ -122,6 +122,7 @@ async function main() {
       );
       await mkdir(path.join(FILE_STORAGE_DIR, sourceId), { recursive: true });
       await writeFile(path.join(FILE_STORAGE_DIR, objectKey), body);
+      await writeFile(path.join(FILE_STORAGE_DIR, `${objectKey}.meta`), "text/plain", "utf8");
       const checksum = createHash("sha256").update(body).digest("hex");
 
       await client.query(
