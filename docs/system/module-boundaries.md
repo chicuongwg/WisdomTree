@@ -33,9 +33,9 @@
 
 | Module | Primary responsibility | Canonical data owned |
 | --- | --- | --- |
-| Web App + API | User interaction, workflow orchestration, authorization, tree editing, review actions | Tree nodes, branches, roles, tasks, audit, workflow state |
-| Source Repo | Evidence storage surface for originals and extracted artifacts | Original files, raw text blobs, corrected text blobs, previews |
-| OCR/Parser Worker | Parsing, OCR, AI draft generation, extraction jobs | Generated artifacts before app acceptance |
+| Web App + API | User interaction, workflow orchestration, authorization, tree editing, review actions | Tree nodes, branches, spaces and membership, roles, tasks, audit, workflow state |
+| Source Repo | Team storage home for originals and extracted artifacts, scoped by spaces | Original files, raw text blobs, corrected text blobs, previews |
+| OCR/Parser Worker | Parsing, OCR, AI draft generation, document rendering, extraction jobs | Generated artifacts before app acceptance |
 | Search/Graph | Query surface for tree and operational source discovery | Search index projections and graph projections |
 | Export Service | Publish tree snapshots into the content repo | Export jobs and export manifests |
 | Auth | Identity and session claims | Role assignment and session state |
@@ -53,6 +53,7 @@
   - run OCR
   - run parser extraction
   - create AI suggestions and Markdown draft candidates
+  - render document exports (`docx`, `pdf`) from node Markdown
 - Only the Export Service may write to the content repo.
 - Object storage never acts as the business-rule engine; it stores artifacts addressed by the app.
 
@@ -62,7 +63,7 @@
   - read by app, search, export
 - Source binaries:
   - written on upload and re-upload
-  - read by worker and Admin/Op download flow
+  - read by worker, space-member download flow, and Admin/Op download flow
 - Raw extracted text:
   - written by worker
   - immutable after creation

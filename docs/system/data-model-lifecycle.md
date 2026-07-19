@@ -15,6 +15,7 @@
 
 ## Decisions
 - Source and node states are separate and must remain separate.
+- Storage is store-first: `stored` guarantees space-member findability and download, independent of extraction or curation outcomes.
 - Raw extracted text is immutable.
 - Archive is soft retirement, never silent deletion.
 - Duplicate concept resolution uses archive plus redirect.
@@ -43,8 +44,14 @@
   - `next_action`
 - May point to a file-backed `Source` or a non-file-backed `Branch-gap Request`.
 
+### Space
+- Membership-scoped storage area, typically per domain, department, or project.
+- Governs who can browse `Library`, search stored items, and download originals.
+- Managed by `Admin/Op`; every source belongs to exactly one space in V1.
+
 ### Source
 - A logical evidence item submitted to the system.
+- Belongs to exactly one `Space`.
 - May contain many source versions over time.
 - Carries trust status independent from published tree node status.
 - Carries uploader identity and assignment state for accountability.
@@ -95,21 +102,31 @@
 
 ## Lifecycle Rules
 
-### Source Lifecycle
-- Source version enters as `uploaded`.
-- It becomes `processed` when raw text or explicit extraction failure is available.
+### Source Storage Lifecycle
+- Source version enters as `uploaded` while the original file write completes.
+- It becomes `stored` once the original file is safely persisted; from this point space members can find it in `Library` and download it.
+- It becomes `archived` when the item is retired from active discovery; history is preserved.
+- Extraction and curation outcomes never remove a `stored` item from `Library` availability.
+
+### Extraction Status
+- Extraction runs asynchronously per source version and is tracked as a parallel status, not a storage gate:
+  - `pending`: parser or OCR work not yet finished.
+  - `processed`: raw text or preview artifacts exist.
+  - `unprocessable`: extraction is unsupported or failed irrecoverably; the stored file remains available.
+
+### Curation Lifecycle
+- Curation is an optional workflow on top of storage, entered when a stored item is nominated for tree publication.
 - It becomes `under_correction` when an assigned `Editor` or `Admin/Op` is actively working on corrected text.
 - It becomes `ready_for_review` when corrected text and a Markdown draft are available.
 - It becomes `promoted` when at least one tree publication is approved from it.
-- It becomes `rejected` when the source should not produce tree content.
-- It may become `unprocessable` when processing is unsupported or fails irrecoverably.
+- It becomes `rejected` when the source should not produce tree content; rejection closes curation only, and the item stays `stored`.
 
 ### Branch-gap Request Lifecycle
 - Branch-gap request enters as `submitted`.
 - It becomes `triaged` when `Admin/Op` reviews the request and decides the next action.
 - It becomes `converted_to_branch` when it creates or links to branch or node work.
 - It becomes `rejected` when the request is not suitable for active knowledge work.
-- It may become `archived` after the triage outcome is historically preserved.
+- It may become `archived` directly at triage or after the triage outcome is historically preserved.
 - `branch_gap_request` never enters `under_correction`, `ready_for_review`, or `promoted`.
 
 ### Node Lifecycle
@@ -145,6 +162,7 @@
 ```mermaid
 flowchart TD
     Upload[Upload Source]
+    Stored[Stored in Space Library]
     Extract[Parse/OCR]
     Correct[Corrected Text]
     Draft[Markdown Draft]
@@ -153,7 +171,8 @@ flowchart TD
     Node[Tree Node]
     Merge[Merge / Archive]
 
-    Upload --> Extract
+    Upload --> Stored
+    Stored --> Extract
     Extract --> Correct
     Correct --> Draft
     Draft --> Review

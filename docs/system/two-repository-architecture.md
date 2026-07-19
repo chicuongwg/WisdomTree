@@ -17,8 +17,9 @@
 
 ## Decisions
 - The system is split into two logical repositories:
-  - `Source Repo`: evidence-first, multi-format, review-driven.
+  - `Source Repo`: the team storage home — storage-first, multi-format, space-scoped, with review layered on top.
   - `Knowledge Tree`: curated Markdown-first, graph-friendly, user-facing.
+- Storage is store-first: a source version is available to its space members at `stored`, before and independent of extraction or curation.
 - Original files and extraction artifacts live in object storage-backed source storage.
 - Tree Markdown is canonical in PostgreSQL.
 - Tree Markdown is exported one-way into a private Git content repo for backup and validation.
@@ -37,9 +38,12 @@
 ## Repository Definitions
 
 ### Source Repo
+- The team's canonical storage home, replacing scattered Excel/Docs storage.
+- Organized into membership-scoped `Spaces` that govern browse, search, and download rights.
 - Accepts broad source input, including files unsuitable for direct knowledge tree use.
 - Stores:
   - original files
+  - space assignment
   - raw extracted text
   - corrected text
   - preview artifacts
@@ -76,7 +80,8 @@
 
 | Data kind | Canonical home | Notes |
 | --- | --- | --- |
-| Original source file | Source Repo object storage | Downloadable by Admin/Op only |
+| Original source file | Source Repo object storage | Downloadable by space members and Admin/Op |
+| Space and membership | PostgreSQL | Governs storage browse, search, and download scope |
 | Raw extracted text | Source Repo evidence storage | Immutable |
 | Corrected text | Source Repo evidence storage | Editable, versioned |
 | Branch-gap request | Intake item storage and projection | No `SourceVersion`, no source trust state |
@@ -108,7 +113,15 @@ flowchart LR
     Export --> Git
 ```
 
+## Storage-First Flow
+1. A user uploads a file into a chosen space through `Source Intake`.
+2. The system stores the original file and marks the source version `stored`.
+3. The item becomes visible in `Library` and search for space members immediately.
+4. Extraction runs asynchronously and enriches the item with raw text and previews.
+5. Curation into the tree is an optional follow-up, not a condition of storage.
+
 ## Promotion Flow
+Promotion is the optional curation path; storage availability never depends on it.
 1. A source file is uploaded through `Source Intake` into the Source Repo.
 2. The worker parses or OCRs the file.
 3. The system stores raw extracted text as immutable evidence.
@@ -130,6 +143,7 @@ flowchart LR
 5. The resulting decision is reflected back into `My Submissions`.
 
 ## Design Rationale
+- Storage value must not wait for curation: teams replacing Excel/Docs need retrieval to work on day one, while curation quality grows over time.
 - Evidence review and curated knowledge have different quality thresholds and different interaction models.
 - Mixing raw OCR text directly into the tree would weaken trust and make graph quality unstable.
 - Separating repositories keeps the tree cleaner, while still preserving deep traceability to source material.

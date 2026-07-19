@@ -20,6 +20,8 @@
 - Worker contracts are asynchronous and job-based.
 - Export remains one-way from app to content repo.
 - `branch-gap requests` are intake items, not file-backed `Source` records.
+- Storage access (library browse, search, download) is space-scoped and enforced at the API.
+- Document export renders node Markdown to `docx`/`pdf` as derived artifacts through a Pandoc-class converter.
 
 ## Dependencies
 - Module roles in [`module-boundaries.md`](./module-boundaries.md).
@@ -37,16 +39,27 @@
 - `GET /api/session`
 - `POST /api/auth/logout`
 
+### Spaces
+- `GET /api/spaces`
+- `POST /api/spaces`
+- `PATCH /api/spaces/:spaceId`
+- `POST /api/spaces/:spaceId/members`
+- `DELETE /api/spaces/:spaceId/members/:userId`
+
 ### Source Repo
 - `POST /api/source/upload`
+- `POST /api/source/:sourceId/version`
 - `POST /api/source/gap-request`
+- `GET /api/library`
 - `GET /api/source/my-submissions`
 - `GET /api/source/:sourceId`
+- `GET /api/source/:sourceId/download`
 - `GET /api/source/gap-request/:requestId`
 - `GET /api/source/:sourceId/version/:versionId`
 - `POST /api/source/gap-request/:requestId/triage`
 - `POST /api/source/gap-request/:requestId/convert`
 - `POST /api/source/gap-request/:requestId/reject`
+- `POST /api/source/gap-request/:requestId/archive`
 - `POST /api/source/:sourceId/version/:versionId/assign`
 - `POST /api/source/:sourceId/version/:versionId/corrected-text`
 - `POST /api/source/:sourceId/version/:versionId/mark-ready-for-review`
@@ -68,6 +81,11 @@
 - `POST /api/tree/nodes/:nodeId/merge`
 - `POST /api/tree/branches`
 - `PATCH /api/tree/branches/:branchId`
+- `POST /api/tree/nodes/:nodeId/export`
+
+### Notifications
+- `GET /api/notifications`
+- `POST /api/notifications/:notificationId/read`
 
 ### Board and Operations
 - `GET /api/board`
@@ -104,6 +122,14 @@
   - tag suggestions
   - link suggestions
 
+### Document Render Job
+- Input:
+  - node id or Markdown reference
+  - target format (`docx` or `pdf`)
+- Output:
+  - rendered document artifact reference
+  - converter warnings
+
 ### Search Reindex Job
 - Input:
   - changed object type
@@ -115,6 +141,7 @@
 
 ## Event Triggers
 - `source.uploaded`
+- `source.stored`
 - `source.gap_requested`
 - `source.processed`
 - `source.processing_failed`
@@ -129,6 +156,6 @@
 ## External Integration Assumptions
 - Google OIDC supplies user identity claims consumed by the app.
 - Object storage stores original source files and evidence artifacts by opaque object keys.
-- Content repo receives export commits from the app or export service.
+- Content repo receives export commits from the export service only.
 - GitHub Actions validates exported content on push.
 - Email provider sends review and operational notifications.

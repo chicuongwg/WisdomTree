@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-18T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="Page-1">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;WISDOMTREE SYSTEM CONTEXT&lt;/b&gt; — external actors, system boundary, and primary runtime relationships (2026-07-18)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2" value="User Roles" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="150" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="150" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Editor" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="260" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Admin/Op" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="370" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Core System" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="230" y="100" width="200" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="WisdomTree
+Web App + API" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="250" y="260" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Storage &amp; Queue" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="470" y="100" width="180" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="PostgreSQL" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="500" y="140" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Redis /
+Job Queue" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="500" y="260" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="Object Storage" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="500" y="380" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="Worker &amp; AI" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="690" y="100" width="180" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="OCR / Parser /
+AI Worker" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="720" y="140" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Ollama" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="720" y="250" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="External Services" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="910" y="100" width="180" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="Google OIDC" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="940" y="140" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="Email Provider" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="940" y="250" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="Git Integration" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="690" y="370" width="400" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="Content Repo" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="720" y="410" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="GitHub Actions" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="910" y="410" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="&lt;b&gt;Assumptions:&lt;/b&gt; WisdomTree V1 runs in a private VPS split deployment (API on primary VPS, OCR/LLM on worker host)." style="rounded=1;whiteSpace=wrap;html=1;align=left;spacing=8;fillColor=#FAFAFA;strokeColor=#969696;fontColor=#000000;fontSize=11;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="1120" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="&lt;b&gt;Colour roles:&lt;/b&gt; &lt;font color=&quot;#3B82F6&quot;&gt;■ User Roles&lt;/font&gt; · &lt;font color=&quot;#82B366&quot;&gt;■ Core App&lt;/font&gt; · &lt;font color=&quot;#D97706&quot;&gt;■ Storage &amp;amp; DB&lt;/font&gt; · &lt;font color=&quot;#9673A6&quot;&gt;■ Worker &amp;amp; AI&lt;/font&gt; · &lt;font color=&quot;#B85450&quot;&gt;■ External Services&lt;/font&gt; · &lt;font color=&quot;#D6B656&quot;&gt;■ Git Integration&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="510" width="1120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Intake / Read&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="3" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Correct / Write&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="4" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Publish / Review&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="5" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Auth&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;dashed=1;" edge="1" parent="1" source="7" target="16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Read/Write&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="7" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Enqueue&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="7" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Store Files&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="7" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Dispatch Job&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="10" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Read/Write text&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="13" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Update status&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="13" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;LLM Prompt&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="13" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="32" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Export&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="7" target="19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Trigger CI&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;dashed=1;" edge="1" parent="1" source="19" target="20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Notify&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;dashed=1;" edge="1" parent="1" source="7" target="17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

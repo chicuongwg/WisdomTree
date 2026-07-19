@@ -80,6 +80,7 @@ flowchart LR
 - Worker host:
   - parser runtime
   - OCR runtime
+  - document render converter (Pandoc-class)
   - Ollama
 - Shared storage:
   - source originals
