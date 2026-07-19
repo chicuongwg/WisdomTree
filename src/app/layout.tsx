@@ -1,15 +1,45 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Link from "next/link";
+import "./globals.css";
+import { currentUser } from "@/modules/auth/session";
+import { T, roleLabel } from "@/lib/vi";
+import { LogoutButton } from "./components/logout-button";
 
 export const metadata: Metadata = {
   title: "WisdomTree",
   description: "Nền tảng lưu trữ và tri thức của nhóm",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const user = await currentUser();
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        <header className="topbar">
+          <Link href="/" className="brand">
+            {T.appName}
+          </Link>
+          {user && (
+            <nav>
+              <Link href="/library">{T.library}</Link>
+              <Link href="/source/intake">{T.sourceIntake}</Link>
+              <Link href="/source/mine">{T.mySubmissions}</Link>
+              <Link href="/catalog">{T.catalog}</Link>
+              {user.role === "admin_op" && <Link href="/catalog/admin">{T.librarianDesk}</Link>}
+            </nav>
+          )}
+          {user && (
+            <div className="who">
+              <span>
+                {user.displayName} · {roleLabel[user.role]}
+              </span>
+              <LogoutButton />
+            </div>
+          )}
+        </header>
+        {children}
+      </body>
     </html>
   );
 }
