@@ -5,7 +5,7 @@
 - Prevent scope creep across product, system, and UI workstreams.
 
 ## In Scope
-- Source repository for uploads, extraction, correction, review, and publication.
+- Source repository as the team storage home: space-scoped storage, library browsing, retrieval, uploads, extraction, correction, review, and publication.
 - Knowledge tree for curated Markdown nodes, branches, links, tags, search, and graph exploration.
 - Basic board and achievement tracking for branch completion and operational work.
 - Export of tree content into a private Git content repository.
@@ -19,6 +19,10 @@
 
 ## Decisions
 - V1 ships with `User`, `Editor`, and `Admin/Op`.
+- Storage is store-first: an uploaded file is findable and downloadable by its space members at `stored`, independent of extraction or curation outcomes.
+- Sources are organized into membership-scoped `Spaces`; space membership governs browse, search, and download rights.
+- Published node Markdown can be exported to common team formats (`docx`, `pdf`) through a Pandoc-class converter.
+- The product UI is bilingual Vietnamese/English with Vietnamese as the default; documentation stays English.
 - Tree authoring and source-driven publication both exist in V1.
 - Source repo supports broad intake but does not promise rich processing for every file type.
 - Unsupported source formats can be stored as `unprocessable` instead of rejected.
@@ -37,7 +41,10 @@
 ## V1 In Scope
 
 ### Source Repo
-- Upload files from authenticated users.
+- Upload files from authenticated users into a chosen space.
+- Organize sources into membership-scoped spaces.
+- Provide `Library` browsing, search, and original-file download for space members.
+- Make stored items available to space members immediately at `stored`, before extraction or curation completes.
 - Accept `branch-gap requests` from authenticated users without creating `SourceVersion`.
 - Let authenticated users view the status of their own submissions.
 - Store original source files in object storage.
@@ -53,9 +60,10 @@
 - Store links, tags, branch membership, and verification status.
 - Support manual node creation with `no_source` default status.
 - Support merge, archive, and redirect behavior for duplicate concepts.
+- Export node Markdown to `docx` and `pdf` as derived documents.
 
 ### Discovery and Navigation
-- Full-text and semantic search across tree and source repository, with clear filters.
+- Full-text and semantic search across tree and space-scoped source storage, with clear filters.
 - Dedicated graph surface plus contextual relation views.
 - User-facing node pages with branch context, trust badges, and source excerpts.
 
@@ -68,6 +76,7 @@
 
 ### Platform and Reliability
 - Audit logging for meaningful user actions.
+- Bilingual Vietnamese/English UI with Vietnamese as the default.
 - Daily backup and manual restore process.
 - Git export for tree content and CI validation for exported Markdown.
 
@@ -79,6 +88,7 @@
 - OCR quality control for complex tables, handwriting, or all non-text formats.
 - Native mobile apps.
 - Full analytics dashboards beyond operational health.
+- Per-file access control lists beyond space membership.
 
 ## Phase 1.5 Candidates
 - Split `Admin/Op` into `Reviewer`, `Curator`, and `Operator`.

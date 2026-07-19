@@ -17,6 +17,7 @@
 ## Decisions
 - V1 ships with three practical roles: `User`, `Editor`, `Admin/Op`.
 - `User` is the default authenticated account role in V1.
+- `User` storage access is scoped by space membership: browse, search, and download within member spaces.
 - `Editor` inherits `User` capabilities and adds owned-or-assigned content update authority.
 - `Admin/Op` absorbs review, taxonomy, publish approval, and operations work in V1.
 - Accountability is intentionally split across uploader, editor/updater, and approver/publisher actions.
@@ -37,13 +38,15 @@
 
 | Role | Primary goal | Primary surfaces |
 | --- | --- | --- |
-| User | Contribute source evidence and consume curated knowledge | Home, Search, Tree, Graph, Source Intake, My Submissions |
+| User | Store and retrieve team files, contribute source evidence, and consume curated knowledge | Home, Search, Library, Tree, Graph, Source Intake, My Submissions |
 | Editor | Refine owned or assigned knowledge work before final approval | Tree authoring, Branch editor, Assigned source correction |
 | Admin/Op | Operate intake, review, trust, publish, taxonomy, and platform workflows | Source Inbox, Source Detail, Review Queue, Publish Review, Admin, Board |
 
 ## User Persona
 
 ### Jobs To Be Done
+- Store working files in the team storage home instead of scattered Excel/Docs folders.
+- Browse, search, and download files stored in my spaces.
 - Upload source material into the system as new evidence input.
 - Track the processing status and outcome of my own submissions.
 - Find trustworthy knowledge quickly.
@@ -53,6 +56,7 @@
 
 ### What Success Looks Like
 - A newly uploaded source item becomes visible in personal submissions with a clear processing state.
+- A file stored by a teammate in a shared space can be found and downloaded within a minute.
 - Search returns useful, trust-visible results.
 - Node pages make provenance and related concepts easy to inspect.
 - Branch structure helps users move from overview to detail.
@@ -61,10 +65,11 @@
 - Read tree content.
 - Search across tree and source snippets exposed through tree pages.
 - Open graph and branch views.
-- Upload new source items through authenticated intake.
+- Upload new source items into member spaces through authenticated intake.
+- Browse `Library`, search stored items, and download original files within member spaces.
 - View own submissions, processing states, and follow-up prompts.
 - Create `branch-gap requests` through `Source Intake` when no file is available yet.
-- No access to full source repository.
+- No access to source items outside member spaces and no access to operational review internals.
 - No permission to edit corrected text, Markdown drafts, trust states, or publication outcomes.
 
 ## Editor Persona
@@ -95,7 +100,7 @@
 - Operate the source repository and review pipeline.
 - Decide trust status and publication readiness.
 - Publish Markdown into the tree.
-- Merge duplicates, archive superseded content, manage taxonomy, and handle ops tasks.
+- Merge duplicates, archive superseded content, manage taxonomy, manage spaces and membership, and handle ops tasks.
 - Maintain auditability and platform health.
 
 ### What Success Looks Like
@@ -106,7 +111,7 @@
 ### Permission Summary
 - Full access to source repository and review workflows.
 - Final approval for corrected text, Markdown drafts, and publication.
-- Manage tags, trust states, archive/merge, notifications, and operational settings.
+- Manage tags, trust states, spaces and membership, archive/merge, notifications, and operational settings.
 - Access backup, export, and system health surfaces.
 - Investigate accountability chains across uploader, editor/updater, and approver/publisher events.
 

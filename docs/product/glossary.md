@@ -15,6 +15,7 @@
 
 ## Decisions
 - `Source Repo` and `Knowledge Tree` are the canonical high-level product terms.
+- `Space` and `Library` are the canonical storage-access terms.
 - `Node`, `Branch`, `Source`, `Version`, `Review`, and `Promotion` are the core domain nouns.
 - Trust and verification states are distinct concepts and must not be merged in wording.
 
@@ -32,7 +33,9 @@
 
 | Term | Definition |
 | --- | --- |
-| Source Repo | The repository-like ingestion space that stores original source files, raw extracted text, corrected text, provenance, preview artifacts, and review state. |
+| Source Repo | The team storage home that stores original source files, raw extracted text, corrected text, provenance, preview artifacts, and review state, organized into membership-scoped spaces. |
+| Space | A membership-scoped storage area, typically per domain, department, or project, that controls who can browse, search, and download stored source items. Every source belongs to exactly one space in V1. |
+| Library | The user-facing browse and search surface over stored source items within the spaces the user belongs to. |
 | Intake Item | The logical projection used by `Source Intake`, `My Submissions`, and `Source Inbox` to represent both `source_upload` and `branch_gap_request` entries. |
 | Knowledge Tree | The curated knowledge surface where Markdown nodes become searchable, linkable, and graphable. |
 | Node | A curated Markdown knowledge unit in the tree, such as a concept note, source summary, branch hub, task page, or achievement page. |
@@ -54,3 +57,4 @@
 | Review Queue | The operational queue where `Admin/Op` reviews corrected text and Markdown drafts for file-backed source items. |
 | Publish Review | The final decision surface where `Admin/Op` approves, rejects, or returns a publishable Markdown draft. |
 | Content Repo | The private Git repository that receives exported tree Markdown snapshots for backup and validation. |
+| Document Export | Rendering node Markdown into common team formats such as `docx` or `pdf` through a Pandoc-class converter, producing derived artifacts only. |

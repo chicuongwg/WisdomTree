@@ -20,7 +20,7 @@
 ## Decisions
 - WisdomTree V1 is a private web application for a small team.
 - V1 uses two logical repositories: `Source Repo` and `Knowledge Tree`.
-- The Source Repo holds original files and extraction artifacts. The Knowledge Tree holds curated Markdown knowledge.
+- The Source Repo is the team's canonical storage home, organized into membership-scoped spaces with store-first availability. The Knowledge Tree holds curated Markdown knowledge.
 - Tree canonical content is stored in PostgreSQL. Source evidence is stored in object storage-backed source storage.
 - Roles for V1 are `User`, `Editor`, and `Admin/Op`.
 
@@ -41,7 +41,7 @@
 - The docs define the canonical planning baseline for implementation work that follows.
 
 ## What WisdomTree Is
-WisdomTree is a knowledge management system that separates raw evidence processing from curated knowledge publication. It is designed for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.
+WisdomTree is a storage-first knowledge platform. It gives a small team one intelligent, multi-domain storage home — replacing scattered Excel/Docs storage — and layers curated knowledge publication on top. It separates raw evidence storage and processing from curated knowledge publication, for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.
 
 ## V1 Product Shape
 - Private team web app.
@@ -54,6 +54,8 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 ## Core Architectural Shape
 
 ### Source Repo
+- The team storage home, organized into membership-scoped spaces.
+- Store-first: items are findable and downloadable by space members at `stored`, before extraction or curation.
 - Accepts many file types.
 - Stores original files.
 - Runs parser-first extraction and OCR fallback.
@@ -74,7 +76,8 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 
 ## V1 Role Model
 - `User`
-  - upload source material
+  - upload source material into member spaces
+  - browse, search, and download stored items in member spaces
   - track own submissions
   - discover and consume curated knowledge
 - `Editor`
@@ -115,6 +118,7 @@ WisdomTree is a knowledge management system that separates raw evidence processi
 
 ## What Not To Re-Decide
 - Do not collapse Source Repo and Knowledge Tree into one mixed content store.
+- Do not gate storage availability behind extraction or review; `stored` items stay retrievable by space members.
 - Do not treat OCR plain text as publishable tree content by itself.
 - Do not make Git export the canonical authoring surface in V1.
 - Do not expand V1 into public sharing, mobile, or full enterprise role modeling.

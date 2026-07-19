@@ -32,6 +32,8 @@
 
 ### Product and Scope
 - V1 is a private small-team product, not a public knowledge portal.
+- WisdomTree is storage-first: the Source Repo is the team's canonical storage home replacing scattered Excel/Docs storage; curation is layered on top.
+- The product serves non-technical, multi-domain team members first; UI simplicity is the second priority after storage.
 - V1 ships with a practical role model: `User`, `Editor`, `Admin/Op`.
 - `User` is the default authenticated role and owns source submission plus personal submission tracking.
 - `Editor` extends `User` but is limited to owned-or-assigned content updates.
@@ -41,6 +43,9 @@
 ### Content and Data Model
 - The system is split into `Source Repo` and `Knowledge Tree`.
 - The Source Repo can receive broad file formats.
+- Sources are organized into membership-scoped `Spaces`; space membership governs browse, search, and download rights.
+- Storage is store-first: `stored` items are findable and downloadable by space members before and independent of extraction or curation.
+- Node Markdown can be exported to `docx`/`pdf` as derived documents through a Pandoc-class converter.
 - The Knowledge Tree accepts Markdown only.
 - Original files are kept for evidence and comparison in the Source Repo.
 - Raw extracted text is immutable.
@@ -68,7 +73,8 @@
 - Layout is `Workspace 3-zone`.
 - User flow comes first in information architecture.
 - Admin/Op flow is secondary in navigation but complete in capabilities.
-- Tree editing is `Markdown source + preview`, not WYSIWYG-heavy.
+- Tree editing is `Markdown source + preview`, not WYSIWYG-heavy; non-technical contribution happens primarily through file upload plus conversion, not through learning Markdown.
+- The UI is bilingual Vietnamese/English with Vietnamese as the default; documentation stays English.
 
 ### Runtime and Operations
 - Web/API, PostgreSQL, and Redis run on the primary VPS.
@@ -80,6 +86,7 @@
 
 ## Reopen Only With Explicit Product Change
 - Public access model.
+- Storage-first ordering and space-based storage access scoping.
 - Role model expansion beyond User, Editor, Admin/Op.
 - Canonical storage moving away from PostgreSQL for tree content.
 - Removing the two-repository split.

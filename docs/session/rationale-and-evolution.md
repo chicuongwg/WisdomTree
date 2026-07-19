@@ -110,3 +110,19 @@
   - speeds up sub-agent startup
   - reduces repeated clarification questions
   - creates a stable handoff pack between planning and implementation agents
+
+## Evolution 7: From Curation-First Pipeline to Storage-First Platform
+- Early direction:
+  - treat the Source Repo mainly as an ingestion pipeline feeding the Knowledge Tree
+- Problem:
+  - the team's actual starting pain is storage: files scattered across Excel/Docs with no shared, findable home
+  - a pipeline-only Source Repo left regular users unable to browse or retrieve stored files at all
+- Final decision:
+  - reposition the Source Repo as the team's canonical storage home, organized into membership-scoped `Spaces`
+  - make storage store-first: `stored` items are findable and downloadable by space members before and independent of curation
+  - keep curation, trust, and publication as the quality layer on top
+  - add document export (`docx`/`pdf`) and a bilingual Vietnamese/English UI for non-technical, multi-domain users
+- Why:
+  - solves the team's primary storage problem on day one
+  - keeps the two-repository architecture intact while fixing the product's center of gravity
+  - preserves the trust and provenance model for knowledge that graduates into the tree

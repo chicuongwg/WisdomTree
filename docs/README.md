@@ -19,6 +19,7 @@
 - Flow, state, context, and sequence diagrams use Mermaid.
 - V1 role model is `User`, `Editor`, and `Admin/Op`.
 - Tree content is modeled separately from source ingestion; details live in [`system/two-repository-architecture.md`](./system/two-repository-architecture.md).
+- The Source Repo is the team's storage-first home, organized into membership-scoped spaces; storage availability precedes curation.
 - The repository is currently in `Phase 0 documentation-complete`; tracked implementation has not started outside `/docs`.
 
 ## Dependencies
