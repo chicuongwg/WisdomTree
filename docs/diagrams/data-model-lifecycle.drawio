@@ -1,60 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mxfile host="Electron" modified="2026-07-18T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
-  <diagram id="diagram_id" name="Page-1">
-    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="Data Lifecycle">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1560" pageHeight="640" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="&lt;b&gt;WISDOMTREE DATA MODEL LIFECYCLE&lt;/b&gt; — transition from raw source files to published tree nodes (2026-07-18)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="40" y="10" width="1200" height="30" as="geometry" />
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — DATA LIFECYCLE — upload to published node, store-first · synced with docs/system/data-model-lifecycle.md (2026-07-20)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1480" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="2" value="Ingestion" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="40" y="100" width="350" height="160" as="geometry" />
+        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; left to right; the purple heavy edge ends the guaranteed path — everything right of &amp;quot;Stored&amp;quot; is optional curation.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="44" width="1480" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="3" value="Upload Source" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="60" y="160" width="130" height="50" as="geometry" />
+        <mxCell id="c4" value="&lt;b&gt;Upload Source&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="4" value="Parse / OCR Text" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="220" y="160" width="130" height="50" as="geometry" />
+        <mxCell id="c5" value="&lt;b&gt;Stored in&lt;br&gt;Space Library&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="230" y="150" width="140" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="5" value="Drafting" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="430" y="100" width="350" height="160" as="geometry" />
+        <mxCell id="c6" value="&lt;b&gt;Parse / OCR&lt;/b&gt;&lt;br&gt;async, parallel" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="150" width="140" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="6" value="Corrected Text" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="450" y="160" width="130" height="50" as="geometry" />
+        <mxCell id="c7" value="&lt;b&gt;Corrected Text&lt;/b&gt;&lt;br&gt;versioned chain" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="630" y="150" width="150" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="7" value="Markdown Draft" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="610" y="160" width="130" height="50" as="geometry" />
+        <mxCell id="c8" value="&lt;b&gt;Markdown Draft&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="840" y="150" width="140" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="8" value="Tree Publication" style="swimlane;html=1;startSize=30;fillColor=none;strokeColor=#64748B;strokeWidth=2;dashed=1;fontColor=#000000;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="820" y="100" width="350" height="160" as="geometry" />
+        <mxCell id="c9" value="&lt;b&gt;Admin/Op Review&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="150" width="150" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="9" value="Admin/Op Review" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="840" y="160" width="130" height="50" as="geometry" />
+        <mxCell id="c10" value="&lt;b&gt;Publish to Tree&lt;/b&gt;&lt;br&gt;+ promotion provenance" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="150" width="180" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="10" value="Published Tree Node" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-          <mxGeometry x="1000" y="160" width="135" height="50" as="geometry" />
+        <mxCell id="c11" value="&lt;b&gt;Tree Node&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="320" width="130" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="16" value="&lt;b&gt;Rules:&lt;/b&gt; Raw text is immutable. Node verification and source trust states are separate." style="rounded=1;whiteSpace=wrap;html=1;align=left;spacing=8;fillColor=#FAFAFA;strokeColor=#969696;fontColor=#000000;fontSize=11;arcSize=8;" vertex="1" parent="1">
-          <mxGeometry x="40" y="50" width="1120" height="35" as="geometry" />
+        <mxCell id="c12" value="&lt;b&gt;Merge / Archive&lt;/b&gt;&lt;br&gt;redirect, audited" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="320" width="160" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="17" value="&lt;b&gt;Colour roles:&lt;/b&gt; &lt;font color=&quot;#64748B&quot;&gt;■ In-App Flow Processes&lt;/font&gt; · &lt;font color=&quot;#D97706&quot;&gt;■ Knowledge Tree DB Node&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="40" y="290" width="1120" height="30" as="geometry" />
+        <mxCell id="c13" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;file persisted&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.5;verticalAlign=bottom;spacingBottom=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c4" target="c5">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="11" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;File parsing&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="3" target="4">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="c14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.2;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c6">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="12" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Editor review&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="4" target="6">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="c15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c6" target="c7">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="13" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Form draft&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="6" target="7">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="c16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c7" target="c8">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="14" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Review draft&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="7" target="9">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="c17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c8" target="c9">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="15" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;Promote node&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;" edge="1" parent="1" source="9" target="10">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="c18" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;approve&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;verticalAlign=bottom;spacingBottom=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c9" target="c10">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c10" target="c11">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="c11" target="c12">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c21" value="&lt;i&gt;Members browse and download here directly (Happy Path 0) — extraction and curation never gate availability.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#969696;fontColor=#555555;fontSize=10;dashed=1;arcSize=8;align=left;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="230" y="240" width="340" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="c22" value="&lt;b&gt;Message:&lt;/b&gt; Store-first: the product guarantee ends at &amp;quot;Stored in Space Library&amp;quot; — the seven boxes to its right are an optional curation overlay that can fail or reject without touching storage." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="460" width="1480" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="c23" value="&lt;b&gt;Colour roles&lt;/b&gt; (repo theme, fixed): &lt;font color=&quot;#A855F7&quot;&gt;&amp;#9632; guaranteed storage / canonical tree&lt;/font&gt; · &lt;font color=&quot;#10B981&quot;&gt;&amp;#9632; async worker step&lt;/font&gt; · &lt;font color=&quot;#64748B&quot;&gt;&amp;#9632; curation stage&lt;/font&gt; · dashed = async hand-off. Source of truth: docs/system/data-model-lifecycle.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="510" width="1480" height="24" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

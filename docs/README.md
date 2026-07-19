@@ -112,6 +112,9 @@
 - [`design/sequence-diagrams.md`](./design/sequence-diagrams.md): runtime sequences for the five core flows, including transaction and outbox boundaries.
 - [`design/authorization-design.md`](./design/authorization-design.md): enforcement pipeline, permission catalog, and the permissions-matrix-as-test-fixture approach.
 
+### Diagrams
+- [`diagrams/`](./diagrams/): draw.io presentation copies of the architecture, lifecycle, ERD, topology, and flow figures. The Mermaid diagrams inside the docs are canonical; a `.drawio` file must be regenerated when its source doc changes, and on any disagreement the doc wins.
+
 ### Product
 - [`product/prd.md`](./product/prd.md): product problem, goals, success definition, audience, and guiding workflows.
 - [`product/v1-scorecard.md`](./product/v1-scorecard.md): V1 KPI definitions, thresholds, and review cadence.
