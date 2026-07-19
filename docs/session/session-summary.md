@@ -43,6 +43,8 @@
 ## What WisdomTree Is
 WisdomTree is a storage-first knowledge platform. It gives a small team one intelligent, multi-domain storage home — replacing scattered Excel/Docs storage — and layers curated knowledge publication on top. It separates raw evidence storage and processing from curated knowledge publication, for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.
 
+Storage and knowledge are the core, but the target is a four-pillar team platform: communication (object-anchored comments plus outbound Zalo and email; chat stays on Messenger and Zalo), storage and knowledge (the core, including a physical library catalog), publishing (selective Quartz sites from the content repo), and project management (a deadline registry plus a basic board). The strategy is build core, integrate ecosystem, under standing constraints: no new accounts, one developer plus AI agents, fewer than ten non-technical users, bilingual Vietnamese-default UI, and local-only AI. See [`../platform/platform-context.md`](../platform/platform-context.md).
+
 ## V1 Product Shape
 - Private team web app.
 - Desktop and web-first.

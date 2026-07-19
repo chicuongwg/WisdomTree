@@ -126,3 +126,19 @@
   - solves the team's primary storage problem on day one
   - keeps the two-repository architecture intact while fixing the product's center of gravity
   - preserves the trust and provenance model for knowledge that graduates into the tree
+
+## Evolution 8: From Standalone Storage App to Four-Pillar Platform
+- Early direction:
+  - treat WisdomTree as a single storage-and-knowledge application
+- Problem:
+  - the team's real need spans four jobs — communication, storage and knowledge, publishing, and project management across many parallel projects with conference and funding deadlines
+  - the team is fewer than ten non-technical people with one developer, and already lives in Google, Messenger, Zalo, and Trello or Notion; forcing new tools or accounts would kill adoption
+- Final decision:
+  - frame WisdomTree as the storage-first core of a four-pillar platform, built as one modular monolith
+  - build only what is unique — space-scoped storage and knowledge, a physical library catalog and circulation, and a deadline registry
+  - borrow the rest — Google for identity and legacy data, Messenger and Zalo for chat, Quartz for publishing — and bridge to Google Forms, Sheets, Calendar, and Drive
+  - keep AI local-only and additive, never a blocking or paid dependency
+- Why:
+  - delivers all four pillars within reach of a single developer plus AI agents
+  - respects the no-new-accounts reality that governs adoption
+  - keeps the storage-and-knowledge core, already specified, as the largest module rather than a rewrite

@@ -43,13 +43,14 @@
 ### Start Here
 1. [`session/README.md`](./session/README.md)
 2. [`session/session-summary.md`](./session/session-summary.md)
-3. [`product/prd.md`](./product/prd.md)
-4. [`product/v1-scorecard.md`](./product/v1-scorecard.md)
-5. [`product/scope-v1.md`](./product/scope-v1.md)
-6. [`operations/operating-playbook.md`](./operations/operating-playbook.md)
-7. [`requirements/functional-spec.md`](./requirements/functional-spec.md)
-8. [`system/two-repository-architecture.md`](./system/two-repository-architecture.md)
-9. [`flows/state-machines.md`](./flows/state-machines.md)
+3. [`platform/platform-context.md`](./platform/platform-context.md)
+4. [`product/prd.md`](./product/prd.md)
+5. [`product/v1-scorecard.md`](./product/v1-scorecard.md)
+6. [`product/scope-v1.md`](./product/scope-v1.md)
+7. [`operations/operating-playbook.md`](./operations/operating-playbook.md)
+8. [`requirements/functional-spec.md`](./requirements/functional-spec.md)
+9. [`system/two-repository-architecture.md`](./system/two-repository-architecture.md)
+10. [`flows/state-machines.md`](./flows/state-machines.md)
 
 ### Backend and Worker Path
 1. [`requirements/functional-spec.md`](./requirements/functional-spec.md)
@@ -95,6 +96,10 @@
 7. [`flows/admin-op-flows.md`](./flows/admin-op-flows.md)
 
 ## Documentation Map
+
+### Platform
+- [`platform/platform-context.md`](./platform/platform-context.md): the four-pillar platform vision, build-versus-borrow strategy, and standing constraints.
+- [`platform/module-map.md`](./platform/module-map.md): modular-monolith module list, canonical data ownership, and dependency rules at platform scope.
 
 ### Product
 - [`product/prd.md`](./product/prd.md): product problem, goals, success definition, audience, and guiding workflows.

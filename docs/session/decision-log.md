@@ -30,6 +30,15 @@
 
 ## Settled Decisions
 
+### Platform Strategy
+- WisdomTree is the storage-first core of a four-pillar team platform: communication, storage and knowledge, publishing, and project management.
+- The strategy is build core, integrate ecosystem: build what is unique to this team, borrow the rest from tools the team already uses.
+- Chat is not built and not self-hosted; real-time messaging stays on Messenger and Zalo, and the platform pushes outbound alerts to Zalo OA and email.
+- Publishing rides the existing content-repo export via a Quartz-class generator; no new runtime module.
+- Project management is a deadline registry plus the basic board, not a Jira replacement.
+- The platform is one deployable modular monolith in one monorepo; see [`../platform/module-map.md`](../platform/module-map.md).
+- Standing constraints: no new accounts (Google OIDC), one developer plus AI agents, fewer than ten non-technical users, bilingual Vietnamese-default UI, local-only AI with no paid API dependency.
+
 ### Product and Scope
 - V1 is a private small-team product, not a public knowledge portal.
 - WisdomTree is storage-first: the Source Repo is the team's canonical storage home replacing scattered Excel/Docs storage; curation is layered on top.
@@ -87,6 +96,9 @@
 ## Reopen Only With Explicit Product Change
 - Public access model.
 - Storage-first ordering and space-based storage access scoping.
+- Build core, integrate ecosystem strategy and the no-new-accounts constraint.
+- Local-only AI with no paid API dependency.
+- Modular monolith in one monorepo.
 - Role model expansion beyond User, Editor, Admin/Op.
 - Canonical storage moving away from PostgreSQL for tree content.
 - Removing the two-repository split.
