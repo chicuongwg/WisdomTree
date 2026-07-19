@@ -1,0 +1,22 @@
+# Dev/demo infrastructure. Object storage is the local filesystem behind the
+# ObjectStore interface (docs/roadmap/demo-brief.md dev-mode substitution), so
+# Postgres is the only service needed here. The app itself runs with `npm run demo`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wisdomtree
+      POSTGRES_PASSWORD: wisdomtree
+      POSTGRES_DB: wisdomtree
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wisdomtree -d wisdomtree"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:

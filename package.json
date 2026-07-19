@@ -1,0 +1,34 @@
+{
+  "name": "wisdomtree",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WisdomTree — storage-first knowledge platform (modular monolith: Next.js App Router + Drizzle + PostgreSQL)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx scripts/db/migrate.ts",
+    "db:seed": "tsx scripts/db/seed.ts",
+    "db:up": "docker compose up -d db",
+    "demo": "docker compose up -d db && npm run db:migrate && npm run db:seed && next dev",
+    "gen:api": "openapi-typescript docs/design/openapi.yaml -o src/lib/api-types.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.2",
+    "next": "^15.3.4",
+    "pg": "^8.16.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.4",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "drizzle-kit": "^0.31.1",
+    "openapi-typescript": "^7.8.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

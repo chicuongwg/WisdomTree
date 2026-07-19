@@ -4,3 +4,15 @@
 # OS-generated files
 .DS_Store
 Thumbs.db
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local environment and dev object storage
+.env
+.env.local
+data/
