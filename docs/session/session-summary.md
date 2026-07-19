@@ -36,9 +36,9 @@
 - The summary is short enough to be used as a startup brief.
 
 ## Current Repository Stage
-- The repository is currently in `Phase 0 documentation-complete`.
+- The repository is in `Phase 0.5 technical design`: the planning baseline is complete and the accepted tech stack, database schema, OpenAPI contract, core-flow sequences, and authorization design live under [`../design/`](../design/database-schema.md).
 - Tracked implementation has not yet started outside `/docs`.
-- The docs define the canonical planning baseline for implementation work that follows.
+- The docs define the canonical planning and design baseline for implementation work that follows.
 
 ## What WisdomTree Is
 WisdomTree is a storage-first knowledge platform. It gives a small team one intelligent, multi-domain storage home — replacing scattered Excel/Docs storage — and layers curated knowledge publication on top. It separates raw evidence storage and processing from curated knowledge publication, for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.

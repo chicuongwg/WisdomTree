@@ -58,10 +58,14 @@
 3. [`platform/module-map.md`](./platform/module-map.md)
 4. [`system/module-boundaries.md`](./system/module-boundaries.md)
 5. [`system/data-model-lifecycle.md`](./system/data-model-lifecycle.md)
-5. [`system/integration-contracts.md`](./system/integration-contracts.md)
-6. [`requirements/non-functional-requirements.md`](./requirements/non-functional-requirements.md)
-7. [`operations/operating-playbook.md`](./operations/operating-playbook.md)
-8. [`system/deployment-topology.md`](./system/deployment-topology.md)
+6. [`system/integration-contracts.md`](./system/integration-contracts.md)
+7. [`requirements/non-functional-requirements.md`](./requirements/non-functional-requirements.md)
+8. [`design/database-schema.md`](./design/database-schema.md)
+9. [`design/openapi.yaml`](./design/openapi.yaml)
+10. [`design/sequence-diagrams.md`](./design/sequence-diagrams.md)
+11. [`design/authorization-design.md`](./design/authorization-design.md)
+12. [`operations/operating-playbook.md`](./operations/operating-playbook.md)
+13. [`system/deployment-topology.md`](./system/deployment-topology.md)
 
 ### Frontend and UX Path
 1. [`product/roles-personas.md`](./product/roles-personas.md)
@@ -102,6 +106,12 @@
 - [`platform/platform-context.md`](./platform/platform-context.md): the four-pillar platform vision, build-versus-borrow strategy, and standing constraints.
 - [`platform/module-map.md`](./platform/module-map.md): modular-monolith module list, canonical data ownership, and dependency rules at platform scope.
 
+### Technical Design
+- [`design/database-schema.md`](./design/database-schema.md): concrete PostgreSQL schema, ERD, and the NFR-to-schema mapping; supersedes the drawio ERD.
+- [`design/openapi.yaml`](./design/openapi.yaml): OpenAPI 3.1 contract covering every endpoint in `system/integration-contracts.md`.
+- [`design/sequence-diagrams.md`](./design/sequence-diagrams.md): runtime sequences for the five core flows, including transaction and outbox boundaries.
+- [`design/authorization-design.md`](./design/authorization-design.md): enforcement pipeline, permission catalog, and the permissions-matrix-as-test-fixture approach.
+
 ### Product
 - [`product/prd.md`](./product/prd.md): product problem, goals, success definition, audience, and guiding workflows.
 - [`product/v1-scorecard.md`](./product/v1-scorecard.md): V1 KPI definitions, thresholds, and review cadence.
@@ -133,7 +143,7 @@
 - [`system/google-bridge.md`](./system/google-bridge.md): one-way and outbound integration with Google Drive, Sheets, Forms, and Calendar.
 - [`system/notifications.md`](./system/notifications.md): notification channels (in-app, email, Zalo OA) and object-anchored comments.
 - [`system/deployment-topology.md`](./system/deployment-topology.md): runtime topology and deployment plan.
-- [`system/tech-stack.md`](./system/tech-stack.md): proposed implementation stack, search plan, and local-only AI approach.
+- [`system/tech-stack.md`](./system/tech-stack.md): accepted implementation stack, search plan, and local-only AI approach.
 
 ### Flows
 - [`flows/state-machines.md`](./flows/state-machines.md): source, node, review, and conflict lifecycle diagrams.
