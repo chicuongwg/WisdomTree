@@ -45,6 +45,8 @@ async function login(googleSub: string): Promise<string> {
   return cookie;
 }
 
+const daysAhead = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString();
+
 const asUser = (cookie: string, init?: RequestInit): RequestInit => ({
   ...init,
   headers: { ...(init?.headers ?? {}), cookie },
@@ -390,6 +392,9 @@ async function main() {
   ok("audit chain: editor_updater (draft)", acc.get("draft.save") === "editor_updater");
   ok("audit chain: approver_publisher (publish)", acc.get("node.publish") === "approver_publisher");
   ok("outbox tree.node.published written", (await outboxCount("tree.node.published", "nodeId", node.id)) === 1);
+  // The dispatcher runs void-async after the mutation returns; give the
+  // richer step-3 tick (preferences + deliveries) a moment to land.
+  await new Promise((r) => setTimeout(r, 1500));
   const { rows: uploaderNote } = await pg.query(
     `SELECT count(*)::int AS n FROM notifications
      WHERE event_type = 'tree.node.published' AND payload->>'nodeId' = $1`,
@@ -442,6 +447,234 @@ async function main() {
   );
   ok("audit node.merge written", (await auditCount("node.merge", dupNode.id)) === 1);
   ok("outbox tree.node.merged written", (await outboxCount("tree.node.merged", "nodeId", dupNode.id)) === 1);
+
+  // ---------- Proof 5: comments, notifications, deadlines ----------
+  // Comment on a visible node OK + mention notification; comment on a
+  // non-visible source → 404; preferences PATCH changes delivery channels;
+  // deadline create member OK / non-member 403; ICS 200 → 404 after revoke;
+  // deadline.approaching exactly once per (deadline, offset).
+  console.log("Proof 5 — comments, notifications, deadlines");
+  const settle = () => new Promise((r) => setTimeout(r, 1500)); // void dispatchOutbox() is async
+
+  // Idempotency: a previous run's preference PATCH must not leak into the
+  // default-matrix assertion below — reset stored preferences first.
+  await pg.query("DELETE FROM notification_preferences WHERE user_id = $1", [minhId]);
+
+  const { rows: visNode } = await pg.query(
+    "SELECT id FROM tree_nodes WHERE slug = 'ket-qua-khao-sat-thuc-dia-2025'",
+  );
+  const c1 = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        anchorType: "tree_node",
+        anchorId: visNode[0].id,
+        body: "Thảo luận proof 5: cần đối chiếu thêm bản đồ cổ.",
+        mentions: [minhId],
+      }),
+    }),
+  );
+  ok("comment on visible node → 201", c1.status === 201, `got ${c1.status}`);
+  const comment1 = (await c1.json()) as { id: string };
+  ok("audit comment.create written", (await auditCount("comment.create", comment1.id)) === 1);
+  ok("outbox comment.created written", (await outboxCount("comment.created", "commentId", comment1.id)) === 1);
+  const clist = await fetch(
+    `${BASE}/api/comments?anchorType=tree_node&anchorId=${visNode[0].id}`,
+    asUser(lan),
+  );
+  const clistBody = (await clist.json()) as Array<{ id: string }>;
+  ok("comment list includes seeded + new comment", clistBody.length >= 2 && clistBody.some((c) => c.id === comment1.id));
+
+  await settle();
+  const { rows: mentionNote } = await pg.query(
+    `SELECT id FROM notifications WHERE user_id = $1 AND event_type = 'comment.created'
+       AND payload->>'commentId' = $2`,
+    [minhId, comment1.id],
+  );
+  ok("mention notification created for Minh", mentionNote.length === 1, `got ${mentionNote.length}`);
+  const { rows: del1 } = await pg.query(
+    "SELECT channel, state FROM notification_deliveries WHERE notification_id = $1 ORDER BY channel",
+    [mentionNote[0].id],
+  );
+  ok(
+    "default matrix deliveries (in_app + zalo, sent)",
+    del1.length === 2 &&
+      del1[0].channel === "in_app" &&
+      del1[1].channel === "zalo" &&
+      del1.every((d: { state: string }) => d.state === "sent"),
+    JSON.stringify(del1),
+  );
+
+  // Non-visible anchor delegates to the anchor's read scope → 404, not 403.
+  const c404 = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ anchorType: "source", anchorId: hiddenId, body: "không thấy được" }),
+    }),
+  );
+  ok("comment on non-visible source → 404", c404.status === 404, `got ${c404.status}`);
+  ok(
+    "comment list on non-visible source → 404",
+    (await fetch(`${BASE}/api/comments?anchorType=source&anchorId=${hiddenId}`, asUser(lan))).status === 404,
+  );
+
+  // Preferences PATCH: Minh moves comment.created to email only; the next
+  // mention must produce exactly one email delivery row.
+  const prefPatch = await fetch(
+    `${BASE}/api/notifications/preferences`,
+    asUser(minh, {
+      method: "PATCH",
+      headers: json,
+      body: JSON.stringify([{ eventType: "comment.created", channels: ["email"] }]),
+    }),
+  );
+  ok("preferences PATCH → 200", prefPatch.status === 200, `got ${prefPatch.status}`);
+  const prefBody = (await prefPatch.json()) as Array<{ eventType: string; channels: string[] }>;
+  const commentPref = prefBody.find((p) => p.eventType === "comment.created");
+  ok("PATCH result reflects override", JSON.stringify(commentPref?.channels) === '["email"]');
+  const c2 = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        anchorType: "tree_node",
+        anchorId: visNode[0].id,
+        body: "Thảo luận proof 5 (lần hai, sau khi đổi kênh).",
+        mentions: [minhId],
+        parentCommentId: comment1.id,
+      }),
+    }),
+  );
+  ok("threaded reply comment → 201", c2.status === 201, `got ${c2.status}`);
+  const comment2 = (await c2.json()) as { id: string; parentCommentId: string };
+  ok("reply carries parentCommentId", comment2.parentCommentId === comment1.id);
+  await settle();
+  const { rows: note2 } = await pg.query(
+    `SELECT id FROM notifications WHERE user_id = $1 AND payload->>'commentId' = $2`,
+    [minhId, comment2.id],
+  );
+  ok("second mention notification created", note2.length === 1);
+  const { rows: del2 } = await pg.query(
+    "SELECT channel, state FROM notification_deliveries WHERE notification_id = $1",
+    [note2[0].id],
+  );
+  ok(
+    "deliveries follow the changed preference (email only, sent)",
+    del2.length === 1 && del2[0].channel === "email" && del2[0].state === "sent",
+    JSON.stringify(del2),
+  );
+
+  // Deadlines: member create OK; non-member create → 403 (write rule); the
+  // non-member list never shows the other space's deadline (read rule).
+  const dlCreate = await fetch(
+    `${BASE}/api/deadlines`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        spaceId: librarySpace[0].id,
+        title: "Hạn nộp bản thảo proof 5",
+        type: "report",
+        dueAt: daysAhead(30),
+      }),
+    }),
+  );
+  ok("deadline create by space member → 201", dlCreate.status === 201, `got ${dlCreate.status}`);
+  const dl = (await dlCreate.json()) as { id: string };
+  ok("audit deadline.create written", (await auditCount("deadline.create", dl.id)) === 1);
+  ok("outbox deadline.created written", (await outboxCount("deadline.created", "deadlineId", dl.id)) === 1);
+  const { rows: otherSpace } = await pg.query(
+    "SELECT id FROM spaces WHERE name = 'Kho Dự Án Cộng Đồng'",
+  );
+  const dlForbidden = await fetch(
+    `${BASE}/api/deadlines`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        spaceId: otherSpace[0].id,
+        title: "không được phép",
+        type: "report",
+        dueAt: daysAhead(30),
+      }),
+    }),
+  );
+  ok("deadline create by non-member → 403", dlForbidden.status === 403, `got ${dlForbidden.status}`);
+  const lanDeadlines = (await (await fetch(`${BASE}/api/deadlines`, asUser(lan))).json()) as Array<{
+    spaceId: string;
+  }>;
+  ok(
+    "non-member deadline list excludes space B",
+    lanDeadlines.length > 0 && !lanDeadlines.some((d) => d.spaceId === otherSpace[0].id),
+  );
+
+  // ICS feed: token-authenticated, no session; revoked token → 404.
+  const { rows: lanRow } = await pg.query("SELECT id FROM users WHERE google_sub = 'dev:lan'");
+  const { rows: tokenRow } = await pg.query(
+    // Idempotency: un-revoke first — a previous run's revocation check must not
+    // leave this run without a live token.
+    "UPDATE calendar_tokens SET revoked_at = NULL WHERE user_id = $1 RETURNING token",
+    [lanRow[0].id],
+  );
+  const ics = await fetch(`${BASE}/calendar/${tokenRow[0].token}.ics`);
+  ok("ICS URL returns 200 without a session", ics.status === 200, `got ${ics.status}`);
+  ok(
+    "ICS content type is text/calendar",
+    (ics.headers.get("content-type") ?? "").startsWith("text/calendar"),
+    ics.headers.get("content-type") ?? "",
+  );
+  const icsBody = await ics.text();
+  ok(
+    "ICS body has the seeded deadline as a VEVENT",
+    icsBody.includes("BEGIN:VCALENDAR") && icsBody.includes("Báo cáo tổng kết quý III"),
+  );
+  await pg.query("UPDATE calendar_tokens SET revoked_at = now() WHERE token = $1", [tokenRow[0].token]);
+  ok(
+    "revoked token → 404",
+    (await fetch(`${BASE}/calendar/${tokenRow[0].token}.ics`)).status === 404,
+  );
+
+  // Reminder idempotency: the seeded 5-days-out deadline crossed only its
+  // "7 days" offset; ticks during this run must have emitted
+  // deadline.approaching EXACTLY once for that (deadline, offset).
+  const { rows: nearDl } = await pg.query(
+    "SELECT id FROM deadlines WHERE title = 'Báo cáo tổng kết quý III'",
+  );
+  const { rows: reminders } = await pg.query(
+    `SELECT "offset"::text AS off FROM deadline_reminders WHERE deadline_id = $1`,
+    [nearDl[0].id],
+  );
+  ok("deadline_reminders dedup row exists (7 days only)", reminders.length === 1 && reminders[0].off === "7 days", JSON.stringify(reminders));
+  ok(
+    "outbox deadline.approaching exactly once",
+    (await outboxCount("deadline.approaching", "deadlineId", nearDl[0].id)) === 1,
+  );
+  // Another mutation triggers another tick; the count must not grow.
+  const c3 = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ anchorType: "deadline", anchorId: dl.id, body: "Kiểm tra nhắc hạn không lặp." }),
+    }),
+  );
+  ok("comment on own-space deadline → 201", c3.status === 201, `got ${c3.status}`);
+  await settle();
+  ok(
+    "deadline.approaching still exactly once after another tick",
+    (await outboxCount("deadline.approaching", "deadlineId", nearDl[0].id)) === 1,
+  );
+  const { rows: approachNotes } = await pg.query(
+    `SELECT count(*)::int AS n FROM notifications
+     WHERE event_type = 'deadline.approaching' AND payload->>'deadlineId' = $1`,
+    [nearDl[0].id],
+  );
+  ok("space members notified of approaching deadline", approachNotes[0].n >= 3, `got ${approachNotes[0].n}`);
 
   console.log(`\nAll proofs passed (${passed} checks).`);
 }

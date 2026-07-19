@@ -2,6 +2,8 @@ import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCatalogItem } from "@/modules/catalog/service";
 import { itemStatusLabel, loanStateLabel, T } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
+import { CommentsSection } from "@/app/components/comments-section";
+import { listMentionableUsers } from "@/modules/notify/service";
 
 // Screen: Catalog Item Detail (`/catalog/:id`) — member view with loan request.
 export default async function CatalogItemDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -53,6 +55,15 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
           disabled={item.status !== "available" || Boolean(item.activeLoan)}
         />
       </div>
+      {item.activeLoan && (
+        // Loan context: comments anchor to the ACTIVE loan ticket, so the
+        // discussion stays part of that borrow-return record.
+        <CommentsSection
+          anchorType="loan_ticket"
+          anchorId={item.activeLoan.id}
+          mentionOptions={await listMentionableUsers()}
+        />
+      )}
     </main>
   );
 }

@@ -41,6 +41,23 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   // here as module.action pending a catalog addendum — flagged in the report.
   "storage.curation.assign": { roles: ["admin_op"], scope: "global" },
   "storage.gap.triage": { roles: ["admin_op"], scope: "global" },
+  // --- Notify + PM modules (authorization-design.md § Permission Catalog) ---
+  // notify.comment.create's catalog scope is "anchor (delegates to the
+  // anchor's read permission)": the role gate lives here; the anchor-scope
+  // delegation is resolveAnchor() in notify/service.ts, which calls the
+  // anchor object's own read authorize (404 on non-visible anchors).
+  "notify.comment.create": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "notify.preferences.manage": { roles: ["user", "editor", "admin_op"], scope: "self" },
+  "pm.deadline.read": { roles: ["user", "editor", "admin_op"], scope: "space" },
+  "pm.deadline.edit": { roles: ["user", "editor", "admin_op"], scope: "space" },
+  // pm.board.manage: admin_op, with "editor: owned-or-assigned task updates"
+  // (catalog note) — modeled as owned-or-assigned so an editor passes for
+  // tasks they created or are assigned, and admin_op bypasses on role.
+  "pm.board.manage": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
+  // Not in the catalog table verbatim: opening the board read surface
+  // (openapi GET /board says "Editor, Admin/Op") — keyed pending a catalog
+  // addendum like storage.curation.assign; flagged in the report.
+  "pm.board.read": { roles: ["editor", "admin_op"], scope: "global" },
 };
 
 export type PermissionKey = keyof typeof CATALOG;

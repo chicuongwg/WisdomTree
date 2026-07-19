@@ -1,6 +1,8 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getSourceDetail } from "@/modules/storage/service";
+import { listMentionableUsers } from "@/modules/notify/service";
 import { extractionLabel, T, trustLabel } from "@/lib/vi";
+import { CommentsSection } from "@/app/components/comments-section";
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
 // download only, never operational review internals (screen-inventory.md).
@@ -10,6 +12,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
   const { id } = await params;
   const source = await orNotFound(() => getSourceDetail(toPrincipal(user), id));
   const v = source.currentVersion;
+  const mentionOptions = await listMentionableUsers();
 
   return (
     <main className="page">
@@ -68,6 +71,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           </p>
         )}
       </div>
+      <CommentsSection anchorType="source" anchorId={source.id} mentionOptions={mentionOptions} />
     </main>
   );
 }

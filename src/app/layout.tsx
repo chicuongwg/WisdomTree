@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/modules/auth/session";
+import { unreadCount } from "@/modules/notify/service";
 import { T, roleLabel } from "@/lib/vi";
 import { LogoutButton } from "./components/logout-button";
 
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
+  const unread = user
+    ? await unreadCount({ userId: user.id, role: user.role, spaceIds: user.spaceIds })
+    : 0;
   return (
     <html lang="vi">
       <body>
@@ -27,6 +31,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <Link href="/source/intake">{T.sourceIntake}</Link>
               <Link href="/source/mine">{T.mySubmissions}</Link>
               <Link href="/catalog">{T.catalog}</Link>
+              <Link href="/deadlines">{T.deadline}</Link>
+              {(user.role === "editor" || user.role === "admin_op") && (
+                <Link href="/board">{T.board}</Link>
+              )}
               {user.role === "admin_op" && (
                 <>
                   <Link href="/source/inbox">{T.sourceInbox}</Link>
@@ -38,6 +46,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           )}
           {user && (
             <div className="who">
+              <Link
+                href="/notifications"
+                className="bell"
+                aria-label={`${T.notificationCenter}${unread > 0 ? ` (${unread} ${T.unread.toLowerCase()})` : ""}`}
+              >
+                {T.notificationCenter}
+                {unread > 0 && <span className="count">{unread}</span>}
+              </Link>
               <span>
                 {user.displayName} · {roleLabel[user.role]}
               </span>

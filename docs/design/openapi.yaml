@@ -624,7 +624,7 @@ components:
               title: {type: string}
               type: {type: string, enum: [conference, funding, report, milestone]}
               dueAt: {type: string, format: date-time}
-              reminderOffsets: {type: array, items: {type: string}, description: ISO-8601 durations before dueAt}
+              reminderOffsets: {type: array, items: {type: string}, description: Postgres interval strings before dueAt (e.g. "7 days", "1 day")}
               links: {type: array, items: {type: object, properties: {targetType: {type: string}, targetId: {type: string, format: uuid}}}}
               expectedVersion: {type: integer}
   schemas:

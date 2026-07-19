@@ -5,6 +5,8 @@ import { linkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
+import { CommentsSection } from "@/app/components/comments-section";
+import { listMentionableUsers } from "@/modules/notify/service";
 
 // Screen: Node Detail (`/tree/node/:id`) — the primary reading surface with
 // verification badge and provenance summary (user-screen-specs.md).
@@ -16,6 +18,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const isAdmin = user.role === "admin_op";
   const canEdit = isAdmin || (user.role === "editor" && node.createdBy === user.id);
   const candidates = isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
+  const mentionOptions = await listMentionableUsers();
 
   return (
     <main className="page">
@@ -42,6 +45,9 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
       <div className="with-side">
         <div>
           <Markdown content={node.contentMd} />
+          <div style={{ marginTop: "1rem" }}>
+            <CommentsSection anchorType="tree_node" anchorId={node.id} mentionOptions={mentionOptions} />
+          </div>
         </div>
         <aside>
           <div className="panel">

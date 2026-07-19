@@ -79,6 +79,32 @@ export const T = {
   contentMd: "Nội dung (Markdown)", // NEW
   suggestedBranch: "Chuyên đề đề xuất", // NEW
   preview: "Xem trước", // NEW
+  // Notify + PM terms; Deadline "Hạn chót" and Comment "Thảo luận" come from
+  // vocabulary-vi.md § Term Map, the rest are NEW pending humanities review.
+  deadline: "Hạn chót",
+  comments: "Thảo luận",
+  addComment: "Gửi thảo luận", // NEW
+  reply: "Trả lời", // NEW
+  mentionMembers: "Nhắc đến thành viên", // NEW
+  notificationCenter: "Thông báo", // NEW
+  markRead: "Đánh dấu đã đọc", // NEW
+  unread: "Chưa đọc", // NEW
+  notificationPrefs: "Tùy chọn nhận thông báo", // NEW
+  board: "Bảng công việc", // NEW
+  task: "Công việc", // NEW
+  createTask: "Thêm công việc", // NEW
+  achievement: "Thành quả", // NEW
+  createDeadline: "Tạo hạn chót", // NEW
+  editDeadline: "Sửa hạn chót", // NEW
+  deadlineType: "Loại hạn chót", // NEW
+  dueAtLabel: "Đến hạn", // NEW
+  reminderOffsets: "Nhắc trước", // NEW
+  checklistAndDocs: "Việc và tài liệu liên quan", // NEW
+  myCalendar: "Lịch của tôi", // NEW
+  calendarSubscribeHint: "Dán đường dẫn này vào ứng dụng lịch (Google Calendar, Outlook…) để tự động nhận các hạn chót.", // NEW
+  project: "Kho dự án", // NEW
+  allProjects: "Tất cả kho dự án", // NEW
+  noAssignee: "Chưa giao", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from
@@ -159,6 +185,41 @@ export const linkTypeLabel: Record<string, string> = {
   supports: "Bổ trợ", // NEW
   contrasts: "Đối chiếu", // NEW
   part_of: "Thuộc về", // NEW
+};
+
+export const deadlineTypeLabel: Record<string, string> = {
+  conference: "Hội thảo", // NEW
+  funding: "Tài trợ", // NEW
+  report: "Báo cáo", // NEW
+  milestone: "Cột mốc", // NEW
+};
+
+export const taskStateLabel: Record<string, string> = {
+  todo: "Cần làm", // NEW
+  doing: "Đang làm", // NEW
+  done: "Hoàn thành", // NEW
+  archived: "Đã lưu trữ",
+};
+
+export const channelLabel: Record<string, string> = {
+  in_app: "Trong ứng dụng", // NEW
+  email: "Email", // NEW
+  zalo: "Zalo", // NEW
+};
+
+// One user-facing sentence per notification event type (matrix events).
+export const notificationEventLabel: Record<string, string> = {
+  "source.processing_failed": "Tư liệu bạn gửi không xử lý được (tệp gốc vẫn được lưu)", // NEW
+  "source.assigned": "Bạn được giao việc hiệu đính", // NEW
+  "source.ready_for_review": "Có tư liệu chờ duyệt xuất bản", // NEW
+  "tree.node.published": "Tư liệu bạn gửi đã được xuất bản lên cây tri thức", // NEW
+  "loan.approved": "Yêu cầu mượn sách đã được duyệt", // NEW
+  "loan.borrowed": "Bạn đã nhận sách; nhớ hạn trả", // NEW
+  "loan.returned": "Phiếu mượn đã ghi nhận trả sách", // NEW
+  "loan.declined": "Yêu cầu mượn sách bị từ chối", // NEW
+  "loan.overdue": "Phiếu mượn đã quá hạn trả", // NEW
+  "deadline.approaching": "Sắp đến hạn chót của dự án", // NEW
+  "comment.created": "Bạn được nhắc đến trong một thảo luận", // NEW
 };
 
 export const roleLabel: Record<string, string> = {

@@ -8,7 +8,7 @@
 //
 // Re-runnable: truncates all demo tables first (TRUNCATE bypasses the
 // append-only row triggers by design; those triggers guard app-path mutations).
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Client } from "pg";
@@ -33,7 +33,11 @@ async function main() {
                 tree_nodes, branches, review_tasks, conflicts,
                 curations, corrected_texts, markdown_drafts,
                 text_chunks, source_versions, sources,
-                branch_gap_requests, notifications, audit_events, outbox_events,
+                branch_gap_requests, comments, notification_deliveries,
+                notification_preferences, notifications,
+                deadline_reminders, deadline_links, deadlines,
+                tasks, achievements, calendar_tokens,
+                audit_events, outbox_events,
                 space_members, spaces, users CASCADE`,
     );
 
@@ -237,8 +241,10 @@ async function main() {
           "# Lễ hội đình làng: phác thảo ban đầu\n\nTrang tạo thủ công, chưa gắn tư liệu dẫn chứng.\n\n- Cần bổ sung ảnh chụp và lời kể của người cao tuổi.",
       },
     ];
+    const nodeIdBySlug: Record<string, string> = {};
     for (const def of nodeDefs) {
       const nodeId = randomUUID();
+      nodeIdBySlug[def.slug] = nodeId;
       await client.query(
         `INSERT INTO tree_nodes (id, branch_id, title, slug, content_md, verification, publish, created_by)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
@@ -358,18 +364,73 @@ async function main() {
 
     // 1 active loan: Lan is borrowing item 1, approved and handed over by Hương.
     const borrowedItem = itemIds[0];
-    await client.query(
+    const { rows: loanRows } = await client.query(
       `INSERT INTO loan_tickets
          (item_id, borrower_id, state, requested_at, approved_at, borrowed_at, due_at, handled_by)
-       VALUES ($1,$2,'borrowed',$3,$4,$5,$6,$7)`,
+       VALUES ($1,$2,'borrowed',$3,$4,$5,$6,$7) RETURNING id`,
       [borrowedItem, lan.id, daysFromNow(-3), daysFromNow(-2), daysFromNow(-2), daysFromNow(5), huong.id],
     );
+    const activeLoanId = loanRows[0].id;
     await client.query(`UPDATE catalog_items SET status = 'borrowed' WHERE id = $1`, [borrowedItem]);
+
+    // --- PM: 3 deadlines across the two team spaces (one due within 7 days so
+    // the 7-day reminder offset fires on the next dispatcher tick), with
+    // checklist/document links, 2 board tasks, calendar tokens per user ---
+    const dlReport = randomUUID();
+    const dlFunding = randomUUID();
+    const dlConference = randomUUID();
+    await client.query(
+      `INSERT INTO deadlines (id, space_id, title, type, due_at, created_by) VALUES
+         ($1,$4,'Báo cáo tổng kết quý III','report',$7,$6),
+         ($2,$5,'Hồ sơ xin tài trợ dự án cộng đồng','funding',$8,$6),
+         ($3,$4,'Hội thảo tri thức bản địa','conference',$9,$6)`,
+      [dlReport, dlFunding, dlConference, library, teamCommunity, huong.id,
+       daysFromNow(5), daysFromNow(20), daysFromNow(45)],
+    );
+
+    const taskDigitize = randomUUID();
+    const taskCatalog = randomUUID();
+    await client.query(
+      `INSERT INTO tasks (id, title, state, assigned_to, created_by) VALUES
+         ($1,'Số hóa sổ ghi chép cũ trước mùa mưa','doing',$3,$4),
+         ($2,'Soạn danh mục sách bổ sung cho thư viện','todo',NULL,$4)`,
+      [taskDigitize, taskCatalog, minh.id, huong.id],
+    );
+
+    // Checklist/documents on the near deadline: a task and a stored source.
+    await client.query(
+      `INSERT INTO deadline_links (deadline_id, target_type, target_id) VALUES
+         ($1,'task',$2),
+         ($1,'source',$3)`,
+      [dlReport, taskDigitize, sourceByTitle["Báo cáo khảo sát thực địa 2025"].sourceId],
+    );
+
+    // Calendar tokens: one active per user (ICS feed, no session).
+    for (const u of users) {
+      await client.query(
+        `INSERT INTO calendar_tokens (token, user_id) VALUES ($1,$2)`,
+        [randomBytes(24).toString("base64url"), u.id],
+      );
+    }
+
+    // --- Notify: 2 comments — one threaded on a published node, one on the
+    // active loan ticket mentioning the librarian ---
+    await client.query(
+      `INSERT INTO comments (anchor_type, anchor_id, author_id, body) VALUES
+         ('tree_node',$1,$2,'Phần kết luận nên bổ sung số liệu của đợt khảo sát bổ sung tháng 5.')`,
+      [nodeIdBySlug["ket-qua-khao-sat-thuc-dia-2025"], lan.id],
+    );
+    await client.query(
+      `INSERT INTO comments (anchor_type, anchor_id, author_id, body, mentions) VALUES
+         ('loan_ticket',$1,$2,'Em xin gia hạn thêm một tuần vì chưa đọc xong phần phụ lục.',$3)`,
+      [activeLoanId, lan.id, `{${huong.id}}`],
+    );
 
     await client.query("COMMIT");
     console.log(
       "Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan, " +
-        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 1 curation ready_for_review (queue non-empty), 1 gap request.",
+        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 1 curation ready_for_review (queue non-empty), 1 gap request, " +
+        "3 deadlines (1 due in 5 days), 2 tasks, 2 comments (1 with mention), calendar tokens per user.",
     );
   } catch (err) {
     await client.query("ROLLBACK");
