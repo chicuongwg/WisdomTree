@@ -120,6 +120,7 @@
 - [`requirements/non-functional-requirements.md`](./requirements/non-functional-requirements.md): reliability, integrity, audit, security, performance, backup, observability, and operator coverage targets.
 - [`requirements/permissions-matrix.md`](./requirements/permissions-matrix.md): role permissions across key product surfaces.
 - [`requirements/acceptance-criteria.md`](./requirements/acceptance-criteria.md): system-level and module-level release acceptance criteria.
+- [`requirements/intake-constraints.md`](./requirements/intake-constraints.md): file size limits, accepted formats, and upload safety rules.
 
 ### System
 - [`system/system-context.md`](./system/system-context.md): system boundary, actors, and context diagram.
@@ -131,6 +132,7 @@
 - [`system/google-bridge.md`](./system/google-bridge.md): one-way and outbound integration with Google Drive, Sheets, Forms, and Calendar.
 - [`system/notifications.md`](./system/notifications.md): notification channels (in-app, email, Zalo OA) and object-anchored comments.
 - [`system/deployment-topology.md`](./system/deployment-topology.md): runtime topology and deployment plan.
+- [`system/tech-stack.md`](./system/tech-stack.md): proposed implementation stack, search plan, and local-only AI approach.
 
 ### Flows
 - [`flows/state-machines.md`](./flows/state-machines.md): source, node, review, and conflict lifecycle diagrams.

@@ -86,6 +86,15 @@
 - Discussion attaches to objects as comments; outbound alerts go to Zalo OA and email; real-time chat stays on Messenger and Zalo and is not built.
 - The UI is bilingual Vietnamese/English with Vietnamese as the default; documentation stays English.
 
+### Technology and AI
+- Proposed stack: TypeScript full-stack app, Python worker, PostgreSQL, Redis, S3-compatible storage, Google OIDC; see [`../system/tech-stack.md`](../system/tech-stack.md).
+- Search is PostgreSQL full-text in V1; semantic finding via pgvector plus local embeddings is Phase 1.5.
+- AI is local-only through Ollama with no paid API dependency, and is additive; the system stays fully functional with all external AI disabled.
+- Extracted text is stored as position-referenced chunks to support future embeddings and cited answers without re-extraction.
+- Ownership defaults to the creator and transfers only by `Admin/Op` assignment.
+- Concurrent edits use optimistic locking (version check on save); stale saves are rejected, not overwritten.
+- Intake is bounded by a size limit and a safety scan before an item becomes `stored`; see [`../requirements/intake-constraints.md`](../requirements/intake-constraints.md).
+
 ### Runtime and Operations
 - Web/API, PostgreSQL, and Redis run on the primary VPS.
 - OCR/AI worker runs on a separate machine.

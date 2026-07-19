@@ -65,7 +65,7 @@
 - Export node Markdown to `docx` and `pdf` as derived documents.
 
 ### Discovery and Navigation
-- Full-text and semantic search across tree and space-scoped source storage, with clear filters.
+- Full-text search across tree and space-scoped source storage, with clear filters. Semantic search is deferred to Phase 1.5 via local embeddings and pgvector.
 - Dedicated graph surface plus contextual relation views.
 - User-facing node pages with branch context, trust badges, and source excerpts.
 

@@ -27,6 +27,9 @@
 - Future ideas that matter architecturally are visible without polluting current implementation documents.
 
 ## Deferred Items
+- AI Librarian, all on local models with no paid API dependency:
+  - Phase 1.5: semantic document finding via local embeddings stored in pgvector.
+  - Phase 1.5 or 2: question answering over stored documents with answers that cite and quote sources through the existing provenance and excerpt model.
 - Explicit split of `Admin/Op` into `Reviewer`, `Curator`, and `Operator`.
 - Richer source preview across more file types.
 - Mobile or tablet-first optimized experience.

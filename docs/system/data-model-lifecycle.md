@@ -66,6 +66,7 @@
 ### Source Version
 - Immutable representation of one uploaded file and its generated artifacts.
 - Owns original file reference, raw text reference, corrected text version chain, and preview references.
+- Extracted text is stored as position-referenced chunks (page or paragraph), not one opaque blob, so future embeddings and cited answers can point to an exact location without re-extracting the source.
 
 ### Branch-gap Request
 - Non-file-backed intake record describing a missing concept, branch gap, or desired expansion.
@@ -162,9 +163,16 @@
 - Audit must preserve the merge decision and operator identity.
 
 ### Conflict Handling
+- Concurrent edits are detected by optimistic locking: each mutable record carries a version, and a save that targets a stale version is rejected rather than overwriting.
+- A rejected save surfaces a conflict instead of silently losing work.
 - Conflicts do not auto-merge in V1.
 - Conflicts must preserve both competing versions until Admin/Op resolves them.
 - Resolution must record outcome and chosen canonical version.
+
+## Ownership Definition
+- Ownership of a tree node, branch, or source-derived work item defaults to its creator.
+- Ownership can be transferred or granted only by `Admin/Op` assignment; an `Editor` cannot self-assign unowned work.
+- "Owned or assigned", used throughout the permission model, means the current user is the creator or holds an explicit `Admin/Op` assignment.
 
 ## Accountability Rules
 - Every source-derived publication must remain traceable to:

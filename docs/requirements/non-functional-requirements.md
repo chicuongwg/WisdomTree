@@ -96,6 +96,16 @@
 - Import jobs are idempotent and never leave partial or corrupt records; failures surface as operational follow-up.
 - The Calendar ICS feed requires no per-user Google OAuth and reflects deadline changes within one feed refresh interval.
 
+## AI and Local Models
+- All AI runs on local models via Ollama on the worker host; there is no paid AI API dependency.
+- The system must be fully functional with every external AI service switched off: storage, catalog, knowledge, and full-text search never depend on AI.
+- AI features are additive: OCR support, indexing, semantic finding, and cited answers may enhance the product but must never block or gate a core workflow.
+- Extracted text is stored as position-referenced chunks so future embeddings and cited answers can reference an exact location without re-extraction.
+
+## Intake Limits
+- File intake is bounded by size and safety checks before an item becomes `stored`; see [`intake-constraints.md`](./intake-constraints.md).
+- Uploads that fail size or safety checks are rejected or quarantined, never partially stored.
+
 ## Security Baseline
 - All authenticated access must flow through Google OIDC.
 - Sensitive routes require backend authorization, not just UI hiding.
