@@ -41,6 +41,9 @@
 | My Submissions | `/source/mine` | User | User, Editor, Admin/Op | Source Repo |
 | Library | `/library` | User | User, Editor, Admin/Op | Source Repo |
 | Stored Item Detail | `/library/:id` | User | Space members, Admin/Op | Source Repo |
+| Catalog | `/catalog` | User | Library-space members, Admin/Op | Catalog |
+| Catalog Item Detail | `/catalog/:id` | User | Library-space members, Admin/Op | Catalog |
+| Librarian Desk | `/catalog/admin` | Admin/Op | Admin/Op | Circulation |
 | Create Branch | `/tree/branch/new` | Editor | Editor, Admin/Op | Tree |
 | Edit Node | `/tree/node/:id/edit` | Editor | Editor, Admin/Op | Tree |
 | Assigned Source Task | `/source/task/:id` | Editor | Assigned Editor, Admin/Op | Source Repo |
@@ -55,6 +58,7 @@ Notes:
 - `My Submissions` is the unified intake history for both file-backed uploads and `branch-gap requests`.
 - `Source Detail` is type-aware and supports both file-backed evidence review and `branch-gap request` triage.
 - `Library` and `Stored Item Detail` are space-scoped: they list and open only items from the viewer's spaces. `Stored Item Detail` is the member view (metadata, preview, download) and never exposes operational review internals.
+- `Catalog` and `Catalog Item Detail` cover the physical library; they are scoped to the library space and let members browse and request loans. `Librarian Desk` is the Admin/Op circulation surface for approving, lending, returning, and managing catalog items.
 
 ## Screen Grouping
 
@@ -63,6 +67,8 @@ Notes:
 - Search
 - Library
 - Stored Item Detail
+- Catalog
+- Catalog Item Detail
 - Node Detail
 - Branch Hub
 - Graph Explorer
@@ -80,4 +86,5 @@ Notes:
 - Source Detail
 - Review Queue
 - Publish Review
+- Librarian Desk
 - Admin Console

@@ -87,6 +87,18 @@
 - `GET /api/notifications`
 - `POST /api/notifications/:notificationId/read`
 
+### Catalog and Circulation
+- `GET /api/catalog`
+- `POST /api/catalog`
+- `POST /api/catalog/import`
+- `GET /api/catalog/:itemId`
+- `PATCH /api/catalog/:itemId`
+- `POST /api/catalog/:itemId/loan/request`
+- `POST /api/catalog/loan/:ticketId/approve`
+- `POST /api/catalog/loan/:ticketId/decline`
+- `POST /api/catalog/loan/:ticketId/borrow`
+- `POST /api/catalog/loan/:ticketId/return`
+
 ### Board and Operations
 - `GET /api/board`
 - `POST /api/tasks`
@@ -152,6 +164,12 @@
 - `tree.node.merged`
 - `export.completed`
 - `export.failed`
+- `catalog.item.created`
+- `loan.requested`
+- `loan.approved`
+- `loan.borrowed`
+- `loan.overdue`
+- `loan.returned`
 
 ## External Integration Assumptions
 - Google OIDC supplies user identity claims consumed by the app.

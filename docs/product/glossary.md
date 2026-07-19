@@ -58,3 +58,6 @@
 | Publish Review | The final decision surface where `Admin/Op` approves, rejects, or returns a publishable Markdown draft. |
 | Content Repo | The private Git repository that receives exported tree Markdown snapshots for backup and validation. |
 | Document Export | Rendering node Markdown into common team formats such as `docx` or `pdf` through a Pandoc-class converter, producing derived artifacts only. |
+| Catalog Item | One physical book copy in the library, holding an auto-issued unique identifier, cover title, author, location, and status, but not book content. |
+| Loan Ticket | One borrow-return cycle for a `Catalog Item`, tracking the borrower, the handling librarian, and due and return timestamps. |
+| Librarian | The role function, held by `Admin/Op` for the library space, that approves loans and manages the physical catalog. |

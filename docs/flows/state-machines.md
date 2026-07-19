@@ -98,6 +98,47 @@ Interpretation:
 - `rejected`: the request was reviewed and not accepted for active knowledge work.
 - `archived`: historical record retained after resolution or as a direct triage outcome.
 
+## Catalog Item Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> available
+    available --> borrowed
+    borrowed --> available
+    available --> repair
+    repair --> available
+    available --> lost
+    borrowed --> lost
+```
+
+Interpretation:
+- `available`: physical copy in the collection and free to borrow.
+- `borrowed`: currently out on an active loan ticket.
+- `repair`: temporarily withdrawn for maintenance.
+- `lost`: recorded as missing; retained in history, not borrowable.
+- `available <-> borrowed` is driven by the loan lifecycle; other transitions are librarian actions.
+
+## Loan Ticket Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> requested
+    requested --> approved
+    requested --> declined
+    approved --> borrowed
+    borrowed --> returned
+    borrowed --> overdue
+    overdue --> returned
+```
+
+Interpretation:
+- `requested`: a member asked to borrow a catalog item.
+- `approved`: a librarian approved and reserved the item.
+- `declined`: the request was not approved; the ticket closes without a loan.
+- `borrowed`: the item was handed over and `due_at` is set.
+- `overdue`: a borrowed loan passed its due date; it stays a loan until returned and drives a reminder.
+- `returned`: the item came back and returns to `available`.
+
 ## Node Verification Lifecycle
 
 ```mermaid

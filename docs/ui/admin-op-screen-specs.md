@@ -107,6 +107,22 @@
   - branch progress view
   - achievement log summary
 
+### Librarian Desk
+- Goal:
+  - let Admin/Op run the physical library: manage the catalog and handle borrow-return circulation
+- Key regions:
+  - catalog table with identifier, title, author, location, and status
+  - add-item and spreadsheet-import actions
+  - loan queue with pending requests and active loans
+  - overdue highlight
+- Actions:
+  - approve or decline a loan request
+  - mark borrowed and mark returned
+  - edit a catalog item; mark lost or in repair
+  - link a digitized source to a catalog item
+- States:
+  - loading, empty, error, access denied
+
 ### Admin Console
 - Goal:
   - hold operational and system-level controls

@@ -90,6 +90,14 @@
 - Branch work can be represented with tasks and basic completion status.
 - Achievement entries can be recorded and surfaced in branch context.
 
+### Catalog and Circulation
+- A librarian can add a book and the system assigns a stable unique identifier.
+- The catalog can be bulk-loaded from a spreadsheet, with failed rows reported.
+- Library-space members can browse and search the catalog and request a loan on an available copy.
+- A loan can move through request, approve, borrow, and return, and overdue loans are visible.
+- A digitized source can be linked to its catalog item while both records stay distinct.
+- Catalog and circulation actions record actor and timestamps for audit.
+
 ### Operations and Recovery
 - Operational surfaces expose failed jobs, queue age, backup status, and publish failures clearly enough for `Admin/Op`.
 - Restore drill results can be reviewed against the `1 business day` and `4h` recovery targets.

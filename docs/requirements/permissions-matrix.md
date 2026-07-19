@@ -63,6 +63,12 @@
 | Manage tags and taxonomy | No | Limited suggestion only | Yes |
 | Manage operational board | No | Limited task updates on owned or assigned work | Yes |
 | Export node Markdown to docx or pdf | Yes | Yes | Yes |
+| Browse and search library catalog | Member spaces only | Member spaces only | Yes |
+| Request to borrow a catalog item | Yes | Yes | Yes |
+| Approve or decline a loan, lend, and mark returned | No | No | Yes |
+| Add, edit, or import catalog items | No | No | Yes |
+| Mark catalog item lost or in repair | No | No | Yes |
+| Link a digitized source to a catalog item | No | No | Yes |
 | Manage spaces and membership | No | No | Yes |
 | Trigger export | No | No | Yes |
 | View backup and system health | No | No | Yes |
@@ -71,4 +77,5 @@
 - Users may submit new source items or `branch-gap requests` and track their own submission history. Storage visibility is space-scoped: users browse, search, and download stored items only within spaces they belong to, never across all spaces.
 - Editors inherit all `User` capabilities and may modify source-derived working content only when the item is owned by them or explicitly assigned to them.
 - Admin/Op is the only role with trust, archive, merge, publish, tree-export, space-management, and cross-space download authority in V1.
+- Library circulation approval and catalog management are held by `Admin/Op` acting as the library space's librarian; library-space members may browse the catalog and request loans.
 - Audit and incident investigation must be able to distinguish uploader, editor/updater, and approver/publisher actions from this permission model.

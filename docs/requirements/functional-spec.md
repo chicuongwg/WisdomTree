@@ -247,3 +247,30 @@
 - Authenticated users see only the surfaces allowed by their role.
 - Review and publish tasks trigger actionable notifications.
 - Route guards, backend authorization, and UI visibility align on the same permission model.
+
+## Capability 11: Physical Catalog and Circulation
+
+### User Stories
+- As a librarian, I can add a physical book to the catalog and have the system assign it a unique identifier so I can label and find the copy.
+- As a librarian, I can bulk-load the existing collection of roughly one thousand books from a spreadsheet.
+- As a member of the library space, I can browse and search the catalog by title, author, or identifier.
+- As a member, I can request to borrow an available book.
+- As a librarian, I can approve or decline a borrow request, mark a book borrowed and returned, and see overdue loans.
+- As a librarian, I can mark a copy lost or in repair without deleting its history.
+- As an Admin/Op, I can link a digitized scan to its physical catalog item.
+
+### Business Rules
+- A `Catalog Item` represents one physical copy and stores identifier, cover title, author, optional cover photo, location, and status, but not book content.
+- Every catalog item belongs to exactly one space, the library collection's space.
+- A catalog item has at most one active `Loan Ticket` at a time.
+- Catalog item status `available <-> borrowed` is driven by the loan lifecycle; `lost` and `repair` are librarian actions.
+- Borrow approval, lend, return, and catalog editing are librarian actions held by `Admin/Op`; browsing and requesting are open to library-space members.
+- A catalog item may optionally link to a `Source` when digitized, without merging the two records.
+- Loan actions must record the handling librarian and timestamps for audit.
+
+### Acceptance Criteria
+- Adding a book produces a catalog item with a stable unique identifier.
+- Members can find a catalog item by title, author, or identifier and request a loan on an available copy.
+- A librarian can move a loan through request, approve, borrow, and return, and overdue loans are visible.
+- Spreadsheet import creates catalog items in bulk and reports rows that fail validation.
+- A digitized copy links to its catalog item while both records remain distinct.

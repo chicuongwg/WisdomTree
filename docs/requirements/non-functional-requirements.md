@@ -111,6 +111,7 @@
   - queue latency
   - backlog age over 7 days
   - backup job status
+  - overdue loan count
 - Logs must allow correlation from a publish event back to its source version and review action.
 - Observability must be sufficient to compute the V1 scorecard without a separate analytics platform.
 

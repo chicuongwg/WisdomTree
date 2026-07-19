@@ -35,6 +35,7 @@
 - Home
 - Search
 - Library
+- Catalog
 - Tree
 - Branches
 - Graph

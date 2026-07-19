@@ -83,6 +83,29 @@
   - no trust or review controls
   - no corrected-text or Markdown-draft editing
 
+### Catalog
+- Goal:
+  - let library-space members browse and search the physical book collection and request loans
+- Key regions:
+  - search and filter bar by title, author, identifier, and availability
+  - catalog list with cover, title, author, identifier, location, and status
+  - borrow request action on available items
+- States:
+  - empty: no books in this library space yet
+  - loading: list skeleton
+  - error: recoverable fetch failure
+  - access denied: not a member of the library space
+
+### Catalog Item Detail
+- Goal:
+  - let a member inspect one book copy and request to borrow it
+- Key regions:
+  - cover, title, author, identifier, location, and status
+  - borrow request action and current availability
+  - link to the digitized version when a linked source exists
+- Restrictions:
+  - no circulation approval or catalog editing controls for members
+
 ### Node Detail
 - Goal:
   - present the node as the primary reading surface

@@ -126,6 +126,7 @@
 - [`system/module-boundaries.md`](./system/module-boundaries.md): module ownership and responsibility map.
 - [`system/two-repository-architecture.md`](./system/two-repository-architecture.md): core architecture for `Source Repo` and `Knowledge Tree`.
 - [`system/data-model-lifecycle.md`](./system/data-model-lifecycle.md): entity lifecycle and state rules.
+- [`system/catalog-circulation.md`](./system/catalog-circulation.md): physical library catalog and borrow-return circulation.
 - [`system/integration-contracts.md`](./system/integration-contracts.md): key endpoints, events, and service contracts.
 - [`system/deployment-topology.md`](./system/deployment-topology.md): runtime topology and deployment plan.
 
