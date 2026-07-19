@@ -4,6 +4,10 @@
 - Define the exact, batch-by-batch plan for upgrading `/docs` from the current storage-module scope to the full WisdomTree platform scope.
 - Serve as the working checklist for the owner and AI agents executing the upgrade across sessions.
 
+## Execution Status
+- All ten batches (0-9) have been executed and committed on `main`, each as its own commit, followed by an independent consistency review whose findings were fixed in the Batch 9 commit.
+- The decision gates D1-D4 were applied with their default choices; D3 (local-only AI) was confirmed by the owner.
+
 ## In Scope
 - Documentation changes only: new docs, modified docs, decision records, and commit sequencing.
 - Platform scope: storage core, physical catalog and circulation, Google bridge, notifications and comments, Quartz publishing, deadline registry, user-oriented layer, and open technical decisions.
