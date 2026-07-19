@@ -8,3 +8,6 @@ const pool = new Pool({
 
 export const db = drizzle(pool, { schema });
 export { schema };
+
+/** A live transaction handle — every mutation service runs inside one. */
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
