@@ -135,13 +135,18 @@
 
 ### Admin Console
 - Goal:
-  - hold operational and system-level controls
-- Key regions:
+  - hold administrative and system-level controls, split so non-technical content admins are never shown system internals
+- Content tab (content admins):
   - space and membership management
   - taxonomy management
-  - export status
+  - export status overview
+- System tab (owner-only):
   - backup summary
+  - restore controls
   - job health snapshot
+  - Google bridge credentials and status
+- Behavior:
+  - the System tab is hidden for non-owner content admins, not merely disabled
 
 ## States Applied Here
 - loading

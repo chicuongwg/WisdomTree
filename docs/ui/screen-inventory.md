@@ -34,6 +34,8 @@
 | --- | --- | --- | --- | --- |
 | Home | `/` | User | User, Editor, Admin/Op | Tree |
 | Search | `/search` | User | User, Editor, Admin/Op | Search |
+| Tree Browse | `/tree` | User | User, Editor, Admin/Op | Tree |
+| Branch List | `/tree/branches` | User | User, Editor, Admin/Op | Tree |
 | Node Detail | `/tree/node/:id` | User | User, Editor, Admin/Op | Tree |
 | Branch Hub | `/tree/branch/:id` | User | User, Editor, Admin/Op | Tree |
 | Graph Explorer | `/graph` | User | User, Editor, Admin/Op | Search/Graph |
@@ -66,6 +68,8 @@ Notes:
 ### User-Facing Experience
 - Home
 - Search
+- Tree Browse
+- Branch List
 - Library
 - Stored Item Detail
 - Catalog

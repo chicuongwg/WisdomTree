@@ -108,4 +108,9 @@ Each state should have:
 - Support GFM, wikilinks, math, code blocks, and tables.
 - Render source references and trust badges near the page header.
 - Preserve readable heading hierarchy.
-- Editing mode should offer live preview and template guidance without removing direct Markdown control.
+
+## Editor Direction
+- The default editor is a visual, WYSIWYG-feel editor of a TipTap or Milkdown class: toolbar formatting, inline images, and no visible syntax, so a non-technical writer works as they would in a familiar office document.
+- Markdown remains the stored format underneath, so export, Quartz publishing, and document rendering are unaffected.
+- A raw Markdown source view is available as a hidden toggle for power users; it is never the default.
+- The primary path for non-technical contribution is uploading a document and converting it, not learning Markdown.

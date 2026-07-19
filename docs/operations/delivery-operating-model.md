@@ -44,11 +44,28 @@
 | Editorial quality and verification | Admin/Op lead | Product lead | `policy/editorial-verification-policy.md`, `product/glossary.md`, `system/data-model-lifecycle.md` |
 | Design system governance | Frontend lead | Product lead | `ui/design-system.md`, `ui/design-system-governance.md` |
 
+## Team Composition and Real DRI Mapping
+- The team is a humanities and social-science group; only the owner is technical. Content work is staffed by domain experts, and system operation is staffed only by the owner.
+- Role-based streams map to real profiles as follows, so accountability is clear even in a small team:
+
+| Stream | Real profile | Notes |
+| --- | --- | --- |
+| Editorial quality and verification | Culture and literature scholars | Language and source judgment is their expertise |
+| Taxonomy and concept quality | Anthropology researcher | Owns branch and tag structure decisions |
+| Metrics and funding reporting | Economics graduate | Owns figures for grant applications |
+| UI and design review | Architect | Approves layout and visual clarity |
+| Technical and system operation | Owner | Sole operator for deploy, worker, and restore |
+
+## Content Admin Versus System Operator
+- The V1 `Admin/Op` role is split at the UI level, not the model level: an Admin Console Content tab for non-technical content admins and a System tab restricted to the owner. See [`../ui/admin-op-screen-specs.md`](../ui/admin-op-screen-specs.md).
+- Content admin work (triage, review, publish, trust, merge, catalog, circulation) must be fully doable through the UI by a non-technical scholar.
+- System operation (restore, worker, deploy, backups) is owner-only; its bus-factor of one is accepted and mitigated by automated backups and a runbook written for the owner's future self, not by a second technical operator.
+
 ## Admin/Op Coverage Rule
-- The active environment must have at least two trained users with `Admin/Op` access.
-- The primary `Admin/Op` owns daily queue review, routine publish decisions, and weekly ops review.
-- The backup `Admin/Op` must be able to publish, export, and execute restore procedures when the primary is unavailable.
-- No release candidate should be treated as operationally ready if backup `Admin/Op` coverage is missing for more than five business days.
+- The active environment must have at least two trained content admins who can triage, review, and publish through the UI.
+- The primary content admin owns daily queue review, routine publish decisions, and weekly ops review.
+- The backup content admin must be able to publish and manage circulation when the primary is unavailable.
+- System operation coverage is owner-only in V1; restore and deploy capability does not require a second content admin, but the restore runbook must stay current and drillable.
 
 ## Review Cadence
 - Weekly:

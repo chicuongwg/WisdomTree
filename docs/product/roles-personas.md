@@ -20,6 +20,7 @@
 - `User` storage access is scoped by space membership: browse, search, and download within member spaces.
 - `Editor` inherits `User` capabilities and adds owned-or-assigned content update authority.
 - `Admin/Op` absorbs review, taxonomy, publish approval, and operations work in V1.
+- The `Admin/Op` role stays single in the model, but the Admin Console UI is split into a Content tab (non-technical content admins: review, publish, catalog, taxonomy) and a System tab (owner-only: backup, restore, jobs). The formal Reviewer/Curator/Operator split remains future work.
 - Accountability is intentionally split across uploader, editor/updater, and approver/publisher actions.
 - Editors can contribute and prepare content but do not finalize trust or publication decisions.
 - Future role splitting is documented but not implemented in V1.

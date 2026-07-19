@@ -70,6 +70,11 @@
   - no over-compressed enterprise admin tables by default
 - Dense views are acceptable in Admin/Op surfaces, but the default user experience should remain legible.
 
+## Plain Language and Support Cost
+- No screen shows engineering vocabulary to a user; every user-facing term uses the Vietnamese wording in [`vocabulary-vi.md`](./vocabulary-vi.md).
+- Empty, loading, error, and access-denied states carry clear Vietnamese guidance on what to do next.
+- The team is non-technical and the only technical person is also the only operator, so every confusing screen becomes a support message that costs the operator time. UI simplicity is therefore a cost-control decision, not only an aesthetic one.
+
 ## Experience Split
 
 ### User-Facing Experience

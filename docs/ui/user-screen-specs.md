@@ -106,6 +106,24 @@
 - Restrictions:
   - no circulation approval or catalog editing controls for members
 
+### Tree Browse
+- Goal:
+  - give an overview entry into the knowledge tree by branch and recent nodes
+- Key regions:
+  - branch overview and featured or recent verified nodes
+  - filter by tag and verification state
+- States:
+  - empty, loading, error
+
+### Branch List
+- Goal:
+  - list branches so a user can pick a topic to explore
+- Key regions:
+  - branch cards with title, summary, node count, and progress
+  - filter and sort controls
+- States:
+  - empty, loading, error
+
 ### Node Detail
 - Goal:
   - present the node as the primary reading surface

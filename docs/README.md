@@ -149,10 +149,12 @@
 - [`ui/user-screen-specs.md`](./ui/user-screen-specs.md): user-facing screens, source intake, and personal submission tracking.
 - [`ui/admin-op-screen-specs.md`](./ui/admin-op-screen-specs.md): source, review, publish, board, and admin screens.
 - [`ui/shared-states.md`](./ui/shared-states.md): cross-product state behavior.
+- [`ui/vocabulary-vi.md`](./ui/vocabulary-vi.md): internal-term to Vietnamese UI copy map and copy governance.
 
 ### Operations
 - [`operations/operating-playbook.md`](./operations/operating-playbook.md): incident classes, degraded modes, and recovery procedures.
 - [`operations/delivery-operating-model.md`](./operations/delivery-operating-model.md): stream ownership, doc review cadence, and `Phase 0 planning` exit criteria.
+- [`operations/adoption-onboarding.md`](./operations/adoption-onboarding.md): seed-before-invite plan, guided onboarding, and adoption measurement.
 
 ### Policy
 - [`policy/editorial-verification-policy.md`](./policy/editorial-verification-policy.md): publish, verification, reject, merge, and archive decision rules.
