@@ -1,7 +1,9 @@
 # Technology Stack
 
+Status: accepted by the owner on 2026-07-19. This file is no longer a proposal; changes to a layer choice require a new decision-log entry.
+
 ## Purpose
-- Propose the V1 implementation stack for owner sign-off, so backend, worker, and frontend work can begin without reopening platform-level infrastructure decisions.
+- Define the V1 implementation stack, so backend, worker, and frontend work can begin without reopening platform-level infrastructure decisions.
 - Keep the stack buildable and operable by one developer plus AI agents, with local-only AI and no paid API dependency.
 
 ## In Scope
@@ -15,7 +17,7 @@
 - Feature-level design.
 
 ## Decisions
-- This file is a proposal awaiting owner sign-off; where a choice is left open, it names the default and the tradeoff.
+- This file is the accepted stack; where a choice was left open (for example TipTap versus Milkdown), the named default stands until implementation proves otherwise.
 - The stack must run as the existing VPS-plus-worker topology and be operable by a single technical person.
 - AI is local-only through Ollama on the worker host, with no paid API dependency and no hard dependency on any external AI service.
 
