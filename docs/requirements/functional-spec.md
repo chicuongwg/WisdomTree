@@ -274,3 +274,25 @@
 - A librarian can move a loan through request, approve, borrow, and return, and overdue loans are visible.
 - Spreadsheet import creates catalog items in bulk and reports rows that fail validation.
 - A digitized copy links to its catalog item while both records remain distinct.
+
+## Capability 12: Notifications and Discussion
+
+### User Stories
+- As a member, I receive a notification through my preferred channels when something relevant to me happens, so I do not have to poll the app.
+- As a member, I can comment on a source, node, loan ticket, or deadline to discuss it in context.
+- As a member, I can keep private notes in my personal space.
+- As an Admin/Op, I can rely on notifications reaching the team on Zalo and email without hosting a chat server.
+
+### Business Rules
+- Notification channels are in-app, email, and Zalo Official Account; real-time chat is not built and stays on Messenger and Zalo.
+- Each member sets per-event channel preferences.
+- A `Comment` anchors to exactly one work object and follows that object's permission scope.
+- Comments are preserved with the object and never mutate its canonical state.
+- Private notes live in a `personal` space visible only to the owner.
+- Notification delivery is best-effort with retry; a channel outage never blocks the triggering workflow.
+
+### Acceptance Criteria
+- Relevant events produce notifications through the member's chosen channels.
+- A member can comment on a source, node, loan ticket, or deadline, and the comment persists.
+- A member can keep private notes no one else can see.
+- A Zalo or email outage delays alerts without blocking the workflow.

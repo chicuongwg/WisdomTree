@@ -129,6 +129,7 @@
 - [`system/catalog-circulation.md`](./system/catalog-circulation.md): physical library catalog and borrow-return circulation.
 - [`system/integration-contracts.md`](./system/integration-contracts.md): key endpoints, events, and service contracts.
 - [`system/google-bridge.md`](./system/google-bridge.md): one-way and outbound integration with Google Drive, Sheets, Forms, and Calendar.
+- [`system/notifications.md`](./system/notifications.md): notification channels (in-app, email, Zalo OA) and object-anchored comments.
 - [`system/deployment-topology.md`](./system/deployment-topology.md): runtime topology and deployment plan.
 
 ### Flows

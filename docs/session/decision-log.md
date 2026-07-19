@@ -83,6 +83,7 @@
 - User flow comes first in information architecture.
 - Admin/Op flow is secondary in navigation but complete in capabilities.
 - Tree editing is `Markdown source + preview`, not WYSIWYG-heavy; non-technical contribution happens primarily through file upload plus conversion, not through learning Markdown.
+- Discussion attaches to objects as comments; outbound alerts go to Zalo OA and email; real-time chat stays on Messenger and Zalo and is not built.
 - The UI is bilingual Vietnamese/English with Vietnamese as the default; documentation stays English.
 
 ### Runtime and Operations

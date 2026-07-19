@@ -48,6 +48,13 @@
 - Membership-scoped storage area, typically per domain, department, or project.
 - Governs who can browse `Library`, search stored items, and download originals.
 - Managed by `Admin/Op`; every source belongs to exactly one space in V1.
+- A `personal` space type exists, one per member, visible only to that member, used for private notes.
+
+### Comment
+- Discussion anchored to exactly one work object: a `Source`, `Tree Node`, `Loan Ticket`, or `Deadline`.
+- Threaded and preserved as part of the object's history; not a chat channel.
+- Follows the anchor object's permission scope and never mutates the anchor's canonical state.
+- See [`notifications.md`](./notifications.md).
 
 ### Source
 - A logical evidence item submitted to the system.

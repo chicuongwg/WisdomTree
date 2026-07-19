@@ -83,9 +83,13 @@
 - `PATCH /api/tree/branches/:branchId`
 - `POST /api/tree/nodes/:nodeId/export`
 
-### Notifications
+### Notifications and Comments
 - `GET /api/notifications`
 - `POST /api/notifications/:notificationId/read`
+- `GET /api/notifications/preferences`
+- `PATCH /api/notifications/preferences`
+- `GET /api/comments?anchorType=&anchorId=`
+- `POST /api/comments`
 
 ### Catalog and Circulation
 - `GET /api/catalog`
@@ -191,6 +195,8 @@
 - `bridge.sheet.imported`
 - `bridge.forms.ingested`
 - `bridge.import.failed`
+- `comment.created`
+- `notification.dispatched`
 
 ## External Integration Assumptions
 - Google OIDC supplies user identity claims consumed by the app.

@@ -43,7 +43,8 @@
 - Should be the visual anchor of every workflow.
 
 ### Zone 3: Context and Inspector Panel
-- Metadata, trust badges, relations, source excerpt, task context, activity, or review notes.
+- Metadata, trust badges, relations, source excerpt, task context, activity, review notes, or object comments.
+- Comments anchor to the object in view (source, node, loan ticket, or deadline) and are part of its history, not a chat channel.
 - Collapsible where necessary, but conceptually always available.
 
 ## Layout Behavior by Surface

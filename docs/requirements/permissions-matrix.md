@@ -69,6 +69,9 @@
 | Add, edit, or import catalog items | No | No | Yes |
 | Mark catalog item lost or in repair | No | No | Yes |
 | Link a digitized source to a catalog item | No | No | Yes |
+| Comment on an object the user can see | Yes | Yes | Yes |
+| Keep private notes in a personal space | Yes | Yes | Yes |
+| Set own notification preferences | Yes | Yes | Yes |
 | Manage spaces and membership | No | No | Yes |
 | Trigger export | No | No | Yes |
 | View backup and system health | No | No | Yes |
