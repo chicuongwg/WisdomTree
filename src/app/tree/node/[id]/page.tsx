@@ -5,6 +5,7 @@ import { linkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
+import { NodeExportActions } from "@/app/components/node-export-actions";
 import { CommentsSection } from "@/app/components/comments-section";
 import { listMentionableUsers } from "@/modules/notify/service";
 
@@ -87,6 +88,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
               </ul>
             )}
           </div>
+          {node.verification !== "archived" && <NodeExportActions nodeId={node.id} />}
           {canEdit && node.verification !== "archived" && (
             <p>
               <Link className="button" href={`/tree/node/${node.id}/edit`}>

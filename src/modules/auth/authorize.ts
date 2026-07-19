@@ -41,6 +41,13 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   // here as module.action pending a catalog addendum — flagged in the report.
   "storage.curation.assign": { roles: ["admin_op"], scope: "global" },
   "storage.gap.triage": { roles: ["admin_op"], scope: "global" },
+  // --- Export module (authorization-design.md § Permission Catalog) ---
+  "export.document": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "export.tree.trigger": { roles: ["admin_op"], scope: "global" },
+  // Not in the catalog table verbatim: the Admin/Op health surface (openapi
+  // GET /admin/health "Admin/Op") — keyed pending a catalog addendum like
+  // storage.curation.assign; flagged in the report.
+  "admin.health.read": { roles: ["admin_op"], scope: "global" },
   // --- Notify + PM modules (authorization-design.md § Permission Catalog) ---
   // notify.comment.create's catalog scope is "anchor (delegates to the
   // anchor's read permission)": the role gate lives here; the anchor-scope

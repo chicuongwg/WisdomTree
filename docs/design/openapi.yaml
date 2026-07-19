@@ -509,6 +509,14 @@ paths:
       responses:
         "202": {description: Export job queued, content: {application/json: {schema: {$ref: "#/components/schemas/JobRef"}}}}
 
+  /jobs/{jobId}:
+    parameters: [{name: jobId, in: path, required: true, schema: {type: string, format: uuid}}]
+    get:
+      summary: Job status for render/export jobs (added 2026-07-20; export_jobs ids resolve for Admin/Op only)
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/JobRef"}}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+
   # --- Google Bridge ---
   /bridge/drive/import:
     post:
@@ -624,7 +632,7 @@ components:
               title: {type: string}
               type: {type: string, enum: [conference, funding, report, milestone]}
               dueAt: {type: string, format: date-time}
-              reminderOffsets: {type: array, items: {type: string}, description: Postgres interval strings before dueAt (e.g. "7 days", "1 day")}
+              reminderOffsets: {type: array, items: {type: string}, description: "Postgres interval strings before dueAt (e.g. '7 days', '1 day')"}
               links: {type: array, items: {type: object, properties: {targetType: {type: string}, targetId: {type: string, format: uuid}}}}
               expectedVersion: {type: integer}
   schemas:
@@ -861,6 +869,12 @@ components:
         jobId: {type: string, format: uuid}
         jobType: {type: string}
         state: {type: string, enum: [queued, running, succeeded, failed, dead]}
+        result:
+          type: object
+          description: Present on succeeded render jobs
+          properties:
+            downloadUrl: {type: string}
+            converterWarnings: {type: array, items: {type: string}}
     HealthReport:
       type: object
       properties:

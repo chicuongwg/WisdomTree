@@ -676,6 +676,153 @@ async function main() {
   );
   ok("space members notified of approaching deadline", approachNotes[0].n >= 3, `got ${approachNotes[0].n}`);
 
+  // ---------- Proof 6: export ----------
+  // Member render → 202 job → succeeded artifact downloadable (stub HTML or
+  // real docx; converter warning surfaced when stub); editor render allowed
+  // (all roles); tree export editor 403 / admin 202 → export_jobs succeeded
+  // with manifest listing published slugs; bare repo commit verified; outbox
+  // export.completed; re-export without content change makes NO new commit.
+  console.log("Proof 6 — export");
+  const { execFileSync } = await import("node:child_process");
+  const gitDir = process.env.EXPORT_REPO_DIR ?? "data/content-repo.git";
+  const bareGit = (...args: string[]) =>
+    execFileSync("git", [`--git-dir=${gitDir}`, ...args], { encoding: "utf8" }).trim();
+
+  const renderRes = await fetch(
+    `${BASE}/api/tree/nodes/${visNode[0].id}/export`,
+    asUser(lan, { method: "POST", headers: json, body: JSON.stringify({ format: "docx" }) }),
+  );
+  ok("member render request → 202", renderRes.status === 202, `got ${renderRes.status}`);
+  const renderRef = (await renderRes.json()) as { jobId: string; state: string };
+
+  type JobStatus = {
+    state: string;
+    result?: { downloadUrl: string; converterWarnings: string[] };
+  };
+  // Always fetch at least once: an idempotent re-request may return a JobRef
+  // that is already succeeded, and the result rides on the status endpoint.
+  let renderJob = (await (await fetch(`${BASE}/api/jobs/${renderRef.jobId}`, asUser(lan))).json()) as JobStatus;
+  for (let i = 0; i < 20 && renderJob.state !== "succeeded" && renderJob.state !== "failed"; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    renderJob = (await (await fetch(`${BASE}/api/jobs/${renderRef.jobId}`, asUser(lan))).json()) as JobStatus;
+  }
+  ok("render job reaches succeeded", renderJob.state === "succeeded", `got ${renderJob.state}`);
+  const artifact = await fetch(`${BASE}${renderJob.result!.downloadUrl}`);
+  ok("render artifact downloadable via signed blob URL", artifact.status === 200, `got ${artifact.status}`);
+  const artifactType = artifact.headers.get("content-type") ?? "";
+  if (artifactType.startsWith("text/html")) {
+    ok(
+      "stub artifact carries converter warning",
+      renderJob.result!.converterWarnings.includes("stub: pandoc unavailable"),
+      JSON.stringify(renderJob.result!.converterWarnings),
+    );
+    ok(
+      "stub HTML contains the node content",
+      (await artifact.text()).includes("Kết quả khảo sát thực địa 2025"),
+    );
+  } else {
+    ok("real docx artifact has the docx content type", artifactType.includes("officedocument"));
+  }
+  ok(
+    "render is NOT audited (read-style action)",
+    (await auditCount("node.export", visNode[0].id)) === 0 &&
+      (await auditCount("export.document", visNode[0].id)) === 0,
+  );
+
+  const editorRender = await fetch(
+    `${BASE}/api/tree/nodes/${visNode[0].id}/export`,
+    asUser(minh, { method: "POST", headers: json, body: JSON.stringify({ format: "pdf" }) }),
+  );
+  ok("editor render allowed (all roles) → 202", editorRender.status === 202, `got ${editorRender.status}`);
+
+  ok(
+    "tree export by editor → 403",
+    (await fetch(`${BASE}/api/export/tree`, asUser(minh, { method: "POST" }))).status === 403,
+  );
+  const exportRes = await fetch(`${BASE}/api/export/tree`, asUser(huong, { method: "POST" }));
+  ok("tree export by admin → 202", exportRes.status === 202, `got ${exportRes.status}`);
+  const exportRef = (await exportRes.json()) as { jobId: string };
+  let exportState = "queued";
+  for (let i = 0; i < 20 && exportState !== "succeeded" && exportState !== "failed"; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    exportState = (
+      (await (await fetch(`${BASE}/api/jobs/${exportRef.jobId}`, asUser(huong))).json()) as { state: string }
+    ).state;
+  }
+  ok("export job reaches succeeded", exportState === "succeeded", `got ${exportState}`);
+
+  const { rows: exportRow } = await pg.query("SELECT manifest FROM export_jobs WHERE id = $1", [exportRef.jobId]);
+  const manifest = exportRow[0].manifest as {
+    commitSha: string;
+    changed: boolean;
+    files: Array<{ path: string; slug: string; publish: boolean }>;
+  };
+  const { rows: publishedSlugs } = await pg.query(
+    "SELECT slug FROM tree_nodes WHERE publish = true AND verification = 'verified'",
+  );
+  ok(
+    "manifest lists every published node slug",
+    publishedSlugs.every((r) => manifest.files.some((f) => f.slug === r.slug && f.publish)),
+    JSON.stringify(manifest.files),
+  );
+  ok(
+    "bare repo HEAD matches manifest commit sha",
+    bareGit("rev-parse", "HEAD") === manifest.commitSha,
+  );
+  const treeListing = bareGit("ls-tree", "-r", "--name-only", "HEAD");
+  ok(
+    "bare repo commit contains the exported files",
+    manifest.files.every((f) => treeListing.includes(f.path)),
+    treeListing,
+  );
+  ok("audit export.trigger written", (await auditCount("export.trigger", exportRef.jobId)) === 1);
+  ok(
+    "outbox export.completed written",
+    (await outboxCount("export.completed", "exportJobId", exportRef.jobId)) === 1,
+  );
+
+  // Idempotent no-change policy: identical content → NO new commit; the
+  // second manifest records changed=false with the same HEAD sha.
+  const commitCountBefore = bareGit("rev-list", "--count", "HEAD");
+  const rerunRes = await fetch(`${BASE}/api/export/tree`, asUser(huong, { method: "POST" }));
+  ok("second tree export → 202", rerunRes.status === 202);
+  const rerunRef = (await rerunRes.json()) as { jobId: string };
+  let rerunState = "queued";
+  for (let i = 0; i < 20 && rerunState !== "succeeded" && rerunState !== "failed"; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    rerunState = (
+      (await (await fetch(`${BASE}/api/jobs/${rerunRef.jobId}`, asUser(huong))).json()) as { state: string }
+    ).state;
+  }
+  ok("second export succeeded", rerunState === "succeeded", `got ${rerunState}`);
+  const { rows: rerunRow } = await pg.query("SELECT manifest FROM export_jobs WHERE id = $1", [rerunRef.jobId]);
+  const rerunManifest = rerunRow[0].manifest as { commitSha: string; changed: boolean };
+  ok(
+    "unchanged content → no new commit, same sha",
+    rerunManifest.changed === false &&
+      rerunManifest.commitSha === manifest.commitSha &&
+      bareGit("rev-list", "--count", "HEAD") === commitCountBefore,
+    JSON.stringify(rerunManifest),
+  );
+
+  const health = await fetch(`${BASE}/api/admin/health`, asUser(huong));
+  ok("admin health → 200", health.status === 200, `got ${health.status}`);
+  const healthBody = (await health.json()) as {
+    jobCounts: Record<string, Record<string, number>>;
+    lastExport: { id: string } | null;
+  };
+  ok(
+    "health reports render + export_tree job counts and last export",
+    (healthBody.jobCounts.render?.succeeded ?? 0) >= 1 &&
+      (healthBody.jobCounts.export_tree?.succeeded ?? 0) >= 2 &&
+      healthBody.lastExport?.id === rerunRef.jobId,
+    JSON.stringify(healthBody.jobCounts),
+  );
+  ok(
+    "admin health hidden from editor (404)",
+    (await fetch(`${BASE}/api/admin/health`, asUser(minh))).status === 404,
+  );
+
   console.log(`\nAll proofs passed (${passed} checks).`);
 }
 
