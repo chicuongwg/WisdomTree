@@ -75,7 +75,7 @@
 - Freeze further merge or archive work if the canonical result of the failed publish is unclear.
 
 ### Object Storage Degraded
-- Block new uploads and original source downloads until storage access is reliable again.
+- Block new uploads and original source downloads, including `Library` downloads, until storage access is reliable again.
 - Keep tree reading and manual node authoring available if the app and database remain healthy.
 - Block source-driven publish until source artifacts and provenance references are reachable again.
 

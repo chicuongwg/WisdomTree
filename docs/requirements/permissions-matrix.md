@@ -19,6 +19,7 @@
 - `Editor` extends `User` permissions but is limited to owned-or-assigned update work.
 - `Admin/Op` owns all approval and publication actions in V1.
 - Editors can contribute to source correction and Markdown drafting only when owned or assigned.
+- Storage browse, search, and download rights are scoped by space membership for `User` and `Editor`; `Admin/Op` has global scope.
 
 ## Dependencies
 - Role definitions in [`../product/roles-personas.md`](../product/roles-personas.md).
@@ -37,9 +38,10 @@
 | Sign in via Google OIDC | Yes | Yes | Yes |
 | Read tree nodes | Yes | Yes | Yes |
 | Search tree | Yes | Yes | Yes |
-| Search source repo items | Limited to exposed snippets only | Own submissions and assigned items | Yes |
+| Search source repo items | Within member spaces | Within member spaces plus assigned items | Yes |
 | Open dedicated graph surface | Yes | Yes | Yes |
 | Open source intake | Yes | Yes | Yes |
+| Browse Library of stored items | Member spaces only | Member spaces only | Yes |
 | Create branch-gap request | Yes | Yes | Yes |
 | Create branch | No | Yes | Yes |
 | Edit branch metadata | No | Owned or assigned only | Yes |
@@ -48,8 +50,8 @@
 | View node audit summary | No | Limited to owned or assigned items | Yes |
 | Upload source file | Yes | Yes | Yes |
 | View own submissions | Yes | Yes | Yes |
-| View all source items | No | No | Yes |
-| Download original source file | No | No | Yes |
+| View source items across all spaces | No | No | Yes |
+| Download original source file | Member spaces only | Member spaces only | Yes |
 | Edit corrected text when owned or assigned | No | Yes | Yes |
 | Edit Markdown draft when owned or assigned | No | Yes | Yes |
 | Approve corrected text | No | No | Yes |
@@ -60,11 +62,13 @@
 | Archive node or source | No | No | Yes |
 | Manage tags and taxonomy | No | Limited suggestion only | Yes |
 | Manage operational board | No | Limited task updates on owned or assigned work | Yes |
+| Export node Markdown to docx or pdf | Yes | Yes | Yes |
+| Manage spaces and membership | No | No | Yes |
 | Trigger export | No | No | Yes |
 | View backup and system health | No | No | Yes |
 
 ## Notes
-- Users may submit new source items or `branch-gap requests` directly and track their own submission history, but they do not gain visibility into the full source repository.
+- Users may submit new source items or `branch-gap requests` and track their own submission history. Storage visibility is space-scoped: users browse, search, and download stored items only within spaces they belong to, never across all spaces.
 - Editors inherit all `User` capabilities and may modify source-derived working content only when the item is owned by them or explicitly assigned to them.
-- Admin/Op is the only role with trust, archive, merge, publish, export, and download-original authority in V1.
+- Admin/Op is the only role with trust, archive, merge, publish, tree-export, space-management, and cross-space download authority in V1.
 - Audit and incident investigation must be able to distinguish uploader, editor/updater, and approver/publisher actions from this permission model.

@@ -59,7 +59,7 @@
 
 ## Reliability
 - Source intake jobs must be retryable.
-- OCR and parsing failures must end in a visible state, not silent loss.
+- OCR and parsing failures must end in a visible state, not silent loss, and must never remove the stored item from `Library` availability.
 - Publish jobs must be idempotent at the application level.
 - Export validation failures must not corrupt canonical tree content.
 - Worker or storage outages must enter a visible degraded mode, not silent queue growth.
@@ -84,6 +84,7 @@
 - Backup coverage must be able to execute publish, export, and restore procedures without waiting for undocumented knowledge transfer.
 
 ## Search Freshness
+- Newly stored items must be findable in `Library` by title and metadata immediately, and by full text within 5 minutes of successful extraction.
 - New publishes should appear in search within 5 minutes of successful indexing.
 - Archive and merge redirects should affect default search visibility within 5 minutes.
 - Source correction status changes should appear in operational search within 2 minutes.
@@ -91,8 +92,8 @@
 ## Security Baseline
 - All authenticated access must flow through Google OIDC.
 - Sensitive routes require backend authorization, not just UI hiding.
-- Original file downloads are limited to `Admin/Op`.
-- Personal submission views must be scoped by uploader identity and must not leak full Source Repo visibility to baseline users.
+- Original file downloads are limited to members of the item's space and `Admin/Op`; space scoping is enforced by backend authorization.
+- Personal submission views must be scoped by uploader identity, and storage browsing must be scoped by space membership; neither may leak cross-space visibility to baseline users.
 - Object storage access must use server-issued, time-limited access paths or equivalent controlled delivery.
 - Private data must travel over encrypted transport.
 
@@ -118,3 +119,4 @@
 - Integration boundaries must be explicit enough to replace the OCR worker or export process later without rewriting the entire app.
 - Future role split should not require rethinking the core two-repository model.
 - Permission and audit semantics must remain explicit enough that a future reviewer or curator split can layer on top of the existing accountability chain.
+- UI strings must be externalized for bilingual Vietnamese/English rendering with Vietnamese as the default.

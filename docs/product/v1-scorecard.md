@@ -47,6 +47,7 @@
 | `published_nodes_with_evidence_linkage` | Share of source-driven published nodes that retain source version linkage, review actor, and provenance reference. | Publish audit records plus provenance query. | Weekly | `100%`. | `95% - 99%`. | `< 95%`. |
 
 ## Interpretation Notes
+- `upload_to_processing_outcome` measures the extraction outcome only; storage is store-first, and an item is findable and downloadable by space members at `stored`, before extraction completes.
 - `weekly_active_accounts_by_role` is a usefulness signal for a small team, not a growth metric.
 - `publish_success_rate` counts retries as failures if the first attempt required operational repair.
 - `published_nodes_with_evidence_linkage` applies only to source-driven publishes; manual nodes are governed separately by `no_source` and evidence attachment rules.

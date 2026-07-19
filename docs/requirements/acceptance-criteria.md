@@ -33,7 +33,9 @@
 - There must be no unresolved contradictions with the flow, policy, and UI documents.
 
 ## System-Level Release Criteria
-- A user can upload a source file and receive a visible processing state.
+- A user can upload a source file into a space and receive a visible processing state.
+- A space member can find a stored item through `Library` or search and download the original file immediately after it is `stored`, without any review step.
+- A user cannot see, search, or download stored items from spaces they do not belong to.
 - A user can create a `branch-gap request` and receive a visible intake state.
 - A user can open `My Submissions` and see only their own intake items and statuses.
 - The system can produce raw text, corrected text, and a Markdown draft or clearly indicate failure.
@@ -43,6 +45,8 @@
 - Audit history exists for upload, correction, publish, merge, archive, export, and restore-related actions.
 - Audit history can reconstruct the accountability chain `upload -> edit/update -> approve/publish` for any published node or source item under investigation.
 - Export to the content repository works and validation failures are surfaced operationally.
+- A published node can be exported to `docx` and `pdf` as derived documents.
+- The UI renders completely in both Vietnamese and English, with Vietnamese as the default.
 - Daily backup jobs exist and a restore procedure is documented, drillable, and testable.
 - The operating playbook covers worker outage, publish failure, full-environment restore, and single-record restore scenarios.
 - The active environment has primary and backup `Admin/Op` coverage.
@@ -51,13 +55,14 @@
 ## Module-Level Criteria
 
 ### Source Repo
-- Supports upload and versioned storage of original files.
+- Supports upload and versioned storage of original files into membership-scoped spaces.
+- Supports `Library` browsing, search, and original-file download for space members, available from the `stored` state onward.
 - Supports `branch-gap request` intake without creating a source version.
 - Supports unified `My Submissions` history across file-backed uploads and `branch-gap requests`.
 - Displays source lifecycle state and trust state.
 - Preserves raw text as immutable and corrected text as editable.
 - Supports `unprocessable` state for unsupported or failed formats.
-- Allows authenticated `User` accounts to view only their own submissions.
+- Allows authenticated `User` accounts to browse stored items in member spaces while workflow detail stays limited to their own submissions.
 - Allows `Admin/Op` to filter `Source Inbox` by `item_type` and triage `branch-gap requests` without sending them into source trust or publish states.
 - Prevents `Editor` accounts from modifying unowned and unassigned source work.
 
@@ -76,7 +81,8 @@
 - Editor mutation rights are limited to owned or assigned content in V1.
 
 ### Search and Graph
-- Search supports repository, state, and type filters.
+- Search supports repository, space, state, and type filters.
+- Source-side search results are scoped by space membership.
 - Archived items are hidden by default.
 - Graph view and relation panels reflect primary branch and cross-link relationships.
 

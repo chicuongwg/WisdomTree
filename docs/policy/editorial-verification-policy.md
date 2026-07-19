@@ -19,6 +19,7 @@
 
 ## Decisions
 - Source trust and node verification remain separate policies and must not be collapsed into one status.
+- Rejection is a curation outcome only: a source rejected for publication stays `stored` and retrievable in its space.
 - `verified` always requires evidence linkage plus `Admin/Op` review.
 - `Editor` may prepare corrected text and Markdown drafts only for owned or assigned work.
 - `Editor` never changes source trust or node verification state in V1.
@@ -99,7 +100,7 @@ Reject the source when one or more of the following is true:
 - The source is outside the intended knowledge scope for V1.
 - The source is a duplicate evidence item that adds no meaningful new provenance or correction value.
 
-Do not reject a source only because it requires normal human correction or because it should publish as `unverified` rather than `verified`.
+Do not reject a source only because it requires normal human correction or because it should publish as `unverified` rather than `verified`. Rejection closes curation work only; the stored file remains available to its space members in `Library`.
 
 ## Merge and Archive Quality Rules
 - Merge only when two nodes represent the same canonical concept, not when they are merely related or overlapping.

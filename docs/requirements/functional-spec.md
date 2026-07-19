@@ -31,10 +31,11 @@
 - Functional requirements can be directly mapped to system modules and screen specs.
 - No core workflow remains undefined for User, Editor, or Admin/Op.
 
-## Capability 1: Source Intake and Repository
+## Capability 1: Source Intake, Storage, and Library
 
 ### User Stories
-- As an authenticated user, I can upload a source file so that the team can extract and review knowledge from it.
+- As an authenticated user, I can upload a source file into a space so that it is stored safely and my teammates can find it.
+- As a User, I can browse and search the `Library` of my spaces and download the original files stored there.
 - As a User, I can create a `branch-gap request` when I do not have a file yet but know the tree is missing a concept.
 - As a User, I can view the status of my submitted intake items.
 - As an Editor, I can continue follow-up work on my own submissions or items assigned to me when the content needs correction or update.
@@ -43,6 +44,9 @@
 - As an Admin/Op, I can classify unsupported files as `unprocessable` without losing the source record.
 
 ### Business Rules
+- Every source belongs to exactly one `Space`; upload requires membership in the target space.
+- Storage is store-first: once a source version is `stored`, space members can find it in `Library` and search, and can download the original file, independent of extraction or curation outcomes.
+- Extraction or curation failure never removes a stored item from `Library` availability.
 - Intake history is modeled as a logical `Intake Item` projection shown in `My Submissions` and `Source Inbox`.
 - `Intake Item` exposes at least:
   - `submission_id`
@@ -59,13 +63,15 @@
 - Raw extracted text is immutable.
 - Corrected text is editable and versioned.
 - Source trust status is independent from node verification status.
-- Users can view only their own submissions and limited status information, not the full Source Repo.
+- Users can browse stored items within member spaces; submission workflow detail stays limited to their own submissions, and cross-space visibility stays limited to `Admin/Op`.
 - Editors may edit source-derived working content only when the item is owned by them or assigned to them.
 - Uploader, editor/updater, and approver actions must be recorded separately in audit history.
 - Unsupported formats may be retained as `unprocessable`.
 
 ### Acceptance Criteria
-- Upload produces a trackable source item with a stable identifier.
+- Upload produces a trackable source item with a stable identifier, stored in the chosen space.
+- A space member can find a newly stored item in `Library` and download the original file without any review step.
+- A non-member cannot browse, search, or download another space's items.
 - `branch-gap requests` produce a trackable intake item with an `item_type` visible in `My Submissions`.
 - Users can see the current intake state and next expected action for both file-backed submissions and `branch-gap requests`.
 - Editors can identify which own or assigned items need their follow-up action.
@@ -157,7 +163,8 @@
 - As an Admin/Op, I can search for items requiring review or correction.
 
 ### Business Rules
-- Search is unified but filterable by repository, role-allowed surface, trust state, and type.
+- Search is unified but filterable by repository, space, role-allowed surface, trust state, and type.
+- Source-side search results are scoped to the user's spaces; `Admin/Op` searches across all spaces.
 - Archived content is hidden by default.
 - Tree results must expose trust badges and source excerpts when available.
 - Search freshness matters after publish, archive, merge, and correction events.
@@ -207,17 +214,20 @@
 
 ### User Stories
 - As an Admin/Op, I can export tree content into a content repository for backup and validation.
+- As a User, I can export a published node to `docx` or `pdf` so I can use the knowledge in familiar office formats.
 - As an engineer, I can rely on exported Markdown to match in-app state without being the source of truth.
 
 ### Business Rules
 - Export is one-way from the app to the content repository.
 - Export occurs on meaningful publish or change events.
 - Validation checks front matter, schema conformance, and link integrity.
+- Document export renders node Markdown through a Pandoc-class converter into derived `docx`/`pdf` artifacts; rendered documents never mutate canonical content.
 
 ### Acceptance Criteria
 - Export jobs can run without changing the canonical tree state.
 - Validation failures create an operational follow-up signal.
 - Exported content is traceable back to node versions.
+- A published node can be exported to `docx` and `pdf`.
 
 ## Capability 10: Authentication, Authorization, and Notification
 
