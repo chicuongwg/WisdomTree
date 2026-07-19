@@ -15,28 +15,28 @@
           <mxGeometry x="40" y="150" width="130" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c5" value="&lt;b&gt;Stored in&lt;br&gt;Space Library&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="230" y="150" width="140" height="50" as="geometry" />
+          <mxGeometry x="240" y="150" width="140" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c6" value="&lt;b&gt;Parse / OCR&lt;/b&gt;&lt;br&gt;async, parallel" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="430" y="150" width="140" height="50" as="geometry" />
+          <mxGeometry x="450" y="150" width="140" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c7" value="&lt;b&gt;Corrected Text&lt;/b&gt;&lt;br&gt;versioned chain" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="630" y="150" width="150" height="50" as="geometry" />
+          <mxGeometry x="650" y="150" width="150" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c8" value="&lt;b&gt;Markdown Draft&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="840" y="150" width="140" height="50" as="geometry" />
+          <mxGeometry x="860" y="150" width="140" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c9" value="&lt;b&gt;Admin/Op Review&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="150" width="150" height="50" as="geometry" />
+          <mxGeometry x="1060" y="150" width="150" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c10" value="&lt;b&gt;Publish to Tree&lt;/b&gt;&lt;br&gt;+ promotion provenance" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="1250" y="150" width="180" height="50" as="geometry" />
+          <mxGeometry x="1270" y="150" width="180" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c11" value="&lt;b&gt;Tree Node&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="1250" y="320" width="130" height="50" as="geometry" />
+          <mxGeometry x="1270" y="320" width="130" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c12" value="&lt;b&gt;Merge / Archive&lt;/b&gt;&lt;br&gt;redirect, audited" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="1000" y="320" width="160" height="50" as="geometry" />
+          <mxGeometry x="1020" y="320" width="160" height="50" as="geometry" />
         </mxCell>
         <mxCell id="c13" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;file persisted&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.5;verticalAlign=bottom;spacingBottom=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c4" target="c5">
           <mxGeometry relative="1" as="geometry"></mxGeometry>
@@ -63,7 +63,7 @@
           <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
         <mxCell id="c21" value="&lt;i&gt;Members browse and download here directly (Happy Path 0) — extraction and curation never gate availability.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F2F2;strokeColor=#969696;fontColor=#555555;fontSize=10;dashed=1;arcSize=8;align=left;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="230" y="240" width="340" height="55" as="geometry" />
+          <mxGeometry x="240" y="245" width="340" height="55" as="geometry" />
         </mxCell>
         <mxCell id="c22" value="&lt;b&gt;Message:&lt;/b&gt; Store-first: the product guarantee ends at &amp;quot;Stored in Space Library&amp;quot; — the seven boxes to its right are an optional curation overlay that can fail or reject without touching storage." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
           <mxGeometry x="40" y="460" width="1480" height="34" as="geometry" />
