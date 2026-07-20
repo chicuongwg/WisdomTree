@@ -86,15 +86,27 @@
   --graph-dim: 0.28;
 
   /* --- Type roles ---------------------------------------------------- */
-  /* Display + long-form knowledge content: bookish serif with full
-     Vietnamese coverage (self-hosted files unavailable → system stack) */
-  --font-display: "Charter", "Bitstream Charter", Cambria, Georgia,
-    "Times New Roman", serif;
+  /* Display + long-form knowledge content: bookish serif.
+     EVERY family listed here must carry the Vietnamese precomposed range
+     (U+1EA0–U+1EF9 plus ơ/ư U+01A1/U+01B0) — a font missing them does not
+     fail visibly, it renders the unaccented letters itself and lets the
+     browser substitute per glyph, so "Việc được giao" comes out in two
+     different typefaces. Charter, Bitstream Charter and Georgia were in this
+     list and none of them cover Vietnamese; Georgia is installed on Linux and
+     was therefore the one actually chosen. Check before adding a family:
+       fc-list ':charset=1ec7' family | grep -i '<name>'
+     Self-hosting a real Charter subset would be the nicer answer, and would
+     replace this list rather than extend it. */
+  --font-display: "Noto Serif", "Source Serif 4", "Liberation Serif",
+    "DejaVu Serif", "Times New Roman", serif;
   /* Interface: quiet sans for nav, controls, tables, badges */
   --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
   /* Utility: data, editors, subscription URLs */
-  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  /* Same coverage rule: the corrected-text and Markdown editors are
+     monospace and hold Vietnamese prose, so the named fallbacks must too. */
+  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas,
+    "DejaVu Sans Mono", "Liberation Mono", monospace;
 
   /* --- Rhythm -------------------------------------------------------- */
   /* One 4px-based spacing scale. Every gap, pad and margin in the app is

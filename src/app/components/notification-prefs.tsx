@@ -45,8 +45,10 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
     setBusy(false);
   }
 
+  // Fragment for the same reason as the curation workbench: the panel spaces
+  // its own children, and a wrapper element absorbs that spacing.
   return (
-    <div>
+    <>
       <table className="list">
         <thead>
           <tr>
@@ -78,11 +80,11 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
       </table>
       {error && <p className="error-text">{error}</p>}
       {message && <p className="muted">{message}</p>}
-      <p>
+      <div className="button-row">
         <button onClick={save} disabled={busy}>
           {busy ? T.loading : T.save}
         </button>
-      </p>
-    </div>
+      </div>
+    </>
   );
 }

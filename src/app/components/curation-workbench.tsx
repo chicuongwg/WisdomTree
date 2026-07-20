@@ -76,8 +76,13 @@ export function CurationWorkbench(props: Props) {
     }
   }
 
+  // A fragment, not a wrapper <div>: `.with-side > *` already stacks its
+  // children with the standard gap, and every block in this app gets its
+  // spacing from a parent's gap rather than its own margin. One extra element
+  // in between swallowed that gap, which is why the "Lưu" button sat flush
+  // against the "Bản thảo" heading below it.
   return (
-    <div>
+    <>
       {error && <p className="error-text" role="alert">{error}</p>}
       {ok && <p className="ok-text" role="status">{ok}</p>}
 
@@ -124,10 +129,10 @@ export function CurationWorkbench(props: Props) {
           ))}
         </select>
       </div>
-      <p>
+      <div className="button-row">
         <button disabled={busy || !active || !draftMd.trim()} onClick={saveDraft}>
           {T.saveDraft}
-        </button>{" "}
+        </button>
         <button
           className="secondary"
           disabled={busy || !active || !draftMd.trim()}
@@ -135,7 +140,7 @@ export function CurationWorkbench(props: Props) {
         >
           {T.markReady}
         </button>
-      </p>
-    </div>
+      </div>
+    </>
   );
 }
