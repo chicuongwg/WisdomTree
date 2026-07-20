@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { ConfirmButton } from "./confirm-button";
 
 export function LoanActions({ ticketId, state }: { ticketId: string; state: string }) {
   const router = useRouter();
@@ -24,22 +25,29 @@ export function LoanActions({ ticketId, state }: { ticketId: string; state: stri
       setBusy(false);
       return;
     }
-    setBusy(false);
+    // Refresh first, clear busy after: the button stays disabled across the
+    // round trip so the act cannot be fired twice.
     router.refresh();
+    setBusy(false);
   }
 
   return (
     <div>
       {error && <p className="error-text">{error}</p>}
       {state === "requested" && (
-        <span className="button-row">
+        <div className="button-row">
           <button disabled={busy} onClick={() => act("approve")}>
             {T.approve}
           </button>
-          <button className="danger" disabled={busy} onClick={() => act("decline")}>
-            {T.decline}
-          </button>
-        </span>
+          <ConfirmButton
+            className="danger"
+            disabled={busy}
+            label={T.decline}
+            title={T.confirmDeclineLoanTitle}
+            body={T.confirmDeclineLoanBody}
+            onConfirm={() => act("decline")}
+          />
+        </div>
       )}
       {state === "approved" && (
         <span className="button-row">
@@ -55,9 +63,13 @@ export function LoanActions({ ticketId, state }: { ticketId: string; state: stri
         </span>
       )}
       {(state === "borrowed" || state === "overdue") && (
-        <button disabled={busy} onClick={() => act("return")}>
-          {T.markReturned}
-        </button>
+        <ConfirmButton
+          disabled={busy}
+          label={T.markReturned}
+          title={T.confirmMarkReturnedTitle}
+          body={T.confirmMarkReturnedBody}
+          onConfirm={() => act("return")}
+        />
       )}
     </div>
   );

@@ -1137,6 +1137,37 @@ a.pal-item:hover, button.pal-item:hover, .pal-item.sel {
 .pal-item .pal-cat { margin-left: auto; flex: none; color: var(--color-ink-muted); font-size: 0.72rem; }
 .pal-item .item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* --- Confirm dialog ------------------------------------------
+   A destructive act asks first, on the same dó paper as a panel and
+   marked with the seal rule down its edge — the vermilion says
+   "stamped decision", the way .danger buttons do. The element is the
+   native <dialog> opened with showModal(), so focus trapping, Escape
+   and the inert background come from the browser; only the paper is
+   styled here. ::backdrop reads --shell-veil by inheriting from the
+   dialog, the same veil the command palette dims the app with. */
+dialog.confirm {
+  width: min(30rem, 92vw);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
+  border-left: 3px solid var(--color-seal);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-ui);
+}
+dialog.confirm::backdrop { background: var(--shell-veil); }
+dialog.confirm h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+/* The consequence is the point of the box, so it is read in full ink, not
+   muted like ordinary metadata. */
+dialog.confirm p { margin: var(--space-3) 0 0; line-height: 1.55; }
+dialog.confirm .confirm-actions { margin-top: var(--space-5); justify-content: flex-end; }
+
 /* Signed-out chrome (login page): the old topbar, brand only */
 .plain-shell { min-height: 100vh; }
 

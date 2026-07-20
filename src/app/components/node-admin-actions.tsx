@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { ConfirmButton } from "./confirm-button";
 
 /** Node Detail Admin/Op controls: archive, and merge into a canonical node. */
 export function NodeAdminActions({
@@ -31,19 +32,26 @@ export function NodeAdminActions({
       setBusy(false);
       return;
     }
-    setBusy(false);
+    // Refresh first, clear busy after: the button stays disabled across the
+    // round trip so the act cannot be fired twice.
     router.refresh();
+    setBusy(false);
   }
 
   return (
     <div className="panel">
       <h2>Quản trị trang</h2>
       {error && <p className="error-text">{error}</p>}
-      <p>
-        <button className="danger" disabled={busy} onClick={() => act(`/api/tree/nodes/${nodeId}/archive`)}>
-          {T.archive}
-        </button>
-      </p>
+      <div>
+        <ConfirmButton
+          className="danger"
+          disabled={busy}
+          label={T.archive}
+          title={T.confirmArchiveNodeTitle}
+          body={T.confirmArchiveNodeBody}
+          onConfirm={() => act(`/api/tree/nodes/${nodeId}/archive`)}
+        />
+      </div>
       <div className="field">
         <label htmlFor="canonical">{T.merge} — chọn trang chuẩn</label>
         <select id="canonical" value={canonicalNodeId} onChange={(e) => setCanonicalNodeId(e.target.value)}>
@@ -57,12 +65,15 @@ export function NodeAdminActions({
             ))}
         </select>
       </div>
-      <button
-        disabled={busy || !canonicalNodeId}
-        onClick={() => act(`/api/tree/nodes/${nodeId}/merge`, { canonicalNodeId })}
-      >
-        {T.merge}
-      </button>
+      <div>
+        <ConfirmButton
+          disabled={busy || !canonicalNodeId}
+          label={T.merge}
+          title={T.confirmMergeTitle}
+          body={T.confirmMergeBody}
+          onConfirm={() => act(`/api/tree/nodes/${nodeId}/merge`, { canonicalNodeId })}
+        />
+      </div>
     </div>
   );
 }

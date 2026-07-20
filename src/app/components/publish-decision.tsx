@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { ConfirmButton } from "./confirm-button";
 
 /**
  * Publish Review decision controls (admin-op-screen-specs.md): approve
@@ -46,12 +47,14 @@ export function PublishDecision({
         ...(selected.length ? { excerptChunkIds: selected } : {}),
       }),
     });
-    setBusy(false);
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setBusy(false);
       return;
     }
+    // Busy stays set on the way out: the decision is made and the screen is
+    // navigating away, so the buttons must not come back to life first.
     const node = (await res.json()) as { id: string };
     router.push(`/tree/node/${node.id}`);
     router.refresh();
@@ -63,10 +66,10 @@ export function PublishDecision({
     const res = await fetch(`/api/source/${sourceId}/version/${versionId}/reject`, {
       method: "POST",
     });
-    setBusy(false);
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setBusy(false);
       return;
     }
     router.push("/review");
@@ -106,17 +109,33 @@ export function PublishDecision({
           ))}
         </fieldset>
       )}
-      <p className="button-row">
-        <button disabled={busy || !branchId} onClick={() => publish("verified")}>
-          {T.publishVerified}
-        </button>
-        <button className="secondary" disabled={busy || !branchId} onClick={() => publish("unverified")}>
-          {T.publishUnverified}
-        </button>
-        <button className="danger" disabled={busy} onClick={reject}>
-          {T.reject}
-        </button>
-      </p>
+      <div className="button-row">
+        <ConfirmButton
+          disabled={busy || !branchId}
+          label={T.publishVerified}
+          title={T.confirmPublishVerifiedTitle}
+          body={T.confirmPublishVerifiedBody}
+          confirmLabel={T.publish}
+          onConfirm={() => publish("verified")}
+        />
+        <ConfirmButton
+          className="secondary"
+          disabled={busy || !branchId}
+          label={T.publishUnverified}
+          title={T.confirmPublishUnverifiedTitle}
+          body={T.confirmPublishUnverifiedBody}
+          confirmLabel={T.publish}
+          onConfirm={() => publish("unverified")}
+        />
+        <ConfirmButton
+          className="danger"
+          disabled={busy}
+          label={T.reject}
+          title={T.confirmRejectCurationTitle}
+          body={T.confirmRejectCurationBody}
+          onConfirm={reject}
+        />
+      </div>
     </div>
   );
 }

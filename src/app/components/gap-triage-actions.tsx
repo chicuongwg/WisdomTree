@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { ConfirmButton } from "./confirm-button";
 
 /** Gap-request triage: triaged → converted / rejected → archived. */
 export function GapTriageActions({
@@ -30,13 +31,16 @@ export function GapTriageActions({
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
     });
-    setBusy(false);
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setBusy(false);
       return;
     }
+    // Refresh first, clear busy after: the button stays disabled across the
+    // round trip so the act cannot be fired twice.
     router.refresh();
+    setBusy(false);
   }
 
   return (
@@ -72,7 +76,7 @@ export function GapTriageActions({
               ))}
             </select>
           </div>
-          <p>
+          <div className="button-row">
             <button
               disabled={busy || (!branchId && !nodeId)}
               onClick={() =>
@@ -83,17 +87,29 @@ export function GapTriageActions({
               }
             >
               {T.convertToBranch}
-            </button>{" "}
-            <button className="danger" disabled={busy} onClick={() => act("reject")}>
-              {T.reject}
             </button>
-          </p>
+            <ConfirmButton
+              className="danger"
+              disabled={busy}
+              label={T.reject}
+              title={T.confirmRejectGapTitle}
+              body={T.confirmRejectGapBody}
+              onConfirm={() => act("reject")}
+            />
+          </div>
         </>
       )}
       {["triaged", "converted_to_branch", "rejected"].includes(state) && (
-        <button className="secondary" disabled={busy} onClick={() => act("archive")}>
-          {T.archive}
-        </button>
+        <div>
+          <ConfirmButton
+            className="secondary"
+            disabled={busy}
+            label={T.archive}
+            title={T.confirmArchiveGapTitle}
+            body={T.confirmArchiveGapBody}
+            onConfirm={() => act("archive")}
+          />
+        </div>
       )}
     </div>
   );

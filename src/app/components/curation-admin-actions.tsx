@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { ConfirmButton } from "./confirm-button";
 
 /**
  * Admin Source Detail actions: assign curation to an editor, or close the
@@ -34,13 +35,16 @@ export function CurationAdminActions({
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
     });
-    setBusy(false);
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setBusy(false);
       return;
     }
+    // Refresh first, clear busy after: the button stays disabled across the
+    // round trip so the act cannot be fired twice.
     router.refresh();
+    setBusy(false);
   }
 
   const base = `/api/source/${sourceId}/version/${versionId}`;
@@ -59,16 +63,21 @@ export function CurationAdminActions({
           ))}
         </select>
       </div>
-      <p>
+      <div className="button-row">
         <button disabled={busy || !assigneeId} onClick={() => act(`${base}/assign`, { assigneeId })}>
           {T.assign}
-        </button>{" "}
+        </button>
         {curationOpen && (
-          <button className="danger" disabled={busy} onClick={() => act(`${base}/reject`)}>
-            {T.reject}
-          </button>
+          <ConfirmButton
+            className="danger"
+            disabled={busy}
+            label={T.reject}
+            title={T.confirmRejectCurationTitle}
+            body={T.confirmRejectCurationBody}
+            onConfirm={() => act(`${base}/reject`)}
+          />
         )}
-      </p>
+      </div>
     </div>
   );
 }
