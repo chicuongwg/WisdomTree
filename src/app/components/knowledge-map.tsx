@@ -540,9 +540,9 @@ export function KnowledgeMap({
   // everywhere else. Ctrl/⌘ + wheel zooms, which is the modifier browsers and
   // canvas tools already use for zoom, and the help text below says so.
   //
-  // The listener is attached by the ref callback rather than by an effect: the
-  // <svg> is conditionally rendered, and an effect with stable deps would
-  // never re-run to re-attach it after a filter emptied the map.
+  // The listener is attached by the ref callback rather than by an effect, so
+  // it follows the element itself rather than a render: whatever React does
+  // with the <svg>, the wheel handler goes with it.
   const attachSvg = useCallback(
     (el: SVGSVGElement | null) => {
       svgRef.current = el;
@@ -779,159 +779,163 @@ export function KnowledgeMap({
           idPrefix={uid}
         />
 
-        {view.visible.length === 0 ? (
-          <p className="muted">{T.graphNoMatch}</p>
-        ) : (
-          <svg
-            ref={attachSvg}
-            className="knowledge-map"
-            viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
-            /* never taller than 1:1 — past that the map is only bigger dots */
-            style={{ maxHeight: CANVAS.height, "--g-edge-w": edgeWidth } as React.CSSProperties}
-            role="group"
-            aria-label={T.graph}
-            aria-describedby={`${uid}-help`}
-            data-dim={lit ? "on" : "off"}
-          >
-            {/* One arrowhead per link type, so a direction marker keeps the
-                colour of the line it ends. `context-stroke` would do this with a
-                single marker but is not carried by every engine we support, and
-                four <marker> elements is cheaper than a fallback.
-                ponytail: refX pushes the head back a fixed 24 units so it lands
-                beside the target mark rather than under it. Marks are 8–21 units
-                of radius, so a hub with the size slider at maximum can still
-                swallow its own arrowheads. Per-edge geometry would fix that and
-                would mean computing an offset per edge on every frame — do it
-                only if a reader reports it. */}
-            <defs>
-              {LINK_TYPES.map((t) => (
-                <marker
-                  key={t}
-                  id={`${uid}-arrow-${t}`}
-                  className={`g-arrow t-${t}`}
-                  viewBox="0 0 10 10"
-                  /* 34 viewBox units × (7/10 scale to user units) ≈ 24 canvas
-                     units of pull-back from the line's end. */
-                  refX="34"
-                  refY="5"
-                  markerWidth="7"
-                  markerHeight="7"
-                  markerUnits="userSpaceOnUse"
-                  orient="auto-start-reverse"
-                >
-                  <path d="M 0 0 L 10 5 L 0 10 z" />
-                </marker>
-              ))}
-            </defs>
+        {/* A filter that matches nothing empties the map; it does not remove it.
+            The canvas used to be swapped out for a paragraph, so filtering to
+            zero results made the map — and every pixel of height it held —
+            vanish, and the page collapsed around the words. The svg is
+            unconditional now and the message is laid over it (.map-empty), so
+            the reader keeps a blank map exactly where the map was, and gets it
+            back the moment the term matches something again. */}
+        {view.visible.length === 0 && <p className="map-empty">{T.graphNoMatch}</p>}
+        <svg
+          ref={attachSvg}
+          className="knowledge-map"
+          viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
+          /* the drawn height is the map screen fill in globals.css now */
+          style={{ "--g-edge-w": edgeWidth } as React.CSSProperties}
+          role="group"
+          aria-label={T.graph}
+          aria-describedby={`${uid}-help`}
+          data-dim={lit ? "on" : "off"}
+        >
+          {/* One arrowhead per link type, so a direction marker keeps the
+              colour of the line it ends. `context-stroke` would do this with a
+              single marker but is not carried by every engine we support, and
+              four <marker> elements is cheaper than a fallback.
+              ponytail: refX pushes the head back a fixed 24 units so it lands
+              beside the target mark rather than under it. Marks are 8–21 units
+              of radius, so a hub with the size slider at maximum can still
+              swallow its own arrowheads. Per-edge geometry would fix that and
+              would mean computing an offset per edge on every frame — do it
+              only if a reader reports it. */}
+          <defs>
+            {LINK_TYPES.map((t) => (
+              <marker
+                key={t}
+                id={`${uid}-arrow-${t}`}
+                className={`g-arrow t-${t}`}
+                viewBox="0 0 10 10"
+                /* 34 viewBox units × (7/10 scale to user units) ≈ 24 canvas
+                   units of pull-back from the line's end. */
+                refX="34"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                markerUnits="userSpaceOnUse"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" />
+              </marker>
+            ))}
+          </defs>
 
-            {/* Background: the pan surface. Also the click target that dismisses
-                the preview card. */}
-            <rect
-              className="g-surface"
-              x="0"
-              y="0"
-              width={CANVAS.width}
-              height={CANVAS.height}
-              onPointerDown={onBackgroundPointerDown}
-              onPointerMove={onBackgroundPointerMove}
-              onPointerUp={onBackgroundPointerUp}
-              onPointerCancel={onBackgroundPointerUp}
-            />
+          {/* Background: the pan surface. Also the click target that dismisses
+              the preview card. */}
+          <rect
+            className="g-surface"
+            x="0"
+            y="0"
+            width={CANVAS.width}
+            height={CANVAS.height}
+            onPointerDown={onBackgroundPointerDown}
+            onPointerMove={onBackgroundPointerMove}
+            onPointerUp={onBackgroundPointerUp}
+            onPointerCancel={onBackgroundPointerUp}
+          />
 
-            <g ref={viewportRef} className="g-viewport">
-              <g className="g-edges">
-                {view.links.map((e) => {
-                  const key = `${e.from}-${e.to}-${e.linkType}`;
-                  const a = view.seed[e.from];
-                  const b = view.seed[e.to];
-                  if (!a || !b) return null;
-                  const near = !lit || (lit.has(e.from) && lit.has(e.to));
-                  return (
-                    <line
-                      key={key}
-                      ref={(el) => {
-                        if (el) edgeEls.current.set(key, { el, from: e.from, to: e.to });
-                        return () => {
-                          edgeEls.current.delete(key);
-                        };
-                      }}
-                      className={`g-edge t-${e.linkType}${near ? " is-near" : " is-far"}`}
-                      markerEnd={settings.arrows ? `url(#${uid}-arrow-${e.linkType})` : undefined}
-                      x1={a.x}
-                      y1={a.y}
-                      x2={b.x}
-                      y2={b.y}
-                    />
-                  );
-                })}
-              </g>
-
-              {view.visible.map((n) => {
-                const at = view.seed[n.id];
-                if (!at) return null;
-                // The DRAWN radius. `radii` stays the physical one the collision
-                // pass was given, so scaling the marks never moves them.
-                const r = (radii.get(n.id) ?? 8) * nodeScale;
-                const isPinned = pinned.has(n.id) || n.id === centerId;
-                const near = !lit || lit.has(n.id);
-                const label = `${n.title} — ${verificationStateLabel(n.verification)} (${
-                  SHAPE_LABEL[n.verification] ?? ""
-                })${isPinned ? `, ${T.graphPinnedOne}` : ""}`;
+          <g ref={viewportRef} className="g-viewport">
+            <g className="g-edges">
+              {view.links.map((e) => {
+                const key = `${e.from}-${e.to}-${e.linkType}`;
+                const a = view.seed[e.from];
+                const b = view.seed[e.to];
+                if (!a || !b) return null;
+                const near = !lit || (lit.has(e.from) && lit.has(e.to));
                 return (
-                  <g
-                    key={n.id}
-                    data-id={n.id}
+                  <line
+                    key={key}
                     ref={(el) => {
-                      if (el) nodeEls.current.set(n.id, el);
+                      if (el) edgeEls.current.set(key, { el, from: e.from, to: e.to });
                       return () => {
-                        nodeEls.current.delete(n.id);
+                        edgeEls.current.delete(key);
                       };
                     }}
-                    className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
-                      near ? " is-near" : " is-far"
-                    }${
-                      (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
-                    }`}
-                    role="link"
-                    tabIndex={0}
-                    aria-label={label}
-                    aria-describedby={peek?.id === n.id ? cardId : undefined}
-                    transform={`translate(${at.x}, ${at.y})`}
-                    onPointerDown={onNodePointerDown}
-                    onPointerMove={onNodePointerMove}
-                    onPointerUp={onNodePointerUp}
-                    onPointerCancel={onNodePointerCancel}
-                    onKeyDown={onMarkKeyDown}
-                    onMouseEnter={onNodeEnter}
-                    onMouseLeave={onLeave}
-                    onFocus={onNodeEnter}
-                    onBlur={onLeave}
-                  >
-                    {/* The seal ring: a pinned mark is stamped in place. */}
-                    {isPinned && <circle className="g-seal" r={r + 6} />}
-                    {n.verification === "verified" ? (
-                      <circle className="g-mark" r={r} />
-                    ) : n.verification === "unverified" ? (
-                      <rect
-                        className="g-mark"
-                        x={-r}
-                        y={-r}
-                        width={r * 2}
-                        height={r * 2}
-                        transform="rotate(45)"
-                      />
-                    ) : (
-                      <rect className="g-mark" x={-r} y={-r} width={r * 2} height={r * 2} rx="2" />
-                    )}
-                    <text className="g-label" y={r + LABEL_DY}>
-                      {n.title.length > LABEL_MAX ? `${n.title.slice(0, LABEL_CUT)}…` : n.title}
-                    </text>
-                  </g>
+                    className={`g-edge t-${e.linkType}${near ? " is-near" : " is-far"}`}
+                    markerEnd={settings.arrows ? `url(#${uid}-arrow-${e.linkType})` : undefined}
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                  />
                 );
               })}
             </g>
-          </svg>
-        )}
+
+            {view.visible.map((n) => {
+              const at = view.seed[n.id];
+              if (!at) return null;
+              // The DRAWN radius. `radii` stays the physical one the collision
+              // pass was given, so scaling the marks never moves them.
+              const r = (radii.get(n.id) ?? 8) * nodeScale;
+              const isPinned = pinned.has(n.id) || n.id === centerId;
+              const near = !lit || lit.has(n.id);
+              const label = `${n.title} — ${verificationStateLabel(n.verification)} (${
+                SHAPE_LABEL[n.verification] ?? ""
+              })${isPinned ? `, ${T.graphPinnedOne}` : ""}`;
+              return (
+                <g
+                  key={n.id}
+                  data-id={n.id}
+                  ref={(el) => {
+                    if (el) nodeEls.current.set(n.id, el);
+                    return () => {
+                      nodeEls.current.delete(n.id);
+                    };
+                  }}
+                  className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
+                    near ? " is-near" : " is-far"
+                  }${
+                    (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
+                  }`}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={label}
+                  aria-describedby={peek?.id === n.id ? cardId : undefined}
+                  transform={`translate(${at.x}, ${at.y})`}
+                  onPointerDown={onNodePointerDown}
+                  onPointerMove={onNodePointerMove}
+                  onPointerUp={onNodePointerUp}
+                  onPointerCancel={onNodePointerCancel}
+                  onKeyDown={onMarkKeyDown}
+                  onMouseEnter={onNodeEnter}
+                  onMouseLeave={onLeave}
+                  onFocus={onNodeEnter}
+                  onBlur={onLeave}
+                >
+                  {/* The seal ring: a pinned mark is stamped in place. */}
+                  {isPinned && <circle className="g-seal" r={r + 6} />}
+                  {n.verification === "verified" ? (
+                    <circle className="g-mark" r={r} />
+                  ) : n.verification === "unverified" ? (
+                    <rect
+                      className="g-mark"
+                      x={-r}
+                      y={-r}
+                      width={r * 2}
+                      height={r * 2}
+                      transform="rotate(45)"
+                    />
+                  ) : (
+                    <rect className="g-mark" x={-r} y={-r} width={r * 2} height={r * 2} rx="2" />
+                  )}
+                  <text className="g-label" y={r + LABEL_DY}>
+                    {n.title.length > LABEL_MAX ? `${n.title.slice(0, LABEL_CUT)}…` : n.title}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        </svg>
       </div>
 
       {peek && (

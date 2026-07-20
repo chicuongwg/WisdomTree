@@ -1557,6 +1557,9 @@ a.tree-item.nav-item { font-weight: 500; }
    it would cover the thing it is controlling with no way to see both. Shut, it
    is one summary row, so it costs the map almost nothing there either. */
 @media (max-width: 40rem) {
+  /* On a phone the map goes back to its own proportions: a 72vh box around a
+     350px-wide drawing is mostly empty paper above and below the marks. */
+  svg.knowledge-map { height: auto; }
   .graph-panel {
     position: static;
     width: auto;
@@ -1616,9 +1619,35 @@ a.tree-item.nav-item { font-weight: 500; }
   font-size: 0.8rem;
 }
 
+/* The message shown when a filter matches nothing. It is laid OVER the canvas,
+   never in place of it: the map used to be swapped out for this paragraph, and
+   a reader who mistyped a page title watched the whole map — and the height it
+   held — disappear out from under them. The canvas stays, empty, and the words
+   sit in the middle of it. `pointer-events: none` so the surface underneath can
+   still be panned while the message is up. */
+.map-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--color-ink-muted);
+  pointer-events: none;
+}
+
 svg.knowledge-map {
   width: 100%;
-  height: auto;
+  /* Full size is the point of this screen (owner: "ưu tiên full size"), and the
+     floating control panel eats into it as well, so the map takes the height of
+     the window rather than the fixed 640px it used to be capped at. It keeps
+     its 1000×640 viewBox, so on a very wide column the drawing is centred with
+     paper either side — the same paper, so nothing shows a seam.
+     ponytail: a viewBox that tracked the element's own aspect ratio would use
+     that strip too, at the cost of a resize observer and a re-layout on every
+     drag of the window edge. Do it only if someone asks for the strip back. */
+  height: min(72vh, 46rem);
   background: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
