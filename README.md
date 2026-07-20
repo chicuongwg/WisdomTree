@@ -19,7 +19,7 @@ extraction stub, console notification adapters, local bare content repo).
 
 ```sh
 npm install
-npm run demo   # docker compose up db → migrate → seed → next dev
+npm run demo   # docker compose up db → migrate → seed → build → start
 ```
 
 Or step by step:
@@ -28,8 +28,20 @@ Or step by step:
 docker compose up -d db   # PostgreSQL 16 on :5432
 npm run db:migrate        # applies drizzle/*.sql (forward-only, tracked)
 npm run db:seed           # acceptance-criteria dataset (re-runnable)
-npm run dev               # http://localhost:3000
+npm run build && npm run start   # http://localhost:3000
 ```
+
+**Use the built app, not `next dev`, for anything but editing code.** Every
+page is dynamic, so a dev server compiles each route the first time it is
+opened: measured on this repo, first paint runs 0.6–3.0 s per route and stays
+70–200 ms afterwards, against 9–15 ms served from a build. Nothing in the app
+is slow — the wait is webpack. While editing, `npm run dev` uses Turbopack,
+which cuts the compile pause substantially; `npm run dev:webpack` keeps the
+old bundler if a Turbopack bug ever needs ruling out.
+
+Never run `npm run build` while a dev server is up: both write `.next` and the
+result is a corrupted server that fails with `Cannot find module
+'./vendor-chunks/...'`. Stop the server, `rm -rf .next`, then build.
 
 Seeded per the brief's acceptance criteria: 3 users (User/Editor/Admin-Op),
 2 team spaces (one is the community library) + a personal space per user,
@@ -40,7 +52,7 @@ choose a seeded member; V1 swaps in Google OIDC behind the same session shape.
 
 ### Acceptance proofs
 
-With the app running (`npm run dev` or `npm run demo`):
+With the app running (`npm run demo`, or `npm run start` after a build):
 
 ```sh
 npm run proofs
