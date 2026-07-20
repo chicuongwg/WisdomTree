@@ -86,11 +86,10 @@ export default async function TreeBrowsePage({
             <Link href="/tree/branches">{T.branch}</Link>
           </h2>
           {branches.length === 0 && (
-            // TODO(vi): move to src/lib/vi.ts
             <Empty
               panel={false}
-              title="Chưa có chuyên đề nào."
-              hint="Chuyên đề gom những trang tri thức cùng một chủ đề lại với nhau."
+              title={T.branchesEmptyTitle}
+              hint={T.branchesEmptyHint}
               action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
             />
           )}
@@ -109,11 +108,11 @@ export default async function TreeBrowsePage({
           <h2>Trang cập nhật gần đây</h2>
           {recent.length === 0 && (
             // A page is written inside a branch, so the next step is a branch,
-            // not a "new page" button. TODO(vi): move to src/lib/vi.ts
+            // not a "new page" button.
             <Empty
               panel={false}
-              title="Chưa có trang tri thức nào."
-              hint="Mỗi trang tri thức nằm trong một chuyên đề — mở một chuyên đề để bắt đầu viết."
+              title={T.nodesEmptyTitle}
+              hint={T.nodesEmptyHint}
               action={canEdit ? { label: T.navBranches, href: "/tree/branches" } : undefined}
             />
           )}

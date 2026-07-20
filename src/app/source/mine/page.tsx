@@ -22,10 +22,9 @@ export default async function MySubmissionsPage() {
     <main className="page">
       <h1>{T.mySubmissions}</h1>
       {items.length === 0 ? (
-        // TODO(vi): move to src/lib/vi.ts
         <Empty
-          title="Bạn chưa gửi tư liệu nào."
-          hint="Tư liệu bạn tải lên và những đề xuất bổ sung bạn nêu đều được liệt kê ở đây."
+          title={T.mySubmissionsEmptyTitle}
+          hint={T.mySubmissionsEmptyHint}
           action={{ label: T.uploadCta, href: "/source/intake" }}
         />
       ) : (

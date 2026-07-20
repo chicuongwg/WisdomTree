@@ -73,10 +73,9 @@ export default async function ReviewQueuePage({
         taskType || state ? (
           <Empty title={T.noMatches} action={<Link href="/review">{T.clearFilters}</Link>} />
         ) : (
-          // TODO(vi): move to src/lib/vi.ts
           <Empty
-            title="Không có việc nào đang chờ duyệt."
-            hint="Việc sẽ tự vào hàng chờ khi có tư liệu mới gửi lên hoặc có bản thảo xin xuất bản."
+            title={T.reviewQueueEmptyTitle}
+            hint={T.reviewQueueEmptyHint}
             action={{ label: T.sourceInbox, href: "/source/inbox" }}
           />
         )

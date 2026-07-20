@@ -24,10 +24,9 @@ export default async function BranchListPage() {
         </p>
       )}
       {branches.length === 0 ? (
-        // TODO(vi): move to src/lib/vi.ts
         <Empty
-          title="Chưa có chuyên đề nào."
-          hint="Chuyên đề gom những trang tri thức cùng một chủ đề lại với nhau."
+          title={T.branchesEmptyTitle}
+          hint={T.branchesEmptyHint}
           action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
         />
       ) : (

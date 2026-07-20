@@ -37,11 +37,10 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
     router.refresh();
   }
 
-  // TODO(vi): move to src/lib/vi.ts
   if (!open) {
     return (
       <button className="secondary" onClick={() => setOpen(true)}>
-        Thêm trang tri thức
+        {T.addNode}
       </button>
     );
   }

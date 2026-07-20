@@ -43,14 +43,9 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
       {branch.nodes.length === 0 ? (
         // The create form sits right below for an editor, so the empty state
         // points at it instead of adding a second button.
-        // TODO(vi): move to src/lib/vi.ts
         <Empty
-          title="Chuyên đề này chưa có trang tri thức nào."
-          hint={
-            canEdit
-              ? "Bấm “Thêm trang tri thức” ngay bên dưới để viết trang đầu tiên."
-              : "Khi có người thêm trang vào chuyên đề này, chúng sẽ hiện ở đây."
-          }
+          title={T.branchNodesEmptyTitle}
+          hint={canEdit ? T.branchNodesEmptyHintEditor : T.branchNodesEmptyHintReader}
         />
       ) : (
         <div className="record-scroll">

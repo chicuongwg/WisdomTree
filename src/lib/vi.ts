@@ -64,6 +64,45 @@ export const T = {
   libraryEmptyHint: "Tải lên tài liệu đầu tiên — tệp xem và tải được ngay, không cần chờ xử lý.",
   uploadCta: "Gửi tư liệu",
   catalogEmptyHint: "Thư viện chưa có đầu sách nào. Liên hệ thủ thư để bổ sung.",
+  // Empty states, one per screen (NEW — not yet in vocabulary-vi.md)
+  homeLoansEmptyTitle: "Bạn chưa mượn cuốn sách nào.",
+  homeLoansEmptyHint: "Tìm sách trong thư viện rồi gửi yêu cầu mượn; thủ thư sẽ duyệt giúp bạn.",
+  notificationsEmptyTitle: "Chưa có thông báo nào.",
+  homeNotificationsEmptyHint:
+    "Khi có người nhắc bạn trong thảo luận, hoặc tư liệu bạn gửi có thay đổi, thông báo sẽ hiện ở đây.",
+  notificationsEmptyHint:
+    "Khi có người nhắc bạn trong thảo luận, hoặc việc bạn theo dõi có thay đổi, thông báo sẽ hiện ở đây. Chọn kênh nhận thông báo ở phần bên dưới.",
+  deadlinesEmptyTitle: "Chưa có hạn chót nào.",
+  deadlinesEmptyHint:
+    "Tạo hạn chót đầu tiên ở khung bên cạnh — cả nhóm sẽ thấy nó và được nhắc trước khi tới hạn.",
+  deadlineLinksEmptyTitle: "Chưa có việc hay tài liệu nào gắn với hạn chót này.",
+  deadlineLinksEmptyHint:
+    "Gắn công việc và tư liệu từ chính trang của chúng, để mọi người biết cần chuẩn bị những gì trước hạn.",
+  deskTicketsEmptyTitle: "Không có phiếu mượn nào ở mục này.",
+  deskTicketsEmptyHint: "Phiếu mượn sẽ tự chuyển vào đây khi tới bước này.",
+  boardTodoEmptyTitle: "Chưa có việc cần làm.",
+  boardTodoEmptyHint: "Mở “Thêm công việc” ở trên.",
+  boardDoingEmptyTitle: "Chưa có việc đang làm.",
+  boardDoneEmptyTitle: "Chưa có việc nào hoàn thành.",
+  mySubmissionsEmptyTitle: "Bạn chưa gửi tư liệu nào.",
+  mySubmissionsEmptyHint:
+    "Tư liệu bạn tải lên và những đề xuất bổ sung bạn nêu đều được liệt kê ở đây.",
+  sourceInboxEmptyTitle: "Chưa có tư liệu nào được gửi lên.",
+  sourceInboxEmptyHint:
+    "Khi thành viên gửi tư liệu, chúng vào đây để bạn giao việc hiệu đính. Bạn cũng tự gửi được.",
+  gapRequestsEmptyTitle: "Chưa có đề xuất bổ sung nào.",
+  gapRequestsEmptyHint:
+    "Thành viên gửi đề xuất khi cần một tư liệu mà kho chưa có; đề xuất sẽ hiện ở đây.",
+  reviewQueueEmptyTitle: "Không có việc nào đang chờ duyệt.",
+  reviewQueueEmptyHint:
+    "Việc sẽ tự vào hàng chờ khi có tư liệu mới gửi lên hoặc có bản thảo xin xuất bản.",
+  branchesEmptyTitle: "Chưa có chuyên đề nào.",
+  branchesEmptyHint: "Chuyên đề gom những trang tri thức cùng một chủ đề lại với nhau.",
+  nodesEmptyTitle: "Chưa có trang tri thức nào.",
+  nodesEmptyHint: "Mỗi trang tri thức nằm trong một chuyên đề — mở một chuyên đề để bắt đầu viết.",
+  branchNodesEmptyTitle: "Chuyên đề này chưa có trang tri thức nào.",
+  branchNodesEmptyHintEditor: "Bấm “Thêm trang tri thức” ngay bên dưới để viết trang đầu tiên.",
+  branchNodesEmptyHintReader: "Khi có người thêm trang vào chuyên đề này, chúng sẽ hiện ở đây.",
   // Correcting your own upload (NEW — not yet in vocabulary-vi.md)
   genericError: "Có lỗi xảy ra. Vui lòng thử lại sau.",
   // Gap request: the no-file intake mode (NEW — not yet in vocabulary-vi.md)
@@ -71,6 +110,7 @@ export const T = {
   gapRequestTitle: "Cần bổ sung tư liệu gì?",
   gapRequestWhy: "Vì sao cần (không bắt buộc)",
   gapRequestSent: "Đã gửi đề xuất. Bạn theo dõi được ở mục “Tư liệu tôi đã gửi”.",
+  gapRequestSubmit: "Gửi đề xuất",
   // Librarian Desk: adding a physical item (NEW — not yet in vocabulary-vi.md)
   author: "Tác giả",
   shelfLocation: "Vị trí",
@@ -81,6 +121,7 @@ export const T = {
   uploading: "Đang tải lên",
   uploadFinishing: "Đã tải xong, đang lưu…",
   uploadNetworkError: "Mất kết nối khi đang tải lên. Kiểm tra mạng và thử lại.",
+  noFileChosen: "Chưa chọn tệp",
   noSpacesTitle: "Bạn chưa thuộc kho nào.",
   noSpacesHint: "Cần được thêm vào một kho trước khi gửi tư liệu. Liên hệ quản trị viên.",
   sourceOwnerActions: "Tư liệu bạn đã gửi",
@@ -137,6 +178,7 @@ export const T = {
   deadline: "Hạn chót",
   comments: "Thảo luận",
   addComment: "Gửi thảo luận", // NEW
+  newComment: "Viết thảo luận mới", // NEW
   reply: "Trả lời", // NEW
   // Mentions are typed into the comment itself; the picker is gone.
   mentionHelp: "Gõ @ rồi tên thành viên (ví dụ @Phạm Thu Hương) để nhắc họ vào thảo luận này.", // NEW
@@ -165,6 +207,9 @@ export const T = {
   recent: "Gần đây", // NEW
   shortcuts: "Lối tắt", // NEW
   themeToggle: "Đổi giao diện sáng/tối", // NEW
+  // The theme button is a toggle, so its accessible name is the thing being
+  // switched on ("dark theme, on/off"), not the act.
+  darkTheme: "Giao diện tối", // NEW
   palettePlaceholder: "Gõ để tìm trang tri thức hoặc mở nhanh một mục…", // NEW
   paletteNoResults: "Không tìm thấy kết quả.", // NEW
   paletteSearching: "Đang tìm…", // NEW
@@ -203,6 +248,9 @@ export const T = {
   graphHelp: "Kéo một chấm để ghim nó vào chỗ mới. Giữ Ctrl và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
   graphKeyboardHelp: "Bàn phím: Tab để đi giữa các trang, Enter để mở, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
   graphMotionOff: "Bản đồ đang đứng yên theo thiết lập giảm chuyển động của máy bạn.", // NEW
+  graphZoomGroup: "Thu phóng bản đồ", // NEW
+  graphTouchHelp:
+    "Chạm một chấm để mở trang. Kéo một chấm để ghim nó vào chỗ mới. Kéo nền để di chuyển bản đồ.", // NEW
   // Câu hỏi xác nhận trước những việc không có đường lui. Mỗi câu nói rõ điều
   // gì sẽ thay đổi và có lấy lại được hay không — không bao giờ hỏi trống
   // "Bạn có chắc không?". NEW pending humanities review.
@@ -234,6 +282,43 @@ export const T = {
   confirmMarkReturnedTitle: "Ghi nhận đã nhận lại sách?", // NEW
   confirmMarkReturnedBody:
     "Phiếu mượn đóng lại ở trạng thái Đã trả và đầu sách trở lại Sẵn sàng. Không thể hoàn tác — nếu ghi nhầm thì phải lập phiếu mượn mới.", // NEW
+  // Gap-request triage: where a converted request lands — NEW pending humanities review
+  gapConvertTargetBranch: "— chuyên đề đích", // NEW
+  gapConvertTargetNode: "Hoặc trang tri thức đích", // NEW
+  chooseBranch: "— chọn chuyên đề —", // NEW
+  chooseNoNode: "— không chọn —", // NEW
+  // Curation workbench and the publish decision (NEW — not yet in vocabulary-vi.md)
+  correctedTextHint: "Mỗi lần lưu tạo một bản mới trong chuỗi hiệu đính (không ghi đè).", // NEW
+  correctedTextSaved: "Đã lưu bản hiệu đính mới.", // NEW
+  draftSaved: "Đã lưu bản thảo.", // NEW
+  chooseBranchNotYet: "— chưa chọn —", // NEW
+  sentForReview: "Đã gửi duyệt. Quản trị/Vận hành sẽ ra quyết định xuất bản.", // NEW
+  chooseEditor: "— chọn biên tập viên —", // NEW
+  publishDecision: "Quyết định", // NEW
+  // Node Detail: admin panel, manual creation, save conflict (NEW — not yet in vocabulary-vi.md)
+  nodeAdmin: "Quản trị trang", // NEW
+  mergeCanonicalLabel: "— chọn trang chuẩn", // NEW
+  chooseCanonicalNode: "— chọn trang chuẩn —", // NEW
+  addNode: "Thêm trang tri thức", // NEW
+  reloadNewVersion: "Tải lại phiên bản mới", // NEW
+  // Node Detail: document export — NEW pending humanities review
+  exportNode: "Xuất tài liệu", // NEW
+  exportDocx: "Xuất docx", // NEW
+  exportPdf: "Xuất pdf", // NEW
+  exporting: "Đang xuất tệp…", // NEW
+  downloadExport: "Tải tệp đã xuất", // NEW
+  exportWarnings: "Lưu ý:", // NEW
+  // Deadline form: reminder offsets and save results (NEW — not yet in vocabulary-vi.md)
+  reminderOneDay: "1 ngày trước", // NEW
+  reminderThreeDays: "3 ngày trước", // NEW
+  reminderOneWeek: "1 tuần trước", // NEW
+  changesSaved: "Đã lưu thay đổi.", // NEW
+  deadlineCreated: "Đã tạo hạn chót.", // NEW
+  // Sign-in picker (NEW — not yet in vocabulary-vi.md)
+  loginPickerCaption: "Chọn một thành viên để đăng nhập", // NEW
+  signingIn: "Đang đăng nhập…", // NEW
+  // Loan request result — NEW pending humanities review
+  loanRequestSent: "Đã gửi yêu cầu mượn. Vui lòng chờ thủ thư duyệt.", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

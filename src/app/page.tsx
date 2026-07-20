@@ -62,11 +62,10 @@ export default async function Home() {
         <div className="panel">
           <h2>{T.loanTicket}</h2>
           {tickets.length === 0 && (
-            // TODO(vi): move to src/lib/vi.ts
             <Empty
               panel={false}
-              title="Bạn chưa mượn cuốn sách nào."
-              hint="Tìm sách trong thư viện rồi gửi yêu cầu mượn; thủ thư sẽ duyệt giúp bạn."
+              title={T.homeLoansEmptyTitle}
+              hint={T.homeLoansEmptyHint}
               action={{ label: T.catalog, href: "/catalog" }}
             />
           )}
@@ -102,11 +101,10 @@ export default async function Home() {
           </h2>
           {notes.length === 0 && (
             // Nothing to press here: notifications arrive on their own.
-            // TODO(vi): move to src/lib/vi.ts
             <Empty
               panel={false}
-              title="Chưa có thông báo nào."
-              hint="Khi có người nhắc bạn trong thảo luận, hoặc tư liệu bạn gửi có thay đổi, thông báo sẽ hiện ở đây."
+              title={T.notificationsEmptyTitle}
+              hint={T.homeNotificationsEmptyHint}
             />
           )}
           <ul>

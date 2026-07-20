@@ -37,13 +37,14 @@ export function GapTriageActions({
           {m.busy ? T.loading : T.triage}
         </button>
       )}
-      {/* TODO(vi): move to src/lib/vi.ts */}
       {state === "triaged" && (
         <>
           <div className="field">
-            <label htmlFor="gap-branch">{T.convertToBranch} — chuyên đề đích</label>
+            <label htmlFor="gap-branch">
+              {T.convertToBranch} {T.gapConvertTargetBranch}
+            </label>
             <select id="gap-branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-              <option value="">— chọn chuyên đề —</option>
+              <option value="">{T.chooseBranch}</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -52,9 +53,9 @@ export function GapTriageActions({
             </select>
           </div>
           <div className="field">
-            <label htmlFor="gap-node">Hoặc trang tri thức đích</label>
+            <label htmlFor="gap-node">{T.gapConvertTargetNode}</label>
             <select id="gap-node" value={nodeId} onChange={(e) => setNodeId(e.target.value)}>
-              <option value="">— không chọn —</option>
+              <option value="">{T.chooseNoNode}</option>
               {nodes.map((n) => (
                 <option key={n.id} value={n.id}>
                   {n.title}

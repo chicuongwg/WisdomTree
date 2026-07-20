@@ -50,8 +50,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           {/* A second map lived here: ~600px of settings, zoom buttons, canvas,
               mouse-and-keyboard help and legend, to draw two dots and one line.
               The two link panels in the rail already name those relationships,
-              in words and with context. One link into the real map instead.
-              TODO(vi): move this label to src/lib/vi.ts */}
+              in words and with context. One link into the real map instead. */}
           <p>
             <Link href={`/graph?node=${node.id}`}>{T.openOnMap}</Link>
           </p>

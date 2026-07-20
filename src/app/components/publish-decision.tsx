@@ -75,13 +75,14 @@ export function PublishDecision({
 
   return (
     <div className="panel">
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h2>Quyết định {T.publish.toLowerCase()}</h2>
+      <h2>
+        {T.publishDecision} {T.publish.toLowerCase()}
+      </h2>
       <Say error={error} />
       <div className="field">
         <label htmlFor="target-branch">{T.branch} đích</label>
         <select id="target-branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-          <option value="">— chọn chuyên đề —</option>
+          <option value="">{T.chooseBranch}</option>
           {branches.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}

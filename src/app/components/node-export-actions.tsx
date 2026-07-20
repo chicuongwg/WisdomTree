@@ -63,26 +63,25 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
 
   return (
     <div className="panel">
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h2>Xuất tài liệu</h2>
+      <h2>{T.exportNode}</h2>
       <Say error={error} />
       <p>
         <button disabled={busy} onClick={() => start("docx")}>
-          Xuất docx
+          {T.exportDocx}
         </button>{" "}
         <button disabled={busy} onClick={() => start("pdf")}>
-          Xuất pdf
+          {T.exportPdf}
         </button>
       </p>
-      {busy && <p className="muted" role="status">Đang xuất tệp…</p>}
+      {busy && <p className="muted" role="status">{T.exporting}</p>}
       {job?.state === "succeeded" && job.result && (
         <p>
           <a className="button" href={job.result.downloadUrl}>
-            Tải tệp đã xuất
+            {T.downloadExport}
           </a>
           {job.result.converterWarnings.length > 0 && (
             <span className="meta">
-              Lưu ý: {job.result.converterWarnings.join("; ")}
+              {T.exportWarnings} {job.result.converterWarnings.join("; ")}
             </span>
           )}
         </p>

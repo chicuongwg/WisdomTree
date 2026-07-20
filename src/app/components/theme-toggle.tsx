@@ -26,10 +26,6 @@ const subscribe = (onChange: () => void) => {
   return () => observer.disconnect();
 };
 
-// TODO(vi): move to src/lib/vi.ts — the button is a toggle, so it is named for
-// the thing being switched on ("dark theme, on/off"), not for the act.
-const DARK_THEME = "Giao diện tối";
-
 export function ThemeToggle() {
   const dark = useSyncExternalStore(subscribe, readTheme, readServerTheme);
 
@@ -58,7 +54,7 @@ export function ThemeToggle() {
       className="rail-btn"
       onClick={toggle}
       title={T.themeToggle}
-      aria-label={DARK_THEME}
+      aria-label={T.darkTheme}
       aria-pressed={dark}
     >
       {dark ? (

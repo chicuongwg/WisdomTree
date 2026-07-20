@@ -207,10 +207,9 @@ export function CommentsSection({
         )}
         <div className="field wide">
           {/* The panel heading already says "Thảo luận"; repeating it on the box
-              named the room, not the thing being written in it.
-              TODO(vi): move to src/lib/vi.ts */}
+              named the room, not the thing being written in it. */}
           <label htmlFor={`${fieldId}-body`}>
-            {replyTo ? `${T.reply} ${replyTo.authorName}` : "Viết thảo luận mới"}
+            {replyTo ? `${T.reply} ${replyTo.authorName}` : T.newComment}
           </label>
           <textarea
             id={`${fieldId}-body`}

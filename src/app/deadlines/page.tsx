@@ -62,11 +62,10 @@ export default async function DeadlinesPage({
             ) : (
               // The create form is the aside on this same screen, so the empty
               // state points at it rather than repeating the button.
-              // TODO(vi): move to src/lib/vi.ts
               <Empty
                 panel={false}
-                title="Chưa có hạn chót nào."
-                hint="Tạo hạn chót đầu tiên ở khung bên cạnh — cả nhóm sẽ thấy nó và được nhắc trước khi tới hạn."
+                title={T.deadlinesEmptyTitle}
+                hint={T.deadlinesEmptyHint}
               />
             )
           ) : (

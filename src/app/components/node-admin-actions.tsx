@@ -21,8 +21,7 @@ export function NodeAdminActions({
   // label rather than only the one that was pressed.
   return (
     <div className="panel">
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h2>Quản trị trang</h2>
+      <h2>{T.nodeAdmin}</h2>
       <SayMutation m={m} />
       <div>
         <ConfirmButton
@@ -35,9 +34,11 @@ export function NodeAdminActions({
         />
       </div>
       <div className="field">
-        <label htmlFor="canonical">{T.merge} — chọn trang chuẩn</label>
+        <label htmlFor="canonical">
+          {T.merge} {T.mergeCanonicalLabel}
+        </label>
         <select id="canonical" value={canonicalNodeId} onChange={(e) => setCanonicalNodeId(e.target.value)}>
-          <option value="">— chọn trang chuẩn —</option>
+          <option value="">{T.chooseCanonicalNode}</option>
           {candidates
             .filter((c) => c.id !== nodeId)
             .map((c) => (

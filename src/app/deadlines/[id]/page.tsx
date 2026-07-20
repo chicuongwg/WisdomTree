@@ -33,11 +33,11 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
             <h2>{T.checklistAndDocs}</h2>
             {deadline.links.length === 0 ? (
               // Nothing gets linked from this screen — the link is made from
-              // the task or the document side. TODO(vi): move to src/lib/vi.ts
+              // the task or the document side.
               <Empty
                 panel={false}
-                title="Chưa có việc hay tài liệu nào gắn với hạn chót này."
-                hint="Gắn công việc và tư liệu từ chính trang của chúng, để mọi người biết cần chuẩn bị những gì trước hạn."
+                title={T.deadlineLinksEmptyTitle}
+                hint={T.deadlineLinksEmptyHint}
               />
             ) : (
               <ul>

@@ -44,11 +44,8 @@ export default async function LibrarianDeskPage() {
             {rows.length === 0 ? (
               // One copy for all four groups: a ticket lands here by moving
               // through the desk, not by anyone pressing something on this
-              // screen. TODO(vi): move to src/lib/vi.ts
-              <Empty
-                title="Không có phiếu mượn nào ở mục này."
-                hint="Phiếu mượn sẽ tự chuyển vào đây khi tới bước này."
-              />
+              // screen.
+              <Empty title={T.deskTicketsEmptyTitle} hint={T.deskTicketsEmptyHint} />
             ) : (
               <div className="record-scroll">
                 <table className="list">

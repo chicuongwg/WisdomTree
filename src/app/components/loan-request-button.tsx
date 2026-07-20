@@ -17,8 +17,7 @@ export function LoanRequestButton({ itemId, disabled }: { itemId: string; disabl
       <button
         onClick={() =>
           void m.run(`/api/catalog/${itemId}/loan/request`, {
-            // TODO(vi): move to src/lib/vi.ts
-            ok: "Đã gửi yêu cầu mượn. Vui lòng chờ thủ thư duyệt.",
+            ok: T.loanRequestSent,
           })
         }
         disabled={disabled || m.busy}

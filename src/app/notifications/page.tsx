@@ -25,11 +25,10 @@ export default async function NotificationsPage() {
         {notes.length === 0 ? (
           // Nothing to press: notifications arrive on their own, and the
           // channel settings are already on this page just below.
-          // TODO(vi): move to src/lib/vi.ts
           <Empty
             panel={false}
-            title="Chưa có thông báo nào."
-            hint="Khi có người nhắc bạn trong thảo luận, hoặc việc bạn theo dõi có thay đổi, thông báo sẽ hiện ở đây. Chọn kênh nhận thông báo ở phần bên dưới."
+            title={T.notificationsEmptyTitle}
+            hint={T.notificationsEmptyHint}
           />
         ) : (
           <div className="record-scroll">

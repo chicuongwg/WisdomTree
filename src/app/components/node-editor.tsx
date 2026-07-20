@@ -69,10 +69,9 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
   return (
     <form onSubmit={onSubmit}>
       <Say error={error} />
-      {/* TODO(vi): move to src/lib/vi.ts */}
       {conflict && (
         <button type="button" className="secondary" onClick={() => router.refresh()}>
-          Tải lại phiên bản mới
+          {T.reloadNewVersion}
         </button>
       )}
       <div className="field">

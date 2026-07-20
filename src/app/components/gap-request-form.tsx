@@ -50,9 +50,8 @@ export function GapRequestForm() {
       </div>
       <button type="submit" disabled={m.busy || !title.trim()}>
         {/* Not the bare T.submit: this screen shows two forms, and two buttons
-            reading only "Gửi" say nothing about which one sends what.
-            TODO(vi): move to src/lib/vi.ts */}
-        {m.busy ? T.loading : "Gửi đề xuất"}
+            reading only "Gửi" say nothing about which one sends what. */}
+        {m.busy ? T.loading : T.gapRequestSubmit}
       </button>
     </form>
   );

@@ -98,8 +98,7 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
         <label htmlFor="file" className="button secondary">
           Chọn {T.file.toLowerCase()}
         </label>
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <span className="muted">{fileName ?? "Chưa chọn tệp"}</span>
+        <span className="muted">{fileName ?? T.noFileChosen}</span>
       </div>
       <div className="field">
         <label htmlFor="spaceId">{T.space}</label>

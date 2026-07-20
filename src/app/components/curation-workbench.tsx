@@ -30,7 +30,6 @@ export function CurationWorkbench(props: Props) {
   const base = `/api/source/${props.sourceId}/version/${props.versionId}`;
   const active = !props.readOnly && props.curationState === "under_correction";
 
-  // TODO(vi): move to src/lib/vi.ts
   async function saveDraft() {
     const saved = await m.run(`${base}/md-draft`, {
       body: {
@@ -38,7 +37,7 @@ export function CurationWorkbench(props: Props) {
         ...(branchId ? { suggestedBranchId: branchId } : {}),
         ...(draftVersion !== null ? { expectedVersion: draftVersion } : {}),
       },
-      ok: "Đã lưu bản thảo.",
+      ok: T.draftSaved,
     });
     // ponytail: the server sets the new version to expectedVersion + 1 (and 1
     // on first save), so counting locally beats reading the response back. If
@@ -51,13 +50,12 @@ export function CurationWorkbench(props: Props) {
   // spacing from a parent's gap rather than its own margin. One extra element
   // in between swallowed that gap, which is why the "Lưu" button sat flush
   // against the "Bản thảo" heading below it.
-  // TODO(vi): move to src/lib/vi.ts
   return (
     <>
       <SayMutation m={m} />
 
       <h2>{T.correctedText}</h2>
-      <p className="muted">Mỗi lần lưu tạo một bản mới trong chuỗi hiệu đính (không ghi đè).</p>
+      <p className="muted">{T.correctedTextHint}</p>
       <div className="field wide">
         <label htmlFor="corrected">{T.correctedText}</label>
         <textarea
@@ -73,7 +71,7 @@ export function CurationWorkbench(props: Props) {
         onClick={() =>
           void m.run(`${base}/corrected-text`, {
             body: { content: corrected },
-            ok: "Đã lưu bản hiệu đính mới.",
+            ok: T.correctedTextSaved,
           })
         }
       >
@@ -99,7 +97,7 @@ export function CurationWorkbench(props: Props) {
           onChange={(e) => setBranchId(e.target.value)}
           disabled={!active}
         >
-          <option value="">— chưa chọn —</option>
+          <option value="">{T.chooseBranchNotYet}</option>
           {props.branches.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}
@@ -118,7 +116,7 @@ export function CurationWorkbench(props: Props) {
           disabled={m.busy || !active || !draftMd.trim()}
           onClick={() =>
             void m.run(`${base}/mark-ready-for-review`, {
-              ok: "Đã gửi duyệt. Quản trị/Vận hành sẽ ra quyết định xuất bản.",
+              ok: T.sentForReview,
             })
           }
         >

@@ -34,8 +34,7 @@ export function CurationAdminActions({
       <div className="field">
         <label htmlFor="assignee">{T.assignee}</label>
         <select id="assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          <option value="">— chọn biên tập viên —</option>
+          <option value="">{T.chooseEditor}</option>
           {editors.map((e) => (
             <option key={e.id} value={e.id}>
               {e.name}

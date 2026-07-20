@@ -11,11 +11,10 @@ import { Empty } from "@/app/components/empty";
 
 // What a lane says when it holds nothing. Only "Cần làm" invites work: an empty
 // "Hoàn thành" is a fact about the past, not a thing to act on.
-// TODO(vi): move to src/lib/vi.ts
 const LANE_EMPTY: Record<string, { title: string; hint?: string }> = {
-  todo: { title: "Chưa có việc cần làm.", hint: "Mở “Thêm công việc” ở trên." },
-  doing: { title: "Chưa có việc đang làm." },
-  done: { title: "Chưa có việc nào hoàn thành." },
+  todo: { title: T.boardTodoEmptyTitle, hint: T.boardTodoEmptyHint },
+  doing: { title: T.boardDoingEmptyTitle },
+  done: { title: T.boardDoneEmptyTitle },
 };
 
 export default async function BoardPage() {

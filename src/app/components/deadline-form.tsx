@@ -27,11 +27,11 @@ const TYPES = ["conference", "funding", "report", "milestone"] as const;
 
 // The column is interval[] and the API takes an array, so more than one
 // reminder is genuinely allowed — checkboxes, not a select.
-// TODO(vi): move to src/lib/vi.ts
+// The `value`s are the Postgres interval wire format, not copy.
 const REMINDERS = [
-  { value: "1 day", label: "1 ngày trước" },
-  { value: "3 days", label: "3 ngày trước" },
-  { value: "7 days", label: "1 tuần trước" },
+  { value: "1 day", label: T.reminderOneDay },
+  { value: "3 days", label: T.reminderThreeDays },
+  { value: "7 days", label: T.reminderOneWeek },
 ] as const;
 
 function toLocalInput(iso: string): string {
@@ -90,8 +90,7 @@ export function DeadlineForm({
       return;
     }
     setBusy(false);
-    // TODO(vi): move to src/lib/vi.ts
-    setOk(existing ? "Đã lưu thay đổi." : "Đã tạo hạn chót.");
+    setOk(existing ? T.changesSaved : T.deadlineCreated);
     if (!existing) setTitle("");
     router.refresh();
   }

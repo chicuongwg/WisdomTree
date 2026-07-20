@@ -44,8 +44,7 @@ export function LoginPicker({
           {/* A picker, not a report: three cells that read left to right as one
               sentence. A header row would name what is already obvious and add
               a row of chrome to a six-row list. */}
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          <caption className="sr-only">Chọn một thành viên để đăng nhập</caption>
+          <caption className="sr-only">{T.loginPickerCaption}</caption>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
@@ -55,8 +54,7 @@ export function LoginPicker({
                 </td>
                 <td>
                   <button disabled={pendingId !== null} onClick={() => signIn(u.id)}>
-                    {/* TODO(vi): move to src/lib/vi.ts */}
-                    {pendingId === u.id ? "Đang đăng nhập…" : T.signIn}
+                    {pendingId === u.id ? T.signingIn : T.signIn}
                   </button>
                 </td>
               </tr>

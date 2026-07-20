@@ -49,10 +49,9 @@ export default async function SourceInboxPage() {
 
       <h2>{T.source}</h2>
       {sources.length === 0 ? (
-        // TODO(vi): move to src/lib/vi.ts
         <Empty
-          title="Chưa có tư liệu nào được gửi lên."
-          hint="Khi thành viên gửi tư liệu, chúng vào đây để bạn giao việc hiệu đính. Bạn cũng tự gửi được."
+          title={T.sourceInboxEmptyTitle}
+          hint={T.sourceInboxEmptyHint}
           action={{ label: T.uploadCta, href: "/source/intake" }}
         />
       ) : (
@@ -99,11 +98,8 @@ export default async function SourceInboxPage() {
       <h2>{T.gapRequest}</h2>
       {gapRequests.length === 0 ? (
         // No button: the upload action above already covers the one thing an
-        // admin can press here. TODO(vi): move to src/lib/vi.ts
-        <Empty
-          title="Chưa có đề xuất bổ sung nào."
-          hint="Thành viên gửi đề xuất khi cần một tư liệu mà kho chưa có; đề xuất sẽ hiện ở đây."
-        />
+        // admin can press here.
+        <Empty title={T.gapRequestsEmptyTitle} hint={T.gapRequestsEmptyHint} />
       ) : (
         <div className="record-scroll">
           <table className="list">

@@ -604,9 +604,8 @@ export function KnowledgeMap({
       <div className="map-toolbar">
         {/* Glyphs, not sentences: three full-width rows of Vietnamese prose
             above the map cost more room than the map itself gained. The
-            wording survives intact as the accessible name and the tooltip.
-            TODO(vi): move "Thu phóng bản đồ" to src/lib/vi.ts */}
-        <div className="map-zoom" role="group" aria-label="Thu phóng bản đồ">
+            wording survives intact as the accessible name and the tooltip. */}
+        <div className="map-zoom" role="group" aria-label={T.graphZoomGroup}>
           {(
             [
               ["+", T.graphZoomIn, () => zoomAround(1.25)],
@@ -759,12 +758,9 @@ export function KnowledgeMap({
       )}
 
       {/* Help for the input device actually in the reader's hand. A phone was
-          being told to hold Ctrl and use the scroll wheel.
-          TODO(vi): move the touch sentence to src/lib/vi.ts */}
+          being told to hold Ctrl and use the scroll wheel. */}
       <p className="map-help" id={`${uid}-help`}>
-        {coarsePointer
-          ? "Chạm một chấm để mở trang. Kéo một chấm để ghim nó vào chỗ mới. Kéo nền để di chuyển bản đồ."
-          : `${T.graphHelp} ${T.graphKeyboardHelp}`}
+        {coarsePointer ? T.graphTouchHelp : `${T.graphHelp} ${T.graphKeyboardHelp}`}
       </p>
 
       <ul className="map-legend" aria-label={T.legend}>
