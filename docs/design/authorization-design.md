@@ -111,7 +111,7 @@ Permission keys are `module.action`. "Roles" lists the minimum roles allowed; sc
 | `pm.deadline.edit` | Create or edit a project deadline | all | space (project space) |
 | `storage.space.manage` | Manage spaces and membership | admin_op | global |
 | `export.tree.trigger` | Trigger export | admin_op | global |
-| `ops.health.read` | View backup and system health | admin_op | global |
+| `admin.health.read` | View backup and system health | admin_op | global |
 
 Addendum (2026-07-20, found during the knowledge-module build — capabilities implied by the flows but missing explicit keys):
 
@@ -121,7 +121,6 @@ Addendum (2026-07-20, found during the knowledge-module build — capabilities i
 | `storage.gap.triage` | Triage, convert, reject, or archive a branch-gap request | admin_op | global |
 | `review.queue.read` | Open the review queue and publish-review workbench | admin_op | global |
 | `pm.board.read` | Open the operational board | editor | global |
-| `admin.health.read` | Read the system health report | admin_op | global |
 | (ruling) | Log an achievement stays under `pm.board.manage` (editor owned-or-assigned, admin_op global); baseline users do not log achievements | | |
 
 Notes:
