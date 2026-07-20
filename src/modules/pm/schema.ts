@@ -61,6 +61,10 @@ export const tasks = pgTable("tasks", {
   assignedTo: uuid("assigned_to").references(() => users.id),
   /** When this task is due — the calendar views place it here. NULL = kanban only. */
   dueAt: timestamp("due_at", { withTimezone: true }),
+  /** When work may open. With due_at this is a duration, not an instant. */
+  startAt: timestamp("start_at", { withTimezone: true }),
+  /** The task's own page: everything that does not fit in a title. */
+  notes: text("notes"),
   targetType: text("target_type"), // optional link to knowledge-work object
   targetId: uuid("target_id"),
   createdBy: uuid("created_by").notNull().references(() => users.id),

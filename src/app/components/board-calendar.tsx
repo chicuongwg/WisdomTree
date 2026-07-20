@@ -58,14 +58,25 @@ export function weekGridRange(anchor: Date) {
 
 // --- chips ---
 
+/** Where a chip goes when the reader opens it — the board, with this task shown. */
+export type TaskHref = (taskId: string) => string;
+
 /** A day's worth of chips: tasks first, then the deadlines they answer to. */
-function DayChips({ schedule, day }: { schedule: Schedule; day: Date }) {
+function DayChips({
+  schedule,
+  day,
+  taskHref,
+}: {
+  schedule: Schedule;
+  day: Date;
+  taskHref: TaskHref;
+}) {
   const tasks = schedule.tasks.filter((t) => t.dueAt && sameDay(new Date(t.dueAt), day));
   const deadlines = schedule.deadlines.filter((d) => sameDay(new Date(d.dueAt), day));
   return (
     <>
       {tasks.map((t) => (
-        <TaskChip key={t.id} task={t} />
+        <TaskChip key={t.id} task={t} taskHref={taskHref} />
       ))}
       {deadlines.map((d) => (
         <DeadlineChip key={d.id} deadline={d} />
@@ -74,18 +85,22 @@ function DayChips({ schedule, day }: { schedule: Schedule; day: Date }) {
   );
 }
 
-function TaskChip({ task }: { task: Schedule["tasks"][number] }) {
+function TaskChip({ task, taskHref }: { task: Schedule["tasks"][number]; taskHref: TaskHref }) {
   // The holder as one letter: a full name in a 60px cell wraps to four lines
   // and buries the title. The full name stays in the tooltip.
   const initial = task.assigneeName?.trim().split(/\s+/).slice(-1)[0]?.[0] ?? "·";
   return (
-    <span
+    // A real link, not a click handler on a span: a chip in a calendar is the
+    // thing a reader middle-clicks into a second tab, or copies the address of
+    // to paste into a message. Both are free here and impossible otherwise.
+    <Link
+      href={taskHref(task.id)}
       className={`${badgeClass(taskStateLabel, task.state)} cal-chip`}
       title={`${task.title} — ${task.assigneeName ?? T.noAssignee}`}
     >
       <span className="cal-chip-text">{task.title}</span>
       <span className="cal-chip-who">{initial}</span>
-    </span>
+    </Link>
   );
 }
 
@@ -108,10 +123,12 @@ export function MonthView({
   anchor,
   schedule,
   now,
+  taskHref,
 }: {
   anchor: Date;
   schedule: Schedule;
   now: Date;
+  taskHref: TaskHref;
 }) {
   const { from } = monthGridRange(anchor);
   const days = Array.from({ length: 42 }, (_, i) => addDays(from, i));
@@ -148,7 +165,7 @@ export function MonthView({
               }`}
             >
               <div className="cal-daynum">{d.getDate()}</div>
-              <DayChips schedule={schedule} day={d} />
+              <DayChips schedule={schedule} day={d} taskHref={taskHref} />
             </div>
           ))}
         </div>
@@ -166,7 +183,17 @@ export function MonthView({
 const HOUR_FROM = 6;
 const HOUR_TO = 22;
 
-export function WeekView({ anchor, schedule, now }: { anchor: Date; schedule: Schedule; now: Date }) {
+export function WeekView({
+  anchor,
+  schedule,
+  now,
+  taskHref,
+}: {
+  anchor: Date;
+  schedule: Schedule;
+  now: Date;
+  taskHref: TaskHref;
+}) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(anchor, i));
   const hours = Array.from({ length: HOUR_TO - HOUR_FROM }, (_, i) => HOUR_FROM + i);
   const inBand = (d: Date) => d.getHours() >= HOUR_FROM && d.getHours() < HOUR_TO;
@@ -183,7 +210,7 @@ export function WeekView({ anchor, schedule, now }: { anchor: Date; schedule: Sc
     return (
       <>
         {tasks.map((t) => (
-          <TaskChip key={t.id} task={t} />
+          <TaskChip key={t.id} task={t} taskHref={taskHref} />
         ))}
         {deadlines.map((d) => (
           <DeadlineChip key={d.id} deadline={d} />

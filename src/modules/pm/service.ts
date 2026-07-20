@@ -290,6 +290,7 @@ export async function listBoard(actor: Principal) {
       assignedTo: tasks.assignedTo,
       assigneeName: users.displayName, // additive over the contract Task shape
       dueAt: tasks.dueAt,
+      startAt: tasks.startAt,
       targetType: tasks.targetType,
       targetId: tasks.targetId,
       createdBy: tasks.createdBy,
@@ -309,17 +310,53 @@ type TaskInput = {
   targetType?: string | null;
   targetId?: string | null;
   dueAt?: string | null;
+  startAt?: string | null;
+  notes?: string | null;
   expectedVersion?: number;
 };
 
 /** ISO date-time or null; anything else is a 400, never a silent Invalid Date. */
-function parseDueAt(raw: string | null | undefined): Date | null {
+function parseMoment(raw: string | null | undefined, code: string, message: string): Date | null {
   if (raw === null || raw === undefined || raw === "") return null;
   const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) {
-    throw new ApiError(400, "invalid_due_at", "Thời hạn không hợp lệ.");
-  }
+  if (Number.isNaN(d.getTime())) throw new ApiError(400, code, message);
   return d;
+}
+
+const parseDueAt = (raw: string | null | undefined) =>
+  parseMoment(raw, "invalid_due_at", "Thời hạn không hợp lệ.");
+const parseStartAt = (raw: string | null | undefined) =>
+  parseMoment(raw, "invalid_start_at", "Ngày bắt đầu không hợp lệ.");
+
+/**
+ * One task with everything its own page shows. Gated on board READ, not on
+ * manage: every approved member can already see the whole board, so a detail
+ * page they cannot open would only hide what the card beside it announces.
+ */
+export async function getTask(actor: Principal, taskId: string) {
+  authorize(actor, "pm.board.read", { kind: "read" });
+  const [row] = await db
+    .select({
+      id: tasks.id,
+      title: tasks.title,
+      state: tasks.state,
+      assignedTo: tasks.assignedTo,
+      assigneeName: users.displayName,
+      dueAt: tasks.dueAt,
+      startAt: tasks.startAt,
+      notes: tasks.notes,
+      targetType: tasks.targetType,
+      targetId: tasks.targetId,
+      createdBy: tasks.createdBy,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+      version: tasks.version,
+    })
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedTo, users.id))
+    .where(eq(tasks.id, taskId));
+  if (!row) throw notFound();
+  return row;
 }
 
 /**
@@ -398,13 +435,18 @@ export async function listSchedule(actor: Principal, range: { from: Date; to: Da
         state: tasks.state,
         assigneeName: users.displayName,
         dueAt: tasks.dueAt,
+        startAt: tasks.startAt,
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assignedTo, users.id))
+      // A task occupies the span [start_at, due_at], and a span belongs to a
+      // week if it OVERLAPS it — a fortnight of work must appear on both weeks
+      // it crosses, not only the one its deadline lands in. With no start the
+      // span collapses to the deadline itself, which is the old behaviour.
       .where(
         and(
           ne(tasks.state, "archived"),
-          sql`${tasks.dueAt} >= ${range.from} AND ${tasks.dueAt} < ${range.to}`,
+          sql`${tasks.dueAt} >= ${range.from} AND COALESCE(${tasks.startAt}, ${tasks.dueAt}) < ${range.to}`,
         ),
       )
       .orderBy(asc(tasks.dueAt)),
@@ -437,6 +479,8 @@ export async function createTask(actor: Principal, input: TaskInput) {
         targetType: input.targetType ?? null,
         targetId: input.targetId ?? null,
         dueAt: parseDueAt(input.dueAt),
+        startAt: parseStartAt(input.startAt),
+        notes: input.notes?.trim() || null,
         createdBy: actor.userId,
       })
       .returning();
@@ -475,6 +519,9 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
         ...(input.assigneeId !== undefined ? { assignedTo: input.assigneeId } : {}),
         // Absent key = leave the schedule alone; explicit null = unschedule.
         ...(input.dueAt !== undefined ? { dueAt: parseDueAt(input.dueAt) } : {}),
+        ...(input.startAt !== undefined ? { startAt: parseStartAt(input.startAt) } : {}),
+        // Same rule for the body: absent leaves it, empty clears it.
+        ...(input.notes !== undefined ? { notes: input.notes?.trim() || null } : {}),
         updatedAt: new Date(),
         version: existing.version + 1,
       })

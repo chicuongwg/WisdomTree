@@ -1939,3 +1939,105 @@ button.login-person:hover .login-person-role { color: inherit; }
   border-left: 3px solid var(--color-seal);
   font-weight: 600;
 }
+
+/* ============================================================
+   Task detail — one task read in full, as a side panel beside
+   the board or as its own page
+   ============================================================ */
+
+/* The board and the open task, side by side (Notion's behaviour: the list
+   stays visible while one item is being read).
+
+   Narrow: one column, and the PANEL COMES FIRST. The alternative — letting
+   the panel keep its place after three lanes of cards — buries the thing the
+   reader just clicked below a screenful of what they clicked it from, and a
+   19rem detail squeezed beside a kanban would be the column of wrapped words
+   we are avoiding. Stacked full width, the panel is simply the page, and the
+   board is where it always was, one scroll down. */
+.board-with-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  gap: var(--space-5);
+  align-items: start;
+}
+.board-with-panel > * { min-width: 0; }
+.board-surface { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+@container main (max-width: 62rem) {
+  .board-with-panel { grid-template-columns: minmax(0, 1fr); }
+  .board-with-panel > .task-panel { order: -1; }
+}
+@media (max-width: 60rem) {
+  .board-with-panel { grid-template-columns: minmax(0, 1fr); }
+  .board-with-panel > .task-panel { order: -1; }
+}
+
+/* The panel follows the reader down a long board rather than scrolling off the
+   top of a month grid. Its own scrollbar appears only when the notes outgrow
+   the viewport. */
+.task-panel {
+  position: sticky;
+  top: var(--space-4);
+  max-height: calc(100vh - var(--space-6));
+  overflow-y: auto;
+}
+
+.task-detail { display: flex; flex-direction: column; gap: var(--space-4); }
+.task-detail > h1, .task-detail > h2 { margin: 0; }
+.task-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.task-detail-nav { display: flex; gap: var(--space-4); font-size: 0.9rem; }
+
+/* Label above value, not a two-column table: "Thời gian cho phép" is long
+   enough that a label column would either wrap or steal the value's width. */
+.task-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+}
+.task-facts dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+}
+.task-facts dd { margin: 0; }
+
+/* Notes are plain text on purpose — no editor, no markup to learn. pre-wrap is
+   what makes the paragraphs someone typed survive the round trip. */
+.task-notes-read {
+  white-space: pre-wrap;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+/* A card's title is its link. It reads as a heading first and a link second —
+   underline on hover, not at rest, so three lanes of cards are not three lanes
+   of underlines. */
+.board-card-title {
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.35;
+}
+.board-card-title:hover { color: var(--color-canopy-deep); }
+
+/* The card whose panel is open. The left bar thickens and the ring appears —
+   never hue alone, per the design system. */
+.board-card.is-open {
+  border-left-width: 5px;
+  border-left-color: var(--color-cham);
+  box-shadow: 0 0 0 2px var(--color-cham-wash);
+}
+
+/* A calendar chip is a link now: it must keep the badge's own colours rather
+   than turning into link green in the middle of a grid of states. */
+.cal-chip { color: inherit; text-decoration: none; }
+.cal-chip:hover { color: inherit; text-decoration: underline; text-underline-offset: 0.12em; }

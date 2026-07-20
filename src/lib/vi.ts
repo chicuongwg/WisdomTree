@@ -220,6 +220,25 @@ export const T = {
   confirmArchiveTaskTitle: "Lưu trữ công việc này?", // NEW
   confirmArchiveTaskBody:
     "Công việc rời khỏi bảng nhưng vẫn được lưu lại trong hồ sơ. Không thể hoàn tác trên bảng.", // NEW
+  // Task detail — the page (and side panel) one task opens into: what was
+  // chosen when it was created, how long there is to do it, and a place to
+  // write the notes that used to live in a separate document.
+  // NEW pending humanities review
+  taskDetail: "Chi tiết công việc", // NEW
+  taskStartAtOptional: "Bắt đầu (không bắt buộc)", // NEW
+  startAtLabel: "Bắt đầu", // NEW
+  taskDurationLabel: "Thời gian cho phép", // NEW
+  taskNotes: "Ghi chú", // NEW
+  taskNotesHint: "Ghi lại diễn biến, việc cần làm tiếp, hoặc điều cần bàn với đồng nghiệp.", // NEW
+  taskNotesEmpty: "Chưa có ghi chú nào.", // NEW
+  taskSchedule: "Thời gian", // NEW
+  taskSaved: "Đã lưu công việc.", // NEW
+  openFullPage: "Mở toàn trang", // NEW
+  closeTaskPanel: "Đóng bảng chi tiết", // NEW
+  backToBoard: "Quay lại bảng công việc", // NEW
+  createdAtLabel: "Tạo lúc", // NEW
+  updatedAtLabel: "Cập nhật lúc", // NEW
+  taskNotManageable: "Bạn chỉ có thể xem công việc này. Người tạo hoặc người nhận việc mới sửa được.", // NEW
   // Workspace shell terms — NEW pending humanities review
   quickSearch: "Tìm nhanh", // NEW
   openBranch: "Mở chuyên đề", // NEW
@@ -723,6 +742,28 @@ export function untilLabel(due: Date, now: Date): string | null {
   if (days === 1) return "Ngày mai";
   if (days <= 7) return `Còn ${days} ngày`;
   return null; // far off: the date alone is the whole story
+}
+
+/**
+ * How long there is to do the work, in words — the owner's "thời gian cho phép
+ * để xử lý công việc". A deadline alone says when to stop; a span says how much
+ * room the work has, which is what a workload board is read for.
+ *
+ * Null when there is no span to speak of (no start, or a start after the
+ * deadline, which is a data mistake the card must not dress up as a duration).
+ *
+ * ponytail: whole days by wall-clock difference, and weeks only at exact
+ * multiples of seven. "1 tuần 3 ngày" is a precision nobody plans in, and the
+ * seven-day rounding a fancier version needs is where off-by-one bugs live.
+ */
+export function spanLabel(start: Date | string, due: Date | string): string | null {
+  const days = Math.round(
+    (new Date(due).getTime() - new Date(start).getTime()) / 86_400_000,
+  );
+  if (days < 0) return null;
+  if (days === 0) return "Trong ngày";
+  if (days % 7 === 0) return `${days / 7} tuần`;
+  return `${days} ngày`;
 }
 
 // ---------------------------------------------------------------------------
