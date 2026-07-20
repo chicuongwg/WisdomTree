@@ -27,11 +27,14 @@ const MAX_SPEED = 28;
 const PAD = 48;
 
 /**
- * The tuned strengths. These were once four sliders; the map ships the values
- * they were always left at instead, because "how hard do the dots push each
- * other" is a physics question this product's readers should never be asked.
+ * The default strengths — where the map sits for a reader who never opens the
+ * panel. These were fixed constants for one release, on the argument that "how
+ * hard do the dots push each other" is not a reader's question. The owner
+ * asked for Obsidian's controls back (2026-07-21): on a map you are reading
+ * rather than passing through, spreading a dense cluster IS the reading move.
+ * So the numbers stay as the shipped default and become the slider midpoints.
  */
-const TUNE = {
+export const TUNE = {
   /**
    * Pull toward the canvas centre, so nothing drifts off the map. Deliberately
    * an order of magnitude weaker than it was: this force fights repulsion
@@ -68,12 +71,21 @@ export type Simulation = {
   tick(): boolean;
   /** Nudge back to life after a drag or a filter change. */
   reheat(to?: number): void;
+  /** Move a force while the loop runs. The caller reheats to see it. */
+  setTuning(next: Tuning): void;
 };
+
+/** What the panel may move. Anything absent keeps its TUNE default. */
+export type Tuning = Partial<typeof TUNE>;
 
 export function createSimulation(
   seed: Array<{ id: string; x: number; y: number; r?: number; pinned?: boolean }>,
   edges: Array<{ from: string; to: string }>,
+  tuning?: Tuning,
 ): Simulation {
+  // Mutated in place by setTuning and read fresh on every tick, so a slider
+  // dragged mid-run lands on the next frame rather than the next remount.
+  const tune = { ...TUNE, ...tuning };
   const nodes: SimNode[] = seed.map((n) => ({
     id: n.id,
     x: n.x,
@@ -106,7 +118,7 @@ export function createSimulation(
 
     // Repulsion — every pair. n² is honest at this scale and SIM_NODE_CAP
     // keeps the worst case bounded (300² / 2 = 45k pair tests per frame).
-    const k = TUNE.repel * alpha;
+    const k = tune.repel * alpha;
     if (k > 0) {
       for (let i = 0; i < n; i++) {
         const a = nodes[i];
@@ -144,7 +156,7 @@ export function createSimulation(
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-      const pull = ((d - TUNE.distance) / d) * TUNE.link * alpha;
+      const pull = ((d - tune.distance) / d) * tune.link * alpha;
       const total = degree[l.source] + degree[l.target] || 1;
       const biasA = degree[l.target] / total;
       const biasB = degree[l.source] / total;
@@ -174,7 +186,7 @@ export function createSimulation(
     mx = cx - mx / n;
     my = cy - my / n;
 
-    const c = TUNE.centre * alpha;
+    const c = tune.centre * alpha;
     for (const p of nodes) {
       if (p.pinned) {
         p.vx = 0;
@@ -205,7 +217,7 @@ export function createSimulation(
       const a = nodes[i];
       for (let j = i + 1; j < n; j++) {
         const b = nodes[j];
-        const want = a.r + b.r + TUNE.collide;
+        const want = a.r + b.r + tune.collide;
         let dx = b.x - a.x;
         let dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
@@ -240,6 +252,9 @@ export function createSimulation(
     tick,
     reheat(to = 0.7) {
       alpha = Math.max(alpha, to);
+    },
+    setTuning(next: Tuning) {
+      Object.assign(tune, next);
     },
   };
 }

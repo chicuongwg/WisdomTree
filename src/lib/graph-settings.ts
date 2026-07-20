@@ -1,9 +1,18 @@
-// Display settings for the knowledge map — the model behind the "Tùy chỉnh
-// bản đồ" panel. Two things survive here, and only two: which branch to look
-// at and which kinds of link to draw. Everything else the map once let a
-// reader tune (forces, colouring, labels, arrows, depth, motion) is now a
-// shipped decision, because this is a secondary surface for people who came
-// to find a page, not to configure a physics engine.
+// Display settings for the knowledge map — the model behind the map's control
+// panel. Two kinds of setting live here:
+//
+//   FILTER  (branch, link types) — what is on the map at all.
+//   DISPLAY + FORCES             — how what is on it is drawn and arranged.
+//
+// The second kind was cut for one release and is back by owner decision
+// (2026-07-21), sized against Obsidian's panel: on a map a reader works in,
+// pulling a dense cluster apart or turning labels off IS the reading move, and
+// no shipped default is right for both a six-page branch and a 300-page tree.
+//
+// Every numeric setting is a 0..1 SLIDER POSITION, not a physics value. The
+// canvas maps position → force through `scale()`. That keeps the stored shape
+// stable if the physics is ever retuned, and keeps every slider looking the
+// same to the reader: middle is the shipped default.
 //
 // Persistence rule: ONE namespaced key, read in an effect and never during
 // render. The server has no localStorage, so reading during render would make
@@ -11,7 +20,9 @@
 // applied on the tick after mount instead, which is invisible to the reader
 // and keeps hydration honest.
 
-export const SETTINGS_KEY = "wisdomtree.graph.v1";
+// v2: the key changes with the shape. A v1 blob has no display or force
+// fields, and reviving it would silently give the reader half a panel.
+export const SETTINGS_KEY = "wisdomtree.graph.v2";
 
 /** The four link types the schema actually allows (drizzle/0001, link_type CHECK). */
 export const LINK_TYPES = ["related", "supports", "contrasts", "part_of"] as const;
@@ -26,13 +37,59 @@ export type GraphSettings = {
    */
   branchId: string;
   linkTypes: Record<LinkType, boolean>;
+  /** Draw an arrowhead on each edge, so a link reads as a direction. */
+  arrows: boolean;
+  /**
+   * Zoom at which every title appears. Left = only landmarks, and titles
+   * arrive as you zoom in; right = every title, always. This is Obsidian's
+   * "text fade threshold" and it is the one control the owner named: a map
+   * with 300 titles at once is a grey smear, not a map.
+   */
+  textFade: number;
+  nodeSize: number;
+  linkThickness: number;
+  centreForce: number;
+  repelForce: number;
+  linkForce: number;
+  linkDistance: number;
 };
 
-/** Shared, and never mutated: every setter builds a new object. */
+/** The slider positions that reproduce the shipped map exactly. */
 export const DEFAULT_SETTINGS: GraphSettings = {
   branchId: "",
   linkTypes: { related: true, supports: true, contrasts: true, part_of: true },
+  arrows: false,
+  textFade: 0.5,
+  nodeSize: 0.5,
+  linkThickness: 0.5,
+  centreForce: 0.5,
+  repelForce: 0.5,
+  linkForce: 0.5,
+  linkDistance: 0.5,
 };
+
+/** Which keys are 0..1 sliders — the one list parse and the panel both use. */
+export const SLIDER_KEYS = [
+  "textFade",
+  "nodeSize",
+  "linkThickness",
+  "centreForce",
+  "repelForce",
+  "linkForce",
+  "linkDistance",
+] as const;
+export type SliderKey = (typeof SLIDER_KEYS)[number];
+
+/**
+ * Slider position → real value, linear between `min` and `max` with the
+ * shipped default landing at 0.5. Every mapping in the app goes through this
+ * one function, so "middle is default" is a property of the code and not a
+ * promise seven call sites have to keep.
+ */
+export function scale(position: number, min: number, max: number): number {
+  const p = Math.min(1, Math.max(0, position));
+  return min + (max - min) * p;
+}
 
 /**
  * Rebuild a settings object from whatever localStorage happens to hold. A
@@ -49,7 +106,22 @@ export function parseSettings(raw: string | null): GraphSettings {
     const linkTypes = { ...DEFAULT_SETTINGS.linkTypes };
     // Only an explicit `false` hides a link type; anything else is "shown".
     for (const t of LINK_TYPES) if (stored[t] === false) linkTypes[t] = false;
-    return { branchId: typeof d.branchId === "string" ? d.branchId : "", linkTypes };
+    // A slider survives only as a finite number in range. A hand-edited NaN
+    // would otherwise reach the physics and freeze every position at NaN.
+    const sliders = {} as Record<SliderKey, number>;
+    for (const k of SLIDER_KEYS) {
+      const v = d[k];
+      sliders[k] =
+        typeof v === "number" && Number.isFinite(v)
+          ? Math.min(1, Math.max(0, v))
+          : DEFAULT_SETTINGS[k];
+    }
+    return {
+      branchId: typeof d.branchId === "string" ? d.branchId : "",
+      linkTypes,
+      arrows: d.arrows === true,
+      ...sliders,
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }

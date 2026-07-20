@@ -289,6 +289,23 @@ export const T = {
   graphZoomGroup: "Thu phóng bản đồ", // NEW
   graphTouchHelp:
     "Chạm một chấm để mở trang. Kéo một chấm để ghim nó vào chỗ mới. Kéo nền để di chuyển bản đồ.", // NEW
+  // Bảng điều khiển bản đồ: ba mục Bộ lọc / Hiển thị / Lực, dựng theo bảng
+  // điều khiển của Obsidian. NEW pending humanities review.
+  graphPanelFilters: "Bộ lọc", // NEW
+  graphPanelDisplay: "Hiển thị", // NEW
+  graphPanelForces: "Lực", // NEW
+  graphClosePanel: "Đóng bảng tùy chỉnh", // NEW
+  graphArrows: "Mũi tên chỉ hướng", // NEW
+  graphTextFade: "Ngưỡng hiện tên", // NEW
+  graphTextFadeHelp:
+    "Kéo sang trái: chỉ những trang nhiều liên kết mới hiện tên, các tên khác hiện dần khi bạn phóng to. Kéo sang phải: hiện mọi tên.", // NEW
+  graphNodeSize: "Cỡ chấm", // NEW
+  graphLinkThickness: "Độ dày đường", // NEW
+  graphReplay: "Xếp lại bản đồ", // NEW
+  graphCentreForce: "Lực kéo về giữa", // NEW
+  graphRepelForce: "Lực đẩy nhau", // NEW
+  graphLinkForce: "Lực của liên kết", // NEW
+  graphLinkDistance: "Độ dài liên kết", // NEW
   // Câu hỏi xác nhận trước những việc không có đường lui. Mỗi câu nói rõ điều
   // gì sẽ thay đổi và có lấy lại được hay không — không bao giờ hỏi trống
   // "Bạn có chắc không?". NEW pending humanities review.

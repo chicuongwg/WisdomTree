@@ -6,7 +6,9 @@ import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
 import { createSimulation, SIM_NODE_CAP, type Simulation } from "@/lib/graph-force";
 import {
   DEFAULT_SETTINGS,
+  LINK_TYPES,
   readSettings,
+  scale,
   writeSettings,
   type GraphSettings,
   type LinkType,
@@ -71,6 +73,52 @@ const LABEL_ZOOM_ALL = 1.2;
 const LABEL_ZOOM_HUBS = 0.6;
 /** A mark needs this many links to count as a landmark. */
 const HUB_DEGREE = 2;
+
+// ---- what each slider means, in real units ------------------------------
+//
+// Every range below is written so that scale(0.5, min, max) is exactly the
+// value this map shipped with, which is what makes "middle is the default"
+// true rather than approximately true. The ends were chosen to be usefully
+// different from each other without ever producing a map that cannot be read.
+//
+// The two label thresholds run BACKWARDS (min > max) on purpose: the reader's
+// slider goes left "fewer titles" → right "every title", while the thing it
+// controls is the zoom at which titles appear, which has to fall as the slider
+// rises. At position 1 both thresholds are 0, so every title is on at any
+// zoom; at position 0 you get landmarks at k≥1.2 and the rest at k≥2.4, i.e.
+// the shape of the map first and the words only when you go looking.
+const FADE_ALL_RANGE = [LABEL_ZOOM_ALL * 2, 0] as const;
+const FADE_HUBS_RANGE = [LABEL_ZOOM_HUBS * 2, 0] as const;
+/** Drawn-radius multiplier. Kept inside ±40% so the largest marks still clear
+ *  each other under the simulation's fixed collision gap (TUNE.collide = 16). */
+const NODE_SCALE_RANGE = [0.6, 1.4] as const;
+/** Edge stroke width in canvas units; 1.4 is the shipped hairline. */
+const EDGE_WIDTH_RANGE = [0.4, 2.4] as const;
+/**
+ * Centre pull. 0 is safe — the simulation also re-centres by translation, so
+ * nothing drifts off the canvas even with the spring switched off — and the
+ * top end stays far below the 0.033 that graph-force.ts records as having
+ * crushed every graph into a clump.
+ *
+ * ponytail: a linear range with the shipped value at its midpoint can only
+ * ever reach 2× that value, and 2× a deliberately weak leash measures as about
+ * a 2% change in mean edge length. It is the least useful of the four sliders
+ * and it is here because the reader asked for Obsidian's panel. If someone
+ * reports that it does nothing, give this one a geometric mapping (0.25×…4×
+ * of TUNE.centre) instead of a linear one.
+ */
+const CENTRE_RANGE = [0, 0.007] as const;
+/** Pairwise repulsion. Below ~800 the collision pass alone holds marks apart;
+ *  above ~6000 the graph presses against the canvas padding and stops opening. */
+const REPEL_RANGE = [800, 6000] as const;
+/** Spring stiffness. Kept under 1 so a spring can never overshoot its own
+ *  rest length and set the map ringing. The odd-looking ends are the widest
+ *  pair whose midpoint is EXACTLY 0.42 in floating point — 0.08…0.76 gives
+ *  0.42000000000000004, and "the middle is the shipped default" should be
+ *  true bit for bit, not to fifteen decimal places. */
+const LINK_FORCE_RANGE = [0.06, 0.78] as const;
+/** Rest length of an edge, in canvas units, against a 1000×640 canvas. */
+const LINK_DISTANCE_RANGE = [44, 220] as const;
 
 type XY = { x: number; y: number };
 type ViewTransform = { k: number; tx: number; ty: number };
@@ -246,6 +294,11 @@ export function KnowledgeMap({
   const simRef = useRef<Simulation | null>(null);
   const rafRef = useRef(0);
   const viewT = useRef<ViewTransform>({ k: 1, tx: 0, ty: 0 });
+  // The two zoom thresholds the labels step at, held in a ref rather than read
+  // from `settings` inside `paint`. `paint` is a dependency of the effect that
+  // builds the simulation, so letting it change identity on every drag of the
+  // fade slider would tear down and rebuild the physics sixty times a second.
+  const labelZoom = useRef({ all: LABEL_ZOOM_ALL, hubs: LABEL_ZOOM_HUBS });
   // ponytail: rather than detect "the simulation has settled", the view refits
   // every tick until the reader zooms or pans. Fewer lines, and the map is
   // framed at every instant instead of only at the end.
@@ -270,9 +323,11 @@ export function KnowledgeMap({
     // readable they are noise, and the shape of the graph is the thing worth
     // looking at — so they step down: every title, then hubs only, then none.
     // A hovered or focused mark keeps its title at any zoom (see .g-label).
+    // The two thresholds come from the reader's "ngưỡng hiện tên" slider.
+    const lz = labelZoom.current;
     svgRef.current?.setAttribute(
       "data-labels",
-      vt.k >= LABEL_ZOOM_ALL ? "all" : vt.k >= LABEL_ZOOM_HUBS ? "hubs" : "none",
+      vt.k >= lz.all ? "all" : vt.k >= lz.hubs ? "hubs" : "none",
     );
     for (const [id, el] of nodeEls.current) {
       const p = posRef.current.get(id);
@@ -351,6 +406,58 @@ export function KnowledgeMap({
     rafRef.current = requestAnimationFrame(step);
   }, [settle]);
 
+  // ---- the display sliders ------------------------------------------------
+  // Labels: a ref write, then one repaint. No React work per frame, and no
+  // rebuild of anything — moving this slider only changes one attribute.
+  useEffect(() => {
+    labelZoom.current = {
+      all: scale(settings.textFade, ...FADE_ALL_RANGE),
+      hubs: scale(settings.textFade, ...FADE_HUBS_RANGE),
+    };
+    paint();
+  }, [settings.textFade, paint]);
+
+  /** Drawn size of a mark and of an edge. Both are pure render: they never
+   *  reach the physics, so moving them cannot disturb a settled layout. */
+  const nodeScale = scale(settings.nodeSize, ...NODE_SCALE_RANGE);
+  const edgeWidth = scale(settings.linkThickness, ...EDGE_WIDTH_RANGE);
+
+  // ---- the four force sliders ---------------------------------------------
+  const tuning = useMemo(
+    () => ({
+      centre: scale(settings.centreForce, ...CENTRE_RANGE),
+      repel: scale(settings.repelForce, ...REPEL_RANGE),
+      link: scale(settings.linkForce, ...LINK_FORCE_RANGE),
+      distance: scale(settings.linkDistance, ...LINK_DISTANCE_RANGE),
+    }),
+    [settings.centreForce, settings.repelForce, settings.linkForce, settings.linkDistance],
+  );
+  // Read by the build effect below, which must NOT list the tuning as a
+  // dependency: a rebuild on every pixel of slider travel would throw away the
+  // simulation the reader is watching. Assigning during render is safe here
+  // because the value is derived from props/state and the write is idempotent.
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
+
+  // A force moved while the loop runs lands on the next frame, not the next
+  // remount — and the map is reheated, because a settled graph would otherwise
+  // absorb the new force silently and show nothing.
+  useEffect(() => {
+    const sim = simRef.current;
+    if (!sim) return;
+    sim.setTuning(tuning);
+    sim.reheat(0.5);
+    runLoop();
+  }, [tuning, runLoop]);
+
+  /** Obsidian's "Animate": run the layout again from where it stands. The
+   *  frame is handed back to the auto-fit so the replay stays in view. */
+  const replay = useCallback(() => {
+    autoFit.current = true;
+    simRef.current?.reheat(1);
+    runLoop();
+  }, [runLoop]);
+
   // Build (or rebuild) the simulation whenever the drawn set of nodes/edges
   // changes. Surviving nodes keep the position they already had, so changing a
   // filter nudges the map instead of reshuffling it.
@@ -387,7 +494,7 @@ export function KnowledgeMap({
     for (const s of seed) next.set(s.id, { x: s.x, y: s.y });
     posRef.current = next;
 
-    simRef.current = createSimulation(seed, view.links);
+    simRef.current = createSimulation(seed, view.links, tuningRef.current);
     runLoop();
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -619,18 +726,6 @@ export function KnowledgeMap({
 
   return (
     <div className="map-wrap">
-      <GraphSettingsPanel
-        settings={settings}
-        set={set}
-        onReset={resetSettings}
-        open={panelOpen}
-        onOpenChange={setPanelOpen}
-        branchOptions={branchOptions}
-        term={term}
-        onTerm={setTerm}
-        idPrefix={uid}
-      />
-
       <div className="map-toolbar">
         {/* Glyphs, not sentences: three full-width rows of Vietnamese prose
             above the map cost more room than the map itself gained. The
@@ -665,125 +760,179 @@ export function KnowledgeMap({
         {announce}
       </p>
 
-      {view.visible.length === 0 ? (
-        <p className="muted">{T.graphNoMatch}</p>
-      ) : (
-        <svg
-          ref={attachSvg}
-          className="knowledge-map"
-          viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
-          /* never taller than 1:1 — past that the map is only bigger dots */
-          style={{ maxHeight: CANVAS.height }}
-          role="group"
-          aria-label={T.graph}
-          aria-describedby={`${uid}-help`}
-          data-dim={lit ? "on" : "off"}
-        >
-          {/* Background: the pan surface. Also the click target that dismisses
-              the preview card. */}
-          <rect
-            className="g-surface"
-            x="0"
-            y="0"
-            width={CANVAS.width}
-            height={CANVAS.height}
-            onPointerDown={onBackgroundPointerDown}
-            onPointerMove={onBackgroundPointerMove}
-            onPointerUp={onBackgroundPointerUp}
-            onPointerCancel={onBackgroundPointerUp}
-          />
+      {/* The stage is the panel's positioning context: the panel floats over
+          the canvas the way Obsidian's does, so it costs the map no height.
+          On a narrow screen the CSS drops it back into normal flow above the
+          map — a 16rem card over a 20rem phone screen is not a control panel,
+          it is a lid. */}
+      <div className="map-stage">
+        <GraphSettingsPanel
+          settings={settings}
+          set={set}
+          onReset={resetSettings}
+          onReplay={replay}
+          open={panelOpen}
+          onOpenChange={setPanelOpen}
+          branchOptions={branchOptions}
+          term={term}
+          onTerm={setTerm}
+          idPrefix={uid}
+        />
 
-          <g ref={viewportRef} className="g-viewport">
-            <g className="g-edges">
-              {view.links.map((e) => {
-                const key = `${e.from}-${e.to}-${e.linkType}`;
-                const a = view.seed[e.from];
-                const b = view.seed[e.to];
-                if (!a || !b) return null;
-                const near = !lit || (lit.has(e.from) && lit.has(e.to));
+        {view.visible.length === 0 ? (
+          <p className="muted">{T.graphNoMatch}</p>
+        ) : (
+          <svg
+            ref={attachSvg}
+            className="knowledge-map"
+            viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
+            /* never taller than 1:1 — past that the map is only bigger dots */
+            style={{ maxHeight: CANVAS.height, "--g-edge-w": edgeWidth } as React.CSSProperties}
+            role="group"
+            aria-label={T.graph}
+            aria-describedby={`${uid}-help`}
+            data-dim={lit ? "on" : "off"}
+          >
+            {/* One arrowhead per link type, so a direction marker keeps the
+                colour of the line it ends. `context-stroke` would do this with a
+                single marker but is not carried by every engine we support, and
+                four <marker> elements is cheaper than a fallback.
+                ponytail: refX pushes the head back a fixed 24 units so it lands
+                beside the target mark rather than under it. Marks are 8–21 units
+                of radius, so a hub with the size slider at maximum can still
+                swallow its own arrowheads. Per-edge geometry would fix that and
+                would mean computing an offset per edge on every frame — do it
+                only if a reader reports it. */}
+            <defs>
+              {LINK_TYPES.map((t) => (
+                <marker
+                  key={t}
+                  id={`${uid}-arrow-${t}`}
+                  className={`g-arrow t-${t}`}
+                  viewBox="0 0 10 10"
+                  /* 34 viewBox units × (7/10 scale to user units) ≈ 24 canvas
+                     units of pull-back from the line's end. */
+                  refX="34"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  markerUnits="userSpaceOnUse"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+              ))}
+            </defs>
+
+            {/* Background: the pan surface. Also the click target that dismisses
+                the preview card. */}
+            <rect
+              className="g-surface"
+              x="0"
+              y="0"
+              width={CANVAS.width}
+              height={CANVAS.height}
+              onPointerDown={onBackgroundPointerDown}
+              onPointerMove={onBackgroundPointerMove}
+              onPointerUp={onBackgroundPointerUp}
+              onPointerCancel={onBackgroundPointerUp}
+            />
+
+            <g ref={viewportRef} className="g-viewport">
+              <g className="g-edges">
+                {view.links.map((e) => {
+                  const key = `${e.from}-${e.to}-${e.linkType}`;
+                  const a = view.seed[e.from];
+                  const b = view.seed[e.to];
+                  if (!a || !b) return null;
+                  const near = !lit || (lit.has(e.from) && lit.has(e.to));
+                  return (
+                    <line
+                      key={key}
+                      ref={(el) => {
+                        if (el) edgeEls.current.set(key, { el, from: e.from, to: e.to });
+                        return () => {
+                          edgeEls.current.delete(key);
+                        };
+                      }}
+                      className={`g-edge t-${e.linkType}${near ? " is-near" : " is-far"}`}
+                      markerEnd={settings.arrows ? `url(#${uid}-arrow-${e.linkType})` : undefined}
+                      x1={a.x}
+                      y1={a.y}
+                      x2={b.x}
+                      y2={b.y}
+                    />
+                  );
+                })}
+              </g>
+
+              {view.visible.map((n) => {
+                const at = view.seed[n.id];
+                if (!at) return null;
+                // The DRAWN radius. `radii` stays the physical one the collision
+                // pass was given, so scaling the marks never moves them.
+                const r = (radii.get(n.id) ?? 8) * nodeScale;
+                const isPinned = pinned.has(n.id) || n.id === centerId;
+                const near = !lit || lit.has(n.id);
+                const label = `${n.title} — ${verificationStateLabel(n.verification)} (${
+                  SHAPE_LABEL[n.verification] ?? ""
+                })${isPinned ? `, ${T.graphPinnedOne}` : ""}`;
                 return (
-                  <line
-                    key={key}
+                  <g
+                    key={n.id}
+                    data-id={n.id}
                     ref={(el) => {
-                      if (el) edgeEls.current.set(key, { el, from: e.from, to: e.to });
+                      if (el) nodeEls.current.set(n.id, el);
                       return () => {
-                        edgeEls.current.delete(key);
+                        nodeEls.current.delete(n.id);
                       };
                     }}
-                    className={`g-edge t-${e.linkType}${near ? " is-near" : " is-far"}`}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                  />
+                    className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
+                      near ? " is-near" : " is-far"
+                    }${
+                      (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
+                    }`}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={label}
+                    aria-describedby={peek?.id === n.id ? cardId : undefined}
+                    transform={`translate(${at.x}, ${at.y})`}
+                    onPointerDown={onNodePointerDown}
+                    onPointerMove={onNodePointerMove}
+                    onPointerUp={onNodePointerUp}
+                    onPointerCancel={onNodePointerCancel}
+                    onKeyDown={onMarkKeyDown}
+                    onMouseEnter={onNodeEnter}
+                    onMouseLeave={onLeave}
+                    onFocus={onNodeEnter}
+                    onBlur={onLeave}
+                  >
+                    {/* The seal ring: a pinned mark is stamped in place. */}
+                    {isPinned && <circle className="g-seal" r={r + 6} />}
+                    {n.verification === "verified" ? (
+                      <circle className="g-mark" r={r} />
+                    ) : n.verification === "unverified" ? (
+                      <rect
+                        className="g-mark"
+                        x={-r}
+                        y={-r}
+                        width={r * 2}
+                        height={r * 2}
+                        transform="rotate(45)"
+                      />
+                    ) : (
+                      <rect className="g-mark" x={-r} y={-r} width={r * 2} height={r * 2} rx="2" />
+                    )}
+                    <text className="g-label" y={r + LABEL_DY}>
+                      {n.title.length > LABEL_MAX ? `${n.title.slice(0, LABEL_CUT)}…` : n.title}
+                    </text>
+                  </g>
                 );
               })}
             </g>
-
-            {view.visible.map((n) => {
-              const at = view.seed[n.id];
-              if (!at) return null;
-              const r = radii.get(n.id) ?? 8;
-              const isPinned = pinned.has(n.id) || n.id === centerId;
-              const near = !lit || lit.has(n.id);
-              const label = `${n.title} — ${verificationStateLabel(n.verification)} (${
-                SHAPE_LABEL[n.verification] ?? ""
-              })${isPinned ? `, ${T.graphPinnedOne}` : ""}`;
-              return (
-                <g
-                  key={n.id}
-                  data-id={n.id}
-                  ref={(el) => {
-                    if (el) nodeEls.current.set(n.id, el);
-                    return () => {
-                      nodeEls.current.delete(n.id);
-                    };
-                  }}
-                  className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
-                    near ? " is-near" : " is-far"
-                  }${
-                    (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
-                  }`}
-                  role="link"
-                  tabIndex={0}
-                  aria-label={label}
-                  aria-describedby={peek?.id === n.id ? cardId : undefined}
-                  transform={`translate(${at.x}, ${at.y})`}
-                  onPointerDown={onNodePointerDown}
-                  onPointerMove={onNodePointerMove}
-                  onPointerUp={onNodePointerUp}
-                  onPointerCancel={onNodePointerCancel}
-                  onKeyDown={onMarkKeyDown}
-                  onMouseEnter={onNodeEnter}
-                  onMouseLeave={onLeave}
-                  onFocus={onNodeEnter}
-                  onBlur={onLeave}
-                >
-                  {/* The seal ring: a pinned mark is stamped in place. */}
-                  {isPinned && <circle className="g-seal" r={r + 6} />}
-                  {n.verification === "verified" ? (
-                    <circle className="g-mark" r={r} />
-                  ) : n.verification === "unverified" ? (
-                    <rect
-                      className="g-mark"
-                      x={-r}
-                      y={-r}
-                      width={r * 2}
-                      height={r * 2}
-                      transform="rotate(45)"
-                    />
-                  ) : (
-                    <rect className="g-mark" x={-r} y={-r} width={r * 2} height={r * 2} rx="2" />
-                  )}
-                  <text className="g-label" y={r + LABEL_DY}>
-                    {n.title.length > LABEL_MAX ? `${n.title.slice(0, LABEL_CUT)}…` : n.title}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-      )}
+          </svg>
+        )}
+      </div>
 
       {peek && (
         <NodePreviewCard preview={preview} id={cardId} style={{ top: peek.top, left: peek.left }} />
