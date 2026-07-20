@@ -17,8 +17,6 @@ import {
   gapLabel,
   gapStateLabel,
   T,
-  trustLabel,
-  trustStateLabel,
 } from "@/lib/vi";
 import { CurationAdminActions } from "@/app/components/curation-admin-actions";
 import { GapTriageActions } from "@/app/components/gap-triage-actions";
@@ -85,9 +83,7 @@ export default async function AdminSourceDetailPage({
         {T.source}: {wb.source.title}
       </h1>
       <p>
-        <span className={badgeClass(trustLabel, wb.source.trustStatus)}>
-          {trustStateLabel(wb.source.trustStatus)}
-        </span>{" "}
+        {/* Trust chip removed: it showed a state nothing writes. */}
         <span className={badgeClass(extractionLabel, wb.version.extractionStatus)}>
           {extractionStateLabel(wb.version.extractionStatus)}
         </span>{" "}

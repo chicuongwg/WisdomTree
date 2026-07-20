@@ -9,9 +9,9 @@ import { emitOutbox, recordAudit } from "../audit/service";
 import { extractionWorker } from "./extraction";
 import { objectStore } from "./object-store";
 import {
+  branchGapRequests,
   curations,
   folders,
-  intakeItems,
   sources,
   sourceVersions,
   spaceMembers,
@@ -162,6 +162,8 @@ export async function listLibrary(
       mimeType: sourceVersions.mimeType,
       storedAt: sourceVersions.storedAt,
       extractionStatus: sourceVersions.extractionStatus,
+      // `processed` with zero chunks is the stub lying; the chip needs the truth.
+      hasText: sql<boolean>`EXISTS (SELECT 1 FROM ${textChunks} WHERE ${textChunks.sourceVersionId} = ${sourceVersions.id})`,
     })
     .from(sources)
     .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
@@ -198,6 +200,15 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
         .where(eq(textChunks.sourceVersionId, row.version.id))
     : [{ chunkCount: 0 }];
 
+  // Curation overlay on the current version: the detail page derives its
+  // next-action sentence from it, and the nominate button hides once one exists.
+  const [curation] = row.version
+    ? await db
+        .select({ state: curations.state, assignedTo: curations.assignedTo })
+        .from(curations)
+        .where(eq(curations.sourceVersionId, row.version.id))
+    : [];
+
   // The whole version chain, newest first — the detail page's history table.
   // One extra query on a page that already makes three; a dedicated
   // listSourceVersions service + route would be more code for the same rows.
@@ -224,6 +235,8 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
     trustStatus: row.source.trustStatus,
     submittedBy: row.source.submittedBy,
     version: row.source.version,
+    curationState: curation?.state ?? null,
+    curationAssigned: Boolean(curation?.assignedTo),
     currentVersion: row.version
       ? {
           id: row.version.id,
@@ -236,6 +249,7 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
           extractionStatus: row.version.extractionStatus,
           storedAt: row.version.storedAt,
           chunkCount,
+          hasText: chunkCount > 0,
         }
       : null,
   };
@@ -508,13 +522,45 @@ export async function addSourceVersion(actor: Principal, sourceId: string, file:
   return getSourceDetail(actor, sourceId);
 }
 
+/**
+ * Unified intake history (sources + gap requests), merged in TS. The old
+ * intake_items SQL view had dropped every field the member-facing next-action
+ * sentence (functional-spec.md:57) derives from, so the rows are built from
+ * the base tables instead; the view stays unused.
+ */
 export async function mySubmissions(actor: Principal) {
   authorize(actor, "storage.submissions.read", { userId: actor.userId, kind: "read" });
-  return db
-    .select()
-    .from(intakeItems)
-    .where(eq(intakeItems.submittedBy, actor.userId))
-    .orderBy(desc(intakeItems.lastUpdatedAt));
+  const [sourceRows, gapRows] = await Promise.all([
+    db
+      .select({
+        submissionId: sources.id,
+        title: sources.title,
+        storageState: sourceVersions.storageState,
+        extractionStatus: sourceVersions.extractionStatus,
+        curationState: curations.state,
+        curationAssignedTo: curations.assignedTo,
+        lastUpdatedAt: sources.updatedAt,
+      })
+      .from(sources)
+      .leftJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+      .leftJoin(curations, eq(curations.sourceVersionId, sourceVersions.id))
+      .where(eq(sources.submittedBy, actor.userId)),
+    db
+      .select({
+        submissionId: branchGapRequests.id,
+        title: branchGapRequests.title,
+        state: branchGapRequests.state,
+        lastUpdatedAt: branchGapRequests.updatedAt,
+      })
+      .from(branchGapRequests)
+      .where(eq(branchGapRequests.submittedBy, actor.userId)),
+  ]);
+  return [
+    ...sourceRows.map((r) => ({ itemType: "source" as const, ...r })),
+    ...gapRows.map((r) => ({ itemType: "gap_request" as const, ...r })),
+  ].sort(
+    (a, b) => new Date(b.lastUpdatedAt ?? 0).getTime() - new Date(a.lastUpdatedAt ?? 0).getTime(),
+  );
 }
 
 /**

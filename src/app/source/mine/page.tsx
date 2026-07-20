@@ -3,17 +3,19 @@ import { requireUser, toPrincipal } from "@/lib/page";
 import { mySubmissions } from "@/modules/storage/service";
 import {
   badgeClass,
+  curationLabel,
+  curationStateLabel,
   gapLabel,
   gapStateLabel,
   T,
-  trustLabel,
-  trustStateLabel,
   when,
 } from "@/lib/vi";
+import { nextActionFor, nextActionLabel } from "@/lib/source-status";
 import { Empty } from "@/app/components/empty";
 
-// Screen: My Submissions (`/source/mine`) — unified intake history over the
-// intake_items view (sources + branch-gap requests).
+// Screen: My Submissions (`/source/mine`) — unified intake history (sources +
+// branch-gap requests), each source row carrying the one sentence about what
+// happens to it next (functional-spec.md:57).
 export default async function MySubmissionsPage() {
   const user = await requireUser();
   const items = await mySubmissions(toPrincipal(user));
@@ -35,6 +37,8 @@ export default async function MySubmissionsPage() {
                 <th scope="col">{T.title}</th>
                 <th scope="col">Loại</th>
                 <th scope="col">Trạng thái</th>
+                {/* TODO(vi): move to src/lib/vi.ts */}
+                <th scope="col">Bước tiếp theo</th>
                 <th scope="col">Cập nhật</th>
               </tr>
             </thead>
@@ -50,14 +54,34 @@ export default async function MySubmissionsPage() {
                   </td>
                   <td>{item.itemType === "source" ? T.source : T.gapRequest}</td>
                   <td>
-                    <span
-                      className={badgeClass(
-                        item.itemType === "source" ? trustLabel : gapStateLabel,
-                        item.state,
-                      )}
-                    >
-                      {(item.itemType === "source" ? trustStateLabel : gapLabel)(item.state)}
-                    </span>
+                    {/* Trust chip removed from source rows: it showed a state
+                        nothing writes. The curation chip carries the state a
+                        source actually has; gap requests keep their own. */}
+                    {item.itemType === "gap_request" ? (
+                      <span className={badgeClass(gapStateLabel, item.state)}>
+                        {gapLabel(item.state)}
+                      </span>
+                    ) : item.curationState ? (
+                      <span className={badgeClass(curationStateLabel, item.curationState)}>
+                        {curationLabel(item.curationState)}
+                      </span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    {item.itemType === "source" ? (
+                      nextActionLabel[
+                        nextActionFor({
+                          storageState: item.storageState,
+                          extractionStatus: item.extractionStatus,
+                          curationState: item.curationState,
+                          curationAssigned: Boolean(item.curationAssignedTo),
+                        })
+                      ]
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
                   </td>
                   <td>{when(item.lastUpdatedAt)}</td>
                 </tr>

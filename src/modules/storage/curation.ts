@@ -125,6 +125,60 @@ export async function assignCuration(
 }
 
 // ---------------------------------------------------------------------------
+// Self-nomination (uploader) — opens curation unassigned
+// ---------------------------------------------------------------------------
+
+/**
+ * The uploader pushes their own stored file toward the tree: creates the
+ * curation row with no assignee. The admin inbox shows it as "chờ giao" and
+ * assignCuration hands it to an editor from there.
+ */
+export async function nominateSource(actor: Principal, sourceId: string) {
+  const [row] = await db
+    .select({ source: sources, version: sourceVersions })
+    .from(sources)
+    .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .where(eq(sources.id, sourceId));
+  if (!row) throw notFound();
+  // Nominating your own upload is managing your source; Admin/Op passes by role.
+  authorize(actor, "storage.source.manage", { ownerIds: [row.source.submittedBy], kind: "write" });
+  if (row.version.storageState !== "stored") {
+    // TODO(vi): move to src/lib/vi.ts
+    throw new ApiError(409, "not_stored", "Tư liệu này không ở trạng thái có thể đề cử.");
+  }
+  const [existing] = await db
+    .select({ id: curations.id })
+    .from(curations)
+    .where(eq(curations.sourceVersionId, row.version.id));
+  if (existing) {
+    // TODO(vi): move to src/lib/vi.ts
+    throw new ApiError(409, "already_nominated", "Tư liệu này đã được đề cử.");
+  }
+
+  return db.transaction(async (tx) => {
+    const [curation] = await tx
+      .insert(curations)
+      .values({
+        sourceVersionId: row.version.id,
+        state: "under_correction",
+        assignedTo: null,
+        nominatedBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.nominate",
+      targetType: "source",
+      targetId: sourceId,
+      details: { sourceVersionId: row.version.id },
+    });
+    // ponytail: no notification event — the admin inbox surfaces it; wire an
+    // event when the humanities team asks.
+    return curation;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Corrected text (append-only revision chain)
 // ---------------------------------------------------------------------------
 
@@ -802,6 +856,7 @@ export async function listInbox(actor: Principal) {
         source: sources,
         assigneeName: users.displayName,
         curationState: curations.state,
+        curationAssignedTo: curations.assignedTo,
       })
       .from(sources)
       .leftJoin(users, eq(sources.assignedTo, users.id))

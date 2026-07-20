@@ -3,7 +3,6 @@ import {
   integer,
   jsonb,
   pgTable,
-  pgView,
   primaryKey,
   text,
   timestamp,
@@ -178,12 +177,5 @@ export const branchGapRequests = pgTable("branch_gap_requests", {
   version: integer("version").notNull().default(1),
 });
 
-// SQL view defined in the migration; mapped read-only for My Submissions / Source Intake.
-export const intakeItems = pgView("intake_items", {
-  submissionId: uuid("submission_id"),
-  itemType: text("item_type"),
-  title: text("title"),
-  state: text("state"),
-  submittedBy: uuid("submitted_by"),
-  lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true }),
-}).existing();
+// The intake_items SQL view still exists in the migration but is no longer
+// mapped: mySubmissions derives its rows in TS from the base tables.

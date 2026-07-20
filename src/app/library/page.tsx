@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { LIBRARY_PAGE_SIZE, listFolders, listLibrary, listMemberSpaces } from "@/modules/storage/service";
-import { badgeClass, extractionLabel, extractionStateLabel, T, when } from "@/lib/vi";
+import { badgeToneClass, T, when } from "@/lib/vi";
+import { extractionDisplay } from "@/lib/source-status";
 import { Pager } from "@/app/components/pager";
 import { Empty } from "@/app/components/empty";
 import { LibraryDropzone } from "@/app/components/library-dropzone";
@@ -182,28 +183,30 @@ export default async function LibraryPage({
                   <td colSpan={4} />
                 </tr>
               ))}
-              {items.map((item) => (
-                <tr key={item.sourceId}>
-                  <td>
-                    <Link href={`/library/${item.sourceId}`}>{item.title}</Link>
-                  </td>
-                  <td>{item.spaceName}</td>
-                  <td>{item.submitterName}</td>
-                  <td>{when(item.storedAt)}</td>
-                  <td>
-                    {/* `processed` is ~70% of rows: a chip on every one of them
-                        is a wall of green that says nothing. Only the rows that
-                        are NOT at rest wear a badge; the empty cell IS the
-                        "đã xử lý" reading, and the header still names the
-                        column. */}
-                    {item.extractionStatus !== "processed" && (
-                      <span className={badgeClass(extractionLabel, item.extractionStatus)}>
-                        {extractionStateLabel(item.extractionStatus)}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {items.map((item) => {
+                const ed = extractionDisplay(item.extractionStatus, item.hasText, item.mimeType);
+                return (
+                  <tr key={item.sourceId}>
+                    <td>
+                      <Link href={`/library/${item.sourceId}`}>{item.title}</Link>
+                    </td>
+                    <td>{item.spaceName}</td>
+                    <td>{item.submitterName}</td>
+                    <td>{when(item.storedAt)}</td>
+                    <td>
+                      {/* Truly-processed rows (`done`) are ~70% of the list: a
+                          chip on every one is a wall of green that says
+                          nothing, so the empty cell IS the "đã xử lý" reading.
+                          Everything else — including `processed` with no text,
+                          which the stub used to hide behind that quiet cell —
+                          wears its badge. */}
+                      {ed.tone !== "done" && (
+                        <span className={badgeToneClass(ed.tone)}>{ed.label}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -4,13 +4,12 @@ import { requireUser, toPrincipal } from "@/lib/page";
 import { listInbox } from "@/modules/storage/curation";
 import {
   badgeClass,
+  badgeToneClass,
   curationLabel,
   curationStateLabel,
   gapLabel,
   gapStateLabel,
   T,
-  trustLabel,
-  trustStateLabel,
   when,
 } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
@@ -59,26 +58,25 @@ export default async function SourceInboxPage() {
           <table className="list">
             <thead>
               <tr>
+                {/* Trust column removed: it showed a state nothing writes. */}
                 <th scope="col">{T.title}</th>
-                <th scope="col">Độ tin cậy</th>
                 <th scope="col">Hiệu đính</th>
                 <th scope="col">{T.assignee}</th>
                 <th scope="col">{T.lastUpdated}</th>
               </tr>
             </thead>
             <tbody>
-              {sources.map(({ source, assigneeName, curationState }) => (
+              {sources.map(({ source, assigneeName, curationState, curationAssignedTo }) => (
                 <tr key={source.id}>
                   <td>
                     <Link href={`/source/${source.id}`}>{source.title}</Link>
                   </td>
                   <td>
-                    <span className={badgeClass(trustLabel, source.trustStatus)}>
-                      {trustStateLabel(source.trustStatus)}
-                    </span>
-                  </td>
-                  <td>
-                    {curationState ? (
+                    {curationState === "under_correction" && !curationAssignedTo ? (
+                      // A member's self-nomination waiting for an editor.
+                      // TODO(vi): move to src/lib/vi.ts
+                      <span className={badgeToneClass("active")}>Đã đề cử — chờ giao</span>
+                    ) : curationState ? (
                       <span className={badgeClass(curationStateLabel, curationState)}>
                         {curationLabel(curationState)}
                       </span>

@@ -1,19 +1,13 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getSourceDetail, listFolders } from "@/modules/storage/service";
-import {
-  badgeClass,
-  extractionLabel,
-  extractionStateLabel,
-  T,
-  trustLabel,
-  trustStateLabel,
-  when,
-} from "@/lib/vi";
+import { badgeToneClass, T, when } from "@/lib/vi";
+import { extractionDisplay, nextActionFor, nextActionLabel } from "@/lib/source-status";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { ExtractionWatcher } from "@/app/components/extraction-watcher";
 import { SourceOwnerActions } from "@/app/components/source-owner-actions";
 import { SourceFileActions } from "@/app/components/source-file-actions";
+import { NominateSource } from "@/app/components/nominate-source";
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
 // download only, never operational review internals (screen-inventory.md).
@@ -48,14 +42,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                   <td>{source.description}</td>
                 </tr>
               )}
-              <tr>
-                <th scope="row">Độ tin cậy</th>
-                <td>
-                  <span className={badgeClass(trustLabel, source.trustStatus)}>
-                    {trustStateLabel(source.trustStatus)}
-                  </span>
-                </td>
-              </tr>
+              {/* Trust chip removed: it showed a state nothing writes. */}
               {v && (
                 <>
                   <tr>
@@ -71,11 +58,19 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                   <tr>
                     <th scope="row">Trạng thái xử lý</th>
                     <td>
-                      <span className={badgeClass(extractionLabel, v.extractionStatus)}>
-                        {extractionStateLabel(v.extractionStatus)}
-                      </span>{" "}
+                      {(() => {
+                        const ed = extractionDisplay(v.extractionStatus, v.hasText, v.mimeType);
+                        return <span className={badgeToneClass(ed.tone)}>{ed.label}</span>;
+                      })()}{" "}
                       {v.extractionStatus === "unprocessable" && (
                         <span className="muted">Tệp gốc vẫn được lưu và tải xuống bình thường.</span>
+                      )}
+                      {v.extractionStatus === "processed" && !v.hasText && (
+                        // TODO(vi): move to src/lib/vi.ts
+                        <span className="muted">
+                          Tệp được lưu và tải xuống bình thường; hệ thống chưa đọc được chữ bên
+                          trong nên tìm toàn văn chưa quét tệp này.
+                        </span>
                       )}
                       <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
                     </td>
@@ -85,6 +80,21 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
             </tbody>
           </table>
         </div>
+        {/* What happens to this file next, in one member-facing sentence
+            (functional-spec.md:57). */}
+        <p className="muted">
+          {
+            nextActionLabel[
+              nextActionFor({
+                storageState: v?.storageState,
+                extractionStatus: v?.extractionStatus,
+                hasText: v?.hasText,
+                curationState: source.curationState,
+                curationAssigned: source.curationAssigned,
+              })
+            ]
+          }
+        </p>
         {/* Preview in place for what the browser can render; the token URL is
             the same authorized 302 the download uses — never a public path. */}
         {v && stored && v.mimeType.startsWith("image/") && (
@@ -149,6 +159,9 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
       {/* Owner-only: the server enforces this too (storage.source.manage is
           owned-or-assigned), this just keeps the controls off other people's
           screens. Admin/Op passes the same check on role. */}
+      {canEdit && stored && (
+        <NominateSource sourceId={source.id} nominated={Boolean(source.curationState)} />
+      )}
       {(source.submittedBy === user.id || user.role === "admin_op") && (
         <SourceOwnerActions
           sourceId={source.id}
