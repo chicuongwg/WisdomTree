@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listDeadlines, myCalendarToken } from "@/modules/pm/service";
 import { listMemberSpaces } from "@/modules/storage/service";
-import { deadlineTypeLabel, T } from "@/lib/vi";
+import { deadlineKindLabel, T } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
 
 // Screen: Deadlines (`/deadlines`) — upcoming deadlines sorted by due date,
@@ -70,7 +70,7 @@ export default async function DeadlinesPage({
                         <Link href={`/deadlines/${d.id}`}>{d.title}</Link>
                       </td>
                       <td>
-                        <span className="badge muted">{deadlineTypeLabel[d.type]}</span>
+                        <span className="badge muted">{deadlineKindLabel(d.type)}</span>
                       </td>
                       <td className="muted">{spaceName.get(d.spaceId) ?? ""}</td>
                       <td>

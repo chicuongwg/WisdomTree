@@ -1,6 +1,6 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCatalogItem } from "@/modules/catalog/service";
-import { itemStatusLabel, loanStateLabel, T } from "@/lib/vi";
+import { itemLabel, loanLabel, T } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
 import { CommentsSection } from "@/app/components/comments-section";
 import { listMentionableUsers } from "@/modules/notify/service";
@@ -33,7 +33,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
               <th>Trạng thái</th>
               <td>
                 <span className={`badge ${item.status === "available" ? "" : "warn"}`}>
-                  {itemStatusLabel[item.status]}
+                  {itemLabel(item.status)}
                 </span>
               </td>
             </tr>
@@ -41,7 +41,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
               <tr>
                 <th>{T.loanTicket}</th>
                 <td>
-                  <span className="badge muted">{loanStateLabel[item.activeLoan.state]}</span>
+                  <span className="badge muted">{loanLabel(item.activeLoan.state)}</span>
                   {item.activeLoan.dueAt && (
                     <span className="muted"> · {T.dueDate}: {item.activeLoan.dueAt.toLocaleDateString("vi-VN")}</span>
                   )}

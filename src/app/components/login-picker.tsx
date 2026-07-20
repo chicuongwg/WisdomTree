@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { roleLabel, T } from "@/lib/vi";
+import { userRoleLabel, T } from "@/lib/vi";
 
 export function LoginPicker({
   users,
@@ -40,7 +40,7 @@ export function LoginPicker({
             <tr key={u.id}>
               <td>{u.displayName}</td>
               <td>
-                <span className="badge muted">{roleLabel[u.role] ?? u.role}</span>
+                <span className="badge muted">{userRoleLabel(u.role)}</span>
               </td>
               <td>
                 <button disabled={busy} onClick={() => signIn(u.id)}>

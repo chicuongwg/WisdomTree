@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { T, roleLabel } from "@/lib/vi";
+import { T, userRoleLabel } from "@/lib/vi";
 import { ThemeToggle } from "./theme-toggle";
 
 // Activity bar (VS Code / Discord): one icon per module, vermilion pip for
@@ -129,7 +129,7 @@ export function ShellRail({
       ))}
       <span className="rail-spacer" />
       <ThemeToggle />
-      <span className="rail-avatar" title={`${displayName} · ${roleLabel[role] ?? role}`}>
+      <span className="rail-avatar" title={`${displayName} · ${userRoleLabel(role)}`}>
         {initials}
       </span>
     </nav>

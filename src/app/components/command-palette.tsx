@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { T, verificationLabel } from "@/lib/vi";
+import { T, verificationStateLabel } from "@/lib/vi";
 
 // Command palette (VS Code / Obsidian, Ctrl+K): full-text search over tree
 // nodes via GET /api/tree/search, plus quick-open entries for every screen
@@ -59,7 +59,7 @@ export function CommandPalette({ role }: { role: string }) {
     ...hits.map((h) => ({
       key: `node:${h.id}`,
       label: h.title,
-      hint: `${h.branchName} · ${verificationLabel[h.verification] ?? h.verification}`,
+      hint: `${h.branchName} · ${verificationStateLabel(h.verification)}`,
       href: `/tree/node/${h.id}`,
     })),
     ...screenMatches,

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCurationWorkbench } from "@/modules/storage/curation";
-import { curationStateLabel, T } from "@/lib/vi";
+import { curationLabel, T } from "@/lib/vi";
 import { CurationWorkbench } from "@/app/components/curation-workbench";
 
 // Screen: Assigned Source Task (`/source/task/:id`, user-screen-specs.md) —
@@ -29,7 +29,7 @@ export default async function AssignedSourceTaskPage({
       <p className="muted">
         {T.state}:{" "}
         <span className="badge muted">
-          {wb.curation ? curationStateLabel[wb.curation.state] : "Chưa giao việc"}
+          {wb.curation ? curationLabel(wb.curation.state) : "Chưa giao việc"}
         </span>{" "}
         · <Link href={`/library/${wb.source.id}`}>Xem trong {T.library}</Link>
       </p>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { T, verificationLabel } from "@/lib/vi";
+import { T, verificationStateLabel } from "@/lib/vi";
 
 // Contextual sidebar (Obsidian explorer + Slack quick links): the knowledge
 // tree as a collapsible branch→page outline, recent pages, and role-gated
@@ -108,8 +108,8 @@ export function ShellSidebar({
                         <span className="item-label">{n.title}</span>
                         <span
                           className={`node-state ${n.verification}`}
-                          title={verificationLabel[n.verification] ?? n.verification}
-                          aria-label={verificationLabel[n.verification] ?? n.verification}
+                          title={verificationStateLabel(n.verification)}
+                          aria-label={verificationStateLabel(n.verification)}
                         >
                           ●
                         </span>

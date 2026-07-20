@@ -6,7 +6,7 @@ import { currentUser } from "@/modules/auth/session";
 import { unreadCount } from "@/modules/notify/service";
 import { recentNodes, treeOutline } from "@/modules/knowledge/service";
 import { listReviewQueue } from "@/modules/storage/curation";
-import { T, roleLabel } from "@/lib/vi";
+import { T, userRoleLabel } from "@/lib/vi";
 import { LogoutButton } from "./components/logout-button";
 import { ShellRail } from "./components/shell-rail";
 import { ShellSidebar } from "./components/shell-sidebar";
@@ -76,7 +76,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <div className="main-area">{children}</div>
           <footer className="statusbar">
             <span className="sb-item">
-              {user.displayName} · {roleLabel[user.role]}
+              {user.displayName} · {userRoleLabel(user.role)}
             </span>
             <span className="sb-item">
               {user.spaceIds.length} {T.yourSpaces}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { deadlineTypeLabel, T } from "@/lib/vi";
+import { deadlineKindLabel, T } from "@/lib/vi";
 
 // Create/edit form for a deadline (user-screen-specs.md § Deadlines). Reminder
 // offsets are entered as comma-separated durations ("7 days, 1 day") and
@@ -95,7 +95,7 @@ export function DeadlineForm({
         <select id="dl-type" value={type} onChange={(e) => setType(e.target.value)}>
           {TYPES.map((t) => (
             <option key={t} value={t}>
-              {deadlineTypeLabel[t]}
+              {deadlineKindLabel(t)}
             </option>
           ))}
         </select>

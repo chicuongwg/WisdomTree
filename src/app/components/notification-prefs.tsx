@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { channelLabel, notificationEventLabel, T } from "@/lib/vi";
+import { notifyChannelLabel, eventLabel, T } from "@/lib/vi";
 
 // Per-event channel preferences (notifications.md): absent row = default
 // matrix; this form always shows the merged view served by the API.
@@ -53,7 +53,7 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
             <th scope="col">Sự kiện</th>
             {CHANNELS.map((c) => (
               <th scope="col" key={c}>
-                {channelLabel[c]}
+                {notifyChannelLabel(c)}
               </th>
             ))}
           </tr>
@@ -61,12 +61,12 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
         <tbody>
           {prefs.map((p) => (
             <tr key={p.eventType}>
-              <td>{notificationEventLabel[p.eventType] ?? p.eventType}</td>
+              <td>{eventLabel(p.eventType)}</td>
               {CHANNELS.map((c) => (
                 <td key={c}>
                   <input
                     type="checkbox"
-                    aria-label={`${notificationEventLabel[p.eventType] ?? p.eventType} — ${channelLabel[c]}`}
+                    aria-label={`${eventLabel(p.eventType)} — ${notifyChannelLabel(c)}`}
                     checked={p.channels.includes(c)}
                     onChange={(e) => toggle(p.eventType, c, e.target.checked)}
                   />

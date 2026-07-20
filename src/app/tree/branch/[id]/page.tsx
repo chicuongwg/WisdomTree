@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { branchGapRequests } from "@/modules/storage/schema";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getBranch } from "@/modules/knowledge/service";
-import { gapStateLabel, T } from "@/lib/vi";
+import { gapLabel, T } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeCreateForm } from "@/app/components/node-create-form";
 import { BranchForm } from "@/app/components/branch-form";
@@ -78,7 +78,7 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
           <ul>
             {gaps.map((g) => (
               <li key={g.id}>
-                {g.title} <span className="badge muted">{gapStateLabel[g.state]}</span>
+                {g.title} <span className="badge muted">{gapLabel(g.state)}</span>
               </li>
             ))}
           </ul>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { T, verificationLabel } from "@/lib/vi";
+import { T, verificationStateLabel } from "@/lib/vi";
 
 type NodeInput = {
   id: string;
@@ -112,7 +112,7 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
             >
               {verificationOptions[node.verification].map((v) => (
                 <option key={v} value={v}>
-                  {verificationLabel[v]}
+                  {verificationStateLabel(v)}
                 </option>
               ))}
             </select>

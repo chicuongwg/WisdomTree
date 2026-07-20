@@ -37,6 +37,12 @@ export function CommentsSection({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fieldId = useId();
+  // The comment a notification link asked for, read once on mount.
+  const [targetId] = useState<string | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : /^#comment-(.+)$/.exec(window.location.hash)?.[1] ?? null,
+  );
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/comments?anchorType=${anchorType}&anchorId=${anchorId}`);
@@ -47,6 +53,19 @@ export function CommentsSection({
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Comments arrive after hydration, so the browser has already given up on
+  // the #comment-<id> fragment by the time the target exists. Once the list
+  // is in the DOM, take the reader there ourselves — and move focus, so a
+  // keyboard reader lands on the comment too, not just the viewport.
+  useEffect(() => {
+    if (!targetId || comments === null) return;
+    const el = document.getElementById(`comment-${targetId}`);
+    if (!el) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    el.focus({ preventScroll: true });
+  }, [targetId, comments]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +101,17 @@ export function CommentsSection({
   const repliesOf = (id: string) => (comments ?? []).filter((c) => c.parentCommentId === id);
 
   const renderComment = (c: CommentRow, isReply: boolean) => (
-    <li key={c.id} className={`comment${isReply ? " comment-reply" : ""}`}>
+    // id="comment-<id>" is the jump target a comment.created notification
+    // links to (modules/notify/links.ts appends the fragment). tabIndex -1
+    // lets the browser move focus here too, not just the scroll position.
+    <li
+      key={c.id}
+      id={`comment-${c.id}`}
+      tabIndex={-1}
+      className={`comment${isReply ? " comment-reply" : ""}${
+        c.id === targetId ? " comment-targeted" : ""
+      }`}
+    >
       <div className="comment-meta">
         <strong>{c.authorName}</strong>
         <span className="muted"> · {new Date(c.createdAt).toLocaleString("vi-VN")}</span>

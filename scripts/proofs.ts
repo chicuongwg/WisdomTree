@@ -832,6 +832,212 @@ async function main() {
     (await fetch(`${BASE}/api/admin/health`, asUser(minh))).status === 404,
   );
 
+  // ---------- Proof 7: notification links ----------
+  // The owner-reported defect: a notification named an event but never
+  // opened it. Every matrix event that has an object must resolve to that
+  // object's route through the ONE shared resolver both surfaces use, the
+  // link text must be the Vietnamese sentence (never a raw event key), and
+  // an unmappable event must resolve to null so the UI renders plain text
+  // instead of a dead link. Unit-style: the resolver is pure, so this
+  // asserts it directly rather than scraping rendered HTML.
+  console.log("Proof 7 — notification links");
+  const seenRenderedEvents = new Set<string>();
+  const { notificationLink } = await import("../src/modules/notify/links");
+  const { eventLabel, notificationEventLabel } = await import("../src/lib/vi");
+
+  const linkOf = (
+    eventType: string,
+    payload: Record<string, unknown>,
+    ctx: Parameters<typeof notificationLink>[2] = {},
+  ) => notificationLink(eventType, payload, ctx);
+
+  // comment.created → the ANCHOR's route plus the comment fragment.
+  const cNode = linkOf("comment.created", {
+    commentId: "c-1",
+    anchorType: "tree_node",
+    anchorId: "n-1",
+    authorId: "u-1",
+    mentions: ["u-2"],
+  });
+  ok(
+    "comment.created on a node → /tree/node/:id#comment-:id",
+    cNode?.href === "/tree/node/n-1#comment-c-1",
+    JSON.stringify(cNode),
+  );
+  ok(
+    "comment.created on a loan ticket → the item route via the ticket lookup",
+    linkOf(
+      "comment.created",
+      { commentId: "c-2", anchorType: "loan_ticket", anchorId: "t-9" },
+      { ticketItemIds: { "t-9": "i-9" } },
+    )?.href === "/catalog/i-9#comment-c-2",
+  );
+  ok(
+    "comment.created on a deadline → /deadlines/:id#comment-:id",
+    linkOf("comment.created", { commentId: "c-3", anchorType: "deadline", anchorId: "d-3" })
+      ?.href === "/deadlines/d-3#comment-c-3",
+  );
+
+  // source.assigned → the assignee's workbench, other readers the member view.
+  const assignedCtx = { assignedSourceIds: ["s-1"], viewerRole: "editor" as const };
+  ok(
+    "source.assigned → /source/task/:sourceId for the assignee",
+    linkOf(
+      "source.assigned",
+      { sourceId: "s-1", sourceVersionId: "sv-1", assigneeId: "u-2", uploaderId: "u-1" },
+      assignedCtx,
+    )?.href === "/source/task/s-1",
+  );
+  ok(
+    "source.assigned without a curation held by the viewer → member /library/:id",
+    linkOf("source.assigned", { sourceId: "s-1" }, { viewerRole: "user" })?.href === "/library/s-1",
+  );
+  ok(
+    "source.ready_for_review → Admin/Op Source Detail /source/:id",
+    linkOf("source.ready_for_review", { sourceId: "s-7" }, { viewerRole: "admin_op" })?.href ===
+      "/source/s-7",
+  );
+
+  // loan.* → the catalog item the ticket is for, from itemId or the lookup.
+  ok(
+    "loan.approved → /catalog/:itemId from the payload",
+    linkOf("loan.approved", { ticketId: "t-1", itemId: "i-1", borrowerId: "u-3" })?.href ===
+      "/catalog/i-1",
+  );
+  ok(
+    "loan.approved without itemId → /catalog/:itemId resolved from the ticket",
+    linkOf("loan.approved", { ticketId: "t-1" }, { ticketItemIds: { "t-1": "i-1" } })?.href ===
+      "/catalog/i-1",
+  );
+
+  ok(
+    "deadline.approaching → /deadlines/:id",
+    linkOf("deadline.approaching", { deadlineId: "d-1", spaceId: "sp-1", title: "Hội thảo" })
+      ?.href === "/deadlines/d-1",
+  );
+  ok(
+    "tree.node.published → /tree/node/:id",
+    linkOf("tree.node.published", { nodeId: "n-2", branchId: "b-1" })?.href === "/tree/node/n-2",
+  );
+
+  // Link text is the Vietnamese sentence, never the technical key.
+  ok(
+    "link label is the Vietnamese event sentence, not the raw key",
+    cNode?.label === notificationEventLabel["comment.created"] &&
+      !cNode?.label.includes("comment.created"),
+    JSON.stringify(cNode?.label),
+  );
+
+  // Unmappable → null (plain text), and a missing id never fabricates a route.
+  ok(
+    "unknown event type → no link",
+    linkOf("something.invented", { id: "x" }) === null,
+  );
+  ok(
+    "loan event with neither itemId nor a resolvable ticket → no link",
+    linkOf("loan.approved", { ticketId: "t-404" }) === null,
+  );
+  ok(
+    "comment on an unknown anchor type → no link",
+    linkOf("comment.created", { commentId: "c-4", anchorType: "galaxy", anchorId: "g-1" }) === null,
+  );
+
+  // The label guard: a key the map has not caught up with degrades to neutral
+  // Vietnamese, never to "source.ready_for_review" in the middle of the UI.
+  const missing = eventLabel("event.not.in.the.map");
+  ok(
+    "missing label falls back to neutral Vietnamese, not the raw key",
+    missing === "Cập nhật mới" && !missing.includes("event.not.in.the.map"),
+    missing,
+  );
+  // Every matrix event that names an object must actually produce a link —
+  // this is what stops a future event type from silently landing unlinked.
+  const SAMPLE_PAYLOADS: Record<string, Record<string, unknown>> = {
+    "source.processing_failed": { sourceId: "s-1" },
+    "source.assigned": { sourceId: "s-1" },
+    "source.ready_for_review": { sourceId: "s-1" },
+    "tree.node.published": { nodeId: "n-1" },
+    "loan.approved": { ticketId: "t-1", itemId: "i-1" },
+    "loan.borrowed": { ticketId: "t-1", itemId: "i-1" },
+    "loan.returned": { ticketId: "t-1", itemId: "i-1" },
+    "loan.declined": { ticketId: "t-1", itemId: "i-1" },
+    "loan.overdue": { ticketId: "t-1", itemId: "i-1" },
+    "deadline.approaching": { deadlineId: "d-1" },
+    "comment.created": { commentId: "c-1", anchorType: "tree_node", anchorId: "n-1" },
+  };
+  const unlinked = Object.keys(SAMPLE_PAYLOADS).filter(
+    (k) => linkOf(k, SAMPLE_PAYLOADS[k], { viewerRole: "admin_op" }) === null,
+  );
+  ok("every matrix event resolves to a link", unlinked.length === 0, unlinked.join(", "));
+  const unlabelled = Object.keys(SAMPLE_PAYLOADS).filter(
+    (k) => notificationEventLabel[k] === undefined,
+  );
+  ok("every matrix event type has a Vietnamese label", unlabelled.length === 0, unlabelled.join(", "));
+
+  // Route/HTTP smoke over the pure assertions: the resolver's answer has to
+  // survive rendering. For every notification the four required event types
+  // actually produced for a real user, the rendered Notification Center must
+  // carry an anchor whose href is that notification's resolved target — and
+  // the page must never print the raw event key.
+  const REQUIRED_EVENTS = [
+    "comment.created",
+    "source.assigned",
+    "loan.approved",
+    "deadline.approaching",
+  ] as const;
+  for (const [who, cookie] of [
+    ["minh", minh],
+    ["lan", lan],
+    ["huong", huong],
+  ] as const) {
+    const { rows: whoRow } = await pg.query("SELECT id, role FROM users WHERE google_sub = $1", [
+      `dev:${who}`,
+    ]);
+    const { rows: whoNotes } = await pg.query(
+      `SELECT event_type, payload FROM notifications
+        WHERE user_id = $1 AND event_type = ANY($2::text[])
+        ORDER BY created_at DESC LIMIT 100`,
+      [whoRow[0].id, [...REQUIRED_EVENTS]],
+    );
+    if (whoNotes.length === 0) continue;
+    const html = await (await fetch(`${BASE}/notifications`, asUser(cookie))).text();
+    // Curation assignments and ticket→item are the DB facts the page hydrates.
+    const { rows: assignedRows } = await pg.query(
+      `SELECT sv.source_id FROM curations c
+         JOIN source_versions sv ON sv.id = c.source_version_id
+        WHERE c.assigned_to = $1`,
+      [whoRow[0].id],
+    );
+    const { rows: ticketRows } = await pg.query("SELECT id, item_id FROM loan_tickets");
+    const ctx = {
+      assignedSourceIds: assignedRows.map((r: { source_id: string }) => r.source_id),
+      ticketItemIds: Object.fromEntries(
+        ticketRows.map((r: { id: string; item_id: string }) => [r.id, r.item_id]),
+      ),
+      viewerRole: whoRow[0].role as "user" | "editor" | "admin_op",
+    };
+    for (const eventType of REQUIRED_EVENTS) {
+      const note = whoNotes.find((n: { event_type: string }) => n.event_type === eventType);
+      if (!note) continue;
+      const expected = notificationLink(eventType, note.payload, ctx);
+      ok(
+        `/notifications renders ${eventType} as an href to its target (${who})`,
+        expected !== null && html.includes(`href="${expected.href}"`),
+        `expected ${expected?.href}`,
+      );
+      seenRenderedEvents.add(eventType);
+    }
+    ok(
+      `/notifications never prints a raw event key (${who})`,
+      !REQUIRED_EVENTS.some((e) => html.includes(`>${e}<`)),
+    );
+  }
+  ok(
+    "all four required event types were proven end-to-end in the rendered page",
+    REQUIRED_EVENTS.every((e) => seenRenderedEvents.has(e)),
+    `missing ${REQUIRED_EVENTS.filter((e) => !seenRenderedEvents.has(e)).join(", ")}`,
+  );
+
   console.log(`\nAll proofs passed (${passed} checks).`);
 }
 

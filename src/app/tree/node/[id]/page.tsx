@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getNode, listNodeOptions } from "@/modules/knowledge/service";
-import { linkTypeLabel, T } from "@/lib/vi";
+import { nodeLinkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
@@ -79,7 +79,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
               <ul>
                 {node.links.map((l) => (
                   <li key={`${l.toNodeId}-${l.linkType}`}>
-                    <span className="badge muted">{linkTypeLabel[l.linkType] ?? l.linkType}</span>{" "}
+                    <span className="badge muted">{nodeLinkTypeLabel(l.linkType)}</span>{" "}
                     <Link href={`/tree/node/${l.toNodeId}`}>{l.title}</Link>
                   </li>
                 ))}

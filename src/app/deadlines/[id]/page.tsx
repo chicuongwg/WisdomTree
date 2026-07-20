@@ -7,7 +7,7 @@ import { listMentionableUsers } from "@/modules/notify/service";
 import { tasks } from "@/modules/pm/schema";
 import { sources } from "@/modules/storage/schema";
 import { treeNodes } from "@/modules/knowledge/schema";
-import { deadlineTypeLabel, T, taskStateLabel } from "@/lib/vi";
+import { deadlineKindLabel, T, taskLabel } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
 import { CommentsSection } from "@/app/components/comments-section";
 
@@ -33,7 +33,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
   return (
     <main className="page">
       <h1>
-        {deadline.title} <span className="badge muted">{deadlineTypeLabel[deadline.type]}</span>
+        {deadline.title} <span className="badge muted">{deadlineKindLabel(deadline.type)}</span>
       </h1>
       <p className="muted">
         {T.dueAtLabel}: {deadline.dueAt.toLocaleString("vi-VN")} · {T.reminderOffsets}:{" "}
@@ -51,7 +51,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
                 {linkedTasks.map((t) => (
                   <li key={t.id}>
                     <span className="badge muted">{T.task}</span> {t.title}{" "}
-                    <span className="muted">({taskStateLabel[t.state]})</span>
+                    <span className="muted">({taskLabel(t.state)})</span>
                   </li>
                 ))}
                 {linkedSources.map((s) => (

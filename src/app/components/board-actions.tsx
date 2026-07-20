@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { T, taskStateLabel } from "@/lib/vi";
+import { T, taskLabel } from "@/lib/vi";
 
 // Board interactions (admin-op-screen-specs.md § Board): simple state moves
 // between todo/doing/done columns — no drag library — plus task creation.
@@ -44,7 +44,7 @@ export function TaskStateButtons({
     <div className="board-actions">
       {moves.map((s) => (
         <button key={s} className="secondary" disabled={busy} onClick={() => move(s)}>
-          → {taskStateLabel[s]}
+          → {taskLabel(s)}
         </button>
       ))}
       {error && <span className="error-text">{error}</span>}

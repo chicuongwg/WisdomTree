@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listCatalog } from "@/modules/catalog/service";
-import { itemStatusLabel, T } from "@/lib/vi";
+import { itemLabel, T } from "@/lib/vi";
 
 // Screen: Catalog (`/catalog`) — physical library, library-space members.
 export default async function CatalogPage({
@@ -44,7 +44,7 @@ export default async function CatalogPage({
                 <td>{item.location}</td>
                 <td>
                   <span className={`badge ${item.status === "available" ? "" : item.status === "borrowed" ? "warn" : "danger"}`}>
-                    {itemStatusLabel[item.status]}
+                    {itemLabel(item.status)}
                   </span>
                 </td>
               </tr>

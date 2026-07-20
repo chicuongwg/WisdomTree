@@ -1,18 +1,11 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { notifications } from "@/modules/notify/schema";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listLibrary } from "@/modules/storage/service";
 import { myAssignedTasks } from "@/modules/storage/curation";
 import { myTickets } from "@/modules/circulation/service";
-import {
-  curationStateLabel,
-  extractionLabel,
-  loanStateLabel,
-  notificationEventLabel,
-  T,
-} from "@/lib/vi";
+import { listNotificationsWithLinks } from "@/modules/notify/service";
+import { NotificationLink } from "@/app/components/notification-actions";
+import { curationLabel, eventLabel, extractionStateLabel, loanLabel, T } from "@/lib/vi";
 
 // Screen: Home (`/` — screen-inventory.md)
 export default async function Home() {
@@ -24,12 +17,7 @@ export default async function Home() {
     user.role === "editor" || user.role === "admin_op"
       ? myAssignedTasks(actor)
       : Promise.resolve([]),
-    db
-      .select()
-      .from(notifications)
-      .where(eq(notifications.userId, user.id))
-      .orderBy(desc(notifications.createdAt))
-      .limit(5),
+    listNotificationsWithLinks(actor, 5),
   ]);
 
   return (
@@ -45,7 +33,7 @@ export default async function Home() {
             {recent.slice(0, 5).map((item) => (
               <li key={item.sourceId}>
                 <Link href={`/library/${item.sourceId}`}>{item.title}</Link>{" "}
-                <span className="badge muted">{extractionLabel[item.extractionStatus]}</span>
+                <span className="badge muted">{extractionStateLabel(item.extractionStatus)}</span>
               </li>
             ))}
           </ul>
@@ -57,7 +45,7 @@ export default async function Home() {
             {tickets.slice(0, 5).map(({ ticket, itemTitle }) => (
               <li key={ticket.id}>
                 <Link href={`/catalog/${ticket.itemId}`}>{itemTitle}</Link>{" "}
-                <span className="badge muted">{loanStateLabel[ticket.state]}</span>
+                <span className="badge muted">{loanLabel(ticket.state)}</span>
               </li>
             ))}
           </ul>
@@ -69,21 +57,29 @@ export default async function Home() {
               {assigned.slice(0, 5).map((a) => (
                 <li key={a.curation.id}>
                   <Link href={`/source/task/${a.sourceId}`}>{a.title}</Link>{" "}
-                  <span className="badge muted">{curationStateLabel[a.curation.state]}</span>
+                  <span className="badge muted">{curationLabel(a.curation.state)}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
         <div className="panel">
-          <h2>{T.notifications}</h2>
+          <h2>
+            <Link href="/notifications">{T.notifications}</Link>
+          </h2>
           {notes.length === 0 && <p className="muted">{T.empty}</p>}
           <ul>
             {notes.map((n) => (
-              <li key={n.id}>
-                <Link href="/notifications">
-                  {notificationEventLabel[n.eventType] ?? n.eventType}
-                </Link>
+              <li key={n.id} className={n.readAt ? undefined : "notification-unread"}>
+                {n.link ? (
+                  <NotificationLink notificationId={n.id} href={n.link.href} unread={!n.readAt}>
+                    {n.link.label}
+                  </NotificationLink>
+                ) : (
+                  // Unmappable event: the sentence still reads, but nothing
+                  // pretends to be clickable.
+                  eventLabel(n.eventType)
+                )}
                 <span className="meta">{n.createdAt.toLocaleString("vi-VN")}</span>
               </li>
             ))}

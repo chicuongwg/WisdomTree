@@ -240,3 +240,74 @@ export const roleLabel: Record<string, string> = {
   editor: "Biên tập viên", // NEW
   admin_op: "Quản trị/Vận hành", // NEW
 };
+
+// ---------------------------------------------------------------------------
+// Guarded lookups — the UI never shows a raw internal term (ui-principles.md).
+//
+// `map[key] ?? key` was the old fallback and it LEAKS: a key the map has not
+// caught up with (a new event type, a new enum member) renders as
+// "source.ready_for_review" in a Vietnamese screen. The guarded accessors
+// below make a gap loud in development (console.warn) and neutral in
+// production (a Vietnamese fallback), never technical.
+// ---------------------------------------------------------------------------
+
+/** Neutral Vietnamese stand-ins, used only when a map has no entry. */
+const FALLBACK = {
+  event: "Cập nhật mới", // NEW
+  state: "Không rõ trạng thái", // NEW
+  kind: "Không rõ loại", // NEW
+  role: "Chưa rõ vai trò", // NEW
+  channel: "Kênh khác", // NEW
+} as const;
+
+/** The one lookup: warn loudly in dev, degrade to Vietnamese in production. */
+function guarded(
+  map: Record<string, string>,
+  mapName: string,
+  key: string | null | undefined,
+  fallback: string,
+): string {
+  if (key != null) {
+    const label = map[key];
+    if (label !== undefined) return label;
+  }
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[vi] ${mapName} has no Vietnamese label for ${JSON.stringify(key)} — showing "${fallback}". Add the entry to src/lib/vi.ts.`,
+    );
+  }
+  return fallback;
+}
+
+/** Notification event → one user-facing Vietnamese sentence. */
+export const eventLabel = (eventType: string | null | undefined): string =>
+  guarded(notificationEventLabel, "notificationEventLabel", eventType, FALLBACK.event);
+
+export const extractionStateLabel = (v: string | null | undefined): string =>
+  guarded(extractionLabel, "extractionLabel", v, FALLBACK.state);
+export const trustStateLabel = (v: string | null | undefined): string =>
+  guarded(trustLabel, "trustLabel", v, FALLBACK.state);
+export const gapLabel = (v: string | null | undefined): string =>
+  guarded(gapStateLabel, "gapStateLabel", v, FALLBACK.state);
+export const loanLabel = (v: string | null | undefined): string =>
+  guarded(loanStateLabel, "loanStateLabel", v, FALLBACK.state);
+export const itemLabel = (v: string | null | undefined): string =>
+  guarded(itemStatusLabel, "itemStatusLabel", v, FALLBACK.state);
+export const verificationStateLabel = (v: string | null | undefined): string =>
+  guarded(verificationLabel, "verificationLabel", v, FALLBACK.state);
+export const curationLabel = (v: string | null | undefined): string =>
+  guarded(curationStateLabel, "curationStateLabel", v, FALLBACK.state);
+export const reviewLabel = (v: string | null | undefined): string =>
+  guarded(reviewStateLabel, "reviewStateLabel", v, FALLBACK.state);
+export const taskLabel = (v: string | null | undefined): string =>
+  guarded(taskStateLabel, "taskStateLabel", v, FALLBACK.state);
+export const reviewTypeLabel = (v: string | null | undefined): string =>
+  guarded(reviewTaskTypeLabel, "reviewTaskTypeLabel", v, FALLBACK.kind);
+export const deadlineKindLabel = (v: string | null | undefined): string =>
+  guarded(deadlineTypeLabel, "deadlineTypeLabel", v, FALLBACK.kind);
+export const nodeLinkTypeLabel = (v: string | null | undefined): string =>
+  guarded(linkTypeLabel, "linkTypeLabel", v, FALLBACK.kind);
+export const userRoleLabel = (v: string | null | undefined): string =>
+  guarded(roleLabel, "roleLabel", v, FALLBACK.role);
+export const notifyChannelLabel = (v: string | null | undefined): string =>
+  guarded(channelLabel, "channelLabel", v, FALLBACK.channel);

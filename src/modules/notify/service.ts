@@ -5,13 +5,14 @@ import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { sources } from "../storage/schema";
+import { curations, sources, sourceVersions } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
 import { catalogItems } from "../catalog/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
 import { comments, notificationPreferences, notifications } from "./schema";
 import { DEFAULT_CHANNELS, dispatchOutbox, type Channel } from "./dispatcher";
+import { notificationLink, type NotificationLinkContext } from "./links";
 
 // Module: notify — comments anchored to work objects, the in-app notification
 // center, and per-user channel preferences (docs/system/notifications.md).
@@ -171,6 +172,78 @@ export async function listNotifications(actor: Principal, unreadOnly = false) {
     )
     .orderBy(desc(notifications.createdAt))
     .limit(100);
+}
+
+/**
+ * Hydrate the few database facts the pure link resolver cannot know, ONCE per
+ * page render rather than per row: which catalog item each referenced loan
+ * ticket belongs to, and which of the referenced sources the viewer actually
+ * holds a curation assignment on (that decides workbench vs member view).
+ * Read-only and self-scoped — it only ever looks at ids the viewer's own
+ * notifications already contain.
+ */
+export async function buildNotificationLinkContext(
+  actor: Principal,
+  notes: ReadonlyArray<{ eventType: string; payload: unknown }>,
+): Promise<NotificationLinkContext> {
+  const ticketIds = new Set<string>();
+  const sourceIds = new Set<string>();
+  const pick = (p: Record<string, unknown>, key: string): string | null =>
+    typeof p[key] === "string" && p[key] ? (p[key] as string) : null;
+
+  for (const note of notes) {
+    const p = (note.payload ?? {}) as Record<string, unknown>;
+    if (note.eventType.startsWith("loan.")) {
+      // Only tickets whose payload lacks itemId need the lookup.
+      if (!pick(p, "itemId")) {
+        const id = pick(p, "ticketId");
+        if (id) ticketIds.add(id);
+      }
+    } else if (note.eventType.startsWith("source.")) {
+      const id = pick(p, "sourceId");
+      if (id) sourceIds.add(id);
+    } else if (note.eventType === "comment.created") {
+      const anchorId = pick(p, "anchorId");
+      if (!anchorId) continue;
+      if (p.anchorType === "loan_ticket") ticketIds.add(anchorId);
+      if (p.anchorType === "source") sourceIds.add(anchorId);
+    }
+  }
+
+  const ticketItemIds: Record<string, string> = {};
+  if (ticketIds.size > 0) {
+    const rows = await db
+      .select({ id: loanTickets.id, itemId: loanTickets.itemId })
+      .from(loanTickets)
+      .where(inArray(loanTickets.id, [...ticketIds]));
+    for (const row of rows) ticketItemIds[row.id] = row.itemId;
+  }
+
+  let assignedSourceIds: string[] = [];
+  if (sourceIds.size > 0) {
+    // curations hang off source_versions, so join back to the source id.
+    const rows = await db
+      .select({ sourceId: sourceVersions.sourceId })
+      .from(curations)
+      .innerJoin(sourceVersions, eq(curations.sourceVersionId, sourceVersions.id))
+      .where(
+        and(
+          eq(curations.assignedTo, actor.userId),
+          inArray(sourceVersions.sourceId, [...sourceIds]),
+        ),
+      );
+    assignedSourceIds = [...new Set(rows.map((r) => r.sourceId))];
+  }
+
+  return { ticketItemIds, assignedSourceIds, viewerRole: actor.role };
+}
+
+/** Rows ready to render: the notification plus its resolved jump-to link. */
+export async function listNotificationsWithLinks(actor: Principal, limit?: number) {
+  const notes = await listNotifications(actor);
+  const rows = typeof limit === "number" ? notes.slice(0, limit) : notes;
+  const ctx = await buildNotificationLinkContext(actor, rows);
+  return rows.map((n) => ({ ...n, link: notificationLink(n.eventType, n.payload, ctx) }));
 }
 
 export async function unreadCount(actor: Principal): Promise<number> {

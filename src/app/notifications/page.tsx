@@ -1,15 +1,21 @@
 import { requireUser, toPrincipal } from "@/lib/page";
-import { getPreferences, listNotifications } from "@/modules/notify/service";
-import { notificationEventLabel, T } from "@/lib/vi";
-import { MarkReadButton } from "@/app/components/notification-actions";
+import { getPreferences, listNotificationsWithLinks } from "@/modules/notify/service";
+import { eventLabel, T } from "@/lib/vi";
+import { MarkReadButton, NotificationLink } from "@/app/components/notification-actions";
 import { NotificationPrefsForm } from "@/app/components/notification-prefs";
 
 // Screen: Notification Center (`/notifications`) — the in-app channel of
 // docs/system/notifications.md plus the per-event channel preferences.
+// Every row that CAN be opened is a link to the object it is about
+// (modules/notify/links.ts); an event we cannot map stays plain text rather
+// than becoming a dead link.
 export default async function NotificationsPage() {
   const user = await requireUser();
   const actor = toPrincipal(user);
-  const [notes, prefs] = await Promise.all([listNotifications(actor), getPreferences(actor)]);
+  const [notes, prefs] = await Promise.all([
+    listNotificationsWithLinks(actor),
+    getPreferences(actor),
+  ]);
 
   return (
     <main className="page">
@@ -27,24 +33,43 @@ export default async function NotificationsPage() {
               </tr>
             </thead>
             <tbody>
-              {notes.map((n) => (
-                <tr key={n.id} className={n.readAt ? undefined : "notification-unread"}>
-                  <td>
-                    {notificationEventLabel[n.eventType] ?? n.eventType}
-                    {typeof (n.payload as Record<string, unknown>).title === "string" && (
-                      <span className="muted"> — {(n.payload as { title: string }).title}</span>
-                    )}
-                  </td>
-                  <td className="muted">{n.createdAt.toLocaleString("vi-VN")}</td>
-                  <td>
-                    {n.readAt ? (
-                      <span className="badge muted">Đã đọc</span>
-                    ) : (
-                      <MarkReadButton notificationId={n.id} />
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {notes.map((n) => {
+                const payload = (n.payload ?? {}) as Record<string, unknown>;
+                const subject = typeof payload.title === "string" ? payload.title : null;
+                // The link text carries the whole sentence + subject, so it
+                // still says what it opens when read out of context.
+                const text = (
+                  <>
+                    {eventLabel(n.eventType)}
+                    {subject && <span className="muted"> — {subject}</span>}
+                  </>
+                );
+                return (
+                  <tr key={n.id} className={n.readAt ? undefined : "notification-unread"}>
+                    <td>
+                      {n.link ? (
+                        <NotificationLink
+                          notificationId={n.id}
+                          href={n.link.href}
+                          unread={!n.readAt}
+                        >
+                          {text}
+                        </NotificationLink>
+                      ) : (
+                        text
+                      )}
+                    </td>
+                    <td className="muted">{n.createdAt.toLocaleString("vi-VN")}</td>
+                    <td>
+                      {n.readAt ? (
+                        <span className="badge muted">Đã đọc</span>
+                      ) : (
+                        <MarkReadButton notificationId={n.id} />
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
