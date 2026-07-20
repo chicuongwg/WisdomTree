@@ -36,9 +36,9 @@
 - The summary is short enough to be used as a startup brief.
 
 ## Current Repository Stage
-- The repository is in `demo-built`: the Phase 0.5 design baseline under [`../design/`](../design/database-schema.md) plus an agent-built, coordinator-verified demo (Happy Path 0 + catalog/circulation) at the repo root per [`../roadmap/demo-brief.md`](../roadmap/demo-brief.md).
-- The demo passed both coordinator gates: scaffold review and the acceptance proofs (store-first, space scoping at the API, loan lifecycle with 409), run independently against the live app.
-- The docs remain the canonical baseline; dev-mode substitutions (user-picker auth, local object store, extraction stub) are demo-only and swap for real services in V1.
+- The repository is in `V1-local complete`: every module buildable on one machine is implemented and coordinator-verified — storage (store-first), catalog + circulation, knowledge (curation → review → publish with provenance, tree browse/search, merge/archive), notifications (comments, preferences, per-channel deliveries), PM (deadlines, board, ICS feed), export (document render + one-way tree export to a local content repo), full schema parity with the design docs, the "Chàm & Son" UI identity, and the matrix-driven authorization suite (155 assertions parsed from the permissions docs at run time).
+- Acceptance ran on the production build (`next build` + `next start`): 125 behavioral proofs green twice consecutively, authz suite green, typecheck clean. Delivery was agent-built in seven phases, each passing a coordinator gate with an atomic commit.
+- Still external, behind the approved substitutions until real services exist: Google OIDC, S3, the separate worker host with OCR/Ollama, Zalo OA and email delivery, the Google bridges, real backups — plus the humanities review of the `// NEW` Vietnamese strings in `src/lib/vi.ts`.
 
 ## What WisdomTree Is
 WisdomTree is a storage-first knowledge platform. It gives a small team one intelligent, multi-domain storage home — replacing scattered Excel/Docs storage — and layers curated knowledge publication on top. It separates raw evidence storage and processing from curated knowledge publication, for teams that gather information in many formats but need a cleaner, Markdown-first tree for linked knowledge, graph exploration, branch-based learning, and long-term maintenance.

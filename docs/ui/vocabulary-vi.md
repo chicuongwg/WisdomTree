@@ -67,7 +67,7 @@
 
 ## Proposed Terms (pending humanities review)
 
-Introduced by the demo build (2026-07-20), marked `NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator for the demo, requiring humanities sign-off before V1 ships:
+Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator, requiring humanities sign-off before V1 ships. The table below covers the core state and role terms; the authoritative pending list — including screen microcopy from the knowledge, notification, deadline, and board surfaces (113 strings as of 2026-07-20) — is the set of `// NEW` markers in `src/lib/vi.ts`, reviewable in one pass there:
 
 | Internal term | Proposed Vietnamese UI copy |
 | --- | --- |

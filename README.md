@@ -5,9 +5,15 @@ Storage-first knowledge platform for a small team — a modular monolith built a
 stack pin in [docs/roadmap/demo-brief.md](docs/roadmap/demo-brief.md).
 
 Planning and design docs live under [docs/](docs/README.md); they are the
-canonical baseline. This tree contains **step 2 (build)** of the demo brief's
-two-step delivery: the in-scope flows (Happy Path 0 + catalog/circulation)
-and the eight demo screens, awaiting the coordinator's acceptance check.
+canonical baseline. This tree is the **V1-local build**: the accepted demo
+(Happy Path 0 + catalog/circulation) plus the knowledge module
+(curation → review → publish with provenance, tree browse/search),
+notifications with comments and channel preferences, PM (deadlines, board,
+ICS feed), the export module (document render + one-way tree export to a
+local content repo), the "Chàm & Son" UI identity, and the matrix-driven
+authorization test suite. External services still run behind the approved
+dev-mode substitutions (user-picker auth, local object store, in-process
+extraction stub, console notification adapters, local bare content repo).
 
 ## Quickstart
 

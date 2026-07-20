@@ -200,10 +200,19 @@ async function main() {
     [ticket.id],
   );
   ok("in-app notifications recorded for borrower", notes[0].n >= 3, `got ${notes[0].n}`);
-  const { rows: undispatched } = await pg.query(
-    "SELECT count(*)::int AS n FROM outbox_events WHERE event_type LIKE 'loan.%' AND dispatched_at IS NULL",
-  );
-  ok("loan outbox rows marked dispatched (stub dispatcher)", undispatched[0].n === 0);
+  // The dispatcher is fire-and-forget after the mutation tx; poll briefly
+  // instead of asserting instantly (the instant assert was flaky on the
+  // production server, where the race is slower than under dev hot-reload).
+  let undispatchedN = -1;
+  for (let i = 0; i < 10; i++) {
+    const { rows: undispatched } = await pg.query(
+      "SELECT count(*)::int AS n FROM outbox_events WHERE event_type LIKE 'loan.%' AND dispatched_at IS NULL",
+    );
+    undispatchedN = undispatched[0].n;
+    if (undispatchedN === 0) break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  ok("loan outbox rows marked dispatched (stub dispatcher)", undispatchedN === 0);
 
   // ---------- Proof 4: curation to publish ----------
   // assign → corrected text → draft → ready_for_review → publish(verified)
