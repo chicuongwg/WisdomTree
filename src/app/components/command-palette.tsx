@@ -1,14 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { T, verificationStateLabel } from "@/lib/vi";
 import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
 
 // Command palette (VS Code / Obsidian, Ctrl+K): full-text search over tree
 // nodes via GET /api/tree/search, plus quick-open entries for every screen
-// the current role can reach. Opened by the shortcut or the sidebar
-// searchbox ("wt:open-palette").
+// the current role can reach. Opened by the shortcut, the sidebar searchbox
+// or the rail's "more" button (all three send "wt:open-palette").
+//
+// The element is the platform's own <dialog> opened with showModal(), the same
+// as ConfirmButton: focus trapping, Escape and the inert page behind come from
+// the browser. It used to be a plain <div role="dialog">, which meant Tab
+// walked straight out of it into a page that was still fully tabbable.
+//
+// The result list is a listbox driven by aria-activedescendant: focus stays in
+// the input while the arrow keys move the selection, so what is highlighted is
+// also what is announced.
 
 type SearchHit = {
   id: string;
@@ -26,11 +35,15 @@ export function CommandPalette({ role }: { role: string }) {
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [busy, setBusy] = useState(false);
   const [sel, setSel] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const baseId = useId();
+  const listId = `${baseId}list`;
+  const rowId = (key: string) => `${baseId}${key}`;
 
   const screens: Entry[] = [
     { key: "tree", label: T.tree, hint: T.paletteHintGo, href: "/tree" },
+    { key: "branches", label: T.navBranches, hint: T.paletteHintGo, href: "/tree/branches" },
     { key: "library", label: T.library, hint: T.paletteHintGo, href: "/library" },
     { key: "catalog", label: T.catalog, hint: T.paletteHintGo, href: "/catalog" },
     { key: "intake", label: T.sourceIntake, hint: T.paletteHintGo, href: "/source/intake" },
@@ -66,20 +79,18 @@ export function CommandPalette({ role }: { role: string }) {
     ...screenMatches,
   ];
 
-  const close = useCallback(() => {
+  const close = () => {
     setOpen(false);
     setQuery("");
     setHits([]);
     setSel(0);
-  }, []);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((v) => !v);
-      } else if (e.key === "Escape") {
-        close();
       }
     };
     const onOpen = () => setOpen(true);
@@ -89,10 +100,15 @@ export function CommandPalette({ role }: { role: string }) {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("wt:open-palette", onOpen);
     };
-  }, [close]);
+  }, []);
 
+  // Escape, the focus trap and focusing the input on open are the dialog's
+  // own doing; this only keeps the element in step with `open`.
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    else if (!open && dialog.open) dialog.close();
   }, [open]);
 
   // debounced tree search
@@ -144,65 +160,78 @@ export function CommandPalette({ role }: { role: string }) {
     };
   }, [open, selectedKey]);
 
-  if (!open) return null;
-
   const go = (entry: Entry) => {
     close();
     router.push(entry.href);
   };
 
   return (
-    <div
-      className="palette-veil"
+    <dialog
+      ref={dialogRef}
+      className="palette"
+      aria-label={T.quickSearch}
+      onClose={close}
       onMouseDown={(e) => {
+        // With no padding of its own the dialog box is fully covered by its
+        // children, so hitting the element itself means the backdrop.
         if (e.target === e.currentTarget) close();
       }}
+      // ponytail: the two UA <dialog> defaults .palette does not already
+      // override — 1em of padding, and margin:auto centring it vertically
+      // where the design puts it 12vh from the top.
+      style={{ padding: 0, margin: "12vh auto auto" }}
     >
-      <div className="palette" role="dialog" aria-modal="true" aria-label={T.quickSearch}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          placeholder={T.palettePlaceholder}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              setSel((s) => Math.min(s + 1, results.length - 1));
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault();
-              setSel((s) => Math.max(s - 1, 0));
-            } else if (e.key === "Enter" && results[sel]) {
-              e.preventDefault();
-              go(results[sel]);
-            }
-          }}
-        />
-        <div className="pal-list">
-          {busy && <p className="pal-empty">{T.paletteSearching}</p>}
-          {!busy && q && results.length === 0 && <p className="pal-empty">{T.paletteNoResults}</p>}
-          {results.map((entry, i) => (
-            <button
-              key={entry.key}
-              type="button"
-              ref={(el) => {
-                if (el) rowRefs.current.set(entry.key, el);
-                else rowRefs.current.delete(entry.key);
-              }}
-              className={`pal-item${i === sel ? " sel" : ""}`}
-              onMouseEnter={() => setSel(i)}
-              onFocus={() => setSel(i)}
-              onClick={() => go(entry)}
-            >
-              <span className="item-label">{entry.label}</span>
-              <span className="pal-cat">
-                {entry.key.startsWith("node:") ? `${T.paletteHintTree} · ${entry.hint}` : entry.hint}
-              </span>
-            </button>
-          ))}
-        </div>
+      <input
+        type="text"
+        value={query}
+        placeholder={T.palettePlaceholder}
+        aria-label={T.quickSearch}
+        aria-controls={listId}
+        aria-activedescendant={results[sel] ? rowId(results[sel].key) : undefined}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setSel((s) => Math.min(s + 1, results.length - 1));
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setSel((s) => Math.max(s - 1, 0));
+          } else if (e.key === "Enter" && results[sel]) {
+            e.preventDefault();
+            go(results[sel]);
+          }
+        }}
+      />
+      {/* Outside the listbox: a status line is not one of its options. */}
+      {busy && <p className="pal-empty">{T.paletteSearching}</p>}
+      {!busy && q && results.length === 0 && <p className="pal-empty">{T.paletteNoResults}</p>}
+      <div className="pal-list" id={listId} role="listbox">
+        {results.map((entry, i) => (
+          <button
+            key={entry.key}
+            id={rowId(entry.key)}
+            type="button"
+            role="option"
+            aria-selected={i === sel}
+            ref={(el) => {
+              if (el) rowRefs.current.set(entry.key, el);
+              else rowRefs.current.delete(entry.key);
+            }}
+            className={`pal-item${i === sel ? " sel" : ""}`}
+            onMouseEnter={() => setSel(i)}
+            onFocus={() => setSel(i)}
+            onClick={() => go(entry)}
+          >
+            <span className="item-label">{entry.label}</span>
+            <span className="pal-cat">
+              {entry.key.startsWith("node:") ? `${T.paletteHintTree} · ${entry.hint}` : entry.hint}
+            </span>
+          </button>
+        ))}
       </div>
+      {/* Inside the dialog, or the top layer would hide it: the card is
+          position:fixed, so it still sits where cardPosition put it. */}
       {peek && <NodePreviewCard preview={preview} style={{ top: peek.top, left: peek.left }} />}
-    </div>
+    </dialog>
   );
 }

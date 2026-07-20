@@ -1117,24 +1117,23 @@ a.tree-item.active {
 }
 :root[data-theme="dark"] .statusbar a:hover { color: var(--shell-rail-active); }
 
-/* --- Command palette ------------------------------------------ */
-.palette-veil {
-  position: fixed;
-  inset: 0;
-  background: var(--shell-veil);
-  display: grid;
-  place-items: start center;
-  padding-top: 12vh;
-  z-index: 50;
-}
+/* --- Command palette ------------------------------------------
+   A native <dialog> opened with showModal(), like the confirm box: the focus
+   trap, Escape and the inert background come from the browser. The hand-rolled
+   .palette-veil that used to dim the page went with the div it wrapped —
+   ::backdrop does that job now, off the same veil token. */
 .palette {
   width: min(36rem, 92vw);
+  padding: 0;
+  margin: 12vh auto auto;
   background: var(--color-surface);
+  color: var(--color-ink);
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
+dialog.palette::backdrop { background: var(--shell-veil); }
 .palette input[type="text"] {
   width: 100%;
   border: none;

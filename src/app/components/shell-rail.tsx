@@ -78,6 +78,13 @@ const icons = {
       <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6M10.5 19a2 2 0 0 0 3 0" />
     </svg>
   ),
+  more: (
+    <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <circle cx="5.5" cy="12" r="1.1" />
+      <circle cx="12" cy="12" r="1.1" />
+      <circle cx="18.5" cy="12" r="1.1" />
+    </svg>
+  ),
 };
 
 export function ShellRail({
@@ -137,6 +144,19 @@ export function ShellRail({
           {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}
         </Link>
       ))}
+      {/* ponytail: below 56rem the sidebar is display:none, and six screens
+          (nộp nguồn, bài nộp của tôi, hộp nguồn, bàn thủ thư, danh sách
+          chuyên đề, chuyên đề mới) live only there. Rather than a second
+          mobile nav, this opens the palette, which already indexes all six. */}
+      <button
+        type="button"
+        className="rail-btn"
+        title={T.quickSearch}
+        aria-label={T.quickSearch}
+        onClick={() => window.dispatchEvent(new CustomEvent("wt:open-palette"))}
+      >
+        {icons.more}
+      </button>
       <span className="rail-spacer" />
       <ThemeToggle />
       <span className="rail-avatar" title={`${displayName} · ${userRoleLabel(role)}`}>
