@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T, taskLabel } from "@/lib/vi";
+import { ConfirmButton } from "./confirm-button";
 
 // Board interactions (admin-op-screen-specs.md § Board): simple state moves
-// between todo/doing/done columns — no drag library — plus task creation.
+// between todo/doing/done columns — no drag library — plus task creation,
+// claiming an unheld task, and archiving one off the board.
 
 type UserOption = { id: string; displayName: string };
 
@@ -52,10 +54,76 @@ export function TaskStateButtons({
   );
 }
 
+/**
+ * Take an unheld task from the pool. The button is only rendered on a card
+ * with no holder, but the real guard is the service's WHERE clause: two people
+ * pressing at once resolve to one winner and one 409, which lands here as the
+ * service's own message ("Việc này đã có người nhận").
+ */
+export function TaskClaimButton({ taskId }: { taskId: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function claim() {
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/tasks/${taskId}/claim`, { method: "POST" });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => null)) as { message?: string } | null;
+      setError(err?.message ?? T.genericError);
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    router.refresh();
+  }
+
+  return (
+    <>
+      <button type="button" disabled={busy} onClick={claim}>
+        {T.claimTask}
+      </button>
+      {error && <span className="error-text">{error}</span>}
+    </>
+  );
+}
+
+/** Off the board, still in the record — so the question says exactly that. */
+export function TaskArchiveButton({ taskId }: { taskId: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
+  async function archive() {
+    setError(null);
+    const res = await fetch(`/api/tasks/${taskId}/archive`, { method: "POST" });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => null)) as { message?: string } | null;
+      setError(err?.message ?? T.genericError);
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <>
+      <ConfirmButton
+        label={T.archive}
+        title={T.confirmArchiveTaskTitle}
+        body={T.confirmArchiveTaskBody}
+        className="secondary"
+        onConfirm={archive}
+      />
+      {error && <span className="error-text">{error}</span>}
+    </>
+  );
+}
+
 export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
+  const [dueAt, setDueAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,7 +134,14 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, state: "todo", ...(assigneeId ? { assigneeId } : {}) }),
+      body: JSON.stringify({
+        title,
+        state: "todo",
+        ...(assigneeId ? { assigneeId } : {}),
+        // Empty = unscheduled; the field is a local wall-clock time, so it is
+        // sent as-is and read back in the same zone the team works in.
+        ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}),
+      }),
     });
     if (!res.ok) {
       const err = (await res.json().catch(() => null)) as { message?: string } | null;
@@ -76,6 +151,7 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
     }
     setTitle("");
     setAssigneeId("");
+    setDueAt("");
     setBusy(false);
     router.refresh();
   }
@@ -96,6 +172,15 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
             </option>
           ))}
         </select>
+      </div>
+      <div className="field">
+        <label htmlFor="task-due">{T.taskDueAtOptional}</label>
+        <input
+          id="task-due"
+          type="datetime-local"
+          value={dueAt}
+          onChange={(e) => setDueAt(e.target.value)}
+        />
       </div>
       {error && <p className="error-text">{error}</p>}
       <button type="submit" disabled={busy || !title.trim()}>

@@ -1795,3 +1795,147 @@ button.login-person:hover {
 .login-person-name { font-weight: 600; font-size: 1rem; }
 .login-person-role { color: var(--color-ink-muted); font-size: 0.85rem; flex: none; }
 button.login-person:hover .login-person-role { color: inherit; }
+
+/* ============================================================
+   Board — the view switcher, and the month / week calendars
+   ============================================================ */
+
+/* Segmented control: three ways of looking at one board, so they sit in one
+   frame rather than reading as three separate destinations. */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-surface);
+  align-self: start;
+}
+.segmented a {
+  padding: 0.35rem 0.9rem;
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: var(--color-ink-muted);
+  text-decoration: none;
+  border-left: 1px solid var(--color-line);
+}
+.segmented a:first-child { border-left: none; }
+.segmented a:hover { background: var(--color-canopy-wash); color: var(--color-canopy-deep); }
+/* The current view is stated by weight and fill, not colour alone. */
+.segmented a[aria-current="page"] {
+  background: var(--color-canopy);
+  color: var(--color-on-strong);
+  font-weight: 600;
+}
+
+.cal-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.cal-head h2 { margin: 0; }
+.cal-nav { display: flex; gap: var(--space-3); font-size: 0.88rem; }
+
+/* Both grids scroll inside .record-scroll rather than stacking: a month that
+   collapses to one column stops being a month — the shape IS the information.
+   At 390px the reader pans a 34rem grid sideways, the same gesture every wide
+   table in this app already asks for. */
+.cal-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(4.6rem, 1fr));
+  min-width: 34rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-line);
+  gap: 1px; /* the background shows through as the rules */
+}
+.cal-dow {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-muted);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.3rem 0.2rem;
+}
+.cal-dow.is-today { color: var(--color-canopy-deep); }
+.cal-day {
+  background: var(--color-surface);
+  min-height: 5.5rem;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: stretch;
+}
+.cal-daynum { font-family: var(--font-ui); font-size: 0.78rem; color: var(--color-ink-muted); }
+/* Leading and trailing days belong to the neighbouring months: present, but
+   not competing with the month being read. */
+.cal-day.is-outside { background: var(--color-surface-sunken); }
+.cal-day.is-outside .cal-daynum { opacity: 0.6; }
+/* Today is marked by a ring and a filled day number, never by hue alone. */
+.cal-day.is-today { box-shadow: inset 0 0 0 2px var(--color-canopy); }
+.cal-day.is-today .cal-daynum {
+  color: var(--color-on-strong);
+  background: var(--color-canopy);
+  border-radius: 3px;
+  align-self: flex-start;
+  padding: 0 0.35rem;
+  font-weight: 600;
+}
+
+/* Hour label column + seven day columns, one flat grid so every row lines up. */
+.cal-week {
+  display: grid;
+  grid-template-columns: 3.4rem repeat(7, minmax(4.6rem, 1fr));
+  min-width: 36rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-line);
+  gap: 1px;
+}
+.cal-corner { background: var(--color-surface-sunken); }
+.cal-hour {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-muted);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  padding: 0.25rem 0.35rem;
+  text-align: right;
+}
+.cal-hour-allday { text-align: left; font-weight: 600; }
+.cal-slot {
+  background: var(--color-surface);
+  min-height: 2.1rem;
+  padding: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.cal-slot.is-today { background: var(--color-canopy-wash); }
+/* The strip carries whatever falls outside 6:00–22:00, so nothing is dropped
+   for being early, late, or dated without a time. */
+.cal-slot-allday { min-height: 2.6rem; background: var(--color-surface-sunken); }
+.cal-slot-allday.is-today { background: var(--color-canopy-wash); }
+
+/* A chip in a 4.6rem cell: the title truncates, the full text is in the title
+   attribute, and the badge tone still carries the task's state. */
+.cal-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  min-width: 0;
+}
+.cal-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+.cal-chip-who { flex: none; font-weight: 700; opacity: 0.75; }
+/* A deadline is not a task: seal edge and the flag mark say so without hue. */
+.cal-chip-deadline {
+  background: var(--color-seal-wash);
+  color: var(--color-seal-deep);
+  border-color: color-mix(in srgb, var(--color-seal) 45%, transparent);
+  border-left: 3px solid var(--color-seal);
+  font-weight: 600;
+}

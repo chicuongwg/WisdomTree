@@ -1,12 +1,32 @@
-import { NextResponse } from "next/server";
-import { handleApi } from "@/lib/errors";
+import { NextResponse, type NextRequest } from "next/server";
+import { ApiError, handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
-import { listBoard } from "@/modules/pm/service";
+import { listBoard, listSchedule } from "@/modules/pm/service";
 
-// GET /api/board — operational board tasks (Editor, Admin/Op).
-export async function GET() {
+// GET /api/board — operational board tasks (every role: pm.board.read).
+// GET /api/board?from=<iso>&to=<iso> — the same board as a date range: tasks
+// by due_at plus the project deadlines. One route rather than two, because the
+// caller is asking the same question ("what is this team carrying") and only
+// the shape of the answer differs.
+function parseRange(from: string, to: string) {
+  const start = new Date(from);
+  const end = new Date(to);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+    throw new ApiError(400, "invalid_range", "Khoảng thời gian không hợp lệ.");
+  }
+  return { from: start, to: end };
+}
+
+export async function GET(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
-    return NextResponse.json(await listBoard(actor));
+    const params = request.nextUrl.searchParams;
+    const from = params.get("from");
+    const to = params.get("to");
+    if (from === null && to === null) return NextResponse.json(await listBoard(actor));
+    if (from === null || to === null) {
+      throw new ApiError(400, "invalid_range", "Cần cả ngày bắt đầu và ngày kết thúc.");
+    }
+    return NextResponse.json(await listSchedule(actor, parseRange(from, to)));
   });
 }

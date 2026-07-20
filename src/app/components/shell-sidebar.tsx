@@ -51,9 +51,10 @@ export function ShellSidebar({
     { href: "/tree", label: T.tree },
     { href: "/tree/branches", label: T.navBranches },
   ];
-  const workNav: { href: string; label: string }[] = [];
-  if (role === "editor" || role === "admin_op") workNav.push({ href: "/board", label: T.board });
-  workNav.push({ href: "/deadlines", label: T.deadline });
+  const workNav: { href: string; label: string }[] = [
+    { href: "/board", label: T.board }, // every role — pm.board.read is global
+    { href: "/deadlines", label: T.deadline },
+  ];
 
   const shortcuts: { href: string; label: string }[] = [
     { href: "/source/intake", label: T.sourceIntake },

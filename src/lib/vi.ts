@@ -201,6 +201,25 @@ export const T = {
   project: "Kho dự án", // NEW
   allProjects: "Tất cả kho dự án", // NEW
   noAssignee: "Chưa giao", // NEW
+  // Board: claim, archive, and the three ways of looking at the same work
+  // (lanes / month / week) — NEW pending humanities review
+  claimTask: "Nhận việc", // NEW
+  boardViews: "Cách xem bảng công việc", // NEW
+  boardViewKanban: "Cột việc", // NEW
+  boardViewMonth: "Tháng", // NEW
+  boardViewWeek: "Tuần", // NEW
+  taskDueAtOptional: "Đến hạn (không bắt buộc)", // NEW
+  today: "Hôm nay", // NEW
+  prevMonth: "Tháng trước", // NEW
+  nextMonth: "Tháng sau", // NEW
+  prevWeek: "Tuần trước", // NEW
+  nextWeek: "Tuần sau", // NEW
+  outsideHoursStrip: "Cả ngày / ngoài giờ", // NEW
+  calendarEmptyTitle: "Chưa có việc nào đến hạn trong khoảng này.", // NEW
+  calendarEmptyHint: "Đặt “Đến hạn” khi thêm công việc để nó hiện trên lịch.", // NEW
+  confirmArchiveTaskTitle: "Lưu trữ công việc này?", // NEW
+  confirmArchiveTaskBody:
+    "Công việc rời khỏi bảng nhưng vẫn được lưu lại trong hồ sơ. Không thể hoàn tác trên bảng.", // NEW
   // Workspace shell terms — NEW pending humanities review
   quickSearch: "Tìm nhanh", // NEW
   openBranch: "Mở chuyên đề", // NEW
@@ -576,6 +595,9 @@ export const taskStateLabel: Record<string, string> = {
   done: "Hoàn thành", // NEW
   archived: "Đã lưu trữ",
 };
+
+/** Weekday column heads, Monday first — the week a Vietnamese calendar shows. */
+export const weekdayShort = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]; // NEW
 
 export const channelLabel: Record<string, string> = {
   in_app: "Trong ứng dụng", // NEW

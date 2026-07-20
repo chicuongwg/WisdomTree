@@ -115,10 +115,10 @@ export function ShellRail({
     { href: "/library", label: T.library, icon: icons.library, also: ["/source"] },
     { href: "/catalog", label: T.catalog, icon: icons.catalog },
     { href: "/deadlines", label: T.deadline, icon: icons.deadlines },
+    // Every role: pm.board.read is global, and unheld work is a pool anyone
+    // may take from.
+    { href: "/board", label: T.board, icon: icons.board },
   ];
-  if (role === "editor" || role === "admin_op") {
-    items.push({ href: "/board", label: T.board, icon: icons.board });
-  }
   if (role === "admin_op") {
     items.push({ href: "/review", label: T.reviewQueue, icon: icons.review, pip: reviewOpen });
     items.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });

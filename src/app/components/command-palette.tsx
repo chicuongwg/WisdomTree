@@ -49,14 +49,17 @@ export function CommandPalette({ role }: { role: string }) {
     { key: "intake", label: T.sourceIntake, hint: T.paletteHintGo, href: "/source/intake" },
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
     { key: "deadlines", label: T.deadline, hint: T.paletteHintGo, href: "/deadlines" },
+    { key: "board", label: T.board, hint: T.paletteHintGo, href: "/board" },
     { key: "notifications", label: T.notificationCenter, hint: T.paletteHintGo, href: "/notifications" },
     { key: "account", label: T.account, hint: T.paletteHintGo, href: "/account" },
   ];
   if (role === "editor" || role === "admin_op") {
-    screens.push(
-      { key: "board", label: T.board, hint: T.paletteHintGo, href: "/board" },
-      { key: "new-branch", label: T.createBranch, hint: T.paletteHintGo, href: "/tree/branch/new" },
-    );
+    screens.push({
+      key: "new-branch",
+      label: T.createBranch,
+      hint: T.paletteHintGo,
+      href: "/tree/branch/new",
+    });
   }
   if (role === "admin_op") {
     screens.push(

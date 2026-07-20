@@ -289,6 +289,7 @@ export async function listBoard(actor: Principal) {
       state: tasks.state,
       assignedTo: tasks.assignedTo,
       assigneeName: users.displayName, // additive over the contract Task shape
+      dueAt: tasks.dueAt,
       targetType: tasks.targetType,
       targetId: tasks.targetId,
       createdBy: tasks.createdBy,
@@ -435,6 +436,7 @@ export async function createTask(actor: Principal, input: TaskInput) {
         assignedTo: input.assigneeId ?? null,
         targetType: input.targetType ?? null,
         targetId: input.targetId ?? null,
+        dueAt: parseDueAt(input.dueAt),
         createdBy: actor.userId,
       })
       .returning();
@@ -471,6 +473,8 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
         ...(input.title?.trim() ? { title: input.title.trim() } : {}),
         ...(input.state ? { state: input.state as TaskState } : {}),
         ...(input.assigneeId !== undefined ? { assignedTo: input.assigneeId } : {}),
+        // Absent key = leave the schedule alone; explicit null = unschedule.
+        ...(input.dueAt !== undefined ? { dueAt: parseDueAt(input.dueAt) } : {}),
         updatedAt: new Date(),
         version: existing.version + 1,
       })
