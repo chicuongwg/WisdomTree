@@ -35,7 +35,7 @@
 
 ### Pillar 1: Communication
 - Real-time chat stays on the tools the team already uses: Facebook Messenger and Zalo. WisdomTree does not build a chat product and does not self-host a chat server, because both would force new accounts and lose adoption.
-- What WisdomTree does build is object-anchored discussion: threaded comments attached to a stored source, a knowledge node, a loan ticket, or a deadline, so that context becomes part of the durable record instead of scrolling away in a chat app.
+- What WisdomTree does build is object-anchored discussion: threaded comments attached to a stored source, a knowledge node, or a deadline, so that context becomes part of the durable record instead of scrolling away in a chat app.
 - The platform pushes outbound notifications to where the team already is: a Zalo Official Account and email. See [`../system/notifications.md`](../system/notifications.md).
 - Private notes are a `personal` space in the storage model, not a separate feature.
 

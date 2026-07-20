@@ -44,7 +44,7 @@
 
 ### Zone 3: Context and Inspector Panel
 - Metadata, trust badges, relations, source excerpt, task context, activity, review notes, or object comments.
-- Comments anchor to the object in view (source, node, loan ticket, or deadline) and are part of its history, not a chat channel.
+- Comments anchor to the object in view (source, node, or deadline) and are part of its history, not a chat channel. A `Loan Ticket` is not an anchor: a loan carries a factual record on Catalog Item Detail instead of a discussion thread.
 - Collapsible where necessary, but conceptually always available.
 
 ## Layout Behavior by Surface

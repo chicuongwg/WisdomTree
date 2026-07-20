@@ -288,7 +288,7 @@
 
 ### User Stories
 - As a member, I receive a notification through my preferred channels when something relevant to me happens, so I do not have to poll the app.
-- As a member, I can comment on a source, node, loan ticket, or deadline to discuss it in context.
+- As a member, I can comment on a source, node, or deadline to discuss it in context.
 - As a member, I can keep private notes in my personal space.
 - As an Admin/Op, I can rely on notifications reaching the team on Zalo and email without hosting a chat server.
 
@@ -302,6 +302,6 @@
 
 ### Acceptance Criteria
 - Relevant events produce notifications through the member's chosen channels.
-- A member can comment on a source, node, loan ticket, or deadline, and the comment persists.
+- A member can comment on a source, node, or deadline, and the comment persists.
 - A member can keep private notes no one else can see.
 - A Zalo or email outage delays alerts without blocking the workflow.

@@ -152,9 +152,10 @@
 - Goal:
   - support exploratory relation navigation
 - Key regions:
-  - graph canvas
-  - selected node inspector
-  - filters by branch, tag, and relation type
+  - graph canvas: an SVG map of every non-archived node, drawn with verification encoded by both colour and shape
+  - hover or focus preview card for the node under the pointer, and click or Enter to open that node
+  - filters by branch and by node title, with a live count of visible nodes and links
+  - legend for the verification marks
 
 ### Deadlines
 - Goal:

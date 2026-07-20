@@ -100,7 +100,7 @@
 
 ### Notifications and Comments
 - Relevant events notify the right members through their chosen channels (in-app, email, Zalo OA).
-- A member can comment on a source, node, loan ticket, or deadline, and the comment persists with the object.
+- A member can comment on a source, node, or deadline, and the comment persists with the object.
 - A channel outage delays alerts without blocking the triggering workflow.
 
 ### Deadlines

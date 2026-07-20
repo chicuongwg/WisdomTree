@@ -67,7 +67,7 @@
 
 ## Proposed Terms (pending humanities review)
 
-Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator, requiring humanities sign-off before V1 ships. The table below covers the core state and role terms; the authoritative pending list — including screen microcopy from the knowledge, notification, deadline, and board surfaces (113 strings as of 2026-07-20) — is the set of `// NEW` markers in `src/lib/vi.ts`, reviewable in one pass there:
+Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator, requiring humanities sign-off before V1 ships. The table below now lists every `// NEW` marker in `src/lib/vi.ts` (162 strings as of 2026-07-20), in file order: the core state and role terms first, then the screen microcopy from the catalog loan-record, knowledge, graph, notification, deadline, board, and workspace-shell surfaces. Entries taken from a state or event map are prefixed with that map's concept; entries from the `T` string table are listed under their key. `Graph` is not repeated here because it is already an approved term above.
 
 | Internal term | Proposed Vietnamese UI copy |
 | --- | --- |
@@ -90,6 +90,148 @@ Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src
 | Role: user | Thành viên |
 | Role: editor | Biên tập viên |
 | Role: admin_op | Quản trị/Vận hành |
+| loanRecord | Sổ mượn trả |
+| currentLoan | Lượt mượn hiện tại |
+| loanHistory | Các lượt mượn trước |
+| noLoanRecord | Đầu sách này chưa có lượt mượn nào. |
+| noCurrentLoan | Hiện không có ai mượn đầu sách này. |
+| borrower | Người mượn |
+| requestedAtLabel | Yêu cầu lúc |
+| approvedByLabel | Duyệt bởi |
+| approvedAtLabel | Duyệt lúc |
+| borrowedAtLabel | Nhận sách lúc |
+| returnedAtLabel | Đã trả lúc |
+| overdueLabel | Quá hạn |
+| notYet | Chưa có |
+| correctedText | Văn bản đã hiệu đính |
+| rawText | Văn bản trích xuất |
+| sourceInbox | Tiếp nhận tư liệu |
+| assignedTask | Việc được giao |
+| provenance | Nguồn dẫn |
+| relatedNodes | Trang liên quan |
+| tags | Thẻ |
+| branchName | Tên chuyên đề |
+| createBranch | Tạo chuyên đề |
+| editNode | Sửa trang tri thức |
+| save | Lưu |
+| saveDraft | Lưu bản thảo |
+| markReady | Gửi duyệt |
+| assign | Giao việc |
+| assignee | Người phụ trách |
+| requestChanges | Yêu cầu chỉnh sửa |
+| publishVerified | Xuất bản (Đã thẩm định) |
+| publishUnverified | Xuất bản (Chưa thẩm định) |
+| archive | Lưu trữ |
+| merge | Gộp trang |
+| mergedNotice | Trang này đã được gộp vào một trang chuẩn. |
+| openCanonical | Mở trang chuẩn |
+| verificationLabelTitle | Mức thẩm định |
+| excerpts | Trích đoạn dẫn chứng |
+| nodeCount | Số trang tri thức |
+| lastUpdated | Cập nhật lần cuối |
+| state | Trạng thái |
+| taskType | Loại việc |
+| openItem | Mở |
+| triage | Tiếp nhận |
+| convertToBranch | Chuyển thành chuyên đề |
+| contentMd | Nội dung (Markdown) |
+| suggestedBranch | Chuyên đề đề xuất |
+| preview | Xem trước |
+| addComment | Gửi thảo luận |
+| reply | Trả lời |
+| mentionHelp | Gõ @ rồi tên thành viên (ví dụ @Phạm Thu Hương) để nhắc họ vào thảo luận này. |
+| notificationCenter | Thông báo |
+| markRead | Đánh dấu đã đọc |
+| unread | Chưa đọc |
+| notificationPrefs | Tùy chọn nhận thông báo |
+| board | Bảng công việc |
+| task | Công việc |
+| createTask | Thêm công việc |
+| achievement | Thành quả |
+| createDeadline | Tạo hạn chót |
+| editDeadline | Sửa hạn chót |
+| deadlineType | Loại hạn chót |
+| dueAtLabel | Đến hạn |
+| reminderOffsets | Nhắc trước |
+| checklistAndDocs | Việc và tài liệu liên quan |
+| myCalendar | Lịch của tôi |
+| calendarSubscribeHint | Dán đường dẫn này vào ứng dụng lịch (Google Calendar, Outlook…) để tự động nhận các hạn chót. |
+| project | Kho dự án |
+| allProjects | Tất cả kho dự án |
+| noAssignee | Chưa giao |
+| quickSearch | Tìm nhanh |
+| openBranch | Mở chuyên đề |
+| recent | Gần đây |
+| shortcuts | Lối tắt |
+| themeToggle | Đổi giao diện sáng/tối |
+| palettePlaceholder | Gõ để tìm trang tri thức hoặc mở nhanh một mục… |
+| paletteNoResults | Không tìm thấy kết quả. |
+| paletteSearching | Đang tìm… |
+| paletteHintTree | trang tri thức |
+| paletteHintGo | mở nhanh |
+| yourSpaces | không gian |
+| modules | Mô-đun |
+| graphIntro | Mỗi chấm là một trang tri thức, mỗi đường là một liên kết giữa hai trang. |
+| backlinks | Liên kết đến trang này |
+| outgoingLinks | Trang này liên kết đến |
+| localMap | Bản đồ quanh trang này |
+| wikiMissing | Chưa có trang này |
+| wikiHelp | Gõ [[Tiêu đề trang]] để liên kết sang một trang tri thức khác. |
+| legend | Chú giải |
+| filterByBranch | Lọc theo chuyên đề |
+| allBranches | Tất cả chuyên đề |
+| filterByTitle | Lọc theo tên trang |
+| graphEmpty | Chưa có trang tri thức nào để vẽ bản đồ. |
+| graphNoMatch | Không có trang nào khớp bộ lọc. Xóa bớt điều kiện để xem lại. |
+| graphCount | trang · liên kết |
+| noBacklinks | Chưa trang nào liên kết đến trang này. |
+| navKnowledge | Tri thức |
+| navWork | Dự án & công việc |
+| navBranches | Danh sách chuyên đề |
+| openGraph | Mở bản đồ tri thức |
+| Curation: under_correction | Đang hiệu đính |
+| Curation: ready_for_review | Chờ duyệt xuất bản |
+| Curation: promoted | Đã xuất bản |
+| Review: queued | Đang chờ |
+| Review: assigned | Đã giao |
+| Review: in_review | Đang duyệt |
+| Review: changes_requested | Cần chỉnh sửa |
+| Review: approved | Đã duyệt |
+| Review task: correction | Hiệu đính |
+| Review task: gap_triage | Tiếp nhận đề xuất |
+| Review task: merge | Gộp trang |
+| Review task: archive | Lưu trữ |
+| Review task: operational | Vận hành |
+| Link type: related | Liên quan |
+| Link type: supports | Bổ trợ |
+| Link type: contrasts | Đối chiếu |
+| Link type: part_of | Thuộc về |
+| Deadline type: conference | Hội thảo |
+| Deadline type: funding | Tài trợ |
+| Deadline type: report | Báo cáo |
+| Deadline type: milestone | Cột mốc |
+| Task: todo | Cần làm |
+| Task: doing | Đang làm |
+| Task: done | Hoàn thành |
+| Channel: in_app | Trong ứng dụng |
+| Channel: email | Email |
+| Channel: zalo | Zalo |
+| Notification: source.processing_failed | Tư liệu bạn gửi không xử lý được (tệp gốc vẫn được lưu) |
+| Notification: source.assigned | Bạn được giao việc hiệu đính |
+| Notification: source.ready_for_review | Có tư liệu chờ duyệt xuất bản |
+| Notification: tree.node.published | Tư liệu bạn gửi đã được xuất bản lên cây tri thức |
+| Notification: loan.approved | Yêu cầu mượn sách đã được duyệt |
+| Notification: loan.borrowed | Bạn đã nhận sách; nhớ hạn trả |
+| Notification: loan.returned | Phiếu mượn đã ghi nhận trả sách |
+| Notification: loan.declined | Yêu cầu mượn sách bị từ chối |
+| Notification: loan.overdue | Phiếu mượn đã quá hạn trả |
+| Notification: deadline.approaching | Sắp đến hạn chót của dự án |
+| Notification: comment.created | Bạn được nhắc đến trong một thảo luận |
+| Fallback: event | Cập nhật mới |
+| Fallback: state | Không rõ trạng thái |
+| Fallback: kind | Không rõ loại |
+| Fallback: role | Chưa rõ vai trò |
+| Fallback: channel | Kênh khác |
 
 ## Governance
 - Engineering may introduce an internal term; the humanities reviewer assigns the Vietnamese UI word before it reaches users.
