@@ -375,22 +375,18 @@ export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> 
   return { nodes, edges: edgeRows.filter((e) => live.has(e.from) && live.has(e.to)) };
 }
 
-/** How many hops the local map may ever ask for — matches DEPTH_RANGE.max in graph-settings.ts. */
-export const MAX_LOCAL_DEPTH = 3;
-
 /**
- * Local map on Node Detail: the page plus its neighbours out to `depth` hops.
+ * Local map on Node Detail: the page and the pages one link away from it.
  *
- * `depth` defaults to 1, so every pre-existing caller issues exactly the same
- * single edge query it always did. The Node Detail page asks for the maximum
- * the display panel offers, and the client narrows to the reader's chosen
- * depth without another round trip.
+ * Exactly two queries, both bounded by this page's own link count. A
+ * multi-hop version walked outward through archived pages (the archived
+ * filter only applies to the node fetch at the end, so an archived page still
+ * pulled in its own neighbours and left them looking like orphans) and fed an
+ * unbounded frontier to `inArray`, which Postgres caps at 65535 bind
+ * parameters. One hop is what the local map draws, so one hop is what it asks
+ * for.
  */
-export async function neighbourGraph(
-  actor: Principal,
-  nodeId: string,
-  depth = 1,
-): Promise<KnowledgeGraph> {
+export async function neighbourGraph(actor: Principal, nodeId: string): Promise<KnowledgeGraph> {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [self] = await db
     .select({
@@ -405,34 +401,11 @@ export async function neighbourGraph(
     .where(eq(treeNodes.id, nodeId));
   if (!self) throw notFound();
 
-  const hops = Math.max(1, Math.min(MAX_LOCAL_DEPTH, Math.trunc(depth) || 1));
-  const seen = new Set<string>([nodeId]);
-  const edgeKeys = new Set<string>();
-  const incident: GraphEdge[] = [];
-  let frontier: string[] = [nodeId];
-  for (let step = 0; step < hops && frontier.length > 0; step++) {
-    const rows = await db
-      .select({ from: nodeLinks.fromNodeId, to: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
-      .from(nodeLinks)
-      .where(
-        or(inArray(nodeLinks.fromNodeId, frontier), inArray(nodeLinks.toNodeId, frontier)),
-      );
-    const next: string[] = [];
-    for (const e of rows) {
-      const key = `${e.from}|${e.to}|${e.linkType}`;
-      if (!edgeKeys.has(key)) {
-        edgeKeys.add(key);
-        incident.push(e);
-      }
-      for (const side of [e.from, e.to]) {
-        if (seen.has(side)) continue;
-        seen.add(side);
-        next.push(side);
-      }
-    }
-    frontier = next;
-  }
-  const ids = [...seen];
+  const incident = await db
+    .select({ from: nodeLinks.fromNodeId, to: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
+    .from(nodeLinks)
+    .where(or(eq(nodeLinks.fromNodeId, nodeId), eq(nodeLinks.toNodeId, nodeId)));
+  const ids = [...new Set([nodeId, ...incident.flatMap((e) => [e.from, e.to])])];
   const nodes = await db
     .select({
       id: treeNodes.id,

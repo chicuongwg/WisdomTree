@@ -149,7 +149,6 @@ export const T = {
   filterByTitle: "Lọc theo tên trang", // NEW
   graphEmpty: "Chưa có trang tri thức nào để vẽ bản đồ.", // NEW
   graphNoMatch: "Không có trang nào khớp bộ lọc. Xóa bớt điều kiện để xem lại.", // NEW
-  graphCount: "trang · liên kết", // NEW
   noBacklinks: "Chưa trang nào liên kết đến trang này.", // NEW
   navKnowledge: "Tri thức", // NEW
   navWork: "Dự án & công việc", // NEW
@@ -157,46 +156,47 @@ export const T = {
   openGraph: "Mở bản đồ tri thức", // NEW
   // Bản đồ tri thức: thao tác và tùy chỉnh hiển thị — NEW pending humanities review
   graphSettings: "Tùy chỉnh bản đồ", // NEW
-  graphGroupFilter: "Bộ lọc", // NEW
-  graphGroupDisplay: "Hiển thị", // NEW
-  graphGroupForce: "Lực kéo đẩy", // NEW
-  graphGroupLocal: "Bản đồ quanh trang", // NEW
-  graphShowOrphans: "Hiện cả trang chưa có liên kết", // NEW
-  graphColourBy: "Tô màu theo", // NEW
-  graphColourVerification: "Mức thẩm định", // NEW
-  graphColourBranch: "Chuyên đề", // NEW
-  graphSizeByLinks: "Chấm to dần theo số liên kết", // NEW
-  graphShowArrows: "Hiện mũi tên chỉ chiều liên kết", // NEW
-  graphLabels: "Tên trang", // NEW
-  graphLabelsAlways: "Luôn hiện", // NEW
-  graphLabelsHover: "Hiện khi trỏ tới", // NEW
-  graphLabelsHidden: "Ẩn", // NEW
   graphLinkTypes: "Loại liên kết", // NEW
-  graphCentreForce: "Lực hút vào giữa", // NEW
-  graphRepelForce: "Lực đẩy giữa các chấm", // NEW
-  graphLinkForce: "Lực kéo của liên kết", // NEW
-  graphLinkDistance: "Độ dài liên kết", // NEW
-  graphDepth: "Số bước lan tỏa", // NEW
-  graphDirection: "Chiều liên kết", // NEW
-  graphDirectionBoth: "Cả hai chiều", // NEW
-  graphDirectionOutgoing: "Liên kết đi ra", // NEW
-  graphDirectionIncoming: "Liên kết đi vào", // NEW
   graphZoomIn: "Phóng to bản đồ", // NEW
   graphZoomOut: "Thu nhỏ bản đồ", // NEW
   graphZoomReset: "Vừa khung", // NEW
-  graphPause: "Dừng chuyển động", // NEW
-  graphResume: "Cho chuyển động", // NEW
-  graphUnpinAll: "Bỏ ghim tất cả", // NEW
   graphResetSettings: "Khôi phục mặc định", // NEW
-  graphPinned: "đã ghim", // NEW
   graphPinnedOne: "Đã ghim tại chỗ", // NEW
+  graphUnpinned: "Đã bỏ ghim", // NEW
   graphHelp: "Kéo một chấm để ghim nó vào chỗ mới. Giữ Ctrl và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
-  graphKeyboardHelp: "Bàn phím: Tab để đi giữa các trang, Enter để mở, phím mũi tên để dời chấm đang chọn, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
-  graphWheelHint: "Giữ Ctrl rồi lăn chuột để phóng to bản đồ.", // NEW
-  graphCapNotice: "Bản đồ vượt mức chuyển động được nên đang giữ bố cục tĩnh. Hãy lọc bớt để bản đồ chuyển động trở lại.", // NEW
-  graphCapLimit: "Mức tối đa", // NEW
-  graphShapeNote: "Hình dạng luôn cho biết mức thẩm định, kể cả khi tô màu theo chuyên đề.", // NEW
+  graphKeyboardHelp: "Bàn phím: Tab để đi giữa các trang, Enter để mở, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
   graphMotionOff: "Bản đồ đang đứng yên theo thiết lập giảm chuyển động của máy bạn.", // NEW
+  // Câu hỏi xác nhận trước những việc không có đường lui. Mỗi câu nói rõ điều
+  // gì sẽ thay đổi và có lấy lại được hay không — không bao giờ hỏi trống
+  // "Bạn có chắc không?". NEW pending humanities review.
+  cancel: "Hủy bỏ", // NEW
+  confirmArchiveNodeTitle: "Lưu trữ trang tri thức này?", // NEW
+  confirmArchiveNodeBody:
+    "Trang sẽ rời khỏi cây tri thức, bản đồ tri thức và bản xuất bản. Nội dung vẫn được giữ trong hệ thống, nhưng trạng thái lưu trữ là điểm dừng: không có nút mở lại trang.", // NEW
+  confirmMergeTitle: "Gộp trang này vào trang chuẩn?", // NEW
+  confirmMergeBody:
+    "Trang hiện tại sẽ được lưu trữ và người đọc được dẫn sang trang chuẩn; các liên kết trang này trỏ đi sẽ bị xóa. Không thể hoàn tác.", // NEW
+  confirmPublishVerifiedTitle: "Xuất bản ở mức Đã thẩm định?", // NEW
+  confirmPublishVerifiedBody:
+    "Tư liệu sẽ thành một trang tri thức mang nhãn Đã thẩm định — nhãn này nói với người đọc rằng nguồn dẫn đã được kiểm chứng. Hồ sơ hiệu đính đóng lại sau khi xuất bản.", // NEW
+  confirmPublishUnverifiedTitle: "Xuất bản ở mức Chưa thẩm định?", // NEW
+  confirmPublishUnverifiedBody:
+    "Tư liệu sẽ thành một trang tri thức hiện ngay trên cây tri thức cho cả nhóm, mang nhãn Chưa thẩm định. Hồ sơ hiệu đính đóng lại sau khi xuất bản.", // NEW
+  confirmRejectCurationTitle: "Đóng hồ sơ hiệu đính này ở mức Không dùng?", // NEW
+  confirmRejectCurationBody:
+    "Tư liệu sẽ không được xuất bản và không hiệu đính tiếp được. Tệp gốc vẫn nằm trong Kho tư liệu. Không thể hoàn tác — muốn dùng lại phải gửi tư liệu mới.", // NEW
+  confirmRejectGapTitle: "Không dùng đề xuất bổ sung này?", // NEW
+  confirmRejectGapBody:
+    "Đề xuất chuyển sang Không dùng và không tiếp nhận lại được. Người gửi vẫn xem được đề xuất của mình.", // NEW
+  confirmArchiveGapTitle: "Lưu trữ đề xuất bổ sung này?", // NEW
+  confirmArchiveGapBody:
+    "Đề xuất rời khỏi danh sách tiếp nhận và không xử lý tiếp được. Không thể hoàn tác.", // NEW
+  confirmDeclineLoanTitle: "Từ chối yêu cầu mượn này?", // NEW
+  confirmDeclineLoanBody:
+    "Người mượn sẽ nhận thông báo bị từ chối và phiếu mượn đóng lại. Muốn mượn nữa, họ phải gửi yêu cầu mới.", // NEW
+  confirmMarkReturnedTitle: "Ghi nhận đã nhận lại sách?", // NEW
+  confirmMarkReturnedBody:
+    "Phiếu mượn đóng lại ở trạng thái Đã trả và đầu sách trở lại Sẵn sàng. Không thể hoàn tác — nếu ghi nhầm thì phải lập phiếu mượn mới.", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

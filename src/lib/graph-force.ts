@@ -1,10 +1,10 @@
 // A small force simulation for the knowledge map. No dependency: this is a
-// deliberately plain velocity-Verlet loop, ~150 lines, so the graph can move
-// like Obsidian's without pulling d3-force (or anything else) into the bundle.
+// deliberately plain velocity-Verlet loop so the graph can settle into a
+// readable shape without pulling d3-force (or anything else) into the bundle.
 //
 // Three forces, all scaled by `alpha` so the system cools to a stop:
 //   - repel   : every pair pushes apart (approximate n², capped by SIM_NODE_CAP)
-//   - link    : each edge is a spring that wants to be `linkDistance` long
+//   - link    : each edge is a spring that wants to be TUNE.distance long
 //   - centre  : a weak pull toward the canvas centre so nothing drifts away
 //
 // The simulation NEVER seeds from random. Callers pass the deterministic
@@ -17,7 +17,7 @@ import { CANVAS } from "./graph-layout";
 export const SIM_NODE_CAP = 300;
 
 /** The loop stops once alpha drops below this — an idle tab then burns no CPU. */
-export const ALPHA_MIN = 0.01;
+const ALPHA_MIN = 0.01;
 
 const ALPHA_DECAY = 0.976;
 /** Velocity retained per tick (d3 calls the complement "velocityDecay"). */
@@ -27,30 +27,20 @@ const MAX_SPEED = 28;
 const PAD = 48;
 
 /**
- * Force settings as the UI stores them: whole numbers on a 0–100 dial, except
- * `linkDistance` which is real pixels. Keeping the stored units human-readable
- * means a localStorage blob stays legible and the sliders need no inverse math.
+ * The tuned strengths. These were once four sliders; the map ships the values
+ * they were always left at instead, because "how hard do the dots push each
+ * other" is a physics question this product's readers should never be asked.
  */
-export type ForceSettings = {
-  centreForce: number;
-  repelForce: number;
-  linkForce: number;
-  linkDistance: number;
+const TUNE = {
+  /** pull toward the canvas centre, so nothing drifts off the map */
+  centre: 0.033,
+  /** pairwise repulsion */
+  repel: 1280,
+  /** spring stiffness per edge */
+  link: 0.36,
+  /** the length each edge wants to be, in canvas units */
+  distance: 110,
 };
-
-export const FORCE_DEFAULTS: ForceSettings = {
-  centreForce: 30,
-  repelForce: 40,
-  linkForce: 40,
-  linkDistance: 110,
-};
-
-export const FORCE_RANGE = {
-  centreForce: { min: 0, max: 100, step: 1 },
-  repelForce: { min: 0, max: 100, step: 1 },
-  linkForce: { min: 0, max: 100, step: 1 },
-  linkDistance: { min: 30, max: 300, step: 5 },
-} as const;
 
 export type SimNode = {
   id: string;
@@ -62,35 +52,17 @@ export type SimNode = {
   pinned: boolean;
 };
 
-export type SimLink = { source: number; target: number };
-
-/** Dial (0–100) → the strength the integrator actually uses. */
-function tuning(s: ForceSettings) {
-  return {
-    centre: (s.centreForce / 100) * 0.11,
-    repel: (s.repelForce / 100) * 3200,
-    link: (s.linkForce / 100) * 0.9,
-    distance: s.linkDistance,
-  };
-}
-
 export type Simulation = {
   nodes: SimNode[];
-  /** Read the current heat; the caller stops its rAF loop when it hits 0. */
-  alpha(): number;
   /** Advance one frame. Returns false once the simulation has settled. */
   tick(): boolean;
-  /** Nudge back to life after a drag, a filter change or a settings change. */
+  /** Nudge back to life after a drag or a filter change. */
   reheat(to?: number): void;
-  setSettings(next: ForceSettings): void;
-  /** Run to rest without painting — used for prefers-reduced-motion. */
-  settle(maxTicks?: number): void;
 };
 
 export function createSimulation(
   seed: Array<{ id: string; x: number; y: number; pinned?: boolean }>,
   edges: Array<{ from: string; to: string }>,
-  settings: ForceSettings,
 ): Simulation {
   const nodes: SimNode[] = seed.map((n) => ({
     id: n.id,
@@ -102,7 +74,7 @@ export function createSimulation(
   }));
   const index = new Map(nodes.map((n, i) => [n.id, i]));
 
-  const links: SimLink[] = [];
+  const links: Array<{ source: number; target: number }> = [];
   const degree = new Array<number>(nodes.length).fill(0);
   for (const e of edges) {
     const source = index.get(e.from);
@@ -113,7 +85,6 @@ export function createSimulation(
     degree[target] += 1;
   }
 
-  let tune = tuning(settings);
   let alpha = 1;
   const cx = CANVAS.width / 2;
   const cy = CANVAS.height / 2;
@@ -124,7 +95,7 @@ export function createSimulation(
 
     // Repulsion — every pair. n² is honest at this scale and SIM_NODE_CAP
     // keeps the worst case bounded (300² / 2 = 45k pair tests per frame).
-    const k = tune.repel * alpha;
+    const k = TUNE.repel * alpha;
     if (k > 0) {
       for (let i = 0; i < n; i++) {
         const a = nodes[i];
@@ -160,7 +131,7 @@ export function createSimulation(
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-      const pull = ((d - tune.distance) / d) * tune.link * alpha;
+      const pull = ((d - TUNE.distance) / d) * TUNE.link * alpha;
       const total = degree[l.source] + degree[l.target] || 1;
       const biasA = degree[l.target] / total;
       const biasB = degree[l.source] / total;
@@ -171,7 +142,7 @@ export function createSimulation(
     }
 
     // Centring, plus integration.
-    const c = tune.centre * alpha;
+    const c = TUNE.centre * alpha;
     for (const p of nodes) {
       if (p.pinned) {
         p.vx = 0;
@@ -197,19 +168,9 @@ export function createSimulation(
 
   return {
     nodes,
-    alpha: () => alpha,
     tick,
     reheat(to = 0.7) {
       alpha = Math.max(alpha, to);
-    },
-    setSettings(next) {
-      tune = tuning(next);
-    },
-    settle(maxTicks = 400) {
-      for (let i = 0; i < maxTicks; i++) {
-        if (!tick()) break;
-      }
-      alpha = 0;
     },
   };
 }

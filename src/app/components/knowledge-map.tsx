@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
 import { createSimulation, SIM_NODE_CAP, type Simulation } from "@/lib/graph-force";
 import {
-  LINK_TYPES,
-  reachable,
+  DEFAULT_SETTINGS,
   readSettings,
-  defaultSettings,
   writeSettings,
   type GraphSettings,
   type LinkType,
@@ -18,7 +16,7 @@ import { GraphSettingsPanel } from "./graph-settings-panel";
 import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
 
 // Knowledge map — the Graph Explorer surface (screen-inventory.md) and the
-// local map on Node Detail, one component. Still no graph library and no new
+// local map on Node Detail, one component. No graph library and no new
 // runtime dependency: the physics is our own loop in src/lib/graph-force.ts.
 //
 // How the two halves fit together:
@@ -33,8 +31,7 @@ import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./
 //      work never touches React state — a settling graph causes zero renders.
 //
 // Verification is encoded twice — colour AND shape (circle / diamond /
-// square). Colouring by branch swaps only the colour axis; the shape keeps
-// carrying verification, so the map never depends on colour alone.
+// square), so the map never depends on colour alone.
 
 export type MapNode = {
   id: string;
@@ -49,24 +46,27 @@ const SHAPE_LABEL: Record<string, string> = {
   verified: "hình tròn",
   unverified: "hình thoi",
   no_source: "hình vuông",
-  archived: "hình vuông",
 };
 
-/** How many colours the branch palette cycles through (see --graph-branch-N). */
-const BRANCH_COLOURS = 6;
 /** Pointer travel before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 4;
-/** Keyboard nudge step, in canvas units. */
-const NUDGE = 10;
 const ZOOM_LIMIT = { min: 0.35, max: 4 };
 
 type XY = { x: number; y: number };
 type ViewTransform = { k: number; tx: number; ty: number };
 
-function markRadius(base: number, degree: number, sizeByLinks: boolean): number {
-  if (!sizeByLinks) return base;
-  // sqrt keeps a hub from swamping the map: 16 links is twice the radius of 4.
+/** sqrt keeps a hub from swamping the map: 16 links is twice the radius of 4. */
+function markRadius(base: number, degree: number): number {
   return base + Math.min(9, Math.sqrt(degree) * 2.2);
+}
+
+/**
+ * Every mark shares one set of handlers and reads its own id back off the
+ * element. Allocating a closure per node per listener made a hover over a
+ * 300-mark map rebuild 1500 functions to change one class name.
+ */
+function nodeId(e: { currentTarget: SVGGElement }): string {
+  return e.currentTarget.dataset.id ?? "";
 }
 
 export function KnowledgeMap({
@@ -84,17 +84,19 @@ export function KnowledgeMap({
   height?: number;
 }) {
   const router = useRouter();
-  // React's generated ids contain punctuation that is not valid in an HTML id
-  // or in a url(#…) reference, so strip everything but id-safe characters.
+  // React's generated ids contain punctuation that is not valid in an HTML id,
+  // so strip everything but id-safe characters.
   const uid = `map${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   // ---- settings -----------------------------------------------------------
   // Initialised to the defaults so the server render and the first client
   // render are identical; the stored values arrive in an effect below.
-  const [settings, setSettings] = useState<GraphSettings>(defaultSettings);
+  const [settings, setSettings] = useState<GraphSettings>(DEFAULT_SETTINGS);
   const [term, setTerm] = useState("");
   const [panelOpen, setPanelOpen] = useState(showFilters);
   const [reducedMotion, setReducedMotion] = useState(false);
+  /** Nothing to persist until the reader actually changes something. */
+  const dirty = useRef(false);
 
   useEffect(() => {
     setSettings(readSettings());
@@ -108,21 +110,23 @@ export function KnowledgeMap({
     return () => mq.removeEventListener("change", sync);
   }, []);
 
+  // Persisting from inside a `setSettings` updater would be a side effect in a
+  // function React is allowed to call twice (and does, under StrictMode).
+  useEffect(() => {
+    if (dirty.current) writeSettings(settings);
+  }, [settings]);
+
   const set = useCallback(
     <K extends keyof GraphSettings>(key: K, value: GraphSettings[K]) => {
-      setSettings((current) => {
-        const next = { ...current, [key]: value };
-        writeSettings(next);
-        return next;
-      });
+      dirty.current = true;
+      setSettings((current) => ({ ...current, [key]: value }));
     },
     [],
   );
 
   const resetSettings = useCallback(() => {
-    const fresh = defaultSettings();
-    setSettings(fresh);
-    writeSettings(fresh);
+    dirty.current = true;
+    setSettings(DEFAULT_SETTINGS);
     setTerm("");
   }, []);
 
@@ -132,14 +136,20 @@ export function KnowledgeMap({
   const [preview, setPreview] = useState<NodePreview | null>(null);
   /** The node whose neighbourhood is lit up. Hover or keyboard focus sets it. */
   const [active, setActive] = useState<string | null>(null);
+  /** Bumped per request, so a slow card for A cannot land on top of B's. */
+  const peekToken = useRef(0);
 
   const onPeek = useCallback((id: string, target: Element) => {
+    const token = ++peekToken.current;
     setActive(id);
     setPeek({ id, ...cardPosition(target) });
     setPreview(null);
-    void loadPreview(id).then((p) => setPreview((current) => (p?.id === id ? p : current)));
+    void loadPreview(id).then((p) => {
+      if (peekToken.current === token) setPreview(p);
+    });
   }, []);
   const onLeave = useCallback(() => {
+    peekToken.current++;
     setActive(null);
     setPeek(null);
   }, []);
@@ -151,76 +161,45 @@ export function KnowledgeMap({
     return [...seen].sort((a, b) => a[1].localeCompare(b[1], "vi"));
   }, [nodes]);
 
-  /** Stable branch → palette slot, from sorted branch ids so SSR and client agree. */
-  const branchSlot = useMemo(() => {
-    const ids = [...new Set(nodes.map((n) => n.branchId))].sort();
-    return new Map(ids.map((id, i) => [id, (i % BRANCH_COLOURS) + 1]));
-  }, [nodes]);
-
   const view = useMemo(() => {
     const q = term.trim().toLowerCase();
-    let visible = nodes.filter(
+    // The centre of a local map is the thing the map is about: no filter may
+    // remove it. Orphans stay visible — a page with no links is information.
+    const visible = nodes.filter(
       (n) =>
-        (!settings.branchId || n.branchId === settings.branchId) &&
-        (!q || n.title.toLowerCase().includes(q)),
+        n.id === centerId ||
+        ((!settings.branchId || n.branchId === settings.branchId) &&
+          (!q || n.title.toLowerCase().includes(q))),
     );
-
-    // Local map: keep only what is reachable from the centre at this depth,
-    // following links in the requested direction.
-    if (centerId) {
-      const keep = reachable(centerId, edges, settings.depth, settings.direction);
-      visible = visible.filter((n) => keep.has(n.id) || n.id === centerId);
-    }
-
-    let ids = new Set(visible.map((n) => n.id));
-    let links = edges.filter(
+    const ids = new Set(visible.map((n) => n.id));
+    const links = edges.filter(
       (e) => ids.has(e.from) && ids.has(e.to) && settings.linkTypes[e.linkType as LinkType] !== false,
     );
-
-    if (!settings.showOrphans) {
-      const linked = new Set<string>();
-      for (const e of links) {
-        linked.add(e.from);
-        linked.add(e.to);
-      }
-      // The centre of a local map is never an orphan to be hidden.
-      visible = visible.filter((n) => linked.has(n.id) || n.id === centerId);
-      ids = new Set(visible.map((n) => n.id));
-      links = links.filter((e) => ids.has(e.from) && ids.has(e.to));
-    }
 
     const degree = degreeOf(links);
     const seed = centerId ? egoLayout(visible, centerId) : branchLayout(visible, degree);
     return { visible, links, seed, degree };
-  }, [
-    nodes,
-    edges,
-    centerId,
-    term,
-    settings.branchId,
-    settings.showOrphans,
-    settings.linkTypes,
-    settings.depth,
-    settings.direction,
-  ]);
+  }, [nodes, edges, centerId, term, settings.branchId, settings.linkTypes]);
 
-  const overCap = view.visible.length > SIM_NODE_CAP;
-  const animating = settings.animate && !reducedMotion && !overCap;
+  // Past this size the loop costs more than it explains: keep the
+  // deterministic layout, silently.
+  const animating = !reducedMotion && view.visible.length <= SIM_NODE_CAP;
 
   const radii = useMemo(() => {
     const map = new Map<string, number>();
     for (const n of view.visible) {
-      const base = n.id === centerId ? 12 : 8;
-      map.set(n.id, markRadius(base, view.degree[n.id] ?? 0, settings.sizeByLinks));
+      map.set(n.id, markRadius(n.id === centerId ? 12 : 8, view.degree[n.id] ?? 0));
     }
     return map;
-  }, [view, centerId, settings.sizeByLinks]);
+  }, [view, centerId]);
 
   const neighbours = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const e of view.links) {
-      (map.get(e.from) ?? map.set(e.from, new Set()).get(e.from)!).add(e.to);
-      (map.get(e.to) ?? map.set(e.to, new Set()).get(e.to)!).add(e.from);
+      if (!map.has(e.from)) map.set(e.from, new Set());
+      if (!map.has(e.to)) map.set(e.to, new Set());
+      map.get(e.from)!.add(e.to);
+      map.get(e.to)!.add(e.from);
     }
     return map;
   }, [view.links]);
@@ -236,29 +215,16 @@ export function KnowledgeMap({
   const nodeEls = useRef(new Map<string, SVGGElement>());
   const edgeEls = useRef(new Map<string, { el: SVGLineElement; from: string; to: string }>());
   const posRef = useRef(new Map<string, XY>());
-  const radiiRef = useRef(radii);
   const simRef = useRef<Simulation | null>(null);
   const rafRef = useRef(0);
   const viewT = useRef<ViewTransform>({ k: 1, tx: 0, ty: 0 });
-  const arrowsRef = useRef(settings.showArrows);
 
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
-  // The rebuild effect deliberately does not list `pinned` or `settings` as
-  // dependencies (pinning and force changes are applied to the live
-  // simulation instead of rebuilding it), so it reads both through refs to
-  // avoid acting on a stale closure after a filter change.
+  // The rebuild effect deliberately does not list `pinned` as a dependency
+  // (pinning is applied to the live simulation instead of rebuilding it), so
+  // it reads it through a ref to avoid acting on a stale closure.
   const pinnedRef = useRef(pinned);
-  const settingsRef = useRef(settings);
-  const [hint, setHint] = useState("");
   const [announce, setAnnounce] = useState("");
-  const hintTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const flashHint = useCallback((message: string) => {
-    setHint(message);
-    clearTimeout(hintTimer.current);
-    hintTimer.current = setTimeout(() => setHint(""), 3200);
-  }, []);
-  useEffect(() => () => clearTimeout(hintTimer.current), []);
 
   /** Write the current positions and view transform straight to the DOM. */
   const paint = useCallback(() => {
@@ -276,20 +242,10 @@ export function KnowledgeMap({
       const a = posRef.current.get(from);
       const b = posRef.current.get(to);
       if (!a || !b) continue;
-      let { x: bx, y: by } = b;
-      if (arrowsRef.current) {
-        // Stop the line short of the target mark so the arrowhead is visible.
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const d = Math.hypot(dx, dy) || 1;
-        const back = (radiiRef.current.get(to) ?? 8) + 7;
-        bx = b.x - (dx / d) * back;
-        by = b.y - (dy / d) * back;
-      }
       el.setAttribute("x1", a.x.toFixed(2));
       el.setAttribute("y1", a.y.toFixed(2));
-      el.setAttribute("x2", bx.toFixed(2));
-      el.setAttribute("y2", by.toFixed(2));
+      el.setAttribute("x2", b.x.toFixed(2));
+      el.setAttribute("y2", b.y.toFixed(2));
     }
   }, []);
 
@@ -315,9 +271,22 @@ export function KnowledgeMap({
     cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
 
+    if (!animating) {
+      // Reduced motion, or too large to simulate: keep the deterministic
+      // layout the server already painted, exactly as rendered.
+      simRef.current = null;
+      const still = new Map<string, XY>();
+      for (const n of view.visible) {
+        const p = view.seed[n.id];
+        if (p) still.set(n.id, { x: p.x, y: p.y });
+      }
+      posRef.current = still;
+      paint();
+      return;
+    }
+
     const seed = view.visible.map((n) => {
-      const held = posRef.current.get(n.id);
-      const from = held ?? view.seed[n.id];
+      const from = posRef.current.get(n.id) ?? view.seed[n.id];
       return {
         id: n.id,
         x: from?.x ?? CANVAS.width / 2,
@@ -325,93 +294,31 @@ export function KnowledgeMap({
         pinned: pinnedRef.current.has(n.id) || n.id === centerId,
       };
     });
-
     const next = new Map<string, XY>();
     for (const s of seed) next.set(s.id, { x: s.x, y: s.y });
     posRef.current = next;
 
-    if (overCap) {
-      // Too big to simulate: keep the deterministic layout exactly as rendered.
-      simRef.current = null;
-      for (const n of view.visible) {
-        const p = view.seed[n.id];
-        if (p) posRef.current.set(n.id, { x: p.x, y: p.y });
-      }
-      paint();
-      return;
-    }
-
-    const sim = createSimulation(seed, view.links, settingsRef.current);
-    simRef.current = sim;
-
-    if (!animating) {
-      // Reduced motion, or motion switched off: jump straight to the
-      // settled arrangement without painting a single intermediate frame.
-      sim.settle();
-      for (const n of sim.nodes) posRef.current.set(n.id, { x: n.x, y: n.y });
-      paint();
-      return;
-    }
+    simRef.current = createSimulation(seed, view.links);
     runLoop();
     return () => {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
     };
-    // `settings` force values are applied by the effect below, not here, so
-    // dragging a slider retunes the running simulation instead of rebuilding it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, animating, overCap, centerId, paint, runLoop]);
+  }, [view, animating, centerId, paint, runLoop]);
 
-  // Live force retuning: dragging a slider retunes the running simulation
-  // rather than rebuilding it, so the map visibly relaxes into the new shape.
-  useEffect(() => {
-    const sim = simRef.current;
-    if (!sim) return;
-    sim.setSettings(settingsRef.current);
-    if (!animating) {
-      // No motion allowed: recompute the settled arrangement in one go.
-      sim.reheat(1);
-      sim.settle();
-      for (const n of sim.nodes) posRef.current.set(n.id, { x: n.x, y: n.y });
-      paint();
-      return;
-    }
-    sim.reheat(0.6);
-    runLoop();
-  }, [
-    settings.centreForce,
-    settings.repelForce,
-    settings.linkForce,
-    settings.linkDistance,
-    animating,
-    paint,
-    runLoop,
-  ]);
-
-  // After any React re-render, put the DOM back on the simulated positions —
-  // JSX carries the deterministic seed transform, which would otherwise
-  // visibly snap the map back on every settings change.
+  // After a re-render that rebuilt the marks, put the DOM back on the
+  // simulated positions — the JSX carries the deterministic seed transform,
+  // which would otherwise visibly snap the map back. Gated on what `paint`
+  // actually reads, so a hover does not trigger a full attribute sweep.
   useLayoutEffect(() => {
-    radiiRef.current = radii;
-    arrowsRef.current = settings.showArrows;
     pinnedRef.current = pinned;
-    settingsRef.current = settings;
     paint();
-  });
+  }, [view, pinned, paint]);
 
   // ---- coordinate helpers -------------------------------------------------
-  const toGraph = useCallback((clientX: number, clientY: number): XY => {
-    const g = viewportRef.current;
-    const ctm = g?.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const p = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
-    return { x: p.x, y: p.y };
-  }, []);
-
-  /** Client point → the svg's own viewBox space (before the pan/zoom group). */
-  const toCanvas = useCallback((clientX: number, clientY: number): XY => {
-    const svg = svgRef.current;
-    const ctm = svg?.getScreenCTM();
+  /** Client point → the coordinate space of `el` (svg viewBox, or the pan group). */
+  const toLocal = useCallback((el: SVGGraphicsElement | null, clientX: number, clientY: number): XY => {
+    const ctm = el?.getScreenCTM();
     if (!ctm) return { x: 0, y: 0 };
     const p = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
     return { x: p.x, y: p.y };
@@ -461,40 +368,43 @@ export function KnowledgeMap({
   // ---- wheel: never trap the page scroll ----------------------------------
   // Plain wheel is left entirely alone, so the page scrolls exactly as it does
   // everywhere else. Ctrl/⌘ + wheel zooms, which is the modifier browsers and
-  // canvas tools already use for zoom, and a hint says so the first time
-  // somebody scrolls over the map.
-  useEffect(() => {
-    const el = svgRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) {
-        flashHint(T.graphWheelHint);
-        return;
-      }
-      e.preventDefault();
-      zoomAround(Math.exp(-e.deltaY * 0.0022), toCanvas(e.clientX, e.clientY));
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [zoomAround, toCanvas, flashHint]);
+  // canvas tools already use for zoom, and the help text below says so.
+  //
+  // The listener is attached by the ref callback rather than by an effect: the
+  // <svg> is conditionally rendered, and an effect with stable deps would
+  // never re-run to re-attach it after a filter emptied the map.
+  const attachSvg = useCallback(
+    (el: SVGSVGElement | null) => {
+      svgRef.current = el;
+      if (!el) return;
+      const onWheel = (e: WheelEvent) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault();
+        zoomAround(Math.exp(-e.deltaY * 0.0022), toLocal(el, e.clientX, e.clientY));
+      };
+      el.addEventListener("wheel", onWheel, { passive: false });
+      return () => {
+        el.removeEventListener("wheel", onWheel);
+        svgRef.current = null;
+      };
+    },
+    [zoomAround, toLocal],
+  );
 
-  // ---- dragging a node, panning the background, pinch to zoom -------------
+  // ---- dragging a node, panning the background ----------------------------
   const drag = useRef<{ id: string; pointerId: number; sx: number; sy: number; moved: boolean } | null>(
     null,
   );
   const pan = useRef<{ pointerId: number; sx: number; sy: number; tx: number; ty: number } | null>(
     null,
   );
-  const pinch = useRef(new Map<number, XY>());
-  const pinchDist = useRef(0);
 
   const pinNode = useCallback(
     (id: string, on: boolean) => {
       // The centre of a local map is pinned by definition — it is the thing
       // the map is about, and letting it drift would make the view meaningless.
       if (!on && id === centerId) return;
-      const sim = simRef.current;
-      const n = sim?.nodes.find((x) => x.id === id);
+      const n = simRef.current?.nodes.find((x) => x.id === id);
       if (n) n.pinned = on;
       setPinned((current) => {
         const next = new Set(current);
@@ -510,103 +420,92 @@ export function KnowledgeMap({
     [animating, centerId, runLoop],
   );
 
-  const unpinAll = useCallback(() => {
-    for (const n of simRef.current?.nodes ?? []) {
-      if (n.id !== centerId) n.pinned = false;
-    }
-    setPinned(new Set());
-    setAnnounce(T.graphUnpinAll);
-    if (animating) {
-      simRef.current?.reheat(0.8);
-      runLoop();
-    }
-  }, [animating, centerId, runLoop]);
-
   const open = useCallback((id: string) => router.push(`/tree/node/${id}`), [router]);
 
-  const onNodePointerDown = (id: string) => (e: React.PointerEvent<SVGGElement>) => {
+  const onNodePointerDown = useCallback((e: React.PointerEvent<SVGGElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     e.stopPropagation(); // do not also start a background pan
     try {
-      (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
+      e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
       // Capture is an optimisation, not a requirement — carry on without it.
     }
-    drag.current = { id, pointerId: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false };
-  };
+    drag.current = {
+      id: nodeId(e),
+      pointerId: e.pointerId,
+      sx: e.clientX,
+      sy: e.clientY,
+      moved: false,
+    };
+  }, []);
 
-  const onNodePointerMove = (e: React.PointerEvent<SVGGElement>) => {
-    const d = drag.current;
-    if (!d || d.pointerId !== e.pointerId) return;
-    if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < DRAG_THRESHOLD) return;
-    d.moved = true;
-    const p = toGraph(e.clientX, e.clientY);
-    const sim = simRef.current;
-    const n = sim?.nodes.find((x) => x.id === d.id);
-    if (n) {
-      n.x = p.x;
-      n.y = p.y;
-      n.vx = 0;
-      n.vy = 0;
-      n.pinned = true; // a dragged node stays where it is dropped
-    }
-    posRef.current.set(d.id, p);
-    paint();
-    if (animating) {
-      sim?.reheat(0.35);
-      runLoop();
-    }
-  };
+  const onNodePointerMove = useCallback(
+    (e: React.PointerEvent<SVGGElement>) => {
+      const d = drag.current;
+      if (!d || d.pointerId !== e.pointerId) return;
+      if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < DRAG_THRESHOLD) return;
+      d.moved = true;
+      const p = toLocal(viewportRef.current, e.clientX, e.clientY);
+      const sim = simRef.current;
+      const n = sim?.nodes.find((x) => x.id === d.id);
+      if (n) {
+        n.x = p.x;
+        n.y = p.y;
+        n.vx = 0;
+        n.vy = 0;
+        n.pinned = true; // a dragged node stays where it is dropped
+      }
+      posRef.current.set(d.id, p);
+      paint();
+      if (animating) {
+        sim?.reheat(0.35);
+        runLoop();
+      }
+    },
+    [animating, paint, runLoop, toLocal],
+  );
 
-  const onNodePointerUp = (id: string) => (e: React.PointerEvent<SVGGElement>) => {
-    const d = drag.current;
+  const onNodePointerUp = useCallback(
+    (e: React.PointerEvent<SVGGElement>) => {
+      const d = drag.current;
+      drag.current = null;
+      if (!d || d.pointerId !== e.pointerId) return;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* the pointer may already be gone */
+      }
+      if (!d.moved) {
+        open(d.id); // a press that never moved is still a click
+        return;
+      }
+      pinNode(d.id, true);
+    },
+    [open, pinNode],
+  );
+
+  const onNodePointerCancel = useCallback(() => {
     drag.current = null;
-    if (!d || d.pointerId !== e.pointerId) return;
-    try {
-      (e.currentTarget as SVGGElement).releasePointerCapture(e.pointerId);
-    } catch {
-      /* the pointer may already be gone */
-    }
-    if (!d.moved) {
-      open(id); // a press that never moved is still a click
-      return;
-    }
-    pinNode(id, true);
-  };
+  }, []);
+
+  const onNodeEnter = useCallback(
+    (e: React.MouseEvent<SVGGElement> | React.FocusEvent<SVGGElement>) => {
+      onPeek(nodeId(e), e.currentTarget);
+    },
+    [onPeek],
+  );
 
   const onBackgroundPointerDown = (e: React.PointerEvent<SVGRectElement>) => {
-    const el = e.currentTarget;
     try {
-      el.setPointerCapture(e.pointerId);
+      e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
       /* see above */
-    }
-    pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pinch.current.size === 2) {
-      const [a, b] = [...pinch.current.values()];
-      pinchDist.current = Math.hypot(a.x - b.x, a.y - b.y);
-      pan.current = null;
-      return;
     }
     const vt = viewT.current;
     pan.current = { pointerId: e.pointerId, sx: e.clientX, sy: e.clientY, tx: vt.tx, ty: vt.ty };
   };
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
-    if (pinch.current.has(e.pointerId)) pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    // Two fingers: pinch to zoom about the midpoint — the standard gesture,
-    // so it is honoured rather than redefined.
-    if (pinch.current.size === 2) {
-      const [a, b] = [...pinch.current.values()];
-      const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinchDist.current > 0 && dist > 0) {
-        zoomAround(dist / pinchDist.current, toCanvas((a.x + b.x) / 2, (a.y + b.y) / 2));
-      }
-      pinchDist.current = dist;
-      return;
-    }
-
     const p = pan.current;
     if (!p || p.pointerId !== e.pointerId) return;
     const svg = svgRef.current;
@@ -622,8 +521,6 @@ export function KnowledgeMap({
   };
 
   const onBackgroundPointerUp = (e: React.PointerEvent<SVGRectElement>) => {
-    pinch.current.delete(e.pointerId);
-    if (pinch.current.size < 2) pinchDist.current = 0;
     if (pan.current?.pointerId === e.pointerId) pan.current = null;
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
@@ -632,53 +529,29 @@ export function KnowledgeMap({
     }
   };
 
-  const onMarkKeyDown = (id: string) => (e: React.KeyboardEvent<SVGGElement>) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      open(id);
-      return;
-    }
-    if (e.key === "Escape") {
-      onLeave();
-      return;
-    }
-    if (e.key === "p" || e.key === "P") {
-      e.preventDefault();
-      pinNode(id, !pinned.has(id));
-      setAnnounce(pinned.has(id) ? T.graphUnpinAll : T.graphPinnedOne);
-      return;
-    }
-    // Keyboard alternative to dragging: nudge the mark, which pins it.
-    const step = e.shiftKey ? NUDGE * 3 : NUDGE;
-    const delta: Record<string, XY> = {
-      ArrowLeft: { x: -step, y: 0 },
-      ArrowRight: { x: step, y: 0 },
-      ArrowUp: { x: 0, y: -step },
-      ArrowDown: { x: 0, y: step },
-    };
-    const d = delta[e.key];
-    if (!d) return;
-    e.preventDefault();
-    const p = posRef.current.get(id);
-    if (!p) return;
-    const next = { x: p.x + d.x, y: p.y + d.y };
-    const n = simRef.current?.nodes.find((x) => x.id === id);
-    if (n) {
-      n.x = next.x;
-      n.y = next.y;
-      n.vx = 0;
-      n.vy = 0;
-      n.pinned = true;
-    }
-    posRef.current.set(id, next);
-    if (!pinned.has(id)) pinNode(id, true);
-    paint();
-  };
+  const onMarkKeyDown = useCallback(
+    (e: React.KeyboardEvent<SVGGElement>) => {
+      const id = nodeId(e);
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        open(id);
+        return;
+      }
+      if (e.key === "Escape") {
+        onLeave();
+        return;
+      }
+      if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        const was = pinnedRef.current.has(id);
+        pinNode(id, !was);
+        setAnnounce(was ? T.graphUnpinned : T.graphPinnedOne);
+      }
+    },
+    [onLeave, open, pinNode],
+  );
 
   if (nodes.length === 0) return <p className="muted">{T.graphEmpty}</p>;
-
-  const pinnedCount = pinned.size;
-  const arrowTypes = LINK_TYPES;
 
   return (
     <div className="map-wrap">
@@ -688,7 +561,6 @@ export function KnowledgeMap({
         onReset={resetSettings}
         open={panelOpen}
         onOpenChange={setPanelOpen}
-        isLocal={Boolean(centerId)}
         branchOptions={branchOptions}
         term={term}
         onTerm={setTerm}
@@ -707,39 +579,12 @@ export function KnowledgeMap({
             {T.graphZoomReset}
           </button>
         </div>
-        <button
-          type="button"
-          className="secondary"
-          disabled={reducedMotion || overCap}
-          onClick={() => set("animate", !settings.animate)}
-        >
-          {settings.animate ? T.graphPause : T.graphResume}
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          disabled={pinnedCount === 0}
-          onClick={unpinAll}
-        >
-          {T.graphUnpinAll}
-        </button>
         <p className="map-count" aria-live="polite">
           {view.visible.length} {T.node.toLowerCase()} · {view.links.length} liên kết
-          {pinnedCount > 0 && ` · ${pinnedCount} ${T.graphPinned}`}
         </p>
       </div>
 
       {reducedMotion && <p className="map-notice">{T.graphMotionOff}</p>}
-      {overCap && (
-        <p className="map-notice" role="status">
-          {T.graphCapNotice} {T.graphCapLimit}: {SIM_NODE_CAP}.
-        </p>
-      )}
-      {hint && (
-        <p className="map-notice" role="status">
-          {hint}
-        </p>
-      )}
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
@@ -748,34 +593,15 @@ export function KnowledgeMap({
         <p className="muted">{T.graphNoMatch}</p>
       ) : (
         <svg
-          ref={svgRef}
+          ref={attachSvg}
           className="knowledge-map"
           viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
           style={{ maxHeight: `${height}px` }}
           role="group"
           aria-label={T.graph}
           aria-describedby={`${uid}-help`}
-          data-colour={settings.colourBy}
-          data-labels={settings.labelMode}
           data-dim={lit ? "on" : "off"}
         >
-          <defs>
-            {arrowTypes.map((t) => (
-              <marker
-                key={t}
-                id={`${uid}-arrow-${t}`}
-                viewBox="0 0 10 10"
-                refX="9"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path className={`g-arrow t-${t}`} d="M 0 0 L 10 5 L 0 10 z" />
-              </marker>
-            ))}
-          </defs>
-
           {/* Background: the pan surface. Also the click target that dismisses
               the preview card. */}
           <rect
@@ -812,7 +638,6 @@ export function KnowledgeMap({
                     y1={a.y}
                     x2={b.x}
                     y2={b.y}
-                    markerEnd={settings.showArrows ? `url(#${uid}-arrow-${e.linkType})` : undefined}
                   />
                 );
               })}
@@ -830,6 +655,7 @@ export function KnowledgeMap({
               return (
                 <g
                   key={n.id}
+                  data-id={n.id}
                   ref={(el) => {
                     if (el) nodeEls.current.set(n.id, el);
                     return () => {
@@ -839,22 +665,19 @@ export function KnowledgeMap({
                   className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
                     isPinned ? " is-pinned" : ""
                   }${near ? " is-near" : " is-far"}`}
-                  style={{ ["--mark-colour" as string]: `var(--graph-branch-${branchSlot.get(n.branchId) ?? 1})` }}
                   role="link"
                   tabIndex={0}
                   aria-label={label}
                   aria-describedby={peek?.id === n.id ? cardId : undefined}
                   transform={`translate(${at.x}, ${at.y})`}
-                  onPointerDown={onNodePointerDown(n.id)}
+                  onPointerDown={onNodePointerDown}
                   onPointerMove={onNodePointerMove}
-                  onPointerUp={onNodePointerUp(n.id)}
-                  onPointerCancel={() => {
-                    drag.current = null;
-                  }}
-                  onKeyDown={onMarkKeyDown(n.id)}
-                  onMouseEnter={(e) => onPeek(n.id, e.currentTarget)}
+                  onPointerUp={onNodePointerUp}
+                  onPointerCancel={onNodePointerCancel}
+                  onKeyDown={onMarkKeyDown}
+                  onMouseEnter={onNodeEnter}
                   onMouseLeave={onLeave}
-                  onFocus={(e) => onPeek(n.id, e.currentTarget)}
+                  onFocus={onNodeEnter}
                   onBlur={onLeave}
                 >
                   {/* The seal ring: a pinned mark is stamped in place. */}
@@ -909,21 +732,6 @@ export function KnowledgeMap({
           </li>
         ))}
       </ul>
-
-      {settings.colourBy === "branch" && (
-        <ul className="map-legend" aria-label={T.graphColourBranch}>
-          {branchOptions.map(([id, name]) => (
-            <li key={id}>
-              <span
-                className="legend-swatch"
-                style={{ ["--mark-colour" as string]: `var(--graph-branch-${branchSlot.get(id) ?? 1})` }}
-                aria-hidden="true"
-              />
-              {name}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
