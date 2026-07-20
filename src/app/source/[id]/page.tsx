@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { eq, inArray } from "drizzle-orm";
-import { db } from "@/db";
-import { users } from "@/modules/auth/schema";
-import { sources } from "@/modules/storage/schema";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { getCurationWorkbench, getGapRequest } from "@/modules/storage/curation";
+import { sourceExists } from "@/modules/storage/service";
+import {
+  getCurationWorkbench,
+  getGapRequest,
+  listAssignableEditors,
+} from "@/modules/storage/curation";
 import { listBranches, listNodeOptions } from "@/modules/knowledge/service";
 import {
   badgeClass,
@@ -34,8 +35,7 @@ export default async function AdminSourceDetailPage({
   const actor = toPrincipal(user);
   const { id } = await params;
 
-  const [isSource] = await db.select({ id: sources.id }).from(sources).where(eq(sources.id, id));
-  if (!isSource) {
+  if (!(await sourceExists(id))) {
     // Gap-request variant of the type-aware detail screen.
     let gap;
     try {
@@ -76,10 +76,7 @@ export default async function AdminSourceDetailPage({
   }
 
   const wb = await getCurationWorkbench(actor, id);
-  const editors = await db
-    .select({ id: users.id, name: users.displayName })
-    .from(users)
-    .where(inArray(users.role, ["editor", "admin_op"]));
+  const editors = await listAssignableEditors(actor);
 
   return (
     <main className="page">

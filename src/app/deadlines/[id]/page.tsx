@@ -1,11 +1,6 @@
 import Link from "next/link";
-import { inArray } from "drizzle-orm";
-import { db } from "@/db";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getDeadline } from "@/modules/pm/service";
-import { tasks } from "@/modules/pm/schema";
-import { sources } from "@/modules/storage/schema";
-import { treeNodes } from "@/modules/knowledge/schema";
+import { getDeadlineLinks } from "@/modules/pm/service";
 import { deadlineKindLabel, T, taskLabel } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
 import { CommentsSection } from "@/app/components/comments-section";
@@ -17,16 +12,9 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
   const user = await requireUser();
   const actor = toPrincipal(user);
   const { id } = await params;
-  const deadline = await orNotFound(() => getDeadline(actor, id));
-
-  const taskIds = deadline.links.filter((l) => l.targetType === "task").map((l) => l.targetId);
-  const sourceIds = deadline.links.filter((l) => l.targetType === "source").map((l) => l.targetId);
-  const nodeIds = deadline.links.filter((l) => l.targetType === "tree_node").map((l) => l.targetId);
-  const [linkedTasks, linkedSources, linkedNodes] = await Promise.all([
-    taskIds.length ? db.select().from(tasks).where(inArray(tasks.id, taskIds)) : [],
-    sourceIds.length ? db.select().from(sources).where(inArray(sources.id, sourceIds)) : [],
-    nodeIds.length ? db.select().from(treeNodes).where(inArray(treeNodes.id, nodeIds)) : [],
-  ]);
+  const { deadline, linkedTasks, linkedSources, linkedNodes } = await orNotFound(() =>
+    getDeadlineLinks(actor, id),
+  );
 
   return (
     <main className="page">

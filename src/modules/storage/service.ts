@@ -8,10 +8,21 @@ import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { extractionWorker } from "./extraction";
 import { objectStore } from "./object-store";
-import { intakeItems, sources, sourceVersions, spaces, textChunks } from "./schema";
+import {
+  curations,
+  intakeItems,
+  sources,
+  sourceVersions,
+  spaceMembers,
+  spaces,
+  textChunks,
+} from "./schema";
+import { promotions } from "../knowledge/schema";
 
 const MAX_SIZE_BYTES = 104_857_600; // 100 MB, intake-constraints.md
-const PAGE_SIZE = 20;
+/** Exported so the Library page's pager agrees with the query's LIMIT. */
+export const LIBRARY_PAGE_SIZE = 20;
+const PAGE_SIZE = LIBRARY_PAGE_SIZE;
 
 // Broad formats are accepted for storage (intake-constraints.md); only
 // actively dangerous executables are refused outright with 415.
@@ -189,6 +200,123 @@ export async function getDownloadToken(actor: Principal, sourceId: string) {
   return signDownload(row.version.originalObjectKey, row.version.originalFilename);
 }
 
+/**
+ * Does this id name a source at all? The admin Source Detail screen is
+ * type-aware — the same id space holds sources and branch-gap requests — and
+ * this is the discriminator it branches on.
+ */
+export async function sourceExists(sourceId: string): Promise<boolean> {
+  const [row] = await db.select({ id: sources.id }).from(sources).where(eq(sources.id, sourceId));
+  return Boolean(row);
+}
+
+/** Load a source with the ownership facts the manage-scope check needs. */
+async function loadOwnedSource(actor: Principal, sourceId: string, kind: "read" | "write") {
+  const [row] = await db
+    .select({ source: sources, version: sourceVersions })
+    .from(sources)
+    .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .where(eq(sources.id, sourceId));
+  if (!row) throw notFound();
+  authorize(actor, "storage.source.manage", {
+    ownerIds: [row.source.submittedBy, row.source.assignedTo],
+    kind,
+  });
+  return row;
+}
+
+/**
+ * Fix the label on your own upload. The bytes and the version history are
+ * untouched — this renames the record, which is the mistake people actually
+ * make (wrong title, typo) and the one thing a spreadsheet has always let
+ * them fix.
+ */
+export async function renameSource(
+  actor: Principal,
+  sourceId: string,
+  input: { title?: string; description?: string | null },
+) {
+  const row = await loadOwnedSource(actor, sourceId, "write");
+  const title = input.title?.trim();
+  if (input.title !== undefined && !title) {
+    throw new ApiError(400, "invalid_title", "Tên tư liệu không được để trống.");
+  }
+
+  const updated = await db.transaction(async (tx) => {
+    const [next] = await tx
+      .update(sources)
+      .set({
+        ...(title ? { title } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        updatedAt: new Date(),
+        version: row.source.version + 1,
+      })
+      .where(eq(sources.id, sourceId))
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.rename",
+      targetType: "source",
+      targetId: sourceId,
+      details: { from: row.source.title, to: next.title },
+    });
+    return next;
+  });
+  return updated;
+}
+
+/**
+ * Withdraw your own upload. `storage_state = 'archived'` is the existing
+ * mechanism — listLibrary and getDownloadToken both already require 'stored' —
+ * so the item leaves the library and stops being downloadable while the bytes,
+ * the versions and the audit trail all survive. Nothing here is a hard delete:
+ * a storage-first product that can silently lose the original is not one.
+ *
+ * Refused once anything is derived from it. At that point it is no longer just
+ * your upload: an editor's curation or a published page depends on it, and
+ * removing it would strand their provenance.
+ */
+export async function withdrawSource(actor: Principal, sourceId: string) {
+  const row = await loadOwnedSource(actor, sourceId, "write");
+  if (row.version.storageState !== "stored") {
+    throw new ApiError(409, "not_stored", "Tư liệu này không ở trạng thái có thể thu hồi.");
+  }
+
+  const [derived] = await db
+    .select({ id: curations.id })
+    .from(curations)
+    .where(eq(curations.sourceVersionId, row.version.id));
+  const [published] = await db
+    .select({ id: promotions.id })
+    .from(promotions)
+    .where(eq(promotions.sourceVersionId, row.version.id));
+  if (derived || published) {
+    throw new ApiError(
+      409,
+      "source_in_use",
+      "Không thể thu hồi: đã có người biên tập hoặc xuất bản dựa trên tư liệu này. Liên hệ quản trị viên.",
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(sourceVersions)
+      .set({ storageState: "archived" })
+      .where(eq(sourceVersions.id, row.version.id));
+    await tx
+      .update(sources)
+      .set({ updatedAt: new Date(), version: row.source.version + 1 })
+      .where(eq(sources.id, sourceId));
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.withdraw",
+      targetType: "source",
+      targetId: sourceId,
+      details: { spaceId: row.source.spaceId, versionId: row.version.id },
+    });
+  });
+}
+
 export async function mySubmissions(actor: Principal) {
   authorize(actor, "storage.submissions.read", { userId: actor.userId, kind: "read" });
   return db
@@ -196,6 +324,40 @@ export async function mySubmissions(actor: Principal) {
     .from(intakeItems)
     .where(eq(intakeItems.submittedBy, actor.userId))
     .orderBy(desc(intakeItems.lastUpdatedAt));
+}
+
+/**
+ * Create a team space and put the creator in it. Without this the only spaces
+ * that exist are the ones the seed script wrote, so a real team installing the
+ * app had nowhere to put anything — the first dead end in the product.
+ *
+ * ponytail: the creator is the only member at creation. Adding others is a
+ * membership screen, which is the next thing to build; until it exists an
+ * Admin/Op creates the space and members are added by the same seed/admin path
+ * as today.
+ */
+export async function createSpace(actor: Principal, input: { name?: string }) {
+  authorize(actor, "storage.space.manage", { kind: "write" });
+  const name = input.name?.trim();
+  if (!name) throw new ApiError(400, "invalid_space", "Vui lòng nhập tên kho.");
+
+  return db.transaction(async (tx) => {
+    const [space] = await tx
+      .insert(spaces)
+      .values({ name, type: "team", createdBy: actor.userId })
+      .returning({ id: spaces.id, name: spaces.name, type: spaces.type });
+    await tx
+      .insert(spaceMembers)
+      .values({ spaceId: space.id, userId: actor.userId, addedBy: actor.userId });
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "space.create",
+      targetType: "space",
+      targetId: space.id,
+      details: { name: space.name },
+    });
+    return space;
+  });
 }
 
 export async function listMemberSpaces(actor: Principal) {

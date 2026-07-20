@@ -730,6 +730,70 @@ export async function myAssignedTasks(actor: Principal) {
 // Source Inbox (Admin/Op) + gap-request triage
 // ---------------------------------------------------------------------------
 
+/**
+ * Who curation work can be handed to. Same role set `assignCuration` accepts,
+ * read from one place so the picker cannot offer someone the assign call would
+ * then refuse.
+ */
+export async function listAssignableEditors(actor: Principal) {
+  authorize(actor, "storage.curation.assign", { kind: "read" });
+  return db
+    .select({ id: users.id, name: users.displayName })
+    .from(users)
+    .where(inArray(users.role, ["editor", "admin_op"]));
+}
+
+/**
+ * The second intake mode: ask for something the collection is missing, when
+ * you have no file to upload. `/source/mine` has always rendered this row type
+ * and the triage flow has always been able to convert one into a branch — but
+ * nothing could create one, so the whole path was unreachable.
+ *
+ * Rides `storage.intake.open` per the authz matrix allowlist: opening intake
+ * and submitting a gap are the same capability for a baseline member.
+ */
+export async function createGapRequest(
+  actor: Principal,
+  input: { title?: string; description?: string },
+) {
+  authorize(actor, "storage.intake.open", { kind: "write" });
+  const title = input.title?.trim();
+  if (!title) throw new ApiError(400, "invalid_gap", "Vui lòng nhập nội dung cần bổ sung.");
+
+  const created = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(branchGapRequests)
+      .values({
+        title,
+        description: input.description?.trim() || null,
+        state: "submitted",
+        submittedBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "gap.submit",
+      targetType: "branch_gap_request",
+      targetId: row.id,
+      details: { title: row.title },
+    });
+    await emitOutbox(tx, "gap.submitted", { requestId: row.id, title: row.title });
+    return row;
+  });
+
+  kickDispatch();
+  return created;
+}
+
+/** Gap requests that were converted into this branch — the branch hub's "open gaps". */
+export async function listGapsForBranch(actor: Principal, branchId: string) {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  return db
+    .select()
+    .from(branchGapRequests)
+    .where(eq(branchGapRequests.convertedBranchId, branchId));
+}
+
 export async function listInbox(actor: Principal) {
   authorize(actor, "storage.source.read_all", { kind: "read" });
   const [sourceRows, gapRows] = await Promise.all([

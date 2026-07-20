@@ -57,6 +57,83 @@ Seeded per the brief's acceptance criteria: 3 users (User/Editor/Admin-Op),
 Sign-in is the dev-mode user picker (demo substitution): open the app and
 choose a seeded member; V1 swaps in Google OIDC behind the same session shape.
 
+### Configuration required before any real deployment
+
+The picker is an impersonation endpoint — it trades a user id for that user's
+session with no credential — so it is **off in production** unless
+`ENABLE_DEV_LOGIN=1` is set, and with it off `/login` does not enumerate users
+either. Until OIDC lands, a production deployment must either set that flag
+knowingly (internal network only) or have no sign-in at all.
+
+`SESSION_SECRET` is **required in production**: the app throws at boot without
+it, because the fallback used in development is published in this repo and
+would let anyone forge an `admin_op` session or a download token for any
+stored file. Generate one with `openssl rand -base64 32`. Both settings are
+documented in [.env.example](.env.example).
+
+## Layers
+
+One deployable, three layers, enforced rather than described:
+
+| Layer | Path | May do | May not do |
+| --- | --- | --- | --- |
+| Delivery (FE + routes) | `src/app/**` | Render, read query params, call a service | Touch the database — no `@/db`, no `*/schema`, no `drizzle-orm` |
+| Business logic | `src/modules/<module>/service.ts` | Authorize, query, transact, audit, emit | Reach into another module's tables |
+| Data | `src/db/**`, `src/modules/*/schema.ts` | Connection, table definitions, migrations | Contain business rules |
+
+```sh
+npm run test:boundaries   # fails the build if delivery code queries the database
+```
+
+This is not house style. The one page that queried the database directly was
+also the one page with a cross-space leak, because the predicate a service
+would have carried was simply absent. Keeping the query in the service keeps it
+next to the `authorize()` call and the space scoping that belong with it.
+
+Server components calling a service directly is intended — that is the App
+Router's own model, and the service is still the only thing that talks to
+Postgres. The rule is about *who owns the query*, not about inserting an HTTP
+hop between a page and its data.
+
+```sh
+npm test   # typecheck + boundaries + authz matrix + token suite
+```
+
+## Deploying
+
+One image, one compose stack. Migrations run as a one-shot service before the
+app starts, and never seed.
+
+```sh
+export SESSION_SECRET=$(openssl rand -base64 32)   # required, no default
+export ENABLE_DEV_LOGIN=1                          # until OIDC lands; see above
+docker compose --profile deploy up -d --build
+```
+
+`--profile deploy` is what separates this from `docker compose up -d db`, which
+stays the database-only path the npm scripts use. Compose refuses to start
+without `SESSION_SECRET` rather than letting the published dev default sign
+real sessions.
+
+| Concern | Where it is handled |
+| --- | --- |
+| Uploads + export repo | `appdata` volume on `/app/data` — without it, a redeploy deletes every uploaded file |
+| Migrations | `migrate` service, runs to completion before `app` starts |
+| Health | `GET /api/health` (unauthenticated, `SELECT 1`), wired to the container healthcheck |
+| Backups | `scripts/backup.sh` — `pg_dump` plus a tarball of the object store, on cron |
+
+The image carries `git` (the export target commits into a bare repo) and
+`pandoc` (real `docx` export). There is no TeX engine, so `pdf` degrades to the
+HTML artifact with a converter warning — add `texmf-dist` to the Dockerfile if
+real PDF export is ever needed.
+
+Back up **both** halves or neither: a database row whose file is missing is not
+a restorable source.
+
+```sh
+./scripts/backup.sh /srv/backups        # nightly, via cron — see the script header
+```
+
 ### Acceptance proofs
 
 With the app running (`npm run demo`, or `npm run start` after a build):

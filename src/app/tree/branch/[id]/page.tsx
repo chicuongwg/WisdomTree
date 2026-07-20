@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { branchGapRequests } from "@/modules/storage/schema";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getBranch } from "@/modules/knowledge/service";
+import { listGapsForBranch } from "@/modules/storage/curation";
 import { badgeClass, gapLabel, gapStateLabel, T } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeCreateForm } from "@/app/components/node-create-form";
@@ -16,10 +14,7 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
   const actor = toPrincipal(user);
   const { id } = await params;
   const branch = await orNotFound(() => getBranch(actor, id));
-  const gaps = await db
-    .select()
-    .from(branchGapRequests)
-    .where(eq(branchGapRequests.convertedBranchId, id));
+  const gaps = await listGapsForBranch(actor, id);
 
   const verified = branch.nodes.filter((n) => n.verification === "verified").length;
   const canEdit = user.role === "editor" || user.role === "admin_op";

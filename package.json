@@ -17,7 +17,10 @@
     "start:prod": "npm run db:migrate && next start",
     "gen:api": "openapi-typescript docs/design/openapi.yaml -o src/lib/api-types.ts",
     "proofs": "tsx scripts/proofs.ts",
-    "test:authz": "tsx scripts/authz-matrix.test.ts"
+    "test:authz": "tsx scripts/authz-matrix.test.ts",
+    "test:sign": "tsx scripts/sign.test.ts",
+    "test:boundaries": "tsx scripts/boundaries.test.ts",
+    "test": "npm run typecheck && npm run test:boundaries && npm run test:authz && npm run test:sign"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.2",
