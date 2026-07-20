@@ -1660,3 +1660,27 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 .dropzone-progress .upload-progress { flex: 1 1 16rem; margin-top: 0; }
+
+/* Library folders: the row icon and the breadcrumb above the table. */
+.folder-icon {
+  width: 18px;
+  height: 18px;
+  vertical-align: -0.25em;
+  margin-right: var(--space-2);
+}
+.breadcrumb { color: var(--color-ink-muted); }
+
+/* Stored-item preview: image at natural size capped to the panel, PDF in a
+   tall frame — both above the download button, never instead of it. */
+.preview-image {
+  max-width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+}
+.preview-frame {
+  width: 100%;
+  height: 60vh;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}

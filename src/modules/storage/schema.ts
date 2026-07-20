@@ -40,9 +40,22 @@ export const spaceMembers = pgTable(
   (t) => [primaryKey({ columns: [t.spaceId, t.userId] })],
 );
 
+// Folders inside a space. NULL parent = the space root; NULL sources.folder_id
+// likewise. drizzle/0003 carries the uniqueness rules (name unique per parent,
+// with a partial index for the root because NULLs compare distinct).
+export const folders = pgTable("folders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  spaceId: uuid("space_id").notNull().references(() => spaces.id),
+  parentId: uuid("parent_id"),
+  name: text("name").notNull(),
+  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const sources = pgTable("sources", {
   id: uuid("id").primaryKey().defaultRandom(),
   spaceId: uuid("space_id").notNull().references(() => spaces.id),
+  folderId: uuid("folder_id").references(() => folders.id),
   title: text("title").notNull(),
   description: text("description"),
   trustStatus: text("trust_status", {

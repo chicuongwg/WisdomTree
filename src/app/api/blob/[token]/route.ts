@@ -13,10 +13,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     if (!grant) throw notFound();
     const object = await objectStore.get(grant.objectKey).catch(() => null);
     if (!object) throw notFound();
+    // Images and PDFs render in the page (the detail screen's preview panel);
+    // everything else downloads. nosniff so the browser honours the stored
+    // content type instead of guessing something executable.
+    const inline = object.contentType.startsWith("image/") || object.contentType === "application/pdf";
     return new Response(new Uint8Array(object.body), {
       headers: {
         "Content-Type": object.contentType,
-        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(grant.filename)}`,
+        "Content-Disposition": `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(grant.filename)}`,
+        "X-Content-Type-Options": "nosniff",
       },
     });
   });

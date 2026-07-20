@@ -1,5 +1,5 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getSourceDetail } from "@/modules/storage/service";
+import { getSourceDetail, listFolders } from "@/modules/storage/service";
 import {
   badgeClass,
   extractionLabel,
@@ -13,6 +13,7 @@ import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { ExtractionWatcher } from "@/app/components/extraction-watcher";
 import { SourceOwnerActions } from "@/app/components/source-owner-actions";
+import { SourceFileActions } from "@/app/components/source-file-actions";
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
 // download only, never operational review internals (screen-inventory.md).
@@ -20,8 +21,15 @@ import { SourceOwnerActions } from "@/app/components/source-owner-actions";
 export default async function StoredItemDetail({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const source = await orNotFound(() => getSourceDetail(toPrincipal(user), id));
+  const actor = toPrincipal(user);
+  const source = await orNotFound(() => getSourceDetail(actor, id));
   const v = source.currentVersion;
+  const stored = v?.storageState === "stored";
+  const canEdit = source.submittedBy === user.id || user.role === "admin_op";
+  // The move select needs the space's folders; only fetched when someone who
+  // can move is looking at a movable item.
+  const folders = canEdit && stored ? await listFolders(actor, source.spaceId) : [];
+  const downloadUrl = `/api/source/${source.id}/download`;
 
   return (
     <main className="page">
@@ -77,14 +85,67 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
             </tbody>
           </table>
         </div>
-        {v && (
+        {/* Preview in place for what the browser can render; the token URL is
+            the same authorized 302 the download uses — never a public path. */}
+        {v && stored && v.mimeType.startsWith("image/") && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="preview-image" src={downloadUrl} alt={source.title} />
+        )}
+        {v && stored && v.mimeType === "application/pdf" && (
+          <iframe className="preview-frame" src={downloadUrl} title={source.title} />
+        )}
+        {v && stored && (
           <p>
-            <a className="button" href={`/api/source/${source.id}/download`}>
+            <a className="button" href={downloadUrl}>
               {T.download}
             </a>
           </p>
         )}
+        {v && !stored && (
+          // TODO(vi): move to src/lib/vi.ts
+          <p className="muted">Tư liệu đã được thu hồi — không tải xuống được.</p>
+        )}
       </div>
+      {source.versions.length > 1 && (
+        <div className="panel">
+          {/* TODO(vi): move to src/lib/vi.ts */}
+          <h2>Các bản đã lưu</h2>
+          <div className="record-scroll">
+            <table className="list">
+              <thead>
+                <tr>
+                  {/* TODO(vi): move to src/lib/vi.ts */}
+                  <th scope="col">Bản</th>
+                  <th scope="col">{T.file}</th>
+                  <th scope="col">Người tải lên</th>
+                  <th scope="col">{T.storedAtLabel}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {source.versions.map((ver) => (
+                  <tr key={ver.seq}>
+                    <td>
+                      {ver.seq}
+                      {ver.seq === v?.seq && <span className="muted"> (hiện tại)</span>}
+                    </td>
+                    <td>{ver.filename}</td>
+                    <td>{ver.uploadedByName}</td>
+                    <td>{when(ver.storedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <SourceFileActions
+        sourceId={source.id}
+        folderId={source.folderId}
+        folders={folders}
+        archived={Boolean(v && !stored)}
+        canEdit={canEdit && stored}
+        canRestore={user.role === "admin_op" && v?.storageState === "archived"}
+      />
       {/* Owner-only: the server enforces this too (storage.source.manage is
           owned-or-assigned), this just keeps the controls off other people's
           screens. Admin/Op passes the same check on role. */}

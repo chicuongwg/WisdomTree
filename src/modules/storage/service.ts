@@ -10,6 +10,7 @@ import { extractionWorker } from "./extraction";
 import { objectStore } from "./object-store";
 import {
   curations,
+  folders,
   intakeItems,
   sources,
   sourceVersions,
@@ -95,14 +96,30 @@ export async function uploadSource(
   return getSourceDetail(actor, sourceId);
 }
 
-/** Store-first Library list: only storage_state = 'stored' matters; extraction never gates. */
+/**
+ * Store-first Library list: only storage_state matters; extraction never
+ * gates. `folderId` scopes to one folder (null = the space root) and is only
+ * meaningful with `spaceId`. `archived` flips the view to withdrawn items —
+ * Admin/Op only, the restore screen's read.
+ */
 export async function listLibrary(
   actor: Principal,
-  opts: { spaceId?: string; q?: string; page?: number },
+  opts: {
+    spaceId?: string;
+    q?: string;
+    page?: number;
+    folderId?: string | null;
+    sort?: "title" | "storedAt";
+    dir?: "asc" | "desc";
+    archived?: boolean;
+  },
 ) {
   const visible = scopedToSpaces(actor);
   if (opts.spaceId) {
     authorize(actor, "storage.library.browse", { spaceId: opts.spaceId, kind: "read" });
+  }
+  if (opts.archived) {
+    authorize(actor, "storage.source.read_all", { kind: "read" }); // admin_op
   }
   const spaceFilter = opts.spaceId
     ? eq(sources.spaceId, opts.spaceId)
@@ -121,13 +138,27 @@ export async function listLibrary(
       ))`
     : undefined;
 
+  // Folder scoping only exists inside one space; without spaceId the list is
+  // cross-space and folders are not a meaningful axis.
+  const folderFilter =
+    opts.spaceId && opts.folderId !== undefined
+      ? opts.folderId === null
+        ? isNull(sources.folderId)
+        : eq(sources.folderId, opts.folderId)
+      : undefined;
+
+  const sortCol = opts.sort === "title" ? sources.title : sourceVersions.storedAt;
+  const order = (opts.dir ?? "desc") === "asc" ? asc(sortCol) : desc(sortCol);
+
   const page = Math.max(1, opts.page ?? 1);
   return db
     .select({
       sourceId: sources.id,
       spaceId: sources.spaceId,
       spaceName: spaces.name,
+      folderId: sources.folderId,
       title: sources.title,
+      submitterName: users.displayName,
       mimeType: sourceVersions.mimeType,
       storedAt: sourceVersions.storedAt,
       extractionStatus: sourceVersions.extractionStatus,
@@ -135,8 +166,16 @@ export async function listLibrary(
     .from(sources)
     .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
     .innerJoin(spaces, eq(sources.spaceId, spaces.id))
-    .where(and(eq(sourceVersions.storageState, "stored"), spaceFilter, textMatch))
-    .orderBy(desc(sourceVersions.storedAt))
+    .innerJoin(users, eq(sources.submittedBy, users.id))
+    .where(
+      and(
+        eq(sourceVersions.storageState, opts.archived ? "archived" : "stored"),
+        spaceFilter,
+        folderFilter,
+        textMatch,
+      ),
+    )
+    .orderBy(order)
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE);
 }
@@ -159,10 +198,27 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
         .where(eq(textChunks.sourceVersionId, row.version.id))
     : [{ chunkCount: 0 }];
 
+  // The whole version chain, newest first — the detail page's history table.
+  // One extra query on a page that already makes three; a dedicated
+  // listSourceVersions service + route would be more code for the same rows.
+  const versions = await db
+    .select({
+      seq: sourceVersions.seq,
+      filename: sourceVersions.originalFilename,
+      storedAt: sourceVersions.storedAt,
+      uploadedByName: users.displayName,
+    })
+    .from(sourceVersions)
+    .innerJoin(users, eq(sourceVersions.uploadedBy, users.id))
+    .where(eq(sourceVersions.sourceId, sourceId))
+    .orderBy(desc(sourceVersions.seq));
+
   return {
     id: row.source.id,
     spaceId: row.source.spaceId,
     spaceName: row.spaceName,
+    folderId: row.source.folderId,
+    versions,
     title: row.source.title,
     description: row.source.description,
     trustStatus: row.source.trustStatus,
@@ -318,6 +374,140 @@ export async function withdrawSource(actor: Principal, sourceId: string) {
   });
 }
 
+/**
+ * The way back from withdraw. The confirm dialog has promised "quản trị viên
+ * có thể khôi phục nếu cần" since the withdraw screen shipped; until now that
+ * sentence was a lie — nothing ever set storage_state back to `stored`.
+ */
+export async function restoreSource(actor: Principal, sourceId: string) {
+  authorize(actor, "storage.source.read_all", { kind: "write" }); // admin_op
+  const [row] = await db
+    .select({ source: sources, version: sourceVersions })
+    .from(sources)
+    .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .where(eq(sources.id, sourceId));
+  if (!row) throw notFound();
+  if (row.version.storageState !== "archived") {
+    throw new ApiError(409, "not_archived", "Tư liệu này không ở trạng thái đã thu hồi.");
+  }
+  await db.transaction(async (tx) => {
+    await tx
+      .update(sourceVersions)
+      .set({ storageState: "stored" })
+      .where(eq(sourceVersions.id, row.version.id));
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "source.restore",
+      targetType: "source",
+      targetId: sourceId,
+      details: { spaceId: row.source.spaceId, versionId: row.version.id },
+    });
+  });
+}
+
+/**
+ * File a source in a folder (null = the space root). Same ownership rule as
+ * rename — filing your own upload is fixing your own record. The folder must
+ * be in the source's own space: cross-space moves change who can see the
+ * bytes, which is a different decision with different stakes, and stays
+ * unbuilt on purpose.
+ */
+export async function moveSource(actor: Principal, sourceId: string, folderId: string | null) {
+  const row = await loadOwnedSource(actor, sourceId, "write");
+  if (folderId) {
+    const [folder] = await db
+      .select({ id: folders.id, spaceId: folders.spaceId })
+      .from(folders)
+      .where(eq(folders.id, folderId));
+    if (!folder) throw new ApiError(400, "unknown_folder", "Thư mục không tồn tại.");
+    if (folder.spaceId !== row.source.spaceId) {
+      throw new ApiError(400, "folder_other_space", "Thư mục này thuộc kho khác.");
+    }
+  }
+  await db.transaction(async (tx) => {
+    await tx
+      .update(sources)
+      .set({ folderId, updatedAt: new Date(), version: row.source.version + 1 })
+      .where(eq(sources.id, sourceId));
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.move",
+      targetType: "source",
+      targetId: sourceId,
+      details: { from: row.source.folderId, to: folderId },
+    });
+  });
+}
+
+/**
+ * A corrected copy of the same document. seq was hardcoded to 1 in the only
+ * insert, with no route to add a second — so a researcher who fixed a typo in
+ * their own scan had to withdraw and re-upload, severing every derivation.
+ * The new version becomes current; extraction re-runs; the old versions stay,
+ * which is the entire point of having them.
+ */
+export async function addSourceVersion(actor: Principal, sourceId: string, file: File) {
+  const row = await loadOwnedSource(actor, sourceId, "write");
+  if (row.version.storageState !== "stored") {
+    throw new ApiError(409, "not_stored", "Chỉ thêm được bản mới cho tư liệu đang lưu.");
+  }
+  if (file.size > MAX_SIZE_BYTES) {
+    throw new ApiError(413, "file_too_large", "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.");
+  }
+  const mimeType = file.type || "application/octet-stream";
+  if (FORMAT_DENYLIST.has(mimeType)) {
+    throw new ApiError(415, "format_not_allowed", "Định dạng tệp này không được chấp nhận.");
+  }
+
+  const body = Buffer.from(await file.arrayBuffer());
+  const versionId = randomUUID();
+  const objectKey = `sources/${sourceId}/${versionId}/${file.name}`;
+  await objectStore.put(objectKey, body, mimeType);
+
+  await db.transaction(async (tx) => {
+    // max(seq)+1 inside the transaction; two simultaneous re-uploads of the
+    // same source are a human impossibility at this team size, but the unique
+    // (source_id, seq) constraint would still catch the race with a 500 rather
+    // than silent corruption. // ponytail: no retry loop.
+    const [{ max }] = await tx
+      .select({ max: sql<number>`coalesce(max(${sourceVersions.seq}), 0)` })
+      .from(sourceVersions)
+      .where(eq(sourceVersions.sourceId, sourceId));
+    await tx.insert(sourceVersions).values({
+      id: versionId,
+      sourceId,
+      seq: max + 1,
+      originalObjectKey: objectKey,
+      originalFilename: file.name,
+      mimeType,
+      sizeBytes: body.byteLength,
+      checksumSha256: createHash("sha256").update(body).digest("hex"),
+      storageState: "stored",
+      uploadedBy: actor.userId,
+      storedAt: new Date(),
+    });
+    await tx
+      .update(sources)
+      .set({ currentVersionId: versionId, updatedAt: new Date() })
+      .where(eq(sources.id, sourceId));
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.version.add",
+      targetType: "source",
+      targetId: sourceId,
+      details: { versionId, seq: max + 1, filename: file.name },
+    });
+    await emitOutbox(tx, "source.stored", {
+      sourceId,
+      sourceVersionId: versionId,
+      spaceId: row.source.spaceId,
+    });
+  });
+
+  extractionWorker.enqueue(versionId);
+  return getSourceDetail(actor, sourceId);
+}
+
 export async function mySubmissions(actor: Principal) {
   authorize(actor, "storage.submissions.read", { userId: actor.userId, kind: "read" });
   return db
@@ -425,6 +615,136 @@ export async function removeSpaceMember(actor: Principal, spaceId: string, userI
       targetType: "space",
       targetId: spaceId,
       details: { userId },
+    });
+  });
+}
+
+// --- Folders ---------------------------------------------------------------
+// Drive-shaped filing inside a space. NULL parent / NULL sources.folder_id is
+// the space root; drizzle/0003 carries the name-unique-per-parent rules.
+
+/** The pg unique violation for a duplicate folder name, said in words. */
+function rethrowFolderNameTaken(err: unknown): never {
+  const raw = err as { code?: string; cause?: { code?: string } };
+  if (raw?.code === "23505" || raw?.cause?.code === "23505") {
+    // TODO(vi): move to src/lib/vi.ts
+    throw new ApiError(409, "folder_exists", "Đã có thư mục tên này ở đây.");
+  }
+  throw err;
+}
+
+/** Flat rows for one space; the page builds the tree/breadcrumb itself. */
+export async function listFolders(actor: Principal, spaceId: string) {
+  authorize(actor, "storage.library.browse", { spaceId, kind: "read" });
+  return db
+    .select({ id: folders.id, parentId: folders.parentId, name: folders.name })
+    .from(folders)
+    .where(eq(folders.spaceId, spaceId))
+    .orderBy(asc(folders.name));
+}
+
+/**
+ * Any member of the space can make a folder — filing things is what members
+ * do there; storage.upload is exactly that gate, not an admin one.
+ */
+export async function createFolder(
+  actor: Principal,
+  input: { spaceId: string; parentId?: string | null; name: string },
+) {
+  authorize(actor, "storage.upload", { spaceId: input.spaceId, kind: "write" });
+  const name = input.name?.trim();
+  // TODO(vi): move to src/lib/vi.ts
+  if (!name) throw new ApiError(400, "invalid_folder", "Vui lòng nhập tên thư mục.");
+  const parentId = input.parentId || null;
+  if (parentId) {
+    const [parent] = await db
+      .select({ id: folders.id, spaceId: folders.spaceId })
+      .from(folders)
+      .where(eq(folders.id, parentId));
+    if (!parent || parent.spaceId !== input.spaceId) {
+      // TODO(vi): move to src/lib/vi.ts
+      throw new ApiError(400, "unknown_folder", "Thư mục cha không tồn tại trong kho này.");
+    }
+  }
+  try {
+    return await db.transaction(async (tx) => {
+      const [folder] = await tx
+        .insert(folders)
+        .values({ spaceId: input.spaceId, parentId, name, createdBy: actor.userId })
+        .returning({ id: folders.id, parentId: folders.parentId, name: folders.name });
+      await recordAudit(tx, actor, {
+        accountability: "uploader",
+        action: "folder.create",
+        targetType: "folder",
+        targetId: folder.id,
+        details: { spaceId: input.spaceId, parentId, name },
+      });
+      return folder;
+    });
+  } catch (err) {
+    rethrowFolderNameTaken(err);
+  }
+}
+
+/** Load + gate: the creator fixes their own folder; Admin/Op passes on role. */
+async function loadOwnedFolder(actor: Principal, folderId: string) {
+  const [folder] = await db.select().from(folders).where(eq(folders.id, folderId));
+  if (!folder) throw notFound();
+  authorize(actor, "storage.source.manage", { ownerIds: [folder.createdBy], kind: "write" });
+  return folder;
+}
+
+export async function renameFolder(actor: Principal, folderId: string, name: string) {
+  const folder = await loadOwnedFolder(actor, folderId);
+  const next = name?.trim();
+  // TODO(vi): move to src/lib/vi.ts
+  if (!next) throw new ApiError(400, "invalid_folder", "Vui lòng nhập tên thư mục.");
+  try {
+    await db.transaction(async (tx) => {
+      await tx.update(folders).set({ name: next }).where(eq(folders.id, folderId));
+      await recordAudit(tx, actor, {
+        accountability: "uploader",
+        action: "folder.rename",
+        targetType: "folder",
+        targetId: folderId,
+        details: { from: folder.name, to: next },
+      });
+    });
+  } catch (err) {
+    rethrowFolderNameTaken(err);
+  }
+}
+
+/**
+ * Only an empty folder goes: refusing while anything is inside means delete
+ * can never silently unfile someone else's documents.
+ * ponytail: no moveFolder — reorganising nesting = create new + move sources
+ * + delete old; revisit if anyone asks.
+ */
+export async function deleteFolder(actor: Principal, folderId: string) {
+  const folder = await loadOwnedFolder(actor, folderId);
+  const [child] = await db
+    .select({ id: folders.id })
+    .from(folders)
+    .where(eq(folders.parentId, folderId))
+    .limit(1);
+  const [filed] = await db
+    .select({ id: sources.id })
+    .from(sources)
+    .where(eq(sources.folderId, folderId))
+    .limit(1);
+  if (child || filed) {
+    // TODO(vi): move to src/lib/vi.ts
+    throw new ApiError(409, "folder_not_empty", "Thư mục còn nội dung — chuyển hết ra trước khi xoá.");
+  }
+  await db.transaction(async (tx) => {
+    await tx.delete(folders).where(eq(folders.id, folderId));
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "folder.delete",
+      targetType: "folder",
+      targetId: folderId,
+      details: { spaceId: folder.spaceId, name: folder.name },
     });
   });
 }
