@@ -3,8 +3,9 @@ import { headers } from "next/headers";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listDeadlines, myCalendarToken } from "@/modules/pm/service";
 import { listMemberSpaces } from "@/modules/storage/service";
-import { badgeToneClass, deadlineKindLabel, T } from "@/lib/vi";
+import { badgeToneClass, day, deadlineKindLabel, T, untilLabel } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
+import { Empty } from "@/app/components/empty";
 
 // Screen: Deadlines (`/deadlines`) — upcoming deadlines sorted by due date,
 // filterable by project, with the calendar-feed subscribe link
@@ -27,6 +28,8 @@ export default async function DeadlinesPage({
   const spaceName = new Map(spaces.map((s) => [s.id, s.name]));
   const host = headerList.get("host") ?? "localhost:3000";
   const proto = headerList.get("x-forwarded-proto") ?? "http";
+  // One "now" for the whole table, so two rows can never disagree about today.
+  const now = new Date();
 
   return (
     <main className="page">
@@ -50,42 +53,60 @@ export default async function DeadlinesPage({
       <div className="with-side">
         <div className="panel">
           {deadlines.length === 0 ? (
-            <p className="muted">Chưa có hạn chót nào. Tạo hạn chót đầu tiên ở khung bên.</p>
+            spaceId ? (
+              <Empty
+                panel={false}
+                title={T.noMatches}
+                action={<Link href="/deadlines">{T.clearFilters}</Link>}
+              />
+            ) : (
+              // The create form is the aside on this same screen, so the empty
+              // state points at it rather than repeating the button.
+              // TODO(vi): move to src/lib/vi.ts
+              <Empty
+                panel={false}
+                title="Chưa có hạn chót nào."
+                hint="Tạo hạn chót đầu tiên ở khung bên cạnh — cả nhóm sẽ thấy nó và được nhắc trước khi tới hạn."
+              />
+            )
           ) : (
-            <table className="list">
-              <thead>
-                <tr>
-                  <th scope="col">{T.title}</th>
-                  <th scope="col">{T.deadlineType}</th>
-                  <th scope="col">{T.project}</th>
-                  <th scope="col">{T.dueAtLabel}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {deadlines.map((d) => {
-                  const soon = d.dueAt.getTime() - Date.now() < 7 * 86_400_000;
-                  return (
-                    <tr key={d.id}>
-                      <td>
-                        <Link href={`/deadlines/${d.id}`}>{d.title}</Link>
-                      </td>
-                      <td>
-                        <span className="badge muted">{deadlineKindLabel(d.type)}</span>
-                      </td>
-                      <td className="muted">{spaceName.get(d.spaceId) ?? ""}</td>
-                      <td>
-                        {/* A date, not an enum state — but within a week it is
-                            something a human must act on, so it borrows the
-                            `attention` tone; otherwise it stays quiet. */}
-                        <span className={badgeToneClass(soon ? "attention" : "waiting")}>
-                          {d.dueAt.toLocaleString("vi-VN")}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="record-scroll">
+              <table className="list">
+                <thead>
+                  <tr>
+                    <th scope="col">{T.title}</th>
+                    <th scope="col">{T.deadlineType}</th>
+                    <th scope="col">{T.project}</th>
+                    <th scope="col">{T.dueAtLabel}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deadlines.map((d) => {
+                    const until = untilLabel(d.dueAt, now);
+                    return (
+                      <tr key={d.id}>
+                        <td>
+                          <Link href={`/deadlines/${d.id}`}>{d.title}</Link>
+                        </td>
+                        <td>
+                          <span className="badge muted">{deadlineKindLabel(d.type)}</span>
+                        </td>
+                        <td className="muted">{spaceName.get(d.spaceId) ?? ""}</td>
+                        <td>
+                          {/* A date, not an enum state — but inside a week it is
+                              something a human must act on. The chip now SAYS
+                              how near it is; the `attention` tone is the second
+                              carrier, not the only one. */}
+                          <span className={badgeToneClass(until ? "attention" : "waiting")}>
+                            {until ? `${until} · ${day(d.dueAt)}` : day(d.dueAt)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 

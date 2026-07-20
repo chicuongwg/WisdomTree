@@ -429,6 +429,34 @@ export const notifyChannelLabel = (v: string | null | undefined): string =>
   guarded(channelLabel, "channelLabel", v, FALLBACK.channel);
 
 // ---------------------------------------------------------------------------
+// Dates. `toLocaleString("vi-VN")` with no options prints seconds — every row
+// of every table read `20:26:57 20/7/2026`. Nobody schedules to the second, so
+// the app has exactly two shapes: a moment, and a day.
+// ---------------------------------------------------------------------------
+
+/** A moment: `20:26 20/7/2026`. For "last updated", "stored at", timestamps. */
+export const when = (d: Date | string | null | undefined): string =>
+  d ? new Date(d).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "—";
+
+/** A day: `20/7/2026`. For due dates and anything a person says out loud. */
+export const day = (d: Date | string | null | undefined): string =>
+  d ? new Date(d).toLocaleDateString("vi-VN") : "—";
+
+/**
+ * How far off a deadline is, in words. A date chip that only changes colour
+ * says nothing to a reader who cannot see the colour — globals.css is explicit
+ * that a state is never carried by hue alone.
+ */
+export function untilLabel(due: Date, now: Date): string | null {
+  const days = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
+  if (days < 0) return `Quá hạn ${-days} ngày`;
+  if (days === 0) return "Hôm nay";
+  if (days === 1) return "Ngày mai";
+  if (days <= 7) return `Còn ${days} ngày`;
+  return null; // far off: the date alone is the whole story
+}
+
+// ---------------------------------------------------------------------------
 // Badge tones — the visual half of a state label.
 //
 // A tone is assigned by MEANING, not one colour per enum value: thirty-odd

@@ -7,6 +7,7 @@ import {
   T,
   trustLabel,
   trustStateLabel,
+  when,
 } from "@/lib/vi";
 import { CommentsSection } from "@/app/components/comments-section";
 import { ExtractionWatcher } from "@/app/components/extraction-watcher";
@@ -25,54 +26,56 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
     <main className="page">
       <h1>{source.title}</h1>
       <div className="panel">
-        <table className="list">
-          <tbody>
-            <tr>
-              <th>{T.space}</th>
-              <td>{source.spaceName}</td>
-            </tr>
-            {source.description && (
+        <div className="record-scroll">
+          <table className="list">
+            <tbody>
               <tr>
-                <th>{T.description}</th>
-                <td>{source.description}</td>
+                <th scope="row">{T.space}</th>
+                <td>{source.spaceName}</td>
               </tr>
-            )}
-            <tr>
-              <th>Độ tin cậy</th>
-              <td>
-                <span className={badgeClass(trustLabel, source.trustStatus)}>
-                  {trustStateLabel(source.trustStatus)}
-                </span>
-              </td>
-            </tr>
-            {v && (
-              <>
+              {source.description && (
                 <tr>
-                  <th>{T.file}</th>
-                  <td>
-                    {v.originalFilename} <span className="muted">({Math.max(1, Math.round(v.sizeBytes / 1024))} KB)</span>
-                  </td>
+                  <th scope="row">{T.description}</th>
+                  <td>{source.description}</td>
                 </tr>
-                <tr>
-                  <th>{T.storedAtLabel}</th>
-                  <td>{v.storedAt?.toLocaleString("vi-VN")}</td>
-                </tr>
-                <tr>
-                  <th>Trạng thái xử lý</th>
-                  <td>
-                    <span className={badgeClass(extractionLabel, v.extractionStatus)}>
-                      {extractionStateLabel(v.extractionStatus)}
-                    </span>{" "}
-                    {v.extractionStatus === "unprocessable" && (
-                      <span className="muted">Tệp gốc vẫn được lưu và tải xuống bình thường.</span>
-                    )}
-                    <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
-                  </td>
-                </tr>
-              </>
-            )}
-          </tbody>
-        </table>
+              )}
+              <tr>
+                <th scope="row">Độ tin cậy</th>
+                <td>
+                  <span className={badgeClass(trustLabel, source.trustStatus)}>
+                    {trustStateLabel(source.trustStatus)}
+                  </span>
+                </td>
+              </tr>
+              {v && (
+                <>
+                  <tr>
+                    <th scope="row">{T.file}</th>
+                    <td>
+                      {v.originalFilename} <span className="muted">({Math.max(1, Math.round(v.sizeBytes / 1024))} KB)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">{T.storedAtLabel}</th>
+                    <td>{when(v.storedAt)}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Trạng thái xử lý</th>
+                    <td>
+                      <span className={badgeClass(extractionLabel, v.extractionStatus)}>
+                        {extractionStateLabel(v.extractionStatus)}
+                      </span>{" "}
+                      {v.extractionStatus === "unprocessable" && (
+                        <span className="muted">Tệp gốc vẫn được lưu và tải xuống bình thường.</span>
+                      )}
+                      <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
+                    </td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
         {v && (
           <p>
             <a className="button" href={`/api/source/${source.id}/download`}>

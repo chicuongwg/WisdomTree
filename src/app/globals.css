@@ -337,24 +337,29 @@ main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; mar
 .panel > h2 + *, .panel > h3 + * { margin-top: var(--space-2); }
 /* a panel's own heading may carry a badge or link inline */
 .panel > h2 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-/* a table filling a panel keeps one border, not two: the panel's */
-.panel > table.list {
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
+/* a table filling a panel keeps one border, not two: the panel's.
+   Every table.list is wrapped in .record-scroll now (see the drawer note
+   there), so the panel's child is the scroller and it is the thing that
+   bleeds to the panel's edges. */
+.panel > .record-scroll {
   width: calc(100% + var(--space-5) * 2);
   margin-left: calc(var(--space-5) * -1);
 }
-.panel > table.list th:first-child, .panel > table.list td:first-child { padding-left: var(--space-5); }
-.panel > table.list th:last-child, .panel > table.list td:last-child { padding-right: var(--space-5); }
-.panel > table.list:last-child tr:last-child td { border-bottom: none; }
+.panel > .record-scroll > table.list {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+.panel > .record-scroll th:first-child, .panel > .record-scroll td:first-child { padding-left: var(--space-5); }
+.panel > .record-scroll th:last-child, .panel > .record-scroll td:last-child { padding-right: var(--space-5); }
+.panel > .record-scroll:last-child tr:last-child td { border-bottom: none; }
 /* a panel that is nothing but a table is a frame around it */
-.panel:has(> table.list:only-child) { padding: 0; overflow: hidden; }
-.panel:has(> table.list:only-child) > table.list { width: 100%; margin-left: 0; }
-.panel:has(> table.list:only-child) th:first-child,
-.panel:has(> table.list:only-child) td:first-child { padding-left: var(--space-4); }
-.panel:has(> table.list:only-child) th:last-child,
-.panel:has(> table.list:only-child) td:last-child { padding-right: var(--space-4); }
+.panel:has(> .record-scroll:only-child) { padding: 0; overflow: hidden; }
+.panel:has(> .record-scroll:only-child) > .record-scroll { width: 100%; margin-left: 0; }
+.panel:has(> .record-scroll:only-child) th:first-child,
+.panel:has(> .record-scroll:only-child) td:first-child { padding-left: var(--space-4); }
+.panel:has(> .record-scroll:only-child) th:last-child,
+.panel:has(> .record-scroll:only-child) td:last-child { padding-right: var(--space-4); }
 /* list rows keep their badges in the text flow — a badge trails the
    title on the same line and only wraps when the title does */
 .panel li { line-height: 1.55; }
@@ -765,6 +770,9 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
   .record { grid-template-columns: 1fr; gap: var(--space-1); }
   .record dd { margin-bottom: var(--space-2); }
 }
+/* The card drawer slides sideways. Every table.list in the app is wrapped in
+   this: on a phone the alternative is not a narrower table, it is columns
+   crushed to one word per line with the last one clipped off-screen. */
 .record-scroll { overflow-x: auto; }
 /* a caption a screen reader hears and a sighted reader does not need twice */
 .sr-only {

@@ -1,9 +1,10 @@
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listTickets } from "@/modules/circulation/service";
 import { listMemberSpaces } from "@/modules/storage/service";
-import { badgeClass, loanLabel, loanStateLabel, T } from "@/lib/vi";
+import { badgeClass, day, loanLabel, loanStateLabel, T } from "@/lib/vi";
 import { LoanActions } from "@/app/components/loan-actions";
 import { CatalogItemForm } from "@/app/components/catalog-item-form";
+import { Empty } from "@/app/components/empty";
 
 // Screen: Librarian Desk (`/catalog/admin`) — Admin/Op circulation surface.
 // UI hiding is convenience only; the service layer enforces
@@ -41,38 +42,48 @@ export default async function LibrarianDeskPage() {
           <section key={group.title}>
             <h2>{group.title}</h2>
             {rows.length === 0 ? (
-              <p className="muted">{T.empty}</p>
+              // One copy for all four groups: a ticket lands here by moving
+              // through the desk, not by anyone pressing something on this
+              // screen. TODO(vi): move to src/lib/vi.ts
+              <Empty
+                title="Không có phiếu mượn nào ở mục này."
+                hint="Phiếu mượn sẽ tự chuyển vào đây khi tới bước này."
+              />
             ) : (
-              <table className="list">
-                <thead>
-                  <tr>
-                    <th>{T.catalogItem}</th>
-                    <th>Người mượn</th>
-                    <th>Trạng thái</th>
-                    <th>{T.dueDate}</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(({ ticket, itemTitle, itemCode, borrowerName }) => (
-                    <tr key={ticket.id}>
-                      <td>
-                        {itemTitle} <span className="muted">({itemCode})</span>
-                      </td>
-                      <td>{borrowerName}</td>
-                      <td>
-                        <span className={badgeClass(loanStateLabel, ticket.state)}>
-                          {loanLabel(ticket.state)}
-                        </span>
-                      </td>
-                      <td>{ticket.dueAt ? ticket.dueAt.toLocaleDateString("vi-VN") : "—"}</td>
-                      <td>
-                        <LoanActions ticketId={ticket.id} state={ticket.state} />
-                      </td>
+              <div className="record-scroll">
+                <table className="list">
+                  <thead>
+                    <tr>
+                      <th scope="col">{T.catalogItem}</th>
+                      <th scope="col">Người mượn</th>
+                      <th scope="col">Trạng thái</th>
+                      <th scope="col">{T.dueDate}</th>
+                      <th scope="col">
+                        <span className="muted">Thao tác</span>
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map(({ ticket, itemTitle, itemCode, borrowerName }) => (
+                      <tr key={ticket.id}>
+                        <td>
+                          {itemTitle} <span className="muted">({itemCode})</span>
+                        </td>
+                        <td>{borrowerName}</td>
+                        <td>
+                          <span className={badgeClass(loanStateLabel, ticket.state)}>
+                            {loanLabel(ticket.state)}
+                          </span>
+                        </td>
+                        <td>{day(ticket.dueAt)}</td>
+                        <td>
+                          <LoanActions ticketId={ticket.id} state={ticket.state} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         );

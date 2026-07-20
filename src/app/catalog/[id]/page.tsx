@@ -1,7 +1,16 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCatalogItem } from "@/modules/catalog/service";
 import { listTicketsForItem, type ItemLoanRecord } from "@/modules/circulation/service";
-import { badgeClass, itemLabel, itemStatusLabel, loanLabel, loanStateLabel, T } from "@/lib/vi";
+import {
+  badgeClass,
+  day,
+  itemLabel,
+  itemStatusLabel,
+  loanLabel,
+  loanStateLabel,
+  T,
+  when,
+} from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
 
 // Screen: Catalog Item Detail (`/catalog/:id`) — member view with loan request
@@ -15,10 +24,6 @@ import { LoanRequestButton } from "@/app/components/loan-request-button";
 // hidden here (drizzle/0002_comments_drop_loan_anchor.sql).
 
 const ACTIVE_STATES = new Set(["requested", "approved", "borrowed", "overdue"]);
-
-const dateTime = (d: Date | null | undefined): string =>
-  d ? d.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "—";
-const date = (d: Date | null | undefined): string => (d ? d.toLocaleDateString("vi-VN") : "—");
 
 /** Overdue = the state says so, or the book is out and the due date has passed. */
 const isOverdue = (t: ItemLoanRecord["ticket"]): boolean =>
@@ -52,30 +57,32 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
     <main className="page">
       <h1>{item.title}</h1>
       <div className="panel">
-        <table className="list">
-          <tbody>
-            <tr>
-              <th>Mã số</th>
-              <td>{item.itemCode}</td>
-            </tr>
-            <tr>
-              <th>Tác giả</th>
-              <td>{item.author}</td>
-            </tr>
-            <tr>
-              <th>Vị trí</th>
-              <td>{item.location}</td>
-            </tr>
-            <tr>
-              <th>Trạng thái</th>
-              <td>
-                <span className={badgeClass(itemStatusLabel, item.status)}>
-                  {itemLabel(item.status)}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="record-scroll">
+          <table className="list">
+            <tbody>
+              <tr>
+                <th scope="row">Mã số</th>
+                <td>{item.itemCode}</td>
+              </tr>
+              <tr>
+                <th scope="row">Tác giả</th>
+                <td>{item.author}</td>
+              </tr>
+              <tr>
+                <th scope="row">Vị trí</th>
+                <td>{item.location}</td>
+              </tr>
+              <tr>
+                <th scope="row">Trạng thái</th>
+                <td>
+                  <span className={badgeClass(itemStatusLabel, item.status)}>
+                    {itemLabel(item.status)}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <LoanRequestButton
           itemId={item.id}
           disabled={item.status !== "available" || Boolean(item.activeLoan)}
@@ -95,7 +102,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
                 <>
                   {" "}
                   <span className="overdue-note">
-                    {T.overdueLabel} · {T.dueDate} {date(active.ticket.dueAt)}
+                    {T.overdueLabel} · {T.dueDate} {day(active.ticket.dueAt)}
                   </span>
                 </>
               )}
@@ -103,25 +110,25 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
             <dt>{T.borrower}</dt>
             <dd>{active.borrowerName}</dd>
             <dt>{T.requestedAtLabel}</dt>
-            <dd>{dateTime(active.ticket.requestedAt)}</dd>
+            <dd>{when(active.ticket.requestedAt)}</dd>
             <dt>{T.approvedByLabel}</dt>
             <dd>
               {active.handlerName ?? T.notYet}
               {active.ticket.approvedAt && (
                 <span className="muted">
                   {" · "}
-                  {T.approvedAtLabel} {dateTime(active.ticket.approvedAt)}
+                  {T.approvedAtLabel} {when(active.ticket.approvedAt)}
                 </span>
               )}
             </dd>
             <dt>{T.borrowedAtLabel}</dt>
-            <dd>{active.ticket.borrowedAt ? dateTime(active.ticket.borrowedAt) : T.notYet}</dd>
+            <dd>{active.ticket.borrowedAt ? when(active.ticket.borrowedAt) : T.notYet}</dd>
             <dt>{T.dueDate}</dt>
-            <dd>{active.ticket.dueAt ? date(active.ticket.dueAt) : T.notYet}</dd>
+            <dd>{active.ticket.dueAt ? day(active.ticket.dueAt) : T.notYet}</dd>
             {active.ticket.returnedAt && (
               <>
                 <dt>{T.returnedAtLabel}</dt>
-                <dd>{dateTime(active.ticket.returnedAt)}</dd>
+                <dd>{when(active.ticket.returnedAt)}</dd>
               </>
             )}
           </dl>
@@ -155,11 +162,11 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
                         <StateBadge ticket={row.ticket} />
                       </td>
                       <td>{row.borrowerName}</td>
-                      <td>{dateTime(row.ticket.requestedAt)}</td>
+                      <td>{when(row.ticket.requestedAt)}</td>
                       <td>{row.handlerName ?? "—"}</td>
-                      <td>{dateTime(row.ticket.borrowedAt)}</td>
-                      <td>{date(row.ticket.dueAt)}</td>
-                      <td>{dateTime(row.ticket.returnedAt)}</td>
+                      <td>{when(row.ticket.borrowedAt)}</td>
+                      <td>{day(row.ticket.dueAt)}</td>
+                      <td>{when(row.ticket.returnedAt)}</td>
                     </tr>
                   ))}
                 </tbody>

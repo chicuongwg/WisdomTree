@@ -9,7 +9,9 @@ import {
   reviewTaskTypeLabel,
   reviewTypeLabel,
   T,
+  when,
 } from "@/lib/vi";
+import { Empty } from "@/app/components/empty";
 
 // Screen: Review Queue (`/review`, admin-op-screen-specs.md) — the central
 // decision surface; publish tasks open the Publish Review workbench.
@@ -68,51 +70,62 @@ export default async function ReviewQueuePage({
       </form>
 
       {tasks.length === 0 ? (
-        <p className="muted">{T.empty}</p>
+        taskType || state ? (
+          <Empty title={T.noMatches} action={<Link href="/review">{T.clearFilters}</Link>} />
+        ) : (
+          // TODO(vi): move to src/lib/vi.ts
+          <Empty
+            title="Không có việc nào đang chờ duyệt."
+            hint="Việc sẽ tự vào hàng chờ khi có tư liệu mới gửi lên hoặc có bản thảo xin xuất bản."
+            action={{ label: T.sourceInbox, href: "/source/inbox" }}
+          />
+        )
       ) : (
-        <table className="list">
-          <thead>
-            <tr>
-              <th>{T.taskType}</th>
-              <th>Đối tượng</th>
-              <th>{T.state}</th>
-              <th>{T.assignee}</th>
-              <th>{T.lastUpdated}</th>
-              <th>
-                <span className="muted">Thao tác</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((t) => (
-              <tr key={t.id}>
-                <td>{reviewTypeLabel(t.taskType)}</td>
-                <td>
-                  {t.target ? (
-                    <Link href={`/source/${t.target.sourceId}`}>{t.target.title}</Link>
-                  ) : (
-                    <span className="muted">{t.targetType}</span>
-                  )}
-                </td>
-                <td>
-                  <span className={badgeClass(reviewStateLabel, t.state)}>
-                    {reviewLabel(t.state)}
-                  </span>
-                </td>
-                <td>{t.assigneeName ?? <span className="muted">—</span>}</td>
-                <td>{t.updatedAt.toLocaleString("vi-VN")}</td>
-                <td>
-                  {t.taskType === "publish" &&
-                    ["queued", "assigned", "in_review"].includes(t.state) && (
-                      <Link className="button" href={`/review/publish/${t.id}`}>
-                        {T.publishReview}
-                      </Link>
-                    )}
-                </td>
+        <div className="record-scroll">
+          <table className="list">
+            <thead>
+              <tr>
+                <th scope="col">{T.taskType}</th>
+                <th scope="col">Đối tượng</th>
+                <th scope="col">{T.state}</th>
+                <th scope="col">{T.assignee}</th>
+                <th scope="col">{T.lastUpdated}</th>
+                <th scope="col">
+                  <span className="muted">Thao tác</span>
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tasks.map((t) => (
+                <tr key={t.id}>
+                  <td>{reviewTypeLabel(t.taskType)}</td>
+                  <td>
+                    {t.target ? (
+                      <Link href={`/source/${t.target.sourceId}`}>{t.target.title}</Link>
+                    ) : (
+                      <span className="muted">{t.targetType}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={badgeClass(reviewStateLabel, t.state)}>
+                      {reviewLabel(t.state)}
+                    </span>
+                  </td>
+                  <td>{t.assigneeName ?? <span className="muted">—</span>}</td>
+                  <td>{when(t.updatedAt)}</td>
+                  <td>
+                    {t.taskType === "publish" &&
+                      ["queued", "assigned", "in_review"].includes(t.state) && (
+                        <Link className="button" href={`/review/publish/${t.id}`}>
+                          {T.publishReview}
+                        </Link>
+                      )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </main>
   );

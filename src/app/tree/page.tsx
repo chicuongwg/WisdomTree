@@ -3,6 +3,7 @@ import { requireUser, toPrincipal } from "@/lib/page";
 import { listBranches, recentNodes, searchTree } from "@/modules/knowledge/service";
 import { T } from "@/lib/vi";
 import { VerificationBadge } from "../components/verification-badge";
+import { Empty } from "@/app/components/empty";
 
 // Screen: Tree Browse (`/tree`, user-screen-specs.md) — entry into the
 // knowledge tree: branch overview, recent nodes, and full-text search.
@@ -46,33 +47,35 @@ export default async function TreeBrowsePage({
           {results.length === 0 ? (
             <p className="muted">Không tìm thấy trang tri thức nào. Thử từ khóa khác.</p>
           ) : (
-            <table className="list">
-              <thead>
-                <tr>
-                  <th>{T.node}</th>
-                  <th>{T.branch}</th>
-                  <th>{T.verificationLabelTitle}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <Link href={`/tree/node/${r.id}`}>{r.title}</Link>
-                      <div className="meta">
-                        {r.snippet}…
-                      </div>
-                    </td>
-                    <td>
-                      <Link href={`/tree/branch/${r.branchId}`}>{r.branchName}</Link>
-                    </td>
-                    <td>
-                      <VerificationBadge verification={r.verification} />
-                    </td>
+            <div className="record-scroll">
+              <table className="list">
+                <thead>
+                  <tr>
+                    <th scope="col">{T.node}</th>
+                    <th scope="col">{T.branch}</th>
+                    <th scope="col">{T.verificationLabelTitle}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {results.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <Link href={`/tree/node/${r.id}`}>{r.title}</Link>
+                        <div className="meta">
+                          {r.snippet}…
+                        </div>
+                      </td>
+                      <td>
+                        <Link href={`/tree/branch/${r.branchId}`}>{r.branchName}</Link>
+                      </td>
+                      <td>
+                        <VerificationBadge verification={r.verification} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       )}
@@ -82,7 +85,15 @@ export default async function TreeBrowsePage({
           <h2>
             <Link href="/tree/branches">{T.branch}</Link>
           </h2>
-          {branches.length === 0 && <p className="muted">{T.empty}</p>}
+          {branches.length === 0 && (
+            // TODO(vi): move to src/lib/vi.ts
+            <Empty
+              panel={false}
+              title="Chưa có chuyên đề nào."
+              hint="Chuyên đề gom những trang tri thức cùng một chủ đề lại với nhau."
+              action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
+            />
+          )}
           <ul>
             {branches.slice(0, 8).map((b) => (
               <li key={b.id}>
@@ -96,7 +107,16 @@ export default async function TreeBrowsePage({
         </div>
         <div className="panel">
           <h2>Trang cập nhật gần đây</h2>
-          {recent.length === 0 && <p className="muted">{T.empty}</p>}
+          {recent.length === 0 && (
+            // A page is written inside a branch, so the next step is a branch,
+            // not a "new page" button. TODO(vi): move to src/lib/vi.ts
+            <Empty
+              panel={false}
+              title="Chưa có trang tri thức nào."
+              hint="Mỗi trang tri thức nằm trong một chuyên đề — mở một chuyên đề để bắt đầu viết."
+              action={canEdit ? { label: T.navBranches, href: "/tree/branches" } : undefined}
+            />
+          )}
           <ul>
             {recent.map((n) => (
               <li key={n.id}>

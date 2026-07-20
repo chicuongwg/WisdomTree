@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listBranches } from "@/modules/knowledge/service";
 import { badgeToneClass, T } from "@/lib/vi";
+import { Empty } from "@/app/components/empty";
 
 // Screen: Branch List (`/tree/branches`) — branch cards with node counts and
 // verification progress (user-screen-specs.md).
@@ -13,7 +14,9 @@ export default async function BranchListPage() {
   return (
     <main className="page">
       <h1>{T.branch}</h1>
-      {canEdit && (
+      {/* When the list is empty the empty state carries the create button, so
+          this one would be the same button twice. */}
+      {canEdit && branches.length > 0 && (
         <p>
           <Link className="button" href="/tree/branch/new">
             {T.createBranch}
@@ -21,9 +24,12 @@ export default async function BranchListPage() {
         </p>
       )}
       {branches.length === 0 ? (
-        <p className="muted">
-          {T.empty} {canEdit ? "Hãy tạo chuyên đề đầu tiên." : ""}
-        </p>
+        // TODO(vi): move to src/lib/vi.ts
+        <Empty
+          title="Chưa có chuyên đề nào."
+          hint="Chuyên đề gom những trang tri thức cùng một chủ đề lại với nhau."
+          action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
+        />
       ) : (
         <div className="cards">
           {branches.map((b) => (

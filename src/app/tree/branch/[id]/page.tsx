@@ -2,10 +2,11 @@ import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getBranch } from "@/modules/knowledge/service";
 import { listGapsForBranch } from "@/modules/storage/curation";
-import { badgeClass, gapLabel, gapStateLabel, T } from "@/lib/vi";
+import { badgeClass, gapLabel, gapStateLabel, T, when } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeCreateForm } from "@/app/components/node-create-form";
 import { BranchForm } from "@/app/components/branch-form";
+import { Empty } from "@/app/components/empty";
 
 // Screen: Branch Hub (`/tree/branch/:id`) — branch summary, node map,
 // progress, and open gaps (user-screen-specs.md).
@@ -40,30 +41,42 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
 
       <h2>{T.node}</h2>
       {branch.nodes.length === 0 ? (
-        <p className="muted">{T.empty} {canEdit ? "Hãy thêm trang đầu tiên." : ""}</p>
+        // The create form sits right below for an editor, so the empty state
+        // points at it instead of adding a second button.
+        // TODO(vi): move to src/lib/vi.ts
+        <Empty
+          title="Chuyên đề này chưa có trang tri thức nào."
+          hint={
+            canEdit
+              ? "Bấm “Thêm trang tri thức” ngay bên dưới để viết trang đầu tiên."
+              : "Khi có người thêm trang vào chuyên đề này, chúng sẽ hiện ở đây."
+          }
+        />
       ) : (
-        <table className="list">
-          <thead>
-            <tr>
-              <th>{T.title}</th>
-              <th>{T.verificationLabelTitle}</th>
-              <th>{T.lastUpdated}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {branch.nodes.map((n) => (
-              <tr key={n.id}>
-                <td>
-                  <Link href={`/tree/node/${n.id}`}>{n.title}</Link>
-                </td>
-                <td>
-                  <VerificationBadge verification={n.verification} />
-                </td>
-                <td>{n.updatedAt.toLocaleString("vi-VN")}</td>
+        <div className="record-scroll">
+          <table className="list">
+            <thead>
+              <tr>
+                <th scope="col">{T.title}</th>
+                <th scope="col">{T.verificationLabelTitle}</th>
+                <th scope="col">{T.lastUpdated}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {branch.nodes.map((n) => (
+                <tr key={n.id}>
+                  <td>
+                    <Link href={`/tree/node/${n.id}`}>{n.title}</Link>
+                  </td>
+                  <td>
+                    <VerificationBadge verification={n.verification} />
+                  </td>
+                  <td>{when(n.updatedAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {canEdit && <NodeCreateForm branchId={branch.id} />}
 
