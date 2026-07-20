@@ -7,11 +7,20 @@ import { Client } from "pg";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "drizzle");
 
+// Same rule as the app (src/db/index.ts): a localhost default is fine locally,
+// but in production an unset DATABASE_URL means this would report "applied"
+// against a database nobody is using.
+function connectionString(): string {
+  const configured = process.env.DATABASE_URL;
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("DATABASE_URL is required in production.");
+  }
+  return "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree";
+}
+
 async function main() {
-  const client = new Client({
-    connectionString:
-      process.env.DATABASE_URL ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",
-  });
+  const client = new Client({ connectionString: connectionString() });
   await client.connect();
   try {
     await client.query(

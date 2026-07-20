@@ -1,0 +1,20 @@
+# Build context: source, manifests and migrations only. Everything below is
+# either rebuilt in the image, host-local, or must never enter it.
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Uploaded objects and the local export repo — runtime state, mounted as
+# volumes. Copying them into an image would bake one deployment's user data
+# into every future container.
+data/
+
+.git/
+.env
+.env.local
+.obsidian/
+FE-claude-skill/
+docs/
+*.md
+!README.md

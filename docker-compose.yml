@@ -1,12 +1,17 @@
-# Dev/demo infrastructure. Object storage is the local filesystem behind the
-# ObjectStore interface (docs/roadmap/demo-brief.md dev-mode substitution), so
-# Postgres is the only service needed here. The app itself runs with `npm run demo`.
+# Dev/demo infrastructure plus the deployable app.
+#
+#   docker compose up -d db                  # just Postgres, for `npm run demo`
+#   docker compose --profile deploy up -d    # migrate, then the built app
+#
+# The app and migrate services sit behind the `deploy` profile so the plain
+# `up -d db` used by the npm scripts never starts a second copy of the server.
 services:
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: wisdomtree
-      POSTGRES_PASSWORD: wisdomtree
+      # Defaulted so local dev needs no .env; override it anywhere real.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wisdomtree}
       POSTGRES_DB: wisdomtree
     ports:
       - "5432:5432"
@@ -18,5 +23,52 @@ services:
       timeout: 3s
       retries: 15
 
+  # One-shot: applies drizzle/*.sql (forward-only, tracked) and exits. It never
+  # seeds — seeding wipes the database and is a first-install command only.
+  migrate:
+    profiles: ["deploy"]
+    build: .
+    command: ["node", "--experimental-strip-types", "scripts/db/migrate.ts"]
+    environment:
+      DATABASE_URL: postgres://wisdomtree:${POSTGRES_PASSWORD:-wisdomtree}@db:5432/wisdomtree
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    profiles: ["deploy"]
+    build: .
+    environment:
+      DATABASE_URL: postgres://wisdomtree:${POSTGRES_PASSWORD:-wisdomtree}@db:5432/wisdomtree
+      # Passed through with no default. Deliberately NOT `${SESSION_SECRET:?…}`:
+      # compose interpolates every service at parse time regardless of profile,
+      # so a required-variable marker here breaks plain `up -d db` for anyone
+      # who has not exported it. The app's own boot check is the one gate —
+      # src/lib/sign.ts refuses to sign in production without it.
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      # The user picker is impersonation with no credential. Opt in knowingly,
+      # per deployment, until OIDC replaces it — see README.
+      ENABLE_DEV_LOGIN: ${ENABLE_DEV_LOGIN:-}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      # Uploaded originals and the export repo. Without this, every redeploy
+      # deletes every file a user has ever uploaded.
+      - appdata:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  appdata:

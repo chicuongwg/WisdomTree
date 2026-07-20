@@ -31,6 +31,13 @@ ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed   # see the warning below
 npm run build && npm run start   # http://localhost:3000
 ```
 
+> **`npm run demo` and `npm run db:seed` wipe the database.** The seed
+> TRUNCATEs every table — including `users` and `spaces` — before inserting the
+> fixtures, so it is a first-install and local-development command, never a
+> restart command. It refuses to run without `ALLOW_DESTRUCTIVE_SEED=1` for
+> that reason. **To restart a deployment without touching its data, use
+> `npm run start:prod`** (migrate, then start).
+
 **Use the built app, not `next dev`, for anything but editing code.** Every
 page is dynamic, so a dev server compiles each route the first time it is
 opened: measured on this repo, first paint runs 0.6–3.0 s per route and stays

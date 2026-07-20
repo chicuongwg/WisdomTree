@@ -1,5 +1,5 @@
 import { desc, eq, ne, sql } from "drizzle-orm";
-import { db } from "@/db";
+import { db, ping } from "@/db";
 import { jobs } from "@/db/jobs";
 import { outboxEvents } from "@/db/outbox";
 import { loanTickets } from "../circulation/schema";
@@ -330,6 +330,17 @@ export async function triggerTreeExport(actor: Principal): Promise<JobRef> {
 // ---------------------------------------------------------------------------
 // Admin health (GET /admin/health — HealthReport subset that is computable)
 // ---------------------------------------------------------------------------
+
+/**
+ * The unauthenticated probe's whole question: can this process reach its
+ * database? It lives beside healthReport so one module owns "is the system
+ * well", and so the route handler needs no database import of its own.
+ * No authorize(): a container healthcheck has no principal, and the answer
+ * discloses nothing an unreachable port would not.
+ */
+export async function databaseReachable(): Promise<boolean> {
+  return ping();
+}
 
 export async function healthReport(actor: Principal) {
   authorize(actor, "admin.health.read", { kind: "read" });
