@@ -8,7 +8,7 @@ import { signDownload } from "@/lib/sign";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
-import { dispatchOutbox } from "../notify/dispatcher";
+import { kickDispatch } from "../notify/dispatcher";
 import { objectStore } from "../storage/object-store";
 import { sourceVersions } from "../storage/schema";
 import {
@@ -301,7 +301,7 @@ async function processTreeExport(exportJobId: string): Promise<void> {
       await emitOutbox(tx, "export.failed", { exportJobId, error: String(err) });
     });
   }
-  void dispatchOutbox();
+  kickDispatch();
 }
 
 export async function triggerTreeExport(actor: Principal): Promise<JobRef> {

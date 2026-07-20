@@ -12,8 +12,9 @@
     "db:migrate": "tsx scripts/db/migrate.ts",
     "db:seed": "tsx scripts/db/seed.ts",
     "db:up": "docker compose up -d db",
-    "demo": "docker compose up -d db && npm run db:migrate && npm run db:seed && next build && next start",
-    "demo:dev": "docker compose up -d db && npm run db:migrate && npm run db:seed && next dev --turbopack",
+    "demo": "docker compose up -d db && npm run db:migrate && ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed && next build && ENABLE_DEV_LOGIN=1 next start",
+    "demo:dev": "docker compose up -d db && npm run db:migrate && ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed && next dev --turbopack",
+    "start:prod": "npm run db:migrate && next start",
     "gen:api": "openapi-typescript docs/design/openapi.yaml -o src/lib/api-types.ts",
     "proofs": "tsx scripts/proofs.ts",
     "test:authz": "tsx scripts/authz-matrix.test.ts"

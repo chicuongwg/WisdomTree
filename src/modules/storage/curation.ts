@@ -5,7 +5,7 @@ import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { dispatchOutbox } from "../notify/dispatcher";
+import { kickDispatch } from "../notify/dispatcher";
 import { branches, reviewTasks, treeNodes, treeNodeVersions, promotions } from "../knowledge/schema";
 import {
   branchGapRequests,
@@ -120,7 +120,7 @@ export async function assignCuration(
     });
     return curation;
   });
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 
@@ -275,7 +275,7 @@ export async function markReadyForReview(actor: Principal, sourceId: string, ver
     });
     return updated;
   });
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 
@@ -348,7 +348,7 @@ export async function approveCuration(actor: Principal, sourceId: string, versio
     });
     return { ok: true };
   });
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 
@@ -516,7 +516,7 @@ export async function publishFromSource(
     });
     return node;
   });
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 

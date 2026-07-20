@@ -4,7 +4,20 @@
 // principal matches docs/design/authorization-design.md § Principals:
 // resolved once per request, spaceIds cached per request.
 
-import type { Role } from "./schema";
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "@/db";
+import { users, type Role } from "./schema";
+
+/**
+ * Whether the user-picker sign-in is reachable. It is an impersonation
+ * endpoint — it trades a user id for that user's session with no credential —
+ * so production has to opt in deliberately, one deployment at a time, until
+ * OIDC replaces it. Outside production it is on, so `npm run dev` needs no
+ * configuration.
+ */
+export function devLoginEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_LOGIN === "1";
+}
 
 export interface Principal {
   userId: string;
@@ -21,6 +34,32 @@ export interface AuthProvider {
   signOut(sessionToken: string): Promise<void>;
 }
 
-// Implementation lands in step 2 (build), together with the single
-// authorize(actor, permission, resource) helper and scopedToSpaces query
-// helper required by authorization-design.md.
+export type SignInCandidate = { id: string; displayName: string; role: Role };
+
+/**
+ * The picker's list of seeded members. Owned by this module rather than read
+ * off `users` by the login page: enumerating accounts is an auth concern, and
+ * it must stay behind the same gate as the sign-in it feeds — a caller that
+ * forgets `devLoginEnabled()` gets an empty list, not the team roster.
+ */
+export async function listSignInCandidates(): Promise<SignInCandidate[]> {
+  if (!devLoginEnabled()) return [];
+  return db
+    .select({ id: users.id, displayName: users.displayName, role: users.role })
+    .from(users)
+    .where(isNull(users.disabledAt))
+    .orderBy(users.role);
+}
+
+/**
+ * Resolve the picked user, or null. The gate is checked here too, so the route
+ * cannot mint a session for someone by skipping it.
+ */
+export async function findSignInCandidate(userId: string): Promise<SignInCandidate | null> {
+  if (!devLoginEnabled()) return null;
+  const [user] = await db
+    .select({ id: users.id, displayName: users.displayName, role: users.role })
+    .from(users)
+    .where(and(eq(users.id, userId), isNull(users.disabledAt)));
+  return user ?? null;
+}

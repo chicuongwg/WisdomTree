@@ -160,6 +160,17 @@ async function checkDeadlineReminders(): Promise<void> {
   }
 }
 
+/**
+ * Run a dispatch tick without waiting for it, and without letting a failure
+ * take the process down. Callers commit their own transaction first, so a tick
+ * that throws must not unwind them — but an unhandled rejection here would end
+ * the server, not just the notification. The outbox rows stay undispatched and
+ * the next tick picks them up.
+ */
+export function kickDispatch(): void {
+  void dispatchOutbox().catch((err) => console.error("[notify] dispatch tick failed:", err));
+}
+
 export async function dispatchOutbox(): Promise<void> {
   await checkDeadlineReminders();
 

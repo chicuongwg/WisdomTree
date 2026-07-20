@@ -19,6 +19,20 @@ const now = () => new Date();
 const daysFromNow = (d: number) => new Date(Date.now() + d * 86_400_000);
 
 async function main() {
+  // This script TRUNCATEs every table below before inserting. NODE_ENV is not
+  // a usable guard here — a bare `tsx scripts/db/seed.ts` on a server inherits
+  // no environment — so the destructive intent has to be stated at the call
+  // site every time. `npm run demo` states it; `npm run db:seed` alone does not.
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== "1") {
+    console.error(
+      "Refusing to seed: this wipes every table first.\n" +
+        `  target: ${process.env.DATABASE_URL ?? "(default) localhost:5432/wisdomtree"}\n` +
+        "Re-run with ALLOW_DESTRUCTIVE_SEED=1 if that is what you want.\n" +
+        "To start an existing deployment without touching its data, use `npm run start:prod`.",
+    );
+    process.exit(1);
+  }
+
   const client = new Client({
     connectionString:
       process.env.DATABASE_URL ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",

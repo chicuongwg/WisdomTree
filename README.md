@@ -27,7 +27,7 @@ Or step by step:
 ```sh
 docker compose up -d db   # PostgreSQL 16 on :5432
 npm run db:migrate        # applies drizzle/*.sql (forward-only, tracked)
-npm run db:seed           # acceptance-criteria dataset (re-runnable)
+ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed   # see the warning below
 npm run build && npm run start   # http://localhost:3000
 ```
 

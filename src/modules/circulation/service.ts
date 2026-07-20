@@ -8,7 +8,7 @@ import { emitOutbox, recordAudit } from "../audit/service";
 import { catalogItems } from "../catalog/schema";
 import { users } from "../auth/schema";
 import { loanTickets } from "./schema";
-import { dispatchOutbox } from "../notify/dispatcher";
+import { kickDispatch } from "../notify/dispatcher";
 
 // Loan lifecycle: requested → approved → borrowed → returned (+ declined).
 // Every transition writes the ticket, the item when its status changes,
@@ -45,7 +45,7 @@ export async function requestLoan(actor: Principal, itemId: string) {
     return created;
   });
 
-  void dispatchOutbox();
+  kickDispatch();
   return ticket;
 }
 
@@ -162,7 +162,7 @@ async function librarianTransition(
     return updated;
   });
 
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 

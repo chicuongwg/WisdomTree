@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import { db } from "@/db";
-import { users } from "@/modules/auth/schema";
-import { isNull } from "drizzle-orm";
 import { currentUser } from "@/modules/auth/session";
+import { devLoginEnabled, listSignInCandidates } from "@/modules/auth/dev-auth";
 import { T } from "@/lib/vi";
 import { LoginPicker } from "../components/login-picker";
 
@@ -10,11 +8,25 @@ import { LoginPicker } from "../components/login-picker";
 // role. V1 replaces this page with Google OIDC.
 export default async function LoginPage() {
   if (await currentUser()) redirect("/");
-  const seeded = await db
-    .select({ id: users.id, displayName: users.displayName, role: users.role })
-    .from(users)
-    .where(isNull(users.disabledAt))
-    .orderBy(users.role);
+
+  // The picker lists real user ids, and the route behind it turns any of them
+  // into that user's session. Both halves stay shut together: with the gate
+  // closed this page must not enumerate the team either.
+  if (!devLoginEnabled()) {
+    return (
+      <main className="page">
+        <h1>{T.signIn}</h1>
+        <div className="panel">
+          <p className="muted">
+            Bản cài đặt này chưa bật cách đăng nhập nào. Liên hệ quản trị viên để được cấp quyền
+            truy cập.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  const seeded = await listSignInCandidates();
   return (
     <main className="page">
       <h1>{T.signIn}</h1>

@@ -3,7 +3,7 @@ import { eq, isNull, and } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "./schema";
 import { spaceMembers } from "../storage/schema";
-import { sign, verify } from "@/lib/sign";
+import { signSession, verifySession } from "@/lib/sign";
 import type { Principal } from "./dev-auth";
 
 // Dev-auth implementation (demo substitution): the session cookie carries a
@@ -16,7 +16,7 @@ export const SESSION_COOKIE = "session";
 export async function resolvePrincipal(): Promise<Principal | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const userId = verify(token);
+  const userId = verifySession(token);
   if (!userId) return null;
 
   const [user] = await db
@@ -45,5 +45,5 @@ export async function currentUser() {
 }
 
 export function issueSessionToken(userId: string): string {
-  return sign(userId);
+  return signSession(userId);
 }

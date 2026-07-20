@@ -13,7 +13,7 @@ import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { sources, sourceVersions } from "../storage/schema";
-import { dispatchOutbox } from "../notify/dispatcher";
+import { kickDispatch } from "../notify/dispatcher";
 import {
   branches,
   nodeLinks,
@@ -742,7 +742,7 @@ export async function archiveNode(actor: Principal, nodeId: string) {
     await emitOutbox(tx, "tree.node.archived", { nodeId, branchId: node.branchId });
     return updated;
   });
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 
@@ -784,7 +784,7 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
     await emitOutbox(tx, "tree.node.merged", { nodeId, canonicalNodeId, branchId: node.branchId });
     return updated;
   });
-  void dispatchOutbox();
+  kickDispatch();
   return result;
 }
 

@@ -5,8 +5,9 @@ import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { spaceMembers } from "../storage/schema";
-import { dispatchOutbox } from "../notify/dispatcher";
+import { sources, spaceMembers } from "../storage/schema";
+import { treeNodes } from "../knowledge/schema";
+import { kickDispatch } from "../notify/dispatcher";
 import {
   achievements,
   calendarTokens,
@@ -105,6 +106,32 @@ function parseOffsets(offsets: string[] | undefined): string[] | undefined {
   return offsets;
 }
 
+/**
+ * A deadline may only link what its own space is allowed to see. Of the three
+ * link targets only `source` is space-scoped — the board (pm.board.read) and
+ * the knowledge tree (knowledge.node.read) are deliberately global — so a
+ * source is the one that leaks: without this check a member of space A can
+ * link space B's source id and read its title back off the deadline screen.
+ */
+async function assertLinksVisibleFrom(
+  links: Array<{ targetType: LinkTarget; targetId: string }>,
+  spaceId: string,
+): Promise<void> {
+  const wanted = [...new Set(links.filter((l) => l.targetType === "source").map((l) => l.targetId))];
+  if (wanted.length === 0) return;
+  const found = await db
+    .select({ id: sources.id })
+    .from(sources)
+    .where(and(inArray(sources.id, wanted), eq(sources.spaceId, spaceId)));
+  if (found.length !== wanted.length) {
+    throw new ApiError(
+      400,
+      "invalid_links",
+      "Chỉ được liên kết tư liệu thuộc cùng kho dự án với hạn chót.",
+    );
+  }
+}
+
 async function replaceLinks(
   tx: Tx,
   deadlineId: string,
@@ -114,6 +141,34 @@ async function replaceLinks(
   for (const l of links) {
     await tx.insert(deadlineLinks).values({ deadlineId, ...l });
   }
+}
+
+/**
+ * Resolve a deadline's links into things worth showing. Lives here rather than
+ * in the page because it carries the space rule: `source` is the one
+ * space-scoped target, so it is filtered to the deadline's own space. Tasks and
+ * tree nodes are global by design (pm.board.read / knowledge.node.read carry no
+ * space scope) and need no predicate.
+ *
+ * Writes are validated by assertLinksVisibleFrom; this is the matching read.
+ */
+export async function getDeadlineLinks(actor: Principal, deadlineId: string) {
+  const deadline = await getDeadline(actor, deadlineId);
+  const idsOf = (t: LinkTarget) =>
+    deadline.links.filter((l) => l.targetType === t).map((l) => l.targetId);
+  const [taskIds, sourceIds, nodeIds] = [idsOf("task"), idsOf("source"), idsOf("tree_node")];
+
+  const [linkedTasks, linkedSources, linkedNodes] = await Promise.all([
+    taskIds.length ? db.select().from(tasks).where(inArray(tasks.id, taskIds)) : [],
+    sourceIds.length
+      ? db
+          .select()
+          .from(sources)
+          .where(and(inArray(sources.id, sourceIds), eq(sources.spaceId, deadline.spaceId)))
+      : [],
+    nodeIds.length ? db.select().from(treeNodes).where(inArray(treeNodes.id, nodeIds)) : [],
+  ]);
+  return { deadline, linkedTasks, linkedSources, linkedNodes };
 }
 
 export async function createDeadline(actor: Principal, input: DeadlineInput) {
@@ -131,6 +186,7 @@ export async function createDeadline(actor: Principal, input: DeadlineInput) {
   authorize(actor, "pm.deadline.edit", { spaceId: input.spaceId, kind: "write" });
   const links = parseLinks(input.links) ?? [];
   const offsets = parseOffsets(input.reminderOffsets);
+  await assertLinksVisibleFrom(links, input.spaceId);
 
   const created = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -161,7 +217,7 @@ export async function createDeadline(actor: Principal, input: DeadlineInput) {
     return row;
   });
 
-  void dispatchOutbox();
+  kickDispatch();
   const [withL] = await withLinks([created]);
   return withL;
 }
@@ -185,6 +241,8 @@ export async function updateDeadline(actor: Principal, deadlineId: string, input
   if (typeof expectedVersion !== "number") throw versionConflict();
   const links = parseLinks(input.links);
   const offsets = parseOffsets(input.reminderOffsets);
+  // Against the space the deadline will end up in, not the one it left.
+  if (links) await assertLinksVisibleFrom(links, input.spaceId ?? existing.spaceId);
 
   const updated = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -212,7 +270,7 @@ export async function updateDeadline(actor: Principal, deadlineId: string, input
     return row;
   });
 
-  void dispatchOutbox();
+  kickDispatch();
   const [withL] = await withLinks([updated]);
   return withL;
 }

@@ -10,7 +10,7 @@ import { treeNodes } from "../knowledge/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
 import { comments, notificationPreferences, notifications } from "./schema";
-import { DEFAULT_CHANNELS, dispatchOutbox, type Channel } from "./dispatcher";
+import { DEFAULT_CHANNELS, kickDispatch, type Channel } from "./dispatcher";
 import { notificationLink, type NotificationLinkContext } from "./links";
 
 // Module: notify — comments anchored to work objects, the in-app notification
@@ -259,7 +259,7 @@ export async function createComment(
     return created;
   });
 
-  void dispatchOutbox();
+  kickDispatch();
   return comment;
 }
 
