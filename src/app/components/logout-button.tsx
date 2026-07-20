@@ -1,12 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 
 export function LogoutButton() {
-  const router = useRouter();
   const m = useMutation();
   return (
     <>
@@ -17,7 +15,12 @@ export function LogoutButton() {
         className="secondary"
         disabled={m.busy}
         onClick={async () => {
-          if (await m.run("/api/auth/logout")) router.push("/login");
+          // A hard navigation, not router.push: the App Router caches the root
+          // layout, so a client-side hop to /login kept the signed-in shell —
+          // rail, sidebar, the old name in the status bar — wrapped around the
+          // login screen. Leaving a session is the one navigation that must
+          // drop every piece of signed-in state, so it reloads from zero.
+          if (await m.run("/api/auth/logout")) window.location.assign("/login");
         }}
       >
         {m.busy ? T.loading : T.signOut}

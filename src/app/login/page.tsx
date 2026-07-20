@@ -57,14 +57,10 @@ export default async function LoginPage({
       {dev && (
         <>
           <hr className="login-divider" />
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          <h2 className="muted login-demo-head">Bản demo — đăng nhập nhanh</h2>
-          <div className="panel">
-            <p className="muted">
-              Bản demo: chọn một thành viên để đăng nhập (thay cho đăng nhập Google).
-            </p>
-            <LoginPicker users={seeded} />
-          </div>
+          {/* TODO(vi): move to src/lib/vi.ts. The heading is the whole
+              explanation — a second sentence restating it was chrome. */}
+          <h2 className="muted login-demo-head">Bản demo — chọn một thành viên để đăng nhập</h2>
+          <LoginPicker users={seeded} />
         </>
       )}
 

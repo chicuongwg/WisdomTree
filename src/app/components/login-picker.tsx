@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { userRoleLabel, T } from "@/lib/vi";
 import { Say } from "@/app/components/say";
 
@@ -10,7 +9,6 @@ export function LoginPicker({
 }: {
   users: Array<{ id: string; displayName: string; role: string }>;
 }) {
-  const router = useRouter();
   // The id being signed in, not a bare boolean: "đang bận" is not an answer to
   // "which of these six rows did I just press?".
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -30,38 +28,36 @@ export function LoginPicker({
       setPendingId(null);
       return;
     }
-    router.push("/");
-    router.refresh();
+    // Hard navigation, like logout: entering and leaving a session are the
+    // two moments every cached layout must be thrown away.
+    window.location.assign("/");
   }
 
-  // Fragment, not a wrapper div: the panel spaces its own children, and the
-  // scroller has to be the panel's direct child to bleed to its edges.
+  // Not a table: table.list carries a 40rem minimum for data screens, which
+  // inside a portal column meant a horizontal scrollbar with the sign-in
+  // button clipped off the right edge. A picker is a list of choices, so each
+  // person IS the button — the whole row signs you in, nothing to scroll,
+  // nothing to clip.
   return (
     <>
       <Say error={error} />
-      <div className="record-scroll">
-        <table className="list">
-          {/* A picker, not a report: three cells that read left to right as one
-              sentence. A header row would name what is already obvious and add
-              a row of chrome to a six-row list. */}
-          <caption className="sr-only">{T.loginPickerCaption}</caption>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.displayName}</td>
-                <td>
-                  <span className="badge muted">{userRoleLabel(u.role)}</span>
-                </td>
-                <td>
-                  <button disabled={pendingId !== null} onClick={() => signIn(u.id)}>
-                    {pendingId === u.id ? T.signingIn : T.signIn}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul className="login-people" aria-label={T.loginPickerCaption}>
+        {users.map((u) => (
+          <li key={u.id}>
+            <button
+              type="button"
+              className="login-person"
+              disabled={pendingId !== null}
+              onClick={() => signIn(u.id)}
+            >
+              <span className="login-person-name">{u.displayName}</span>
+              <span className="login-person-role">
+                {pendingId === u.id ? T.signingIn : userRoleLabel(u.role)}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }

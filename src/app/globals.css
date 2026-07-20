@@ -1725,9 +1725,10 @@ a.rail-avatar { text-decoration: none; overflow: hidden; }
    both themes come for free. The h1 skips the card head rule (it is not a
    direct child of main.page) — the seal above it already stamps identity. */
 main.page.login-page {
-  max-width: 26rem;
+  max-width: 30rem;
   align-items: stretch;
-  padding-top: clamp(var(--space-6), 10vh, 7rem);
+  padding-top: clamp(var(--space-6), 12vh, 8rem);
+  gap: var(--space-5);
   text-align: center;
 }
 .login-hero {
@@ -1759,3 +1760,38 @@ main.page.login-page {
 }
 .login-demo-head { font-size: 0.95rem; }
 .login-page .panel { text-align: left; }
+
+/* The demo picker: each person is one full-width row that signs you in.
+   Sized like the front door it stands in for — not a data table. */
+.login-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+button.login-person {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 3.25rem;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  color: var(--color-ink);
+  font-weight: 400;
+  text-align: left;
+}
+button.login-person:hover {
+  background: var(--color-canopy-wash);
+  border-color: var(--color-canopy);
+  color: var(--color-canopy-deep);
+}
+.login-person-name { font-weight: 600; font-size: 1rem; }
+.login-person-role { color: var(--color-ink-muted); font-size: 0.85rem; flex: none; }
+button.login-person:hover .login-person-role { color: inherit; }
