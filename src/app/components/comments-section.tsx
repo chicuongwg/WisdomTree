@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
-import { T } from "@/lib/vi";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { T, when } from "@/lib/vi";
 
 // The ONE comment block (docs/system/notifications.md § Comments): anchored
 // discussion reused verbatim on Node Detail, Stored Item Detail and Deadline
@@ -40,6 +40,7 @@ export function CommentsSection({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fieldId = useId();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   // The comment a notification link asked for, read once on mount.
   const [targetId] = useState<string | null>(() =>
     typeof window === "undefined"
@@ -152,11 +153,21 @@ export function CommentsSection({
     >
       <div className="comment-meta">
         <strong>{c.authorName}</strong>
-        <span className="muted"> · {new Date(c.createdAt).toLocaleString("vi-VN")}</span>
+        <span className="muted"> · {when(c.createdAt)}</span>
       </div>
       <p className="comment-body">{renderBody(c)}</p>
       {!isReply && (
-        <button type="button" className="secondary comment-reply-btn" onClick={() => setReplyTo(c)}>
+        // "Trả lời" used to set the target and leave the reader where they
+        // stood — with the box it aimed at sitting past the whole thread, so a
+        // keyboard reader had to tab through every comment to reach it.
+        <button
+          type="button"
+          className="secondary comment-reply-btn"
+          onClick={() => {
+            setReplyTo(c);
+            bodyRef.current?.focus();
+          }}
+        >
           {T.reply}
         </button>
       )}
@@ -169,11 +180,19 @@ export function CommentsSection({
   return (
     <section className="panel" aria-label={T.comments}>
       <h2>{T.comments}</h2>
-      {comments === null ? (
-        <p className="muted">{T.loading}</p>
-      ) : topLevel.length === 0 ? (
-        <p className="muted">Chưa có thảo luận nào. Hãy là người mở đầu.</p>
-      ) : (
+      {/* The thread arrives after hydration, so "Đang tải…" and the answer that
+          replaces it are both changes a screen reader has to be told about.
+          The region is in the DOM from the first render for that to work; the
+          list itself stays outside it, or loading a thread would read the whole
+          thread aloud. */}
+      <div role="status" aria-live="polite">
+        {comments === null ? (
+          <p className="muted">{T.loading}</p>
+        ) : topLevel.length === 0 ? (
+          <p className="muted">Chưa có thảo luận nào. Hãy là người mở đầu.</p>
+        ) : null}
+      </div>
+      {topLevel.length > 0 && (
         <ul className="comment-list">{topLevel.map((c) => renderComment(c, false))}</ul>
       )}
 
@@ -182,14 +201,20 @@ export function CommentsSection({
           <p className="muted">
             {T.reply}: {replyTo.authorName}{" "}
             <button type="button" className="secondary" onClick={() => setReplyTo(null)}>
-              Hủy
+              {T.cancel}
             </button>
           </p>
         )}
         <div className="field wide">
-          <label htmlFor={`${fieldId}-body`}>{T.comments}</label>
+          {/* The panel heading already says "Thảo luận"; repeating it on the box
+              named the room, not the thing being written in it.
+              TODO(vi): move to src/lib/vi.ts */}
+          <label htmlFor={`${fieldId}-body`}>
+            {replyTo ? `${T.reply} ${replyTo.authorName}` : "Viết thảo luận mới"}
+          </label>
           <textarea
             id={`${fieldId}-body`}
+            ref={bodyRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={3}
