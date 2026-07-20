@@ -677,6 +677,26 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--radius);
 }
 
+/* --- The 44px floor, where the pointer is coarse -------------------------
+   The app's primary controls carry the floor at every size. This block is for
+   the second tier — rows, chips and bar items tuned tight for a mouse, which
+   on a finger are 22-36px targets. One list, so a new compact control is one
+   line away from the floor instead of a new media query. */
+@media (pointer: coarse) {
+  .statusbar { min-height: 2.75rem; }
+  .statusbar button, .statusbar button.secondary, .statusbar .sb-item { min-height: 2.75rem; }
+  a.tree-item, button.tree-item,
+  a.pal-item, button.pal-item,
+  button.searchbox,
+  .comment-reply-btn,
+  .board-card .board-actions button,
+  .graph-check { min-height: 2.75rem; }
+  .side-sec > .side-label a { min-width: 2.75rem; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; }
+  .graph-panel > summary { min-height: 3rem; }
+  .checkbox-row, .graph-check { align-items: center; }
+  input[type="checkbox"] { width: 1.35rem; height: 1.35rem; }
+}
+
 .notice {
   background: var(--color-amber-wash);
   border: 1px solid color-mix(in srgb, var(--color-amber) 45%, transparent);
@@ -1328,10 +1348,8 @@ a.tree-item.nav-item { font-weight: 500; }
   gap: var(--space-2);
   min-height: 2.15rem;
 }
-@media (pointer: coarse) {
-  .graph-check { min-height: 2.75rem; }
-  .graph-panel > summary { min-height: 3rem; }
-}
+/* the coarse-pointer floor for this row lives with every other one, in the
+   accessibility block above */
 .graph-check input[type="checkbox"] {
   flex: none;
   width: 1.1rem;
