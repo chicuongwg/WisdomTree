@@ -1,13 +1,62 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { notFound } from "@/lib/errors";
+import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
+import { recordAudit } from "../audit/service";
 import { loanTickets } from "../circulation/schema";
 import { catalogItems } from "./schema";
 
-const PAGE_SIZE = 24;
+/** Exported so the Catalog page's pager agrees with the query's LIMIT. */
+export const CATALOG_PAGE_SIZE = 24;
+const PAGE_SIZE = CATALOG_PAGE_SIZE;
 const ACTIVE_LOAN_STATES = ["requested", "approved", "borrowed", "overdue"] as const;
+
+/**
+ * Add a physical item to the catalogue. Until this existed the catalogue could
+ * only be populated by the seed script, so a real library's `/catalog` was
+ * permanently empty.
+ *
+ * `item_code` is unique and formatted LIB-000001; it is generated here rather
+ * than typed by the librarian, from the current maximum. ponytail: a
+ * max()+1 under one operator is fine, and the unique index is the real
+ * guarantee — swap in a sequence if two people ever catalogue at once.
+ */
+export async function createCatalogItem(
+  actor: Principal,
+  input: { title?: string; author?: string; location?: string; spaceId?: string },
+) {
+  authorize(actor, "catalog.item.manage", { kind: "write" });
+  const title = input.title?.trim();
+  if (!title) throw new ApiError(400, "invalid_item", "Vui lòng nhập tên đầu sách.");
+  if (!input.spaceId) throw new ApiError(400, "invalid_item", "Vui lòng chọn kho cho đầu sách.");
+
+  return db.transaction(async (tx) => {
+    const [{ maxCode }] = await tx
+      .select({ maxCode: sql<string | null>`max(${catalogItems.itemCode})` })
+      .from(catalogItems);
+    const next = Number(maxCode?.replace(/^LIB-/, "") ?? 0) + 1;
+    const [item] = await tx
+      .insert(catalogItems)
+      .values({
+        itemCode: `LIB-${String(next).padStart(6, "0")}`,
+        title,
+        author: input.author?.trim() || null,
+        location: input.location?.trim() || null,
+        spaceId: input.spaceId!,
+        createdBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "catalog.item.create",
+      targetType: "catalog_item",
+      targetId: item.id,
+      details: { itemCode: item.itemCode, spaceId: item.spaceId },
+    });
+    return item;
+  });
+}
 
 export async function listCatalog(actor: Principal, opts: { q?: string; page?: number }) {
   const visible = scopedToSpaces(actor);

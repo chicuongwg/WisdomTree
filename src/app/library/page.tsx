@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { listLibrary, listMemberSpaces } from "@/modules/storage/service";
+import { LIBRARY_PAGE_SIZE, listLibrary, listMemberSpaces } from "@/modules/storage/service";
 import { badgeClass, extractionLabel, extractionStateLabel, T } from "@/lib/vi";
+import { Pager } from "@/app/components/pager";
 
 // Screen: Library (`/library`) — space-scoped, store-first: items appear at
 // `stored`, before extraction finishes.
 export default async function LibraryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; spaceId?: string }>;
+  searchParams: Promise<{ q?: string; spaceId?: string; page?: string }>;
 }) {
   const user = await requireUser();
   const actor = toPrincipal(user);
-  const { q, spaceId } = await searchParams;
+  const { q, spaceId, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
   const [items, spaces] = await Promise.all([
-    listLibrary(actor, { q, spaceId: spaceId || undefined }),
+    listLibrary(actor, { q, spaceId: spaceId || undefined, page }),
     listMemberSpaces(actor),
   ]);
 
@@ -34,7 +36,24 @@ export default async function LibraryPage({
         <button type="submit">{T.search}</button>
       </form>
       {items.length === 0 ? (
-        <p className="muted">{T.empty}</p>
+        // An empty list is the most common first screen a new team sees, so it
+        // carries the next action rather than only reporting emptiness.
+        <div className="panel empty-state">
+          {q || spaceId ? (
+            <>
+              <p>{T.noMatches}</p>
+              <Link href="/library">{T.clearFilters}</Link>
+            </>
+          ) : (
+            <>
+              <p>{T.libraryEmptyTitle}</p>
+              <p className="muted">{T.libraryEmptyHint}</p>
+              <Link className="button" href="/source/intake">
+                {T.uploadCta}
+              </Link>
+            </>
+          )}
+        </div>
       ) : (
         <table className="list">
           <thead>
@@ -63,6 +82,7 @@ export default async function LibraryPage({
           </tbody>
         </table>
       )}
+      <Pager page={page} pageSize={LIBRARY_PAGE_SIZE} count={items.length} params={{ q, spaceId }} />
     </main>
   );
 }

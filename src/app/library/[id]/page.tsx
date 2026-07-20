@@ -9,6 +9,8 @@ import {
   trustStateLabel,
 } from "@/lib/vi";
 import { CommentsSection } from "@/app/components/comments-section";
+import { ExtractionWatcher } from "@/app/components/extraction-watcher";
+import { SourceOwnerActions } from "@/app/components/source-owner-actions";
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
 // download only, never operational review internals (screen-inventory.md).
@@ -64,6 +66,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                     {v.extractionStatus === "unprocessable" && (
                       <span className="muted">Tệp gốc vẫn được lưu và tải xuống bình thường.</span>
                     )}
+                    <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
                   </td>
                 </tr>
               </>
@@ -78,6 +81,16 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           </p>
         )}
       </div>
+      {/* Owner-only: the server enforces this too (storage.source.manage is
+          owned-or-assigned), this just keeps the controls off other people's
+          screens. Admin/Op passes the same check on role. */}
+      {(source.submittedBy === user.id || user.role === "admin_op") && (
+        <SourceOwnerActions
+          sourceId={source.id}
+          title={source.title}
+          description={source.description}
+        />
+      )}
       <CommentsSection anchorType="source" anchorId={source.id} />
     </main>
   );

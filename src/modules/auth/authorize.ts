@@ -36,6 +36,10 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   "review.corrected.approve": { roles: ["admin_op"], scope: "global" },
   "review.draft.approve": { roles: ["admin_op"], scope: "global" },
   "storage.source.read_all": { roles: ["admin_op"], scope: "global" },
+  // Correcting your own upload: rename it, or withdraw it before anyone has
+  // built on it. Owned-or-assigned so a submitter can fix their own mistake
+  // without an admin, which is the difference between this and a spreadsheet.
+  "storage.source.manage": { roles: ["user", "editor", "admin_op"], scope: "owned-or-assigned" },
   // Not in the catalog table verbatim: curation assignment and gap triage are
   // Admin/Op flows (sequence-diagrams.md Flow 2, admin-op-flows.md); keyed
   // here as module.action pending a catalog addendum — flagged in the report.

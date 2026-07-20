@@ -1,7 +1,9 @@
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listTickets } from "@/modules/circulation/service";
+import { listMemberSpaces } from "@/modules/storage/service";
 import { badgeClass, loanLabel, loanStateLabel, T } from "@/lib/vi";
 import { LoanActions } from "@/app/components/loan-actions";
+import { CatalogItemForm } from "@/app/components/catalog-item-form";
 
 // Screen: Librarian Desk (`/catalog/admin`) — Admin/Op circulation surface.
 // UI hiding is convenience only; the service layer enforces
@@ -17,7 +19,8 @@ export default async function LibrarianDeskPage() {
     );
   }
 
-  const tickets = await listTickets(toPrincipal(user));
+  const actor = toPrincipal(user);
+  const [tickets, spaces] = await Promise.all([listTickets(actor), listMemberSpaces(actor)]);
   const groups = [
     { title: "Chờ duyệt", states: ["requested"] },
     { title: "Chờ giao sách", states: ["approved"] },
@@ -28,6 +31,10 @@ export default async function LibrarianDeskPage() {
   return (
     <main className="page">
       <h1>{T.librarianDesk}</h1>
+      <section className="panel">
+        <h2>{T.addCatalogItem}</h2>
+        <CatalogItemForm spaces={spaces} />
+      </section>
       {groups.map((group) => {
         const rows = tickets.filter((t) => (group.states as readonly string[]).includes(t.ticket.state));
         return (

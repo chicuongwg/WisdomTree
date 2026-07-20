@@ -52,6 +52,43 @@ export const T = {
   loading: "Đang tải…",
   empty: "Chưa có mục nào.",
   notifications: "Thông báo",
+  // Pagination (NEW — not yet in vocabulary-vi.md)
+  pagination: "Phân trang",
+  previousPage: "Trang trước",
+  nextPage: "Trang sau",
+  pageLabel: "Trang",
+  // Empty states that carry a next action (NEW — not yet in vocabulary-vi.md)
+  noMatches: "Không tìm thấy mục nào khớp với bộ lọc.",
+  clearFilters: "Xoá bộ lọc",
+  libraryEmptyTitle: "Kho tư liệu này chưa có gì.",
+  libraryEmptyHint: "Tải lên tài liệu đầu tiên — tệp xem và tải được ngay, không cần chờ xử lý.",
+  uploadCta: "Gửi tư liệu",
+  catalogEmptyHint: "Thư viện chưa có đầu sách nào. Liên hệ thủ thư để bổ sung.",
+  // Correcting your own upload (NEW — not yet in vocabulary-vi.md)
+  genericError: "Có lỗi xảy ra. Vui lòng thử lại sau.",
+  // Gap request: the no-file intake mode (NEW — not yet in vocabulary-vi.md)
+  gapRequestHint: "Không có tệp để gửi? Nêu thứ còn thiếu, quản trị viên sẽ xem xét bổ sung.",
+  gapRequestTitle: "Cần bổ sung tư liệu gì?",
+  gapRequestWhy: "Vì sao cần (không bắt buộc)",
+  gapRequestSent: "Đã gửi đề xuất. Bạn theo dõi được ở mục “Tư liệu tôi đã gửi”.",
+  // Librarian Desk: adding a physical item (NEW — not yet in vocabulary-vi.md)
+  author: "Tác giả",
+  shelfLocation: "Vị trí",
+  addCatalogItem: "Thêm đầu sách",
+  catalogItemAdded: "Đã thêm đầu sách. Mã số:",
+  extractionWatching: "Trang sẽ tự cập nhật khi xử lý xong — không cần tải lại.",
+  extractionSlow: "Việc xử lý lâu hơn thường lệ. Tệp gốc vẫn tải xuống được bình thường.",
+  uploading: "Đang tải lên",
+  uploadFinishing: "Đã tải xong, đang lưu…",
+  uploadNetworkError: "Mất kết nối khi đang tải lên. Kiểm tra mạng và thử lại.",
+  noSpacesTitle: "Bạn chưa thuộc kho nào.",
+  noSpacesHint: "Cần được thêm vào một kho trước khi gửi tư liệu. Liên hệ quản trị viên.",
+  sourceOwnerActions: "Tư liệu bạn đã gửi",
+  renameSource: "Sửa tên và mô tả",
+  withdrawSource: "Thu hồi tư liệu",
+  withdrawSourceTitle: "Thu hồi tư liệu này?",
+  withdrawSourceBody:
+    "Tư liệu sẽ không còn hiện trong kho và không tải xuống được nữa. Tệp gốc vẫn được giữ lại, nên quản trị viên có thể khôi phục nếu cần. Không thu hồi được nếu đã có người biên tập hoặc xuất bản dựa trên tư liệu này.",
   // Knowledge tree terms (vocabulary-vi.md § Term Map)
   tree: "Cây tri thức",
   node: "Trang tri thức",

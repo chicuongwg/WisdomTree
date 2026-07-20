@@ -1,29 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 
+/**
+ * Upload with a real progress bar.
+ *
+ * `fetch()` cannot report upload progress, and the limit here is 100 MB: on a
+ * phone connection a button reading "Đang tải…" sits unchanged for minutes and
+ * reads as a frozen app, so people retry and upload twice. XMLHttpRequest is
+ * the only browser API that emits `upload.onprogress`, which is why this one
+ * request does not use fetch.
+ */
 export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: string }> }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [percent, setPercent] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setPercent(0);
+
     const form = new FormData(event.currentTarget);
-    const res = await fetch("/api/source/upload", { method: "POST", body: form });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
+    xhr.open("POST", "/api/source/upload");
+
+    xhr.upload.onprogress = (e) => {
+      // lengthComputable is false for chunked bodies; leave the bar
+      // indeterminate rather than inventing a number.
+      if (e.lengthComputable) setPercent(Math.round((e.loaded / e.total) * 100));
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const source = JSON.parse(xhr.responseText) as { id: string };
+        // Stay busy through the navigation: re-enabling here would let an
+        // impatient second click upload the same file twice.
+        router.push(`/library/${source.id}`);
+        router.refresh();
+        return;
+      }
+      let message: string = T.genericError;
+      try {
+        message = (JSON.parse(xhr.responseText) as { message?: string }).message ?? message;
+      } catch {
+        // Non-JSON body (a proxy's 413 page, say) — keep the generic message.
+      }
+      setError(message);
       setBusy(false);
-      return;
-    }
-    const source = (await res.json()) as { id: string };
-    router.push(`/library/${source.id}`);
-    router.refresh();
+      setPercent(null);
+    };
+
+    xhr.onerror = () => {
+      setError(T.uploadNetworkError);
+      setBusy(false);
+      setPercent(null);
+    };
+
+    xhr.onabort = () => {
+      setBusy(false);
+      setPercent(null);
+    };
+
+    xhr.send(form);
+  }
+
+  if (spaces.length === 0) {
+    // Without a space there is nowhere for the file to go, and an empty select
+    // with a disabled placeholder explains nothing.
+    return (
+      <div className="empty-state">
+        <p>{T.noSpacesTitle}</p>
+        <p className="muted">{T.noSpacesHint}</p>
+      </div>
+    );
   }
 
   return (
@@ -31,11 +87,11 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
       {error && <p className="error-text">{error}</p>}
       <div className="field">
         <label htmlFor="file">{T.file}</label>
-        <input id="file" name="file" type="file" required />
+        <input id="file" name="file" type="file" required disabled={busy} />
       </div>
       <div className="field">
         <label htmlFor="spaceId">{T.space}</label>
-        <select id="spaceId" name="spaceId" required defaultValue="">
+        <select id="spaceId" name="spaceId" required defaultValue="" disabled={busy}>
           <option value="" disabled>
             — chọn {T.space.toLowerCase()} —
           </option>
@@ -48,15 +104,38 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
       </div>
       <div className="field">
         <label htmlFor="title">{T.title}</label>
-        <input id="title" name="title" type="text" required />
+        <input id="title" name="title" type="text" required disabled={busy} />
       </div>
       <div className="field">
         <label htmlFor="description">{T.description}</label>
-        <textarea id="description" name="description" rows={3} />
+        <textarea id="description" name="description" rows={3} disabled={busy} />
       </div>
-      <button type="submit" disabled={busy}>
-        {busy ? T.loading : T.submit}
-      </button>
+
+      {busy && (
+        <div className="upload-progress">
+          {/* <progress> with no value renders the platform's indeterminate bar,
+              which is exactly right while lengthComputable is false. */}
+          <progress {...(percent === null ? {} : { value: percent, max: 100 })} />
+          <span className="muted">
+            {percent === null
+              ? T.uploading
+              : percent < 100
+                ? `${T.uploading} ${percent}%`
+                : T.uploadFinishing}
+          </span>
+        </div>
+      )}
+
+      <div className="button-row">
+        {busy && (
+          <button type="button" className="secondary" onClick={() => xhrRef.current?.abort()}>
+            {T.cancel}
+          </button>
+        )}
+        <button type="submit" disabled={busy}>
+          {busy ? T.loading : T.submit}
+        </button>
+      </div>
     </form>
   );
 }

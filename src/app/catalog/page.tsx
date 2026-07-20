@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { listCatalog } from "@/modules/catalog/service";
+import { CATALOG_PAGE_SIZE, listCatalog } from "@/modules/catalog/service";
 import { badgeClass, itemLabel, itemStatusLabel, T } from "@/lib/vi";
+import { Pager } from "@/app/components/pager";
 
 // Screen: Catalog (`/catalog`) — physical library, library-space members.
 export default async function CatalogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const user = await requireUser();
-  const { q } = await searchParams;
-  const items = await listCatalog(toPrincipal(user), { q });
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const items = await listCatalog(toPrincipal(user), { q, page });
 
   return (
     <main className="page">
@@ -21,7 +23,16 @@ export default async function CatalogPage({
         <button type="submit">{T.search}</button>
       </form>
       {items.length === 0 ? (
-        <p className="muted">{T.empty}</p>
+        <div className="panel empty-state">
+          {q ? (
+            <>
+              <p>{T.noMatches}</p>
+              <Link href="/catalog">{T.clearFilters}</Link>
+            </>
+          ) : (
+            <p>{T.catalogEmptyHint}</p>
+          )}
+        </div>
       ) : (
         <table className="list">
           <thead>
@@ -52,6 +63,7 @@ export default async function CatalogPage({
           </tbody>
         </table>
       )}
+      <Pager page={page} pageSize={CATALOG_PAGE_SIZE} count={items.length} params={{ q }} />
     </main>
   );
 }

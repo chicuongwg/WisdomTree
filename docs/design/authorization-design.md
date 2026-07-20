@@ -120,6 +120,7 @@ Addendum (2026-07-20, found during the knowledge-module build — capabilities i
 | `storage.curation.assign` | Assign curation work to an editor | admin_op | global |
 | `storage.gap.triage` | Triage, convert, reject, or archive a branch-gap request | admin_op | global |
 | `review.queue.read` | Open the review queue and publish-review workbench | admin_op | global |
+| `storage.source.manage` | Rename your own uploaded source, or withdraw it while nothing is derived from it | user, editor, admin_op | owned-or-assigned |
 | `pm.board.read` | Open the operational board | editor | global |
 | (ruling) | Log an achievement stays under `pm.board.manage` (editor owned-or-assigned, admin_op global); baseline users do not log achievements | | |
 
