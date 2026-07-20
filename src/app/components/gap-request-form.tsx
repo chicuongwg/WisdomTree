@@ -1,48 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 
 /**
  * Intake without a file: say what the collection is missing and let an
  * Admin/Op triage it. The counterpart to UploadForm on the same screen.
  */
 export function GapRequestForm() {
-  const router = useRouter();
+  const m = useMutation();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-    setError(null);
-    setSent(false);
-    const res = await fetch("/api/source/gap-request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description }),
+    const sent = await m.run("/api/source/gap-request", {
+      body: { title, description },
+      ok: T.gapRequestSent,
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
+    if (!sent) return;
     setTitle("");
     setDescription("");
-    setSent(true);
-    router.refresh();
-    setBusy(false);
   }
 
   return (
     <form onSubmit={submit}>
-      {error && <p className="error-text">{error}</p>}
-      {sent && <p className="success-text">{T.gapRequestSent}</p>}
+      <SayMutation m={m} />
       <div className="field">
         <label htmlFor="gap-title">{T.gapRequestTitle}</label>
         <input
@@ -63,8 +48,11 @@ export function GapRequestForm() {
           onChange={(e) => setDescription(e.target.value)}
         />
       </div>
-      <button type="submit" disabled={busy || !title.trim()}>
-        {busy ? T.loading : T.submit}
+      <button type="submit" disabled={m.busy || !title.trim()}>
+        {/* Not the bare T.submit: this screen shows two forms, and two buttons
+            reading only "Gửi" say nothing about which one sends what.
+            TODO(vi): move to src/lib/vi.ts */}
+        {m.busy ? T.loading : "Gửi đề xuất"}
       </button>
     </form>
   );

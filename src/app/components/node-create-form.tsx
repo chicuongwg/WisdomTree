@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { Say } from "./say";
 
 /** Branch Hub inline manual-node creation (Editor; enters "Chưa có nguồn dẫn"). */
 export function NodeCreateForm({ branchId }: { branchId: string }) {
@@ -27,7 +28,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(body?.message ?? T.genericError);
       setBusy(false);
       return;
     }
@@ -36,6 +37,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
     router.refresh();
   }
 
+  // TODO(vi): move to src/lib/vi.ts
   if (!open) {
     return (
       <button className="secondary" onClick={() => setOpen(true)}>
@@ -45,7 +47,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
   }
   return (
     <form onSubmit={onSubmit} className="panel">
-      {error && <p className="error-text">{error}</p>}
+      <Say error={error} />
       <p className="muted">Trang tạo thủ công sẽ mang trạng thái “Chưa có nguồn dẫn”.</p>
       <div className="field">
         <label htmlFor="new-node-title">{T.title}</label>

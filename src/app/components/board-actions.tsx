@@ -33,7 +33,7 @@ export function TaskStateButtons({
     });
     if (!res.ok) {
       const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(err?.message ?? T.genericError);
     } else {
       router.refresh();
     }
@@ -70,7 +70,7 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
     });
     if (!res.ok) {
       const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(err?.message ?? T.genericError);
       setBusy(false);
       return;
     }

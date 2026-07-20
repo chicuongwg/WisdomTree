@@ -1,25 +1,24 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 
 export function MarkReadButton({ notificationId }: { notificationId: string }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-
-  async function markRead() {
-    setBusy(true);
-    await fetch(`/api/notifications/${notificationId}/read`, { method: "POST" });
-    setBusy(false);
-    router.refresh();
-  }
-
+  const m = useMutation();
   return (
-    <button className="secondary" onClick={markRead} disabled={busy}>
-      {busy ? T.loading : T.markRead}
-    </button>
+    <>
+      <SayMutation m={m} />
+      <button
+        className="secondary"
+        onClick={() => void m.run(`/api/notifications/${notificationId}/read`)}
+        disabled={m.busy}
+      >
+        {m.busy ? T.loading : T.markRead}
+      </button>
+    </>
   );
 }
 
@@ -41,16 +40,21 @@ export function NotificationLink({
   children: React.ReactNode;
   unread: boolean;
 }) {
+  const router = useRouter();
   return (
     <Link
       href={href}
       className="notification-link"
       onClick={() => {
         if (!unread) return;
-        void fetch(`/api/notifications/${notificationId}/read`, {
-          method: "POST",
-          keepalive: true,
-        });
+        // ponytail: the screen is already leaving, so a failed mark-read has
+        // nowhere to render a message. Refreshing puts the unread row and its
+        // badge back instead of leaving a silent, stale "đã đọc" behind.
+        fetch(`/api/notifications/${notificationId}/read`, { method: "POST", keepalive: true })
+          .then((res) => {
+            if (!res.ok) router.refresh();
+          })
+          .catch(() => router.refresh());
       }}
     >
       {children}

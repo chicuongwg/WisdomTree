@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
+import { SayMutation } from "./say";
 
 /** Node Detail Admin/Op controls: archive, and merge into a canonical node. */
 export function NodeAdminActions({
@@ -13,43 +14,24 @@ export function NodeAdminActions({
   nodeId: string;
   candidates: Array<{ id: string; title: string }>;
 }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
   const [canonicalNodeId, setCanonicalNodeId] = useState("");
 
-  async function act(path: string, body?: object) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(path, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
-      setBusy(false);
-      return;
-    }
-    // Refresh first, clear busy after: the button stays disabled across the
-    // round trip so the act cannot be fired twice.
-    router.refresh();
-    setBusy(false);
-  }
-
+  // ponytail: one busy flag for the panel, so both buttons show the pending
+  // label rather than only the one that was pressed.
   return (
     <div className="panel">
+      {/* TODO(vi): move to src/lib/vi.ts */}
       <h2>Quản trị trang</h2>
-      {error && <p className="error-text">{error}</p>}
+      <SayMutation m={m} />
       <div>
         <ConfirmButton
           className="danger"
-          disabled={busy}
-          label={T.archive}
+          disabled={m.busy}
+          label={m.busy ? T.loading : T.archive}
           title={T.confirmArchiveNodeTitle}
           body={T.confirmArchiveNodeBody}
-          onConfirm={() => act(`/api/tree/nodes/${nodeId}/archive`)}
+          onConfirm={() => void m.run(`/api/tree/nodes/${nodeId}/archive`)}
         />
       </div>
       <div className="field">
@@ -67,11 +49,11 @@ export function NodeAdminActions({
       </div>
       <div>
         <ConfirmButton
-          disabled={busy || !canonicalNodeId}
-          label={T.merge}
+          disabled={m.busy || !canonicalNodeId}
+          label={m.busy ? T.loading : T.merge}
           title={T.confirmMergeTitle}
           body={T.confirmMergeBody}
-          onConfirm={() => act(`/api/tree/nodes/${nodeId}/merge`, { canonicalNodeId })}
+          onConfirm={() => void m.run(`/api/tree/nodes/${nodeId}/merge`, { body: { canonicalNodeId } })}
         />
       </div>
     </div>

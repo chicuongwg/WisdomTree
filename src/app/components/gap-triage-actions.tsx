@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
+import { SayMutation } from "./say";
 
 /** Gap-request triage: triaged → converted / rejected → archived. */
 export function GapTriageActions({
@@ -17,41 +18,26 @@ export function GapTriageActions({
   branches: Array<{ id: string; name: string }>;
   nodes: Array<{ id: string; title: string }>;
 }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
   const [branchId, setBranchId] = useState("");
   const [nodeId, setNodeId] = useState("");
 
-  async function act(action: string, body?: object) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/source/gap-request/${requestId}/${action}`, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
-      setBusy(false);
-      return;
-    }
-    // Refresh first, clear busy after: the button stays disabled across the
-    // round trip so the act cannot be fired twice.
-    router.refresh();
-    setBusy(false);
-  }
+  // ponytail: one busy flag for the whole panel, so every button in it shows
+  // the pending label — not only the one that was pressed. Per-button pending
+  // would need a second state just to name the act in flight.
+  const act = (action: string, body?: object) =>
+    void m.run(`/api/source/gap-request/${requestId}/${action}`, body ? { body } : undefined);
 
   return (
     <div className="panel">
       <h2>{T.triage}</h2>
-      {error && <p className="error-text">{error}</p>}
+      <SayMutation m={m} />
       {state === "submitted" && (
-        <button disabled={busy} onClick={() => act("triage")}>
-          {T.triage}
+        <button disabled={m.busy} onClick={() => act("triage")}>
+          {m.busy ? T.loading : T.triage}
         </button>
       )}
+      {/* TODO(vi): move to src/lib/vi.ts */}
       {state === "triaged" && (
         <>
           <div className="field">
@@ -78,7 +64,7 @@ export function GapTriageActions({
           </div>
           <div className="button-row">
             <button
-              disabled={busy || (!branchId && !nodeId)}
+              disabled={m.busy || (!branchId && !nodeId)}
               onClick={() =>
                 act("convert", {
                   ...(branchId ? { branchId } : {}),
@@ -86,12 +72,12 @@ export function GapTriageActions({
                 })
               }
             >
-              {T.convertToBranch}
+              {m.busy ? T.loading : T.convertToBranch}
             </button>
             <ConfirmButton
               className="danger"
-              disabled={busy}
-              label={T.reject}
+              disabled={m.busy}
+              label={m.busy ? T.loading : T.reject}
               title={T.confirmRejectGapTitle}
               body={T.confirmRejectGapBody}
               onConfirm={() => act("reject")}
@@ -103,8 +89,8 @@ export function GapTriageActions({
         <div>
           <ConfirmButton
             className="secondary"
-            disabled={busy}
-            label={T.archive}
+            disabled={m.busy}
+            label={m.busy ? T.loading : T.archive}
             title={T.confirmArchiveGapTitle}
             body={T.confirmArchiveGapBody}
             onConfirm={() => act("archive")}

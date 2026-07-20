@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { Say } from "./say";
 
 /** Librarian Desk: add a physical item. The only way the catalogue grows. */
 export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: string }> }) {
@@ -46,12 +47,7 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
 
   return (
     <form onSubmit={submit}>
-      {error && <p className="error-text">{error}</p>}
-      {added && (
-        <p className="success-text">
-          {T.catalogItemAdded} <strong>{added}</strong>
-        </p>
-      )}
+      <Say error={error} ok={added && `${T.catalogItemAdded} ${added}`} />
       <div className="field">
         <label htmlFor="ci-title">{T.catalogItem}</label>
         <input

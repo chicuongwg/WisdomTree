@@ -1,48 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
+import { SayMutation } from "./say";
 
 export function LoanActions({ ticketId, state }: { ticketId: string; state: string }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
   const [dueAt, setDueAt] = useState("");
 
-  async function act(action: "approve" | "decline" | "borrow" | "return", body?: object) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/catalog/loan/${ticketId}/${action}`, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
-      setBusy(false);
-      return;
-    }
-    // Refresh first, clear busy after: the button stays disabled across the
-    // round trip so the act cannot be fired twice.
-    router.refresh();
-    setBusy(false);
-  }
+  // ponytail: one busy flag for the row, so every button in it shows the
+  // pending label rather than only the one that was pressed.
+  const act = (action: "approve" | "decline" | "borrow" | "return", body?: object) =>
+    void m.run(`/api/catalog/loan/${ticketId}/${action}`, body ? { body } : undefined);
 
   return (
     <div>
-      {error && <p className="error-text">{error}</p>}
+      <SayMutation m={m} />
       {state === "requested" && (
         <div className="button-row">
-          <button disabled={busy} onClick={() => act("approve")}>
-            {T.approve}
+          <button disabled={m.busy} onClick={() => act("approve")}>
+            {m.busy ? T.loading : T.approve}
           </button>
           <ConfirmButton
             className="danger"
-            disabled={busy}
-            label={T.decline}
+            disabled={m.busy}
+            label={m.busy ? T.loading : T.decline}
             title={T.confirmDeclineLoanTitle}
             body={T.confirmDeclineLoanBody}
             onConfirm={() => act("decline")}
@@ -57,15 +41,18 @@ export function LoanActions({ ticketId, state }: { ticketId: string; state: stri
             onChange={(e) => setDueAt(e.target.value)}
             aria-label={T.dueDate}
           />
-          <button disabled={busy || !dueAt} onClick={() => act("borrow", { dueAt: new Date(dueAt).toISOString() })}>
-            {T.lend}
+          <button
+            disabled={m.busy || !dueAt}
+            onClick={() => act("borrow", { dueAt: new Date(dueAt).toISOString() })}
+          >
+            {m.busy ? T.loading : T.lend}
           </button>
         </span>
       )}
       {(state === "borrowed" || state === "overdue") && (
         <ConfirmButton
-          disabled={busy}
-          label={T.markReturned}
+          disabled={m.busy}
+          label={m.busy ? T.loading : T.markReturned}
           title={T.confirmMarkReturnedTitle}
           body={T.confirmMarkReturnedBody}
           onConfirm={() => act("return")}

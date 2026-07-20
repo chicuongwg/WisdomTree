@@ -1,35 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 
 export function LoanRequestButton({ itemId, disabled }: { itemId: string; disabled: boolean }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function request() {
-    setBusy(true);
-    setMessage(null);
-    const res = await fetch(`/api/catalog/${itemId}/loan/request`, { method: "POST" });
-    if (!res.ok) {
-      // 409 arrives in the contract Error shape; show its Vietnamese message.
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setMessage(body?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
-      setBusy(false);
-      return;
-    }
-    setMessage("Đã gửi yêu cầu mượn. Vui lòng chờ thủ thư duyệt.");
-    setBusy(false);
-    router.refresh();
-  }
+  // One `message` state used to carry both answers and both were painted in
+  // .error-text — a granted request announced itself in the colour the app
+  // reserves for refusal. useMutation keeps them apart; <Say> colours and
+  // announces each one for what it is.
+  const m = useMutation();
 
   return (
     <div>
-      {message && <p className="error-text">{message}</p>}
-      <button onClick={request} disabled={disabled || busy}>
-        {busy ? T.loading : T.requestLoan}
+      <SayMutation m={m} />
+      <button
+        onClick={() =>
+          void m.run(`/api/catalog/${itemId}/loan/request`, {
+            // TODO(vi): move to src/lib/vi.ts
+            ok: "Đã gửi yêu cầu mượn. Vui lòng chờ thủ thư duyệt.",
+          })
+        }
+        disabled={disabled || m.busy}
+      >
+        {m.busy ? T.loading : T.requestLoan}
       </button>
     </div>
   );

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
+import { SayMutation } from "./say";
 
 /**
  * Admin Source Detail actions: assign curation to an editor, or close the
@@ -22,39 +23,18 @@ export function CurationAdminActions({
   currentAssignee: string | null;
   curationOpen: boolean;
 }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
   const [assigneeId, setAssigneeId] = useState(currentAssignee ?? "");
-
-  async function act(path: string, body?: object) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(path, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
-      setBusy(false);
-      return;
-    }
-    // Refresh first, clear busy after: the button stays disabled across the
-    // round trip so the act cannot be fired twice.
-    router.refresh();
-    setBusy(false);
-  }
 
   const base = `/api/source/${sourceId}/version/${versionId}`;
   return (
     <div className="panel">
       <h2>{T.assign}</h2>
-      {error && <p className="error-text">{error}</p>}
+      <SayMutation m={m} />
       <div className="field">
         <label htmlFor="assignee">{T.assignee}</label>
         <select id="assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+          {/* TODO(vi): move to src/lib/vi.ts */}
           <option value="">— chọn biên tập viên —</option>
           {editors.map((e) => (
             <option key={e.id} value={e.id}>
@@ -63,18 +43,23 @@ export function CurationAdminActions({
           ))}
         </select>
       </div>
+      {/* ponytail: one busy flag for the panel, so both buttons show the
+          pending label rather than only the one that was pressed. */}
       <div className="button-row">
-        <button disabled={busy || !assigneeId} onClick={() => act(`${base}/assign`, { assigneeId })}>
-          {T.assign}
+        <button
+          disabled={m.busy || !assigneeId}
+          onClick={() => void m.run(`${base}/assign`, { body: { assigneeId } })}
+        >
+          {m.busy ? T.loading : T.assign}
         </button>
         {curationOpen && (
           <ConfirmButton
             className="danger"
-            disabled={busy}
-            label={T.reject}
+            disabled={m.busy}
+            label={m.busy ? T.loading : T.reject}
             title={T.confirmRejectCurationTitle}
             body={T.confirmRejectCurationBody}
-            onConfirm={() => act(`${base}/reject`)}
+            onConfirm={() => void m.run(`${base}/reject`)}
           />
         )}
       </div>

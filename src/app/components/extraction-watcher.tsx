@@ -59,6 +59,8 @@ export function ExtractionWatcher({ sourceId, status }: { sourceId: string; stat
   }, [sourceId, status, router]);
 
   if (status !== "pending") return null;
-  // Say the page is watching, so nobody has to guess whether to reload.
-  return <span className="muted">{waiting ? T.extractionWatching : T.extractionSlow}</span>;
+  // Say the page is watching, so nobody has to guess whether to reload. Live,
+  // because the whole point is that the wording changes under the reader:
+  // polite, not an alert — a progress note is not worth interrupting for.
+  return <span className="muted" aria-live="polite">{waiting ? T.extractionWatching : T.extractionSlow}</span>;
 }

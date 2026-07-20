@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 
 type Props = {
   sourceId: string;
@@ -20,10 +21,7 @@ type Props = {
  * ready-for-review transition. Approve/publish stays on the Admin/Op side.
  */
 export function CurationWorkbench(props: Props) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
+  const m = useMutation();
   const [corrected, setCorrected] = useState(props.correctedLatest);
   const [draftMd, setDraftMd] = useState(props.draft?.contentMd ?? "");
   const [branchId, setBranchId] = useState(props.draft?.suggestedBranchId ?? "");
@@ -32,48 +30,20 @@ export function CurationWorkbench(props: Props) {
   const base = `/api/source/${props.sourceId}/version/${props.versionId}`;
   const active = !props.readOnly && props.curationState === "under_correction";
 
-  async function call(path: string, body?: object): Promise<Response | null> {
-    setBusy(true);
-    setError(null);
-    setOk(null);
-    const res = await fetch(path, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
-      return null;
-    }
-    return res;
-  }
-
-  async function saveCorrected() {
-    const res = await call(`${base}/corrected-text`, { content: corrected });
-    if (res) setOk("Đã lưu bản hiệu đính mới.");
-  }
-
+  // TODO(vi): move to src/lib/vi.ts
   async function saveDraft() {
-    const res = await call(`${base}/md-draft`, {
-      contentMd: draftMd,
-      ...(branchId ? { suggestedBranchId: branchId } : {}),
-      ...(draftVersion !== null ? { expectedVersion: draftVersion } : {}),
+    const saved = await m.run(`${base}/md-draft`, {
+      body: {
+        contentMd: draftMd,
+        ...(branchId ? { suggestedBranchId: branchId } : {}),
+        ...(draftVersion !== null ? { expectedVersion: draftVersion } : {}),
+      },
+      ok: "Đã lưu bản thảo.",
     });
-    if (res) {
-      const saved = (await res.json()) as { version: number };
-      setDraftVersion(saved.version);
-      setOk("Đã lưu bản thảo.");
-    }
-  }
-
-  async function markReady() {
-    const res = await call(`${base}/mark-ready-for-review`);
-    if (res) {
-      setOk("Đã gửi duyệt. Quản trị/Vận hành sẽ ra quyết định xuất bản.");
-      router.refresh();
-    }
+    // ponytail: the server sets the new version to expectedVersion + 1 (and 1
+    // on first save), so counting locally beats reading the response back. If
+    // it ever drifts, the next save 409s rather than overwriting anything.
+    if (saved) setDraftVersion((v) => (v ?? 0) + 1);
   }
 
   // A fragment, not a wrapper <div>: `.with-side > *` already stacks its
@@ -81,10 +51,10 @@ export function CurationWorkbench(props: Props) {
   // spacing from a parent's gap rather than its own margin. One extra element
   // in between swallowed that gap, which is why the "Lưu" button sat flush
   // against the "Bản thảo" heading below it.
+  // TODO(vi): move to src/lib/vi.ts
   return (
     <>
-      {error && <p className="error-text" role="alert">{error}</p>}
-      {ok && <p className="ok-text" role="status">{ok}</p>}
+      <SayMutation m={m} />
 
       <h2>{T.correctedText}</h2>
       <p className="muted">Mỗi lần lưu tạo một bản mới trong chuỗi hiệu đính (không ghi đè).</p>
@@ -98,8 +68,16 @@ export function CurationWorkbench(props: Props) {
           disabled={!active}
         />
       </div>
-      <button disabled={busy || !active || !corrected.trim()} onClick={saveCorrected}>
-        {T.save}
+      <button
+        disabled={m.busy || !active || !corrected.trim()}
+        onClick={() =>
+          void m.run(`${base}/corrected-text`, {
+            body: { content: corrected },
+            ok: "Đã lưu bản hiệu đính mới.",
+          })
+        }
+      >
+        {m.busy ? T.loading : T.save}
       </button>
 
       <h2>{T.markdownDraft}</h2>
@@ -129,16 +107,22 @@ export function CurationWorkbench(props: Props) {
           ))}
         </select>
       </div>
+      {/* ponytail: one busy flag for the screen, so every button on it shows
+          the pending label rather than only the one that was pressed. */}
       <div className="button-row">
-        <button disabled={busy || !active || !draftMd.trim()} onClick={saveDraft}>
-          {T.saveDraft}
+        <button disabled={m.busy || !active || !draftMd.trim()} onClick={() => void saveDraft()}>
+          {m.busy ? T.loading : T.saveDraft}
         </button>
         <button
           className="secondary"
-          disabled={busy || !active || !draftMd.trim()}
-          onClick={markReady}
+          disabled={m.busy || !active || !draftMd.trim()}
+          onClick={() =>
+            void m.run(`${base}/mark-ready-for-review`, {
+              ok: "Đã gửi duyệt. Quản trị/Vận hành sẽ ra quyết định xuất bản.",
+            })
+          }
         >
-          {T.markReady}
+          {m.busy ? T.loading : T.markReady}
         </button>
       </div>
     </>

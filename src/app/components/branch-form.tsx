@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { Say } from "./say";
 
 /**
  * Create Branch (`/tree/branch/new`) and Branch Hub metadata edit share this
@@ -34,7 +35,7 @@ export function BranchForm({
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(body?.message ?? T.genericError);
       setBusy(false);
       return;
     }
@@ -45,7 +46,7 @@ export function BranchForm({
 
   return (
     <form onSubmit={onSubmit}>
-      {error && <p className="error-text">{error}</p>}
+      <Say error={error} />
       <div className="field">
         <label htmlFor="name">{T.branchName}</label>
         <input id="name" name="name" type="text" required defaultValue={branch?.name ?? ""} />

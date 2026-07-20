@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T, verificationStateLabel } from "@/lib/vi";
+import { Say } from "./say";
 
 type NodeInput = {
   id: string;
@@ -56,7 +57,7 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string; code?: string } | null;
-      setError(body?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(body?.message ?? T.genericError);
       setConflict(res.status === 409 && body?.code === "version_conflict");
       setBusy(false);
       return;
@@ -67,15 +68,12 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
 
   return (
     <form onSubmit={onSubmit}>
-      {error && (
-        <p className="error-text">
-          {error}{" "}
-          {conflict && (
-            <button type="button" className="secondary" onClick={() => router.refresh()}>
-              Tải lại phiên bản mới
-            </button>
-          )}
-        </p>
+      <Say error={error} />
+      {/* TODO(vi): move to src/lib/vi.ts */}
+      {conflict && (
+        <button type="button" className="secondary" onClick={() => router.refresh()}>
+          Tải lại phiên bản mới
+        </button>
       )}
       <div className="field">
         <label htmlFor="node-title">{T.title}</label>

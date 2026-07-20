@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 import { ConfirmButton } from "./confirm-button";
+import { Say } from "./say";
 
 /**
  * What the submitter can do about their own upload: fix the label, or take it
@@ -58,7 +59,7 @@ export function SourceOwnerActions({
   return (
     <div className="panel">
       <h2>{T.sourceOwnerActions}</h2>
-      {error && <p className="error-text">{error}</p>}
+      <Say error={error} />
 
       {open ? (
         <form

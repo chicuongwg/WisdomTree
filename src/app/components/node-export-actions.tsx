@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { T } from "@/lib/vi";
+import { Say } from "./say";
 
 // Node Detail export action (user-screen-specs.md): "Xuất docx / pdf" — POST
 // the render job (202 JobRef), poll GET /api/jobs/{jobId}, then show the
@@ -51,7 +53,7 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
     });
     if (res.status !== 202) {
       const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(payload?.message ?? T.genericError);
       setBusy(false);
       return;
     }
@@ -61,8 +63,9 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
 
   return (
     <div className="panel">
+      {/* TODO(vi): move to src/lib/vi.ts */}
       <h2>Xuất tài liệu</h2>
-      {error && <p className="error-text">{error}</p>}
+      <Say error={error} />
       <p>
         <button disabled={busy} onClick={() => start("docx")}>
           Xuất docx
@@ -71,7 +74,7 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
           Xuất pdf
         </button>
       </p>
-      {busy && <p className="muted">Đang xuất tệp…</p>}
+      {busy && <p className="muted" role="status">Đang xuất tệp…</p>}
       {job?.state === "succeeded" && job.result && (
         <p>
           <a className="button" href={job.result.downloadUrl}>
