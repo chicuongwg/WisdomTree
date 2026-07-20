@@ -368,13 +368,13 @@ paths:
     get:
       summary: List comments on an object the caller can see
       parameters:
-        - {name: anchorType, in: query, required: true, schema: {type: string, enum: [source, tree_node, loan_ticket, deadline]}}
+        - {name: anchorType, in: query, required: true, schema: {type: string, enum: [source, tree_node, deadline]}}
         - {name: anchorId, in: query, required: true, schema: {type: string, format: uuid}}
       responses:
         "200": {description: OK, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Comment"}}}}}
         "403": {$ref: "#/components/responses/Forbidden"}
     post:
-      summary: Comment on an object the caller can see (mentions trigger notifications)
+      summary: Comment on an object the caller can see (@Name in the body is resolved server-side and notifies that member)
       requestBody:
         required: true
         content:
@@ -383,11 +383,10 @@ paths:
               type: object
               required: [anchorType, anchorId, body]
               properties:
-                anchorType: {type: string, enum: [source, tree_node, loan_ticket, deadline]}
+                anchorType: {type: string, enum: [source, tree_node, deadline]}
                 anchorId: {type: string, format: uuid}
                 parentCommentId: {type: string, format: uuid}
                 body: {type: string}
-                mentions: {type: array, items: {type: string, format: uuid}}
       responses:
         "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Comment"}}}}
 
@@ -801,7 +800,7 @@ components:
       type: object
       properties:
         id: {type: string, format: uuid}
-        anchorType: {type: string, enum: [source, tree_node, loan_ticket, deadline]}
+        anchorType: {type: string, enum: [source, tree_node, deadline]}
         anchorId: {type: string, format: uuid}
         parentCommentId: {type: string, format: uuid}
         authorId: {type: string, format: uuid}

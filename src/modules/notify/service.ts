@@ -5,9 +5,8 @@ import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { curations, sources, sourceVersions } from "../storage/schema";
+import { curations, sources, sourceVersions, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
-import { catalogItems } from "../catalog/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
 import { comments, notificationPreferences, notifications } from "./schema";
@@ -20,6 +19,13 @@ import { notificationLink, type NotificationLinkContext } from "./links";
 // (authorization-design.md: notify.comment.create scope = "anchor"): a
 // non-visible anchor throws the anchor's own read denial → 404, never 403,
 // so cross-space existence is not leaked.
+//
+// Anchors are Source, Tree Node and Deadline. A Loan Ticket is NOT an anchor:
+// a loan carries a factual register entry (borrower, request time, approver,
+// hand-over, due date, return) on the Catalog Item Detail screen instead of a
+// discussion thread — owner decision 2026-07-20, enforced by the CHECK in
+// drizzle/0002_comments_drop_loan_anchor.sql, so a POST anchored to a loan
+// ticket is a 400 invalid_anchor at the route boundary.
 
 export type AnchorType = (typeof comments.$inferSelect)["anchorType"];
 
@@ -45,16 +51,6 @@ async function authorizeAnchorRead(
       authorize(actor, "knowledge.node.read", { kind: "read" });
       return;
     }
-    case "loan_ticket": {
-      const [row] = await db
-        .select({ spaceId: catalogItems.spaceId })
-        .from(loanTickets)
-        .innerJoin(catalogItems, eq(loanTickets.itemId, catalogItems.id))
-        .where(eq(loanTickets.id, anchorId));
-      if (!row) throw notFound();
-      authorize(actor, "catalog.browse", { spaceId: row.spaceId, kind: "read" });
-      return;
-    }
     case "deadline": {
       const [deadline] = await db.select().from(deadlines).where(eq(deadlines.id, anchorId));
       if (!deadline) throw notFound();
@@ -64,11 +60,118 @@ async function authorizeAnchorRead(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Inline @mentions
+// ---------------------------------------------------------------------------
+// The comment BODY is the source of truth: a member types "@Tên" in the text
+// and the server resolves it (owner decision 2026-07-20 — the checkbox list of
+// members is gone from the UI). The RESULT is written to comments.mentions
+// exactly as the old picker wrote it, so the dispatcher and the notification
+// matrix row "Comment mentioning a member → mentioned member" are untouched.
+//
+// A mention that cannot be resolved — misspelt name, someone who cannot see
+// the anchor, two members sharing a display name — is simply not a mention.
+// It is never an error: refusing to save a comment because a name was typed
+// loosely would be a worse product than quietly not notifying anyone.
+
+/** The space whose members can see this anchor; null = readable app-wide. */
+async function anchorSpaceId(anchorType: AnchorType, anchorId: string): Promise<string | null> {
+  switch (anchorType) {
+    case "source": {
+      const [row] = await db
+        .select({ spaceId: sources.spaceId })
+        .from(sources)
+        .where(eq(sources.id, anchorId));
+      return row?.spaceId ?? null;
+    }
+    case "deadline": {
+      const [row] = await db
+        .select({ spaceId: deadlines.spaceId })
+        .from(deadlines)
+        .where(eq(deadlines.id, anchorId));
+      return row?.spaceId ?? null;
+    }
+    case "tree_node":
+      // knowledge.node.read is global scope: every enabled member can see it.
+      return null;
+  }
+}
+
+/**
+ * Longest-name-first scan over the body. Matched spans are consumed so that
+ * "@Lan Anh" cannot also count as a mention of "Lan"; a name must end on a
+ * non-letter/digit so "@Lan" does not fire inside "@Lanh".
+ */
+function matchMentions(
+  body: string,
+  candidates: ReadonlyArray<{ id: string; displayName: string }>,
+): string[] {
+  const byName = new Map<string, string[]>();
+  for (const c of candidates) {
+    const key = c.displayName.trim().toLowerCase();
+    if (!key) continue;
+    byName.set(key, [...(byName.get(key) ?? []), c.id]);
+  }
+  let hay = body.toLowerCase();
+  const boundary = /[\p{L}\p{N}]/u;
+  const found = new Set<string>();
+  for (const name of [...byName.keys()].sort((a, b) => b.length - a.length)) {
+    const ids = byName.get(name)!;
+    const needle = `@${name}`;
+    let from = 0;
+    for (;;) {
+      const at = hay.indexOf(needle, from);
+      if (at < 0) break;
+      const after = hay[at + needle.length];
+      if (after === undefined || !boundary.test(after)) {
+        // Ambiguous display name → consume the span but notify no one.
+        if (ids.length === 1) found.add(ids[0]);
+        // Blank the matched span so a shorter name nested in it ("Lan" inside
+        // "@Lan Anh") cannot claim the same text a second time.
+        hay = hay.slice(0, at) + " ".repeat(needle.length) + hay.slice(at + needle.length);
+        from = at + needle.length;
+      } else {
+        from = at + 1;
+      }
+    }
+  }
+  return [...found];
+}
+
+/**
+ * Members who can see the anchor: enabled users, narrowed to the anchor's
+ * space when it has one (Admin/Op reads every space, so they stay in).
+ */
+async function mentionCandidates(anchorType: AnchorType, anchorId: string) {
+  const spaceId = await anchorSpaceId(anchorType, anchorId);
+  const enabled = await db
+    .select({ id: users.id, displayName: users.displayName, role: users.role })
+    .from(users)
+    .where(isNull(users.disabledAt));
+  if (!spaceId) return enabled;
+  const members = await db
+    .select({ userId: spaceMembers.userId })
+    .from(spaceMembers)
+    .where(eq(spaceMembers.spaceId, spaceId));
+  const inSpace = new Set(members.map((m) => m.userId));
+  return enabled.filter((u) => u.role === "admin_op" || inSpace.has(u.id));
+}
+
+/** Display names for the mentioned ids, so a stored comment still reads right. */
+async function displayNamesById(ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .select({ id: users.id, displayName: users.displayName })
+    .from(users)
+    .where(inArray(users.id, [...ids]));
+  return new Map(rows.map((r) => [r.id, r.displayName]));
+}
+
 /** Threaded list, oldest first; caller must see the anchor (else 404). */
 export async function listComments(actor: Principal, anchorType: AnchorType, anchorId: string) {
   authorize(actor, "notify.comment.create", { kind: "read" });
   await authorizeAnchorRead(actor, anchorType, anchorId);
-  return db
+  const rows = await db
     .select({
       id: comments.id,
       anchorType: comments.anchorType,
@@ -84,6 +187,13 @@ export async function listComments(actor: Principal, anchorType: AnchorType, anc
     .innerJoin(users, eq(comments.authorId, users.id))
     .where(and(eq(comments.anchorType, anchorType), eq(comments.anchorId, anchorId)))
     .orderBy(asc(comments.createdAt));
+  // Names travel with the row (additive over the contract Comment shape) so
+  // the reader can highlight the @Tên tokens already written in the body.
+  const names = await displayNamesById([...new Set(rows.flatMap((r) => r.mentions))]);
+  return rows.map((r) => ({
+    ...r,
+    mentionNames: r.mentions.map((id) => names.get(id)).filter((n): n is string => Boolean(n)),
+  }));
 }
 
 export async function createComment(
@@ -93,7 +203,6 @@ export async function createComment(
     anchorId: string;
     body: string;
     parentCommentId?: string;
-    mentions?: string[];
   },
 ) {
   authorize(actor, "notify.comment.create", { kind: "write" });
@@ -110,17 +219,14 @@ export async function createComment(
       throw new ApiError(400, "invalid_parent_comment", "Bình luận gốc không thuộc mục này.");
     }
   }
-  // Mentions must be real, enabled members; unknown ids are rejected early.
-  const mentionIds = [...new Set(input.mentions ?? [])];
-  if (mentionIds.length > 0) {
-    const found = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(and(inArray(users.id, mentionIds), isNull(users.disabledAt)));
-    if (found.length !== mentionIds.length) {
-      throw new ApiError(400, "invalid_mentions", "Có thành viên được nhắc đến không tồn tại.");
-    }
-  }
+  // Mentions come out of the text itself, against members who can see this
+  // anchor. Nothing matched → no mention, never an error.
+  // (The dispatcher already drops the author from the recipient list, so a
+  // self-mention stays faithful in the record without notifying anyone.)
+  const mentionIds = matchMentions(
+    input.body,
+    await mentionCandidates(input.anchorType, input.anchorId),
+  );
 
   const comment = await db.transaction(async (tx) => {
     const [created] = await tx
@@ -205,7 +311,6 @@ export async function buildNotificationLinkContext(
     } else if (note.eventType === "comment.created") {
       const anchorId = pick(p, "anchorId");
       if (!anchorId) continue;
-      if (p.anchorType === "loan_ticket") ticketIds.add(anchorId);
       if (p.anchorType === "source") sourceIds.add(anchorId);
     }
   }
@@ -322,7 +427,11 @@ export async function updatePreferences(
   return getPreferences(actor);
 }
 
-/** Mention picker options: enabled members (id + display name only). */
+/**
+ * Enabled members (id + display name only). The comment box no longer uses
+ * this — mentions are typed inline as @Tên and resolved server-side — but the
+ * Board's assignee picker still needs the roster.
+ */
 export async function listMentionableUsers() {
   return db
     .select({ id: users.id, displayName: users.displayName })

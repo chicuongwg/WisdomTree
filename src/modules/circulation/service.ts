@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
@@ -190,6 +191,40 @@ export async function listTickets(actor: Principal, states?: TicketRow["state"][
     .where(states?.length ? inArray(loanTickets.state, states) : undefined)
     .orderBy(desc(loanTickets.updatedAt));
 }
+
+/**
+ * The loan REGISTER for one catalog item, newest first: every ticket the item
+ * has ever carried, each with the borrower and the librarian who handled it.
+ *
+ * This is what the Catalog Item Detail screen renders instead of a discussion
+ * thread (owner decision 2026-07-20): a librarian must be able to answer "ai
+ * đang giữ cuốn này và ai đã duyệt" without opening another screen.
+ *
+ * Authorization is the item's NORMAL read: catalog.browse on the item's space,
+ * so an out-of-scope item is a 404 exactly as `getCatalogItem` makes it. No
+ * `circulation.loan.manage` here — a member reading a shelf record is a read
+ * of the item, not a librarian action.
+ */
+export async function listTicketsForItem(actor: Principal, itemId: string) {
+  const [item] = await db.select().from(catalogItems).where(eq(catalogItems.id, itemId));
+  if (!item) throw notFound();
+  authorize(actor, "catalog.browse", { spaceId: item.spaceId, kind: "read" });
+
+  const handler = alias(users, "handler");
+  return db
+    .select({
+      ticket: loanTickets,
+      borrowerName: users.displayName,
+      handlerName: handler.displayName,
+    })
+    .from(loanTickets)
+    .innerJoin(users, eq(loanTickets.borrowerId, users.id))
+    .leftJoin(handler, eq(loanTickets.handledBy, handler.id))
+    .where(eq(loanTickets.itemId, itemId))
+    .orderBy(desc(loanTickets.requestedAt), desc(loanTickets.createdAt));
+}
+
+export type ItemLoanRecord = Awaited<ReturnType<typeof listTicketsForItem>>[number];
 
 /** A member's own tickets (shown on catalog item detail / home). */
 export async function myTickets(actor: Principal) {

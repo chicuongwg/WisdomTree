@@ -3,7 +3,6 @@ import { inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getDeadline } from "@/modules/pm/service";
-import { listMentionableUsers } from "@/modules/notify/service";
 import { tasks } from "@/modules/pm/schema";
 import { sources } from "@/modules/storage/schema";
 import { treeNodes } from "@/modules/knowledge/schema";
@@ -19,7 +18,6 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
   const actor = toPrincipal(user);
   const { id } = await params;
   const deadline = await orNotFound(() => getDeadline(actor, id));
-  const mentionOptions = await listMentionableUsers();
 
   const taskIds = deadline.links.filter((l) => l.targetType === "task").map((l) => l.targetId);
   const sourceIds = deadline.links.filter((l) => l.targetType === "source").map((l) => l.targetId);
@@ -69,7 +67,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
               </ul>
             )}
           </div>
-          <CommentsSection anchorType="deadline" anchorId={deadline.id} mentionOptions={mentionOptions} />
+          <CommentsSection anchorType="deadline" anchorId={deadline.id} />
         </div>
         <aside>
           <div className="panel">

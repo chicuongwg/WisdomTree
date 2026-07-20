@@ -383,14 +383,28 @@ async function main() {
 
     // 1 active loan: Lan is borrowing item 1, approved and handed over by Hương.
     const borrowedItem = itemIds[0];
-    const { rows: loanRows } = await client.query(
+    await client.query(
       `INSERT INTO loan_tickets
          (item_id, borrower_id, state, requested_at, approved_at, borrowed_at, due_at, handled_by)
-       VALUES ($1,$2,'borrowed',$3,$4,$5,$6,$7) RETURNING id`,
+       VALUES ($1,$2,'borrowed',$3,$4,$5,$6,$7)`,
       [borrowedItem, lan.id, daysFromNow(-3), daysFromNow(-2), daysFromNow(-2), daysFromNow(5), huong.id],
     );
-    const activeLoanId = loanRows[0].id;
     await client.query(`UPDATE catalog_items SET status = 'borrowed' WHERE id = $1`, [borrowedItem]);
+
+    // 1 closed loan on the same item, so the Catalog Item Detail loan record
+    // has a history to show under the current holder: Minh had it before Lan,
+    // approved and taken back by Hương. Only ACTIVE loans are unique per item,
+    // so a returned ticket sits happily beside the borrowed one.
+    await client.query(
+      `INSERT INTO loan_tickets
+         (item_id, borrower_id, state, requested_at, approved_at, borrowed_at, due_at, returned_at, handled_by)
+       VALUES ($1,$2,'returned',$3,$4,$5,$6,$7,$8)`,
+      [
+        borrowedItem, minh.id,
+        daysFromNow(-40), daysFromNow(-39), daysFromNow(-39), daysFromNow(-25), daysFromNow(-27),
+        huong.id,
+      ],
+    );
 
     // --- PM: 3 deadlines across the two team spaces (one due within 7 days so
     // the 7-day reminder offset fires on the next dispatcher tick), with
@@ -432,24 +446,50 @@ async function main() {
       );
     }
 
-    // --- Notify: 2 comments — one threaded on a published node, one on the
-    // active loan ticket mentioning the librarian ---
+    // --- Notify: 2 comments on the published node — one plain, one with an
+    // inline @mention of the librarian. The loan-ticket comment is gone: a
+    // loan carries a factual record on Catalog Item Detail, not a discussion
+    // (owner decision 2026-07-20). The mention still seeds the "comment
+    // mentioning a member" matrix row, so the fixture count and the proofs
+    // that depend on it are unchanged. ---
     await client.query(
       `INSERT INTO comments (anchor_type, anchor_id, author_id, body) VALUES
          ('tree_node',$1,$2,'Phần kết luận nên bổ sung số liệu của đợt khảo sát bổ sung tháng 5.')`,
       [nodeIdBySlug["ket-qua-khao-sat-thuc-dia-2025"], lan.id],
     );
-    await client.query(
+    const mentionComment = await client.query(
       `INSERT INTO comments (anchor_type, anchor_id, author_id, body, mentions) VALUES
-         ('loan_ticket',$1,$2,'Em xin gia hạn thêm một tuần vì chưa đọc xong phần phụ lục.',$3)`,
-      [activeLoanId, lan.id, `{${huong.id}}`],
+         ('tree_node',$1,$2,$4,$3) RETURNING id`,
+      [
+        nodeIdBySlug["ket-qua-khao-sat-thuc-dia-2025"],
+        lan.id,
+        `{${huong.id}}`,
+        `@${huong.name} xem giúp em phần phụ lục với ạ.`,
+      ],
+    );
+    // The mention that the dispatcher would have delivered. Seeding it keeps
+    // every event in the notification-link proof present from a fresh seed, so
+    // that proof's coverage does not depend on an earlier proof run having
+    // written the row.
+    await client.query(
+      `INSERT INTO notifications (user_id, event_type, payload) VALUES ($1,'comment.created',$2)`,
+      [
+        huong.id,
+        JSON.stringify({
+          commentId: mentionComment.rows[0].id,
+          anchorType: "tree_node",
+          anchorId: nodeIdBySlug["ket-qua-khao-sat-thuc-dia-2025"],
+          authorId: lan.id,
+          mentions: [huong.id],
+        }),
+      ],
     );
 
     await client.query("COMMIT");
     console.log(
-      "Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan, " +
+      "Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan + 1 returned loan on the same item, " +
         "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 4 wiki-links between them, 1 curation ready_for_review (queue non-empty), 1 gap request, " +
-        "3 deadlines (1 due in 5 days), 2 tasks, 2 comments (1 with mention), calendar tokens per user.",
+        "3 deadlines (1 due in 5 days), 2 tasks, 2 comments on the node (1 with an inline @mention), calendar tokens per user.",
     );
   } catch (err) {
     await client.query("ROLLBACK");

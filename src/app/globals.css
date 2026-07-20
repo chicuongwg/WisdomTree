@@ -632,16 +632,43 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
 .comment-meta { font-size: 0.85rem; color: var(--color-ink-muted); }
 .comment-body { margin: var(--space-1) 0 var(--space-2); white-space: pre-wrap; }
 .comment-reply-btn { min-height: 2.25rem; padding: 0.1rem 0.7rem; font-size: 0.82rem; }
-.mention-fieldset {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  padding: var(--space-2) var(--space-3) var(--space-3);
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+/* An @Tên written in the body reads as a resolved name, not a link: it marks
+   who was pulled in, and there is nowhere to go from a person's name. */
+.mention-token {
+  background: var(--color-canopy-wash);
+  color: var(--color-canopy-deep);
+  border-radius: 3px;
+  padding: 0 0.2rem;
+  font-weight: 600;
 }
-.mention-fieldset legend { font-size: 0.85rem; color: var(--color-ink-muted); padding: 0 var(--space-1); }
+.field-help { font-size: 0.85rem; color: var(--color-ink-muted); margin: 0; }
+
+/* ============================================================
+   Loan record — the borrow/return register on a catalog item.
+   A ledger, not a conversation: label left, fact right, one row
+   per event in the ticket's life.
+   ============================================================ */
+.record { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-5); }
+.record dt { font-size: 0.88rem; font-weight: 600; color: var(--color-ink-muted); }
+.record dd { margin: 0; }
+/* the ledger stacks rather than squeezing the value column on a phone */
+@media (max-width: 30rem) {
+  .record { grid-template-columns: 1fr; gap: var(--space-1); }
+  .record dd { margin-bottom: var(--space-2); }
+}
+.record-scroll { overflow-x: auto; }
+/* a caption a screen reader hears and a sighted reader does not need twice */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.record-scroll > table.list { min-width: 40rem; }
+/* Overdue is stated in words (badge label + this note), never by colour. */
+.record .overdue-note { color: var(--color-seal-deep); font-weight: 600; }
 
 /* ============================================================
    Notifications

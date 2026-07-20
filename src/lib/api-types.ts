@@ -1736,7 +1736,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
-                    anchorType: "source" | "tree_node" | "loan_ticket" | "deadline";
+                    anchorType: "source" | "tree_node" | "deadline";
                     anchorId: string;
                 };
                 header?: never;
@@ -1758,7 +1758,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Comment on an object the caller can see (mentions trigger notifications) */
+        /** Comment on an object the caller can see (@Name in the body is resolved server-side and notifies that member) */
         post: {
             parameters: {
                 query?: never;
@@ -1770,13 +1770,12 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        anchorType: "source" | "tree_node" | "loan_ticket" | "deadline";
+                        anchorType: "source" | "tree_node" | "deadline";
                         /** Format: uuid */
                         anchorId: string;
                         /** Format: uuid */
                         parentCommentId?: string;
                         body: string;
-                        mentions?: string[];
                     };
                 };
             };
@@ -2506,6 +2505,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        /** Job status for render/export jobs (added 2026-07-20; export_jobs ids resolve for Admin/Op only) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JobRef"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bridge/drive/import": {
         parameters: {
             query?: never;
@@ -2889,7 +2929,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
-            anchorType?: "source" | "tree_node" | "loan_ticket" | "deadline";
+            anchorType?: "source" | "tree_node" | "deadline";
             /** Format: uuid */
             anchorId?: string;
             /** Format: uuid */
@@ -2985,6 +3025,11 @@ export interface components {
             jobType?: string;
             /** @enum {string} */
             state?: "queued" | "running" | "succeeded" | "failed" | "dead";
+            /** @description Present on succeeded render jobs */
+            result?: {
+                downloadUrl?: string;
+                converterWarnings?: string[];
+            };
         };
         HealthReport: {
             /** @description Success and failure counts by job type */
@@ -3125,7 +3170,7 @@ export interface components {
                     type?: "conference" | "funding" | "report" | "milestone";
                     /** Format: date-time */
                     dueAt?: string;
-                    /** @description ISO-8601 durations before dueAt */
+                    /** @description Postgres interval strings before dueAt (e.g. '7 days', '1 day') */
                     reminderOffsets?: string[];
                     links?: {
                         targetType?: string;

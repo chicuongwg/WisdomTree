@@ -1,6 +1,5 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getSourceDetail } from "@/modules/storage/service";
-import { listMentionableUsers } from "@/modules/notify/service";
 import { extractionStateLabel, T, trustStateLabel } from "@/lib/vi";
 import { CommentsSection } from "@/app/components/comments-section";
 
@@ -12,7 +11,6 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
   const { id } = await params;
   const source = await orNotFound(() => getSourceDetail(toPrincipal(user), id));
   const v = source.currentVersion;
-  const mentionOptions = await listMentionableUsers();
 
   return (
     <main className="page">
@@ -71,7 +69,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           </p>
         )}
       </div>
-      <CommentsSection anchorType="source" anchorId={source.id} mentionOptions={mentionOptions} />
+      <CommentsSection anchorType="source" anchorId={source.id} />
     </main>
   );
 }

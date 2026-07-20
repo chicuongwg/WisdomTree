@@ -10,7 +10,10 @@ import { users } from "../auth/schema";
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
   anchorType: text("anchor_type", {
-    enum: ["source", "tree_node", "loan_ticket", "deadline"],
+    // Loan tickets are NOT an anchor: a loan carries a factual record on the
+    // Catalog Item Detail screen, not a discussion (owner decision
+    // 2026-07-20; CHECK tightened in drizzle/0002_comments_drop_loan_anchor.sql).
+    enum: ["source", "tree_node", "deadline"],
   }).notNull(),
   anchorId: uuid("anchor_id").notNull(),
   parentCommentId: uuid("parent_comment_id"), // threading; self-FK in the migration

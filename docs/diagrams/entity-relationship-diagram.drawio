@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
   <diagram id="diagram_id" name="ERD">
-    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1990" pageHeight="1575" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1990" pageHeight="1560" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -102,43 +102,43 @@
           <mxGeometry x="1170" y="995" width="320" height="72" as="geometry" />
         </mxCell>
         <mxCell id="c34" value="NOTIFY — comments and alerts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
-          <mxGeometry x="1600" y="90" width="380" height="490" as="geometry" />
+          <mxGeometry x="1600" y="90" width="380" height="475" as="geometry" />
         </mxCell>
-        <mxCell id="c35" value="&lt;b&gt;comments · append-only&lt;/b&gt;&lt;hr&gt;anchor_type source | tree_node | loan_ticket | deadline&lt;br&gt;anchor_id, parent_comment_id?&lt;br&gt;author_id FK, mentions[]" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="130" width="330" height="102" as="geometry" />
+        <mxCell id="c35" value="&lt;b&gt;comments · append-only&lt;/b&gt;&lt;hr&gt;anchor_type source | tree_node | deadline&lt;br&gt;anchor_id, parent_comment_id?&lt;br&gt;author_id FK, mentions[]" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="130" width="330" height="87" as="geometry" />
         </mxCell>
         <mxCell id="c36" value="&lt;b&gt;notifications&lt;/b&gt;&lt;hr&gt;user_id FK&lt;br&gt;event_type, payload&lt;br&gt;read_at?" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="260" width="330" height="87" as="geometry" />
+          <mxGeometry x="1620" y="245" width="330" height="87" as="geometry" />
         </mxCell>
         <mxCell id="c37" value="&lt;b&gt;notification_deliveries&lt;/b&gt;&lt;hr&gt;notification_id FK&lt;br&gt;channel in_app | email | zalo&lt;br&gt;state, attempts" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="375" width="330" height="87" as="geometry" />
+          <mxGeometry x="1620" y="360" width="330" height="87" as="geometry" />
         </mxCell>
         <mxCell id="c38" value="&lt;b&gt;notification_preferences&lt;/b&gt;&lt;hr&gt;user_id + event_type PK&lt;br&gt;channels[]" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="490" width="330" height="72" as="geometry" />
+          <mxGeometry x="1620" y="475" width="330" height="72" as="geometry" />
         </mxCell>
         <mxCell id="c39" value="BRIDGE-GOOGLE + EXPORT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
-          <mxGeometry x="1600" y="630" width="380" height="345" as="geometry" />
+          <mxGeometry x="1600" y="615" width="380" height="345" as="geometry" />
         </mxCell>
         <mxCell id="c40" value="&lt;b&gt;bridge_imports&lt;/b&gt;&lt;hr&gt;kind drive | sheet_catalog | sheet_metrics | forms&lt;br&gt;config, state, watermark?" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="670" width="330" height="72" as="geometry" />
+          <mxGeometry x="1620" y="655" width="330" height="72" as="geometry" />
         </mxCell>
         <mxCell id="c41" value="&lt;b&gt;bridge_import_items&lt;/b&gt;&lt;hr&gt;import_id + external_id PK&lt;br&gt;&amp;#8594; idempotent re-runs&lt;br&gt;target_type/id, status" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="770" width="330" height="87" as="geometry" />
+          <mxGeometry x="1620" y="755" width="330" height="87" as="geometry" />
         </mxCell>
         <mxCell id="c42" value="&lt;b&gt;export_jobs&lt;/b&gt;&lt;hr&gt;scope, state&lt;br&gt;manifest, triggered_by FK" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="885" width="330" height="72" as="geometry" />
+          <mxGeometry x="1620" y="870" width="330" height="72" as="geometry" />
         </mxCell>
         <mxCell id="c43" value="CROSS-CUTTING — audit, outbox, jobs (append-only backbone)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
-          <mxGeometry x="1600" y="1025" width="380" height="390" as="geometry" />
+          <mxGeometry x="1600" y="1010" width="380" height="390" as="geometry" />
         </mxCell>
         <mxCell id="c44" value="&lt;b&gt;audit_events · append-only&lt;/b&gt;&lt;hr&gt;actor_id FK, actor_role&lt;br&gt;accountability uploader | editor_updater | approver_publisher | operator&lt;br&gt;action, target_type/id, outcome" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="1065" width="330" height="102" as="geometry" />
+          <mxGeometry x="1620" y="1050" width="330" height="102" as="geometry" />
         </mxCell>
         <mxCell id="c45" value="&lt;b&gt;outbox_events · append-only&lt;/b&gt;&lt;hr&gt;id bigint (dispatch order)&lt;br&gt;event_type, payload&lt;br&gt;dispatched_at?" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="1195" width="330" height="87" as="geometry" />
+          <mxGeometry x="1620" y="1180" width="330" height="87" as="geometry" />
         </mxCell>
         <mxCell id="c46" value="&lt;b&gt;jobs&lt;/b&gt;&lt;hr&gt;job_type, payload&lt;br&gt;idempotency_key UQ&lt;br&gt;state, attempts" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#969696;" vertex="1" parent="1">
-          <mxGeometry x="1620" y="1310" width="330" height="87" as="geometry" />
+          <mxGeometry x="1620" y="1295" width="330" height="87" as="geometry" />
         </mxCell>
         <mxCell id="c47" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#999999;strokeWidth=1.2;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="c8" target="c7">
           <mxGeometry relative="1" as="geometry"></mxGeometry>
@@ -195,10 +195,10 @@
           <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
         <mxCell id="c65" value="&lt;b&gt;Message:&lt;/b&gt; Every entity in data-model-lifecycle, catalog-circulation, and notifications maps to exactly one table (or the intake_items view) — full column detail lives in docs/design/database-schema.md, which supersedes this map on any disagreement." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="40" y="1465" width="1910" height="34" as="geometry" />
+          <mxGeometry x="40" y="1450" width="1910" height="34" as="geometry" />
         </mxCell>
         <mxCell id="c66" value="&lt;b&gt;Colour roles&lt;/b&gt; (repo theme, fixed): &lt;font color=&quot;#A855F7&quot;&gt;&amp;#9632; provenance spine (tree + promotions)&lt;/font&gt; · &lt;font color=&quot;#D97706&quot;&gt;&amp;#9632; append-only / immutable backbone&lt;/font&gt; · &lt;font color=&quot;#969696&quot;&gt;&amp;#9632; regular table&lt;/font&gt; · dashed card = SQL view · purple heavy edge = evidence linkage. Source of truth: docs/design/database-schema.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="40" y="1515" width="1910" height="24" as="geometry" />
+          <mxGeometry x="40" y="1500" width="1910" height="24" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

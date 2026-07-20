@@ -51,8 +51,10 @@
 - A `personal` space type exists, one per member, visible only to that member, used for private notes.
 
 ### Comment
-- Discussion anchored to exactly one work object: a `Source`, `Tree Node`, `Loan Ticket`, or `Deadline`.
+- Discussion anchored to exactly one work object: a `Source`, `Tree Node`, or `Deadline`.
+- A `Loan Ticket` is not an anchor: a loan carries a factual record (borrower, request time, approver, hand-over, due date, return) on Catalog Item Detail instead of a discussion thread — owner decision 2026-07-20.
 - Threaded and preserved as part of the object's history; not a chat channel.
+- Mentions are typed inline as `@Tên` and resolved server-side against the members who can see the anchor.
 - Follows the anchor object's permission scope and never mutates the anchor's canonical state.
 - See [`notifications.md`](./notifications.md).
 

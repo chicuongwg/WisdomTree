@@ -21,14 +21,10 @@ import { eventLabel } from "../../lib/vi";
 export type NotificationLink = { href: string; label: string };
 
 /** Comment anchors, mirroring comments.anchorType. */
-export type AnchorType = "source" | "tree_node" | "loan_ticket" | "deadline";
+export type AnchorType = "source" | "tree_node" | "deadline";
 
 export type NotificationLinkContext = {
-  /**
-   * loan ticket id → catalog item id, for loan payloads that carry no
-   * itemId (and for comment.created anchored to a loan_ticket, whose
-   * payload only ever has the ticket id).
-   */
+  /** loan ticket id → catalog item id, for loan payloads carrying no itemId. */
   ticketItemIds?: Readonly<Record<string, string>>;
   /**
    * Source ids on which the VIEWER is the assignee of an existing curation.
@@ -63,11 +59,6 @@ export function anchorHref(
       return (ctx.assignedSourceIds ?? []).includes(anchorId)
         ? `/source/task/${anchorId}`
         : `/library/${anchorId}`;
-    case "loan_ticket": {
-      // There is no ticket screen: a loan lives on its Catalog Item Detail.
-      const itemId = ctx.ticketItemIds?.[anchorId];
-      return itemId ? `/catalog/${itemId}` : null;
-    }
     case "deadline":
       return `/deadlines/${anchorId}`;
     default:
@@ -79,7 +70,6 @@ export function anchorHref(
 const ANCHORS_WITH_COMMENTS: ReadonlySet<string> = new Set<AnchorType>([
   "source",
   "tree_node",
-  "loan_ticket",
   "deadline",
 ]);
 
@@ -116,7 +106,11 @@ function hrefFor(eventType: string, payload: Payload, ctx: NotificationLinkConte
       // lookup so a payload written without it still resolves.
       const itemId = str(payload.itemId);
       if (itemId) return `/catalog/${itemId}`;
-      return anchorHref("loan_ticket", str(payload.ticketId), ctx);
+      // There is no ticket screen: a loan lives on its Catalog Item Detail,
+      // where the loan record block names borrower, approver and due date.
+      const ticketId = str(payload.ticketId);
+      const viaTicket = ticketId ? ctx.ticketItemIds?.[ticketId] : null;
+      return viaTicket ? `/catalog/${viaTicket}` : null;
     }
 
     case "deadline.approaching":

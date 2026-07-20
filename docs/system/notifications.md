@@ -29,7 +29,7 @@
 
 ## Acceptance Criteria
 - A member receives a notification through their chosen channels when an event relevant to them occurs.
-- A member can comment on a source, node, loan ticket, or deadline, and the comment persists with the object.
+- A member can comment on a source, node, or deadline, and the comment persists with the object.
 - A member can keep private notes in a personal space that no one else can see.
 - A Zalo or email outage delays alerts but never blocks the workflow that triggered them.
 
@@ -51,12 +51,13 @@
 | `loan.approved` | Borrower | In-app, Zalo |
 | `loan.overdue` | Borrower and librarian | In-app, Zalo, email |
 | `deadline.approaching` | Project members | In-app, Zalo, email |
-| Comment mentioning a member | Mentioned member | In-app, Zalo |
+| Comment mentioning a member (`@Tên` in the body) | Mentioned member | In-app, Zalo |
 
 ## Comments
-- A `Comment` is anchored to exactly one work object: a `Source`, a `Tree Node`, a `Loan Ticket`, or a `Deadline`.
+- A `Comment` is anchored to exactly one work object: a `Source`, a `Tree Node`, or a `Deadline`.
+- A `Loan Ticket` is not an anchor: a loan carries a factual record (borrower, request time, approver, hand-over, due date, return) on Catalog Item Detail instead of a discussion thread — owner decision 2026-07-20.
 - Comments are threaded and preserved as part of the object's history; they are not a chat channel.
-- A comment may mention a member to notify them.
+- A comment mentions a member by typing `@Tên` in the body; the server resolves the name against the members who can see the anchor and notifies them. An unresolvable name is simply not a mention, never an error.
 - Comment visibility follows the anchor object's permission scope: only those who can see the object can see its comments.
 - Comments never mutate the anchor object's canonical state.
 

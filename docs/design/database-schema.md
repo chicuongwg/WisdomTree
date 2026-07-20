@@ -450,7 +450,7 @@ Reminder dispatch: a scheduled job emits `deadline.approaching` once per (deadli
 | Column | Type | Constraints |
 | --- | --- | --- |
 | `id` | uuid | PK |
-| `anchor_type` | text | NOT NULL CHECK IN (`source`, `tree_node`, `loan_ticket`, `deadline`) |
+| `anchor_type` | text | NOT NULL CHECK IN (`source`, `tree_node`, `deadline`) |
 | `anchor_id` | uuid | NOT NULL |
 | `parent_comment_id` | uuid | FK comments NULL — threading |
 | `author_id` | uuid | FK users NOT NULL |
@@ -459,6 +459,8 @@ Reminder dispatch: a scheduled job emits `deadline.approaching` once per (deadli
 | `created_at` | timestamptz | NOT NULL |
 
 Index `(anchor_type, anchor_id, created_at)`. Visibility is resolved from the anchor object's scope at read time (see [`authorization-design.md`](./authorization-design.md)); comments never mutate the anchor.
+
+A `Loan Ticket` is not an anchor: a loan carries a factual record (borrower, request time, approver, hand-over, due date, return) on Catalog Item Detail instead of a discussion thread — owner decision 2026-07-20, tightened by `drizzle/0002_comments_drop_loan_anchor.sql`.
 
 ### notifications
 

@@ -14,7 +14,6 @@ import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
 import { NodeExportActions } from "@/app/components/node-export-actions";
 import { CommentsSection } from "@/app/components/comments-section";
-import { listMentionableUsers } from "@/modules/notify/service";
 
 // Screen: Node Detail (`/tree/node/:id`) — the primary reading surface with
 // verification badge and provenance summary (user-screen-specs.md).
@@ -26,8 +25,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const isAdmin = user.role === "admin_op";
   const canEdit = isAdmin || (user.role === "editor" && node.createdBy === user.id);
   const candidates = isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
-  const [mentionOptions, wiki, localGraph] = await Promise.all([
-    listMentionableUsers(),
+  const [wiki, localGraph] = await Promise.all([
     wikiIndex(actor),
     neighbourGraph(actor, id),
   ]);
@@ -66,7 +64,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
               height={340}
             />
           </section>
-          <CommentsSection anchorType="tree_node" anchorId={node.id} mentionOptions={mentionOptions} />
+          <CommentsSection anchorType="tree_node" anchorId={node.id} />
         </div>
         <aside>
           <div className="panel">

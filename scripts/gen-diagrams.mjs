@@ -268,7 +268,7 @@ class D {
     { k: 'conflicts', n: 'conflicts', f: ['target_type/id, state', 'base_version', 'attempted_payload, attempted_by FK'] },
   ];
   const NOTI = [
-    { k: 'comments', n: 'comments · append-only', f: ['anchor_type source | tree_node | loan_ticket | deadline', 'anchor_id, parent_comment_id?', 'author_id FK, mentions[]'] },
+    { k: 'comments', n: 'comments · append-only', f: ['anchor_type source | tree_node | deadline', 'anchor_id, parent_comment_id?', 'author_id FK, mentions[]'] },
     { k: 'notifs', n: 'notifications', f: ['user_id FK', 'event_type, payload', 'read_at?'] },
     { k: 'delivs', n: 'notification_deliveries', f: ['notification_id FK', 'channel in_app | email | zalo', 'state, attempts'] },
     { k: 'prefs', n: 'notification_preferences', f: ['user_id + event_type PK', 'channels[]'] },

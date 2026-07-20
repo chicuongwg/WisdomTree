@@ -4,10 +4,16 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { T } from "@/lib/vi";
 
 // The ONE comment block (docs/system/notifications.md § Comments): anchored
-// discussion reused verbatim on Node Detail, Stored Item Detail, Catalog Item
-// Detail (loan context) and Deadline Detail. Threading is one reply level in
-// the UI (parentCommentId), mentions are checkbox picks that trigger
-// notifications through the matrix.
+// discussion reused verbatim on Node Detail, Stored Item Detail and Deadline
+// Detail. Threading is one reply level in the UI (parentCommentId).
+//
+// Mentions are typed INTO the text as "@Tên" and resolved on the server
+// against the members who can see the anchor (owner decision 2026-07-20 — the
+// checkbox roster is gone). The client sends the body and nothing else; the
+// notification matrix row "comment mentioning a member" is unchanged.
+//
+// A loan ticket is not an anchor: a loan carries a factual record on the
+// Catalog Item Detail screen instead.
 
 type CommentRow = {
   id: string;
@@ -16,23 +22,20 @@ type CommentRow = {
   authorName: string;
   body: string;
   mentions: string[];
+  /** Display names of the resolved mentions, for highlighting the body. */
+  mentionNames: string[];
   createdAt: string;
 };
-
-export type MentionOption = { id: string; displayName: string };
 
 export function CommentsSection({
   anchorType,
   anchorId,
-  mentionOptions,
 }: {
-  anchorType: "source" | "tree_node" | "loan_ticket" | "deadline";
+  anchorType: "source" | "tree_node" | "deadline";
   anchorId: string;
-  mentionOptions: MentionOption[];
 }) {
   const [comments, setComments] = useState<CommentRow[] | null>(null);
   const [body, setBody] = useState("");
-  const [mentions, setMentions] = useState<string[]>([]);
   const [replyTo, setReplyTo] = useState<CommentRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +82,6 @@ export function CommentsSection({
         anchorType,
         anchorId,
         body: body.trim(),
-        mentions,
         ...(replyTo ? { parentCommentId: replyTo.id } : {}),
       }),
     });
@@ -90,15 +92,51 @@ export function CommentsSection({
       return;
     }
     setBody("");
-    setMentions([]);
     setReplyTo(null);
     setBusy(false);
     await load();
   }
 
-  const nameOf = (id: string) => mentionOptions.find((m) => m.id === id)?.displayName ?? "";
   const topLevel = (comments ?? []).filter((c) => !c.parentCommentId);
   const repliesOf = (id: string) => (comments ?? []).filter((c) => c.parentCommentId === id);
+
+  /**
+   * Highlight the @Tên tokens the server actually resolved. A token is a mark,
+   * not a link: a member's name has nowhere to go, and a fake link teaches the
+   * reader to distrust the real ones. Longest name first so "@Lan Anh" wins
+   * over "@Lan".
+   */
+  function renderBody(c: CommentRow) {
+    const names = [...c.mentionNames].sort((a, b) => b.length - a.length);
+    if (names.length === 0) return c.body;
+    const parts: Array<string | { name: string }> = [c.body];
+    for (const name of names) {
+      const needle = `@${name}`;
+      for (let i = 0; i < parts.length; i++) {
+        const piece = parts[i];
+        if (typeof piece !== "string") continue;
+        const at = piece.indexOf(needle);
+        if (at < 0) continue;
+        parts.splice(
+          i,
+          1,
+          piece.slice(0, at),
+          { name },
+          piece.slice(at + needle.length),
+        );
+        i += 2;
+      }
+    }
+    return parts.map((piece, i) =>
+      typeof piece === "string" ? (
+        piece
+      ) : (
+        <mark key={i} className="mention-token">
+          @{piece.name}
+        </mark>
+      ),
+    );
+  }
 
   const renderComment = (c: CommentRow, isReply: boolean) => (
     // id="comment-<id>" is the jump target a comment.created notification
@@ -115,14 +153,8 @@ export function CommentsSection({
       <div className="comment-meta">
         <strong>{c.authorName}</strong>
         <span className="muted"> · {new Date(c.createdAt).toLocaleString("vi-VN")}</span>
-        {c.mentions.length > 0 && (
-          <span className="muted">
-            {" · "}
-            {T.mentionMembers.toLowerCase()}: {c.mentions.map(nameOf).filter(Boolean).join(", ")}
-          </span>
-        )}
       </div>
-      <p className="comment-body">{c.body}</p>
+      <p className="comment-body">{renderBody(c)}</p>
       {!isReply && (
         <button type="button" className="secondary comment-reply-btn" onClick={() => setReplyTo(c)}>
           {T.reply}
@@ -162,25 +194,12 @@ export function CommentsSection({
             onChange={(e) => setBody(e.target.value)}
             rows={3}
             required
+            aria-describedby={`${fieldId}-help`}
           />
+          <p id={`${fieldId}-help`} className="field-help">
+            {T.mentionHelp}
+          </p>
         </div>
-        <fieldset className="mention-fieldset">
-          <legend>{T.mentionMembers}</legend>
-          {mentionOptions.map((m) => (
-            <label key={m.id} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={mentions.includes(m.id)}
-                onChange={(e) =>
-                  setMentions((prev) =>
-                    e.target.checked ? [...prev, m.id] : prev.filter((id) => id !== m.id),
-                  )
-                }
-              />
-              {m.displayName}
-            </label>
-          ))}
-        </fieldset>
         {error && <p className="error-text">{error}</p>}
         <button type="submit" disabled={busy || !body.trim()}>
           {busy ? T.loading : T.addComment}

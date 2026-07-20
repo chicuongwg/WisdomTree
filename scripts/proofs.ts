@@ -220,8 +220,11 @@ async function main() {
   // (403); stale draft save → 409; merge redirects and archives.
   console.log("Proof 4 — curation to publish");
   const minh = await login("dev:minh");
-  const { rows: minhRow } = await pg.query("SELECT id FROM users WHERE google_sub = 'dev:minh'");
+  const { rows: minhRow } = await pg.query(
+    "SELECT id, display_name FROM users WHERE google_sub = 'dev:minh'",
+  );
   const minhId = minhRow[0].id;
+  const minhName = minhRow[0].display_name as string;
   const { rows: branchRow } = await pg.query(
     "SELECT id FROM branches WHERE name = 'Lịch Sử Địa Phương'",
   );
@@ -480,8 +483,9 @@ async function main() {
       body: JSON.stringify({
         anchorType: "tree_node",
         anchorId: visNode[0].id,
-        body: "Thảo luận proof 5: cần đối chiếu thêm bản đồ cổ.",
-        mentions: [minhId],
+        // Inline mention: the name is typed into the body, the server
+        // resolves it. No `mentions` field is sent any more.
+        body: `Thảo luận proof 5: @${minhName} cần đối chiếu thêm bản đồ cổ.`,
       }),
     }),
   );
@@ -553,8 +557,7 @@ async function main() {
       body: JSON.stringify({
         anchorType: "tree_node",
         anchorId: visNode[0].id,
-        body: "Thảo luận proof 5 (lần hai, sau khi đổi kênh).",
-        mentions: [minhId],
+        body: `Thảo luận proof 5 (lần hai, sau khi đổi kênh) — @${minhName}.`,
         parentCommentId: comment1.id,
       }),
     }),
@@ -865,12 +868,17 @@ async function main() {
     JSON.stringify(cNode),
   );
   ok(
-    "comment.created on a loan ticket → the item route via the ticket lookup",
+    "comment.created anchored to a loan ticket → no link (loan tickets carry a record, not a discussion)",
     linkOf(
       "comment.created",
       { commentId: "c-2", anchorType: "loan_ticket", anchorId: "t-9" },
       { ticketItemIds: { "t-9": "i-9" } },
-    )?.href === "/catalog/i-9#comment-c-2",
+    ) === null,
+  );
+  ok(
+    "loan.approved without an itemId still reaches the item via the ticket lookup",
+    linkOf("loan.approved", { ticketId: "t-9" }, { ticketItemIds: { "t-9": "i-9" } })?.href ===
+      "/catalog/i-9",
   );
   ok(
     "comment.created on a deadline → /deadlines/:id#comment-:id",
@@ -1214,6 +1222,138 @@ async function main() {
     ok(`/graph renders node marks (${who})`, (html.match(/class="g-node/g) ?? []).length >= 4);
     ok(`/graph renders edges (${who})`, (html.match(/class="g-edge/g) ?? []).length >= 1);
     ok(`/graph carries the verification legend (${who})`, html.includes("map-legend"));
+  }
+
+  // ---------- Proof 9: loan record and inline mentions ----------
+  // Owner decision 2026-07-20: a loan ticket carries a FACTUAL RECORD, not a
+  // discussion, and members are mentioned by typing @Tên rather than ticking a
+  // roster. This proof holds both halves of that ruling to the wall:
+  //   (a) an @Tên typed into a comment body still produces exactly the mention
+  //       notification the matrix promises — the dispatcher never changed;
+  //   (b) the loan_ticket anchor is gone from the contract, so a comment aimed
+  //       at one is refused 400 invalid_anchor (the house code for a malformed
+  //       request; 404 stays reserved for an anchor the caller may not see,
+  //       and there is no such anchor to hide here);
+  //   (c) Catalog Item Detail answers "ai đang giữ cuốn này và ai đã duyệt"
+  //       on its own: borrower, approver and due date are in the HTML.
+  console.log("Proof 9 — loan record and mentions");
+
+  const { rows: huongRow } = await pg.query(
+    "SELECT id, display_name FROM users WHERE google_sub = 'dev:huong'",
+  );
+  const huongId = huongRow[0].id as string;
+  const huongName = huongRow[0].display_name as string;
+
+  // (a) inline @Tên → the same mention notification as the old checkbox list.
+  const c9 = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        anchorType: "tree_node",
+        anchorId: visNode[0].id,
+        body: `Proof 9: nhờ @${huongName} xem lại phần chú thích ảnh giúp em.`,
+      }),
+    }),
+  );
+  ok("comment with an inline @Tên → 201", c9.status === 201, `got ${c9.status}`);
+  const comment9 = (await c9.json()) as { id: string; mentions: string[] };
+  ok(
+    "the server resolved @Tên into comments.mentions",
+    comment9.mentions.length === 1 && comment9.mentions[0] === huongId,
+    JSON.stringify(comment9.mentions),
+  );
+  await settle();
+  const { rows: note9 } = await pg.query(
+    `SELECT id FROM notifications WHERE user_id = $1 AND event_type = 'comment.created'
+       AND payload->>'commentId' = $2`,
+    [huongId, comment9.id],
+  );
+  ok("inline mention notifies the named member", note9.length === 1, `got ${note9.length}`);
+
+  // A name nobody answers to is simply not a mention — never an error.
+  const c9b = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        anchorType: "tree_node",
+        anchorId: visNode[0].id,
+        body: "Proof 9: @KhôngCóAiTênNàyCả vẫn phải gửi được bình luận.",
+      }),
+    }),
+  );
+  ok("an unmatched @name still posts → 201", c9b.status === 201, `got ${c9b.status}`);
+  ok(
+    "an unmatched @name mentions nobody",
+    ((await c9b.json()) as { mentions: string[] }).mentions.length === 0,
+  );
+
+  // (b) the loan_ticket anchor is refused, not merely hidden in the UI.
+  const { rows: activeTicket } = await pg.query(
+    `SELECT t.id, t.item_id, t.due_at, b.display_name AS borrower, h.display_name AS handler
+       FROM loan_tickets t
+       JOIN users b ON b.id = t.borrower_id
+       LEFT JOIN users h ON h.id = t.handled_by
+      WHERE t.state IN ('requested','approved','borrowed','overdue')
+      ORDER BY t.requested_at DESC LIMIT 1`,
+  );
+  ok("a seeded active loan exists to prove the record against", activeTicket.length === 1);
+  const ticket9 = activeTicket[0];
+  const cLoan = await fetch(
+    `${BASE}/api/comments`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        anchorType: "loan_ticket",
+        anchorId: ticket9.id,
+        body: "Phiếu mượn không còn là nơi thảo luận.",
+      }),
+    }),
+  );
+  ok("comment anchored to a loan ticket → 400", cLoan.status === 400, `got ${cLoan.status}`);
+  ok(
+    "the 400 uses the contract Error shape with code invalid_anchor",
+    ((await cLoan.json()) as { code?: string }).code === "invalid_anchor",
+  );
+  ok(
+    "listing comments on a loan ticket → 400",
+    (
+      await fetch(
+        `${BASE}/api/comments?anchorType=loan_ticket&anchorId=${ticket9.id}`,
+        asUser(lan),
+      )
+    ).status === 400,
+  );
+  const { rows: loanComments } = await pg.query(
+    "SELECT count(*)::int AS n FROM comments WHERE anchor_type = 'loan_ticket'",
+  );
+  ok("no loan-ticket comment rows survive in the database", loanComments[0].n === 0);
+
+  // (c) the record reads on the screen, for the member and the librarian.
+  const dueText = new Date(ticket9.due_at).toLocaleDateString("vi-VN");
+  for (const [who, cookie] of [
+    ["thành viên", lan],
+    ["quản trị", huong],
+  ] as const) {
+    const res = await fetch(`${BASE}/catalog/${ticket9.item_id}`, asUser(cookie));
+    ok(`/catalog/:id → 200 (${who})`, res.status === 200, `got ${res.status}`);
+    const html = await res.text();
+    ok(`loan record names the borrower (${who})`, html.includes(ticket9.borrower));
+    ok(`loan record names the approver (${who})`, html.includes(ticket9.handler));
+    ok(`loan record prints the due date (${who})`, html.includes(dueText));
+    ok(
+      `loan record labels borrower and approver in Vietnamese (${who})`,
+      html.includes("Người mượn") && html.includes("Duyệt bởi"),
+    );
+    ok(
+      `Catalog Item Detail carries NO comment form (${who})`,
+      !html.includes('aria-label="Thảo luận"') && !html.includes("loan_ticket"),
+    );
+    ok(`past loans appear as a history table (${who})`, html.includes("Các lượt mượn trước"));
   }
 
   console.log(`\nAll proofs passed (${passed} checks).`);

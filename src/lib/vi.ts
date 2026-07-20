@@ -22,6 +22,22 @@ export const T = {
   signIn: "Đăng nhập",
   signOut: "Đăng xuất",
   requestLoan: "Yêu cầu mượn",
+  // Loan record block on Catalog Item Detail — the register entry that
+  // replaced the loan discussion (owner decision 2026-07-20). NEW pending
+  // humanities review.
+  loanRecord: "Sổ mượn trả", // NEW
+  currentLoan: "Lượt mượn hiện tại", // NEW
+  loanHistory: "Các lượt mượn trước", // NEW
+  noLoanRecord: "Đầu sách này chưa có lượt mượn nào.", // NEW
+  noCurrentLoan: "Hiện không có ai mượn đầu sách này.", // NEW
+  borrower: "Người mượn", // NEW
+  requestedAtLabel: "Yêu cầu lúc", // NEW
+  approvedByLabel: "Duyệt bởi", // NEW
+  approvedAtLabel: "Duyệt lúc", // NEW
+  borrowedAtLabel: "Nhận sách lúc", // NEW
+  returnedAtLabel: "Đã trả lúc", // NEW
+  overdueLabel: "Quá hạn", // NEW
+  notYet: "Chưa có", // NEW
   approve: "Duyệt",
   decline: "Từ chối",
   lend: "Giao sách",
@@ -85,7 +101,8 @@ export const T = {
   comments: "Thảo luận",
   addComment: "Gửi thảo luận", // NEW
   reply: "Trả lời", // NEW
-  mentionMembers: "Nhắc đến thành viên", // NEW
+  // Mentions are typed into the comment itself; the picker is gone.
+  mentionHelp: "Gõ @ rồi tên thành viên (ví dụ @Phạm Thu Hương) để nhắc họ vào thảo luận này.", // NEW
   notificationCenter: "Thông báo", // NEW
   markRead: "Đánh dấu đã đọc", // NEW
   unread: "Chưa đọc", // NEW
