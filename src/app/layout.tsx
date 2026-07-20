@@ -27,7 +27,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   if (!user) {
     return (
       <html lang="vi" suppressHydrationWarning>
-        <body>
+        {/* See the note on the signed-in <body> below. */}
+        <body suppressHydrationWarning>
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
           <div className="plain-shell">
             <header className="topbar">
@@ -58,7 +59,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body>
+      {/* suppressHydrationWarning reaches one level only, so <body> needs its
+          own: browser extensions (Grammarly and friends) stamp attributes on
+          <body> before React hydrates, and that is not our mismatch to fix. */}
+      <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <div className="shell">
           <ShellRail
