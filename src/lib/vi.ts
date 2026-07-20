@@ -105,6 +105,19 @@ export const T = {
   project: "Kho dự án", // NEW
   allProjects: "Tất cả kho dự án", // NEW
   noAssignee: "Chưa giao", // NEW
+  // Workspace shell terms — NEW pending humanities review
+  quickSearch: "Tìm nhanh", // NEW
+  openBranch: "Mở chuyên đề", // NEW
+  recent: "Gần đây", // NEW
+  shortcuts: "Lối tắt", // NEW
+  themeToggle: "Đổi giao diện sáng/tối", // NEW
+  palettePlaceholder: "Gõ để tìm trang tri thức hoặc mở nhanh một mục…", // NEW
+  paletteNoResults: "Không tìm thấy kết quả.", // NEW
+  paletteSearching: "Đang tìm…", // NEW
+  paletteHintTree: "trang tri thức", // NEW
+  paletteHintGo: "mở nhanh", // NEW
+  yourSpaces: "không gian", // NEW
+  modules: "Mô-đun", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

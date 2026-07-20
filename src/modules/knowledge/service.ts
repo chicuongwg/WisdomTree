@@ -76,6 +76,30 @@ export async function listBranches(actor: Principal) {
     .orderBy(asc(branches.name));
 }
 
+/** Shell sidebar: every live branch with its node list, two queries total. */
+export async function treeOutline(actor: Principal) {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const branchRows = await db
+    .select({ id: branches.id, name: branches.name })
+    .from(branches)
+    .where(sql`${branches.archivedAt} IS NULL`)
+    .orderBy(asc(branches.name));
+  const nodeRows = await db
+    .select({
+      id: treeNodes.id,
+      title: treeNodes.title,
+      branchId: treeNodes.branchId,
+      verification: treeNodes.verification,
+    })
+    .from(treeNodes)
+    .where(ne(treeNodes.verification, "archived"))
+    .orderBy(asc(treeNodes.title));
+  return branchRows.map((b) => ({
+    ...b,
+    nodes: nodeRows.filter((n) => n.branchId === b.id),
+  }));
+}
+
 export async function getBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
