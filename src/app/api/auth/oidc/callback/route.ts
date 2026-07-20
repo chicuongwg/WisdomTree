@@ -11,8 +11,12 @@ import { SESSION_TTL_MS } from "@/lib/sign";
 export async function GET(request: NextRequest) {
   return handleApi(async () => {
     if (!oidcEnabled()) throw notFound();
+    // Relative Locations throughout: behind the reverse proxy that any real
+    // deployment of this flow sits behind, request.url is the internal host —
+    // an absolute redirect would land the reader (and the session cookie) on
+    // localhost instead of the public origin.
     const back = (error: string) =>
-      NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+      new Response(null, { status: 302, headers: { Location: `/login?error=${error}` } });
 
     const state = request.nextUrl.searchParams.get("state");
     const code = request.nextUrl.searchParams.get("code");
@@ -27,7 +31,7 @@ export async function GET(request: NextRequest) {
     // Valid Google account, no invitation: the one case worth its own words.
     if (!user) return back("not_invited");
 
-    const response = NextResponse.redirect(new URL("/", request.url));
+    const response = new NextResponse(null, { status: 302, headers: { Location: "/" } });
     response.cookies.delete("oidc_nonce");
     response.cookies.set(SESSION_COOKIE, issueSessionToken(user.id), {
       httpOnly: true,

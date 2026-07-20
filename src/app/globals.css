@@ -352,6 +352,10 @@ main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; mar
   gap: var(--space-4);
 }
 .panel > * { margin: 0; }
+/* A control sizes to its words. The panel's stretch is for tables, fields and
+   text blocks; a lone button as a direct child was being pulled to the full
+   panel width — a banner nobody designed ("Đề cử lên cây tri thức"). */
+.panel > button, .panel > .button, .panel > form > button { align-self: flex-start; }
 /* headings open a section exactly as they do on the canvas: one extra step
    above, none below — the gap already spaces what follows */
 .panel > h2:not(:first-child), .panel > h3:not(:first-child) { margin-top: var(--space-2); }
