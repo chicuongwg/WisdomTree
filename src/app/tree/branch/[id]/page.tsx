@@ -5,8 +5,25 @@ import { listGapsForBranch } from "@/modules/storage/curation";
 import { badgeClass, gapLabel, gapStateLabel, T, when } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeCreateForm } from "@/app/components/node-create-form";
-import { BranchForm } from "@/app/components/branch-form";
+import { BranchArchiveButton, BranchForm } from "@/app/components/branch-form";
 import { Empty } from "@/app/components/empty";
+import { authorize } from "@/modules/auth/authorize";
+import type { Principal } from "@/modules/auth/dev-auth";
+
+/**
+ * May this reader archive the branch? Asked of the real policy rather than
+ * re-stated here: `authorize` throws, so a try/catch is the honest way to turn
+ * "would this be allowed" into a boolean. The service enforces it again on the
+ * POST — this only decides whether to offer a button that would be refused.
+ */
+function mayArchive(actor: Principal): boolean {
+  try {
+    authorize(actor, "knowledge.archive", { kind: "write" });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Screen: Branch Hub (`/tree/branch/:id`) — branch summary, node map,
 // progress, and open gaps (user-screen-specs.md).
@@ -94,6 +111,18 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
           <h2>Chỉnh sửa chuyên đề</h2>
           <div className="panel">
             <BranchForm branch={branch} />
+          </div>
+        </>
+      )}
+
+      {/* Last on the page on purpose: finishing a chuyên đề is the rarest act
+          here, and it should not sit next to the everyday edits. */}
+      {mayArchive(actor) && (
+        <>
+          <h2>{T.branchDone}</h2>
+          <div className="panel">
+            <p className="muted">{T.branchDoneHint}</p>
+            <BranchArchiveButton branchId={branch.id} />
           </div>
         </>
       )}

@@ -2300,3 +2300,15 @@ button.login-person:hover .login-person-role { color: inherit; }
    than turning into link green in the middle of a grid of states. */
 .cal-chip { color: inherit; text-decoration: none; }
 .cal-chip:hover { color: inherit; text-decoration: underline; text-underline-offset: 0.12em; }
+
+/* The one line under a sidebar group heading that says what the group holds.
+   "Công việc hằng ngày" and "Quản lý dự án" are two spaces with two rhythms,
+   and the heading alone was what readers kept confusing. Sits inside the
+   label's own indent so it reads as part of the heading, not as a link. */
+.side-sec > .side-hint {
+  margin: -0.1rem 0 0.25rem;
+  padding: 0 0.5rem 0 0.68rem;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--color-ink-muted);
+}

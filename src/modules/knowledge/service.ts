@@ -670,6 +670,42 @@ export async function archiveNode(actor: Principal, nodeId: string) {
   return result;
 }
 
+/**
+ * Retire a finished branch. `branches.archived_at` has been in the schema
+ * since 0001 and every read already skips a branch that has it set — there was
+ * simply no way to set it, so a finished subject stayed on the list forever
+ * beside the live ones (owner decision 2026-07-21).
+ *
+ * Archiving hides the branch, NOT its pages: an archived branch's nodes keep
+ * their own verification state and their published files, because a subject
+ * being finished is the opposite of its findings being withdrawn. Setting the
+ * timestamp again is a no-op rather than an error, so a double-click on a slow
+ * connection cannot produce a conflict a person has to think about.
+ */
+export async function archiveBranch(actor: Principal, branchId: string) {
+  authorize(actor, "knowledge.archive", { kind: "write" });
+  const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
+  if (!branch) throw notFound();
+  if (branch.archivedAt) return branch;
+
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(branches)
+      .set({ archivedAt: new Date(), updatedAt: new Date(), version: branch.version + 1 })
+      .where(and(eq(branches.id, branchId), eq(branches.version, branch.version)))
+      .returning();
+    if (!updated) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "approver_publisher",
+      action: "branch.archive",
+      targetType: "branch",
+      targetId: branchId,
+      details: { name: branch.name },
+    });
+    return updated;
+  });
+}
+
 /** Merge: this node archives and redirects to the canonical node (audited). */
 export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeId: string) {
   authorize(actor, "knowledge.node.merge", { kind: "write" });

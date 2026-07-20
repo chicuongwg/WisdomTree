@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { T } from "@/lib/vi";
 import { NodeLink } from "./node-link";
 
-// Contextual sidebar. Two labelled destination groups come first — knowledge
-// surfaces and project/work surfaces — so the outline below can no longer be
-// read as "these folders are my project". The outline itself is node-centric,
+// Contextual sidebar. Three labelled destination groups come first —
+// knowledge surfaces, the day's work, and project management — so the outline
+// below can no longer be read as "these folders are my project". The outline itself is node-centric,
 // not file-centric: a page row leads with its verification dot (the state of
 // the knowledge, not a file type) and opens the same hover/focus preview card
 // as every other node link, so the row behaves like a page reference rather
@@ -51,8 +51,15 @@ export function ShellSidebar({
     { href: "/tree", label: T.tree },
     { href: "/tree/branches", label: T.navBranches },
   ];
+  // Two groups, not one. "Dự án & công việc" put the day's rotating tasks and
+  // the project calendar under one heading, and readers asked why hạn chót
+  // stood next to bảng công việc: they run at different rhythms. Bảng công
+  // việc is picked up and finished in a day; hạn chót belongs to a project
+  // that runs for months. Each group now says which rhythm it holds.
   const workNav: { href: string; label: string }[] = [
     { href: "/board", label: T.board }, // every role — pm.board.read is global
+  ];
+  const projectNav: { href: string; label: string }[] = [
     { href: "/deadlines", label: T.deadline },
   ];
 
@@ -99,19 +106,27 @@ export function ShellSidebar({
             );
           })}
         </nav>
-        <nav className="side-sec" aria-label={T.navWork}>
-          <div className="side-label">{T.navWork}</div>
-          {workNav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
-              aria-current={pathname.startsWith(n.href) ? "page" : undefined}
-            >
-              <span className="item-label">{n.label}</span>
-            </Link>
-          ))}
-        </nav>
+        {[
+          { label: T.navWork, hint: T.navWorkHint, items: workNav },
+          { label: T.navProjects, hint: T.navProjectsHint, items: projectNav },
+        ].map((group) => (
+          <nav key={group.label} className="side-sec" aria-label={group.label}>
+            <div className="side-label">{group.label}</div>
+            {/* The hint is what tells the two groups apart at a glance: the
+                labels alone still look like two names for the same thing. */}
+            <p className="side-hint">{group.hint}</p>
+            {group.items.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
+                aria-current={pathname.startsWith(n.href) ? "page" : undefined}
+              >
+                <span className="item-label">{n.label}</span>
+              </Link>
+            ))}
+          </nav>
+        ))}
         <div className="side-sec">
           <div className="side-label">
             {T.branch}

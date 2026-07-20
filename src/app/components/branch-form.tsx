@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 import { Say } from "./say";
+import { ConfirmButton } from "./confirm-button";
 
 /**
  * Create Branch (`/tree/branch/new`) and Branch Hub metadata edit share this
@@ -59,5 +60,48 @@ export function BranchForm({
         {busy ? T.loading : T.save}
       </button>
     </form>
+  );
+}
+
+/**
+ * "Chuyên đề này đã xong" — the branch leaves the list of live subjects.
+ *
+ * It lives beside the branch form because it is the same screen's editing
+ * kit, and the confirmation says what actually changes rather than asking
+ * whether the reader is sure.
+ *
+ * Once archived the hub itself answers 404 (every branch read skips an
+ * archived branch), so staying here would leave the reader on a page that
+ * breaks on the next refresh. We send them to the list of subjects, which is
+ * where the change is visible: the branch they just finished is no longer in
+ * it.
+ */
+export function BranchArchiveButton({ branchId }: { branchId: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
+  async function archive() {
+    setError(null);
+    const res = await fetch(`/api/tree/branches/${branchId}/archive`, { method: "POST" });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { message?: string } | null;
+      setError(body?.message ?? T.genericError);
+      return;
+    }
+    router.push("/tree/branches");
+    router.refresh();
+  }
+
+  return (
+    <>
+      <ConfirmButton
+        label={T.archiveBranch}
+        title={T.confirmArchiveBranchTitle}
+        body={T.confirmArchiveBranchBody}
+        className="secondary"
+        onConfirm={archive}
+      />
+      <Say error={error} />
+    </>
   );
 }

@@ -16,6 +16,13 @@ type RailItem = {
   pip?: number;
   /** extra path prefixes that light this item up */
   also?: string[];
+  /**
+   * The space this icon belongs to, shown before its name in the tooltip. The
+   * rail has no room for headings, so for the two items readers kept mixing up
+   * — the day's board and the project calendar — the tooltip is where the
+   * grouping gets said.
+   */
+  group?: string;
 };
 
 const stroke = {
@@ -114,10 +121,12 @@ export function ShellRail({
     { href: "/tree", label: T.tree, icon: icons.tree },
     { href: "/library", label: T.library, icon: icons.library, also: ["/source"] },
     { href: "/catalog", label: T.catalog, icon: icons.catalog },
-    { href: "/deadlines", label: T.deadline, icon: icons.deadlines },
+    // Same order as the sidebar: the day's board first, then the project
+    // calendar, which is a different space and says so in its tooltip.
     // Every role: pm.board.read is global, and unheld work is a pool anyone
     // may take from.
-    { href: "/board", label: T.board, icon: icons.board },
+    { href: "/board", label: T.board, icon: icons.board, group: T.navWork },
+    { href: "/deadlines", label: T.deadline, icon: icons.deadlines, group: T.navProjects },
   ];
   if (role === "admin_op") {
     items.push({ href: "/review", label: T.reviewQueue, icon: icons.review, pip: reviewOpen });
@@ -139,21 +148,22 @@ export function ShellRail({
       <Link href="/" className="brand-mark" title={T.home} aria-label={T.home}>
         WT
       </Link>
-      {items.map((item) => (
+      {items.map((item) => {
+        const name = item.group ? `${item.group} · ${item.label}` : item.label;
+        return (
         <Link
           key={item.href}
           href={item.href}
           className="rail-btn"
-          title={item.label}
-          aria-label={
-            item.pip ? `${item.label} (${item.pip} ${T.unread.toLowerCase()})` : item.label
-          }
+          title={name}
+          aria-label={item.pip ? `${name} (${item.pip} ${T.unread.toLowerCase()})` : name}
           aria-current={isActive(item) ? "page" : undefined}
         >
           {item.icon}
           {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}
         </Link>
-      ))}
+        );
+      })}
       {/* ponytail: below 56rem the sidebar is display:none, and six screens
           (nộp nguồn, bài nộp của tôi, hộp nguồn, bàn thủ thư, danh sách
           chuyên đề, chuyên đề mới) live only there. Rather than a second

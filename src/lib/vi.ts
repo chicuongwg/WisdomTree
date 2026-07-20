@@ -271,7 +271,11 @@ export const T = {
   graphNoMatch: "Không có trang nào khớp bộ lọc. Xóa bớt điều kiện để xem lại.", // NEW
   noBacklinks: "Chưa trang nào liên kết đến trang này.", // NEW
   navKnowledge: "Tri thức", // NEW
-  navWork: "Dự án & công việc", // NEW
+  // Renamed: "Dự án & công việc" lumped the day's rotating tasks together with
+  // long-horizon project management, and readers could not tell why hạn chót
+  // sat beside bảng công việc. The group now names only the day's work; the
+  // project side moved to navProjects.
+  navWork: "Công việc hằng ngày", // NEW
   navBranches: "Danh sách chuyên đề", // NEW
   openGraph: "Mở bản đồ tri thức", // NEW
   // Bản đồ tri thức: thao tác và tùy chỉnh hiển thị — NEW pending humanities review
@@ -536,6 +540,19 @@ export const T = {
   avatarFileRequired: "Chưa chọn tệp ảnh.", // NEW
   invalidUserChange: "Thay đổi tài khoản không hợp lệ.", // NEW
   invalidProfile: "Thông tin hồ sơ không hợp lệ.", // NEW
+  // Lưu trữ chuyên đề đã xong, và hai không gian của thanh điều hướng: việc
+  // hằng ngày ở "bảng công việc" khác hẳn với quản lý dự án dài hơi.
+  // NEW pending humanities review.
+  branchDone: "Chuyên đề đã xong", // NEW
+  branchDoneHint:
+    "Khi chuyên đề đã làm xong, lưu trữ để nó không còn nằm cạnh các chuyên đề đang làm.", // NEW
+  archiveBranch: "Lưu trữ chuyên đề", // NEW
+  confirmArchiveBranchTitle: "Lưu trữ chuyên đề này?", // NEW
+  confirmArchiveBranchBody:
+    "Chuyên đề sẽ rời khỏi danh sách chuyên đề và thanh bên; các trang tri thức bên trong vẫn còn và vẫn tìm được. Không có nút mở lại chuyên đề.", // NEW
+  navProjects: "Quản lý dự án", // NEW
+  navProjectsHint: "Việc dài hơi của cả dự án", // NEW
+  navWorkHint: "Việc nhận và làm trong ngày", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

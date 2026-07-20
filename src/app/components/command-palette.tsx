@@ -48,8 +48,11 @@ export function CommandPalette({ role }: { role: string }) {
     { key: "catalog", label: T.catalog, hint: T.paletteHintGo, href: "/catalog" },
     { key: "intake", label: T.sourceIntake, hint: T.paletteHintGo, href: "/source/intake" },
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
-    { key: "deadlines", label: T.deadline, hint: T.paletteHintGo, href: "/deadlines" },
-    { key: "board", label: T.board, hint: T.paletteHintGo, href: "/board" },
+    // These two say which space they belong to instead of the generic "đi
+    // tới": the board and the deadline calendar are the pair readers mix up,
+    // and the palette is often how they are reached.
+    { key: "board", label: T.board, hint: T.navWork, href: "/board" },
+    { key: "deadlines", label: T.deadline, hint: T.navProjects, href: "/deadlines" },
     { key: "notifications", label: T.notificationCenter, hint: T.paletteHintGo, href: "/notifications" },
     { key: "account", label: T.account, hint: T.paletteHintGo, href: "/account" },
   ];
@@ -72,7 +75,9 @@ export function CommandPalette({ role }: { role: string }) {
 
   const q = query.trim().toLowerCase();
   const screenMatches = q
-    ? screens.filter((s) => s.label.toLowerCase().includes(q))
+    ? // The hint counts as searchable text, so typing "dự án" finds Hạn chót
+      // even though the word is not in its name.
+      screens.filter((s) => `${s.label} ${s.hint}`.toLowerCase().includes(q))
     : screens;
   const results: Entry[] = [
     ...hits.map((h) => ({
