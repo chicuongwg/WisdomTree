@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
@@ -307,8 +307,114 @@ type TaskInput = {
   assigneeId?: string | null;
   targetType?: string | null;
   targetId?: string | null;
+  dueAt?: string | null;
   expectedVersion?: number;
 };
+
+/** ISO date-time or null; anything else is a 400, never a silent Invalid Date. */
+function parseDueAt(raw: string | null | undefined): Date | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) {
+    throw new ApiError(400, "invalid_due_at", "Thời hạn không hợp lệ.");
+  }
+  return d;
+}
+
+/**
+ * Take an unassigned task from the shared pool — the guild-board move (owner
+ * decision 2026-07-21). Gated on its own key rather than manage, because the
+ * claimer by definition does not own the task yet; the WHERE clause is the
+ * real guard: only a still-unassigned, still-open task can be claimed, so two
+ * simultaneous claims resolve to one winner and one 409.
+ */
+export async function claimTask(actor: Principal, taskId: string) {
+  authorize(actor, "pm.task.claim", { kind: "write" });
+  const claimed = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(tasks)
+      .set({ assignedTo: actor.userId, updatedAt: new Date() })
+      .where(and(eq(tasks.id, taskId), isNull(tasks.assignedTo), ne(tasks.state, "archived")))
+      .returning();
+    if (!row) return null;
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "task.claim",
+      targetType: "task",
+      targetId: taskId,
+      details: {},
+    });
+    return row;
+  });
+  if (!claimed) {
+    const [exists] = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.id, taskId));
+    if (!exists) throw notFound();
+    throw new ApiError(409, "already_claimed", "Việc này đã có người nhận.");
+  }
+  return claimed;
+}
+
+/**
+ * Archive: off the board, still in the record. For finished lanes that have
+ * served their purpose and for tasks created by mistake — the two cases the
+ * owner named. Owned-or-assigned (creator or holder), admin by role.
+ */
+export async function archiveTask(actor: Principal, taskId: string) {
+  const [target] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+  if (!target) throw notFound();
+  authorize(actor, "pm.task.archive", {
+    ownerIds: [target.createdBy, target.assignedTo],
+    kind: "write",
+  });
+  if (target.state === "archived") return; // already true
+  await db.transaction(async (tx) => {
+    await tx
+      .update(tasks)
+      .set({ state: "archived", updatedAt: new Date(), version: target.version + 1 })
+      .where(eq(tasks.id, taskId));
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "task.archive",
+      targetType: "task",
+      targetId: taskId,
+      details: { from: target.state },
+    });
+  });
+}
+
+/**
+ * One month (or week) of scheduled work: tasks by due_at plus the project
+ * deadlines already living in this module — the calendar draws both, because
+ * "what is this team carrying" is one question, not two screens.
+ */
+export async function listSchedule(actor: Principal, range: { from: Date; to: Date }) {
+  authorize(actor, "pm.board.read", { kind: "read" });
+  const [taskRows, deadlineRows] = await Promise.all([
+    db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        state: tasks.state,
+        assigneeName: users.displayName,
+        dueAt: tasks.dueAt,
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assignedTo, users.id))
+      .where(
+        and(
+          ne(tasks.state, "archived"),
+          sql`${tasks.dueAt} >= ${range.from} AND ${tasks.dueAt} < ${range.to}`,
+        ),
+      )
+      .orderBy(asc(tasks.dueAt)),
+    db
+      .select({ id: deadlines.id, title: deadlines.title, dueAt: deadlines.dueAt, type: deadlines.type })
+      .from(deadlines)
+      .where(sql`${deadlines.dueAt} >= ${range.from} AND ${deadlines.dueAt} < ${range.to}`)
+      .orderBy(asc(deadlines.dueAt)),
+  ]);
+  return { tasks: taskRows, deadlines: deadlineRows };
+}
 
 export async function createTask(actor: Principal, input: TaskInput) {
   // Creation is board management of one's own task: the creator is the owner.

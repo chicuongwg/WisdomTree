@@ -67,14 +67,19 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   "notify.preferences.manage": { roles: ["user", "editor", "admin_op"], scope: "self" },
   "pm.deadline.read": { roles: ["user", "editor", "admin_op"], scope: "space" },
   "pm.deadline.edit": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  // pm.board.manage: admin_op, with "editor: owned-or-assigned task updates"
-  // (catalog note) — modeled as owned-or-assigned so an editor passes for
-  // tasks they created or are assigned, and admin_op bypasses on role.
-  "pm.board.manage": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
-  // Not in the catalog table verbatim: opening the board read surface
-  // (openapi GET /board says "Editor, Admin/Op") — keyed pending a catalog
-  // addendum like storage.curation.assign; flagged in the report.
-  "pm.board.read": { roles: ["editor", "admin_op"], scope: "global" },
+  // pm.board.manage: owned-or-assigned task updates for every member,
+  // admin_op bypasses on role. The guild-board model (owner decision
+  // 2026-07-21): whoever holds a task works it, whatever their role.
+  "pm.board.manage": { roles: ["user", "editor", "admin_op"], scope: "owned-or-assigned" },
+  // Every approved member sees the team's workload — the board is the shared
+  // picture of who is carrying what (owner decision 2026-07-21).
+  "pm.board.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  // Taking an unassigned task from the pool. Separate from manage because the
+  // claimer by definition does not own the task yet; the service additionally
+  // requires assigned_to IS NULL, so this can never reassign someone's work.
+  "pm.task.claim": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  // Archiving a finished or mistaken task off the board.
+  "pm.task.archive": { roles: ["user", "editor", "admin_op"], scope: "owned-or-assigned" },
 };
 
 export type PermissionKey = keyof typeof CATALOG;

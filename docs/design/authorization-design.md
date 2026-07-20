@@ -96,7 +96,7 @@ Permission keys are `module.action`. "Roles" lists the minimum roles allowed; sc
 | `knowledge.node.merge` | Merge duplicate nodes | admin_op | global |
 | `knowledge.archive` | Archive node or source | admin_op | global |
 | `knowledge.taxonomy.manage` | Manage tags and taxonomy | admin_op (editor: suggest only) | global |
-| `pm.board.manage` | Manage operational board | admin_op (editor: owned-or-assigned task updates) | global |
+| `pm.board.manage` | Manage operational board | admin_op (user, editor: owned-or-assigned task updates) | global |
 | `export.document` | Export node Markdown to docx or pdf | all | global |
 | `catalog.browse` | Browse and search library catalog | all | space (library space) |
 | `circulation.loan.request` | Request to borrow a catalog item | all | space (library space) |
@@ -121,7 +121,9 @@ Addendum (2026-07-20, found during the knowledge-module build — capabilities i
 | `storage.gap.triage` | Triage, convert, reject, or archive a branch-gap request | admin_op | global |
 | `review.queue.read` | Open the review queue and publish-review workbench | admin_op | global |
 | `storage.source.manage` | Rename your own uploaded source, or withdraw it while nothing is derived from it | user, editor, admin_op | owned-or-assigned |
-| `pm.board.read` | Open the operational board | editor | global |
+| `pm.board.read` | Open the operational board — every approved member sees the team's workload (owner decision 2026-07-21) | user, editor | global |
+| `pm.task.claim` | Take an unassigned task from the shared pool (guild-board model, owner decision 2026-07-21) | user, editor, admin_op | global |
+| `pm.task.archive` | Archive a finished or mistaken task off the board | admin_op (user, editor: own tasks) | owned-or-assigned |
 | `admin.users.manage` | Change a member's role or disable/re-enable an account, always audited with old and new values | admin_op | global |
 | `admin.audit.read` | Read the audit trail in the Admin Console | admin_op | global |
 | (ruling) | Log an achievement stays under `pm.board.manage` (editor owned-or-assigned, admin_op global); baseline users do not log achievements | | |

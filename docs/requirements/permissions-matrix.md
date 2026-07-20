@@ -61,7 +61,7 @@
 | Merge duplicate nodes | No | No | Yes |
 | Archive node or source | No | No | Yes |
 | Manage tags and taxonomy | No | Limited suggestion only | Yes |
-| Manage operational board | No | Limited task updates on owned or assigned work | Yes |
+| Manage operational board | Limited task updates on owned or assigned work | Limited task updates on owned or assigned work | Yes |
 | Export node Markdown to docx or pdf | Yes | Yes | Yes |
 | Browse and search library catalog | Member spaces only | Member spaces only | Yes |
 | Request to borrow a catalog item | Yes | Yes | Yes |
