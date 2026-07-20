@@ -102,11 +102,19 @@
   /* Interface: quiet sans for nav, controls, tables, badges */
   --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
-  /* Utility: data, editors, subscription URLs */
-  /* Same coverage rule: the corrected-text and Markdown editors are
-     monospace and hold Vietnamese prose, so the named fallbacks must too. */
-  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas,
-    "DejaVu Sans Mono", "Liberation Mono", monospace;
+  /* Utility: machine text only — code blocks, a subscription URL, a key hint.
+     NOT prose: Vietnamese stacks two marks on one vowel (ề ổ ẫ ậ), and a
+     monospace em box is too tight to hold both, so the tone mark is squashed
+     into the circumflex or clipped. Measured in Firefox on this machine across
+     the whole stack below plus JetBrainsMono Nerd Font (what `ui-monospace`
+     and the generic `monospace` keyword actually resolve to here): every one
+     of them mangles it, and Noto Sans Mono is the least bad by a wide margin.
+     That is why the editors moved to the reading serif rather than getting a
+     better monospace — see textarea.editor.
+     Coverage rule still applies to what is left: check before adding a family.
+       fc-list ':charset=1ec7' family | grep -i '<name>' */
+  --font-mono: "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono",
+    ui-monospace, monospace;
 
   /* --- Rhythm -------------------------------------------------------- */
   /* One 4px-based spacing scale. Every gap, pad and margin in the app is
@@ -672,12 +680,18 @@ pre.raw-text {
   line-height: 1.6;
   margin: 0;
 }
+/* The corrected-text and Markdown editors hold Vietnamese prose written by
+   people who research culture, not code. They were set in monospace — a
+   programmer's affordance that here only crushed the tone marks (see
+   --font-mono) and made the writing pane disagree with the preview pane beside
+   it, which was already the reading serif. Same face on both sides now: what
+   you type looks like what you get. */
 textarea.editor {
   width: 100%;
   min-height: 14rem;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 /* ============================================================
