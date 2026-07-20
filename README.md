@@ -47,8 +47,13 @@ which cuts the compile pause substantially; `npm run dev:webpack` keeps the
 old bundler if a Turbopack bug ever needs ruling out.
 
 Never run `npm run build` while a dev server is up: both write `.next` and the
-result is a corrupted server that fails with `Cannot find module
-'./vendor-chunks/...'`. Stop the server, `rm -rf .next`, then build.
+result is a corrupted server that 404s every route or fails with `Cannot find
+module './vendor-chunks/...'`. Stop the server, `rm -rf .next`, then build.
+
+`npm run build` now checks this itself — a `prebuild` hook refuses when
+something is listening on the app port, because a warning you have to remember
+is weaker than a check that runs itself. Override with
+`SKIP_PORT_CHECK=1 npm run build` when the port belongs to something unrelated.
 
 Seeded per the brief's acceptance criteria: 3 users (User/Editor/Admin-Op),
 2 team spaces (one is the community library) + a personal space per user,
