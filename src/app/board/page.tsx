@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listBoard } from "@/modules/pm/service";
 import { listMentionableUsers } from "@/modules/notify/service";
-import { T, taskLabel } from "@/lib/vi";
+import { badgeClass, T, taskLabel, taskStateLabel } from "@/lib/vi";
 import { TaskCreateForm, TaskStateButtons } from "@/app/components/board-actions";
 
 // Screen: Board (`/board`) — operational task lanes todo/doing/done
@@ -24,7 +24,8 @@ export default async function BoardPage() {
             return (
               <section key={lane} className="panel" aria-label={taskLabel(lane)}>
                 <h2>
-                  {taskLabel(lane)} <span className="badge muted">{laneTasks.length}</span>
+                  {taskLabel(lane)}{" "}
+                  <span className={badgeClass(taskStateLabel, lane)}>{laneTasks.length}</span>
                 </h2>
                 {laneTasks.length === 0 ? (
                   <p className="muted">{T.empty}</p>

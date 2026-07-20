@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listLibrary, listMemberSpaces } from "@/modules/storage/service";
-import { extractionStateLabel, T } from "@/lib/vi";
+import { badgeClass, extractionLabel, extractionStateLabel, T } from "@/lib/vi";
 
 // Screen: Library (`/library`) — space-scoped, store-first: items appear at
 // `stored`, before extraction finishes.
@@ -54,7 +54,7 @@ export default async function LibraryPage({
                 <td>{item.spaceName}</td>
                 <td>{item.storedAt?.toLocaleString("vi-VN")}</td>
                 <td>
-                  <span className={`badge ${item.extractionStatus === "unprocessable" ? "warn" : item.extractionStatus === "pending" ? "muted" : ""}`}>
+                  <span className={badgeClass(extractionLabel, item.extractionStatus)}>
                     {extractionStateLabel(item.extractionStatus)}
                   </span>
                 </td>

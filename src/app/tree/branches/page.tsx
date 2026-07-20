@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listBranches } from "@/modules/knowledge/service";
-import { T } from "@/lib/vi";
+import { badgeToneClass, T } from "@/lib/vi";
 
 // Screen: Branch List (`/tree/branches`) — branch cards with node counts and
 // verification progress (user-screen-specs.md).
@@ -34,7 +34,11 @@ export default async function BranchListPage() {
               {b.description && <p className="muted">{b.description}</p>}
               <p>
                 <strong>{b.nodeCount}</strong> {T.node.toLowerCase()} ·{" "}
-                <span className="badge verified">
+                {/* A count of nodes that reached `verified` — the same tone as
+                    the state it counts, so the card and the node badges agree.
+                    Except at zero: a green chip reading "0 đã thẩm định" would
+                    claim an achievement that has not happened. */}
+                <span className={badgeToneClass(b.verifiedCount > 0 ? "done" : "waiting")}>
                   {b.verifiedCount} đã thẩm định
                 </span>
               </p>

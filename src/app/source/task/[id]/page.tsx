@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCurationWorkbench } from "@/modules/storage/curation";
-import { curationLabel, T } from "@/lib/vi";
+import { badgeClass, badgeToneClass, curationLabel, curationStateLabel, T } from "@/lib/vi";
 import { CurationWorkbench } from "@/app/components/curation-workbench";
 
 // Screen: Assigned Source Task (`/source/task/:id`, user-screen-specs.md) —
@@ -28,7 +28,15 @@ export default async function AssignedSourceTaskPage({
       </h1>
       <p className="muted">
         {T.state}:{" "}
-        <span className="badge muted">
+        {/* No curation row yet = the task is still unassigned, which is a
+            `waiting` state even though no enum value has been written. */}
+        <span
+          className={
+            wb.curation
+              ? badgeClass(curationStateLabel, wb.curation.state)
+              : badgeToneClass("waiting")
+          }
+        >
           {wb.curation ? curationLabel(wb.curation.state) : "Chưa giao việc"}
         </span>{" "}
         · <Link href={`/library/${wb.source.id}`}>Xem trong {T.library}</Link>

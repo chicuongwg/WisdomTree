@@ -1,6 +1,6 @@
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listTickets } from "@/modules/circulation/service";
-import { loanLabel, T } from "@/lib/vi";
+import { badgeClass, loanLabel, loanStateLabel, T } from "@/lib/vi";
 import { LoanActions } from "@/app/components/loan-actions";
 
 // Screen: Librarian Desk (`/catalog/admin`) — Admin/Op circulation surface.
@@ -54,7 +54,7 @@ export default async function LibrarianDeskPage() {
                       </td>
                       <td>{borrowerName}</td>
                       <td>
-                        <span className={`badge ${ticket.state === "overdue" ? "danger" : "muted"}`}>
+                        <span className={badgeClass(loanStateLabel, ticket.state)}>
                           {loanLabel(ticket.state)}
                         </span>
                       </td>

@@ -390,3 +390,164 @@ export const userRoleLabel = (v: string | null | undefined): string =>
   guarded(roleLabel, "roleLabel", v, FALLBACK.role);
 export const notifyChannelLabel = (v: string | null | undefined): string =>
   guarded(channelLabel, "channelLabel", v, FALLBACK.channel);
+
+// ---------------------------------------------------------------------------
+// Badge tones — the visual half of a state label.
+//
+// A tone is assigned by MEANING, not one colour per enum value: thirty-odd
+// states across nine maps collapse onto five tones, so a reader learns the
+// vocabulary once and it holds everywhere.
+//
+//   waiting   — queued, nothing has happened yet (the quietest chip)
+//   active    — someone is working on it right now (chàm indigo)
+//   attention — a human must act, or it is at risk (hổ phách amber)
+//   done      — finished, and finished well (canopy green)
+//   stopped   — ended without succeeding, or withdrawn (son vermilion)
+//
+// Two states keep their own long-standing treatment instead: `archived` stays
+// subdued (design-system.md: archived is subdued, not alarming — never
+// vermilion) and `no_source` keeps its dashed unfilled edge, which already
+// encodes "incomplete" by shape.
+//
+// Colour is never the only carrier: the chip still prints the Vietnamese word,
+// and globals.css adds a left bar / ring to separate the tones whose colours
+// converge under deuteranopia. Kind, type, role and count chips are NOT states
+// and stay on the neutral chip on purpose — tinting them would spend the
+// vocabulary on things that have no lifecycle.
+// ---------------------------------------------------------------------------
+
+export type BadgeTone =
+  | "waiting"
+  | "active"
+  | "attention"
+  | "done"
+  | "stopped"
+  | "archived"
+  | "no_source";
+
+const TONE_CLASS: Record<BadgeTone, string> = {
+  waiting: "badge tone-waiting",
+  active: "badge tone-active",
+  attention: "badge tone-attention",
+  done: "badge tone-done",
+  stopped: "badge tone-stopped",
+  archived: "badge tone-archived",
+  no_source: "badge tone-no-source",
+};
+
+/** What an unknown state degrades to — the same neutral chip as before. */
+const NEUTRAL_CHIP = "badge muted";
+
+const toneTables = new Map<
+  Record<string, string>,
+  { name: string; tones: Record<string, BadgeTone> }
+>();
+
+/** Bind a label map to its state→tone table, keyed by the map itself. */
+function withTones(
+  map: Record<string, string>,
+  name: string,
+  tones: Record<string, BadgeTone>,
+): void {
+  toneTables.set(map, { name, tones });
+}
+
+withTones(extractionLabel, "extractionLabel", {
+  pending: "waiting",
+  processed: "done",
+  unprocessable: "attention",
+});
+
+withTones(trustLabel, "trustLabel", {
+  unknown: "waiting",
+  candidate: "waiting",
+  trusted: "done",
+  rejected: "stopped",
+  archived: "archived",
+});
+
+withTones(gapStateLabel, "gapStateLabel", {
+  submitted: "waiting",
+  triaged: "active",
+  converted_to_branch: "done",
+  rejected: "stopped",
+  archived: "archived",
+});
+
+withTones(loanStateLabel, "loanStateLabel", {
+  requested: "waiting",
+  approved: "done",
+  declined: "stopped",
+  borrowed: "active",
+  overdue: "attention",
+  returned: "done",
+});
+
+withTones(itemStatusLabel, "itemStatusLabel", {
+  available: "done",
+  borrowed: "active",
+  lost: "stopped",
+  repair: "active",
+});
+
+withTones(verificationLabel, "verificationLabel", {
+  no_source: "no_source",
+  unverified: "attention",
+  verified: "done",
+  archived: "archived",
+});
+
+withTones(curationStateLabel, "curationStateLabel", {
+  under_correction: "active",
+  ready_for_review: "attention",
+  promoted: "done",
+  rejected: "stopped",
+});
+
+withTones(reviewStateLabel, "reviewStateLabel", {
+  queued: "waiting",
+  assigned: "active",
+  in_review: "active",
+  changes_requested: "attention",
+  approved: "done",
+  rejected: "stopped",
+});
+
+withTones(taskStateLabel, "taskStateLabel", {
+  todo: "waiting",
+  doing: "active",
+  done: "done",
+  archived: "archived",
+});
+
+/**
+ * The class list for a state badge: `badgeClass(loanStateLabel, state)`.
+ *
+ * Mirrors `guarded()` above — a state the tone table has not caught up with
+ * is loud in development and neutral in production, never a broken chip.
+ */
+export function badgeClass(
+  map: Record<string, string>,
+  value: string | null | undefined,
+): string {
+  const table = toneTables.get(map);
+  if (table && value != null) {
+    const tone = table.tones[value];
+    if (tone !== undefined) return TONE_CLASS[tone];
+  }
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      table
+        ? `[vi] ${table.name} has no badge tone for ${JSON.stringify(value)} — showing the neutral chip. Add the state to the tone table in src/lib/vi.ts.`
+        : `[vi] badgeClass was given a label map with no tone table — showing the neutral chip. Register it with withTones() in src/lib/vi.ts.`,
+    );
+  }
+  return NEUTRAL_CHIP;
+}
+
+/**
+ * The same chips for the few badges whose tone is derived rather than looked
+ * up from an enum (an overdue date, a published flag). Keeps the class strings
+ * in this module so no component hardcodes one.
+ */
+export const badgeToneClass = (tone: BadgeTone): string => TONE_CLASS[tone];

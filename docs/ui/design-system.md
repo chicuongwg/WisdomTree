@@ -55,14 +55,51 @@
 - Muted metadata
 - Semantic colors for trust and workflow state
 
-## Trust Badges
-- `verified`: strong positive but restrained emphasis
-- `unverified`: cautionary neutral or warning emphasis
-- `no_source`: visibly incomplete state
-- `archived`: subdued inactive state
-- `trusted` source: evidence-positive
-- `candidate` source: needs review
-- `rejected` source: blocked or not publishable
+## State Badges
+
+Every state badge is a Vietnamese word plus a tone. Tones are assigned by
+**meaning, not one colour per enum value**: the thirty-odd states across the
+nine label maps collapse onto five tones, so a reader learns the vocabulary
+once and it holds on every screen.
+
+- `waiting`: queued, nothing has happened yet — sunken surface, muted ink.
+  Deliberately the least eye-catching chip in the app.
+- `active`: someone is working on it right now — Chàm indigo.
+- `attention`: a human must act, or it is at risk — Hổ phách amber.
+- `done`: finished, and finished well — Canopy green.
+- `stopped`: ended without succeeding, or withdrawn — Son vermilion.
+
+Two states keep their own long-standing treatment instead of a tone:
+
+- `no_source`: visibly incomplete — dashed edge, no fill commitment.
+- `archived`: subdued inactive, never alarming — shares the quiet frame with
+  `waiting`. An archived item is not at risk and must never read as vermilion.
+
+Kind, type, role, reference and count chips are not states and stay on the
+neutral chip. Tinting them would spend the tone vocabulary on things that have
+no lifecycle.
+
+### Rules
+
+- The state→tone table lives in `src/lib/vi.ts` and is the single source of
+  truth; `badgeClass(map, value)` is the only way a screen picks a chip. An
+  unrecognised state degrades to the neutral chip and warns in development,
+  exactly like the `guarded()` label fallback.
+- Tone appearance lives in `src/app/globals.css` as `--tone-*` custom
+  properties. No raw hex in components.
+- Colour is never the only carrier. Every chip prints its state in Vietnamese,
+  and shape disambiguates the tones whose colours converge for a deuteranope
+  (measured: attention/stopped separate by only 1.14:1, active/done by 1.02:1):
+  - left bar (3px, full strength) = a person is on this, or must be
+    → `active`, `attention`
+  - 2px ring = read me before you skim → `attention`, `done`
+  - `done` earns the ring because green collapses towards both grey and indigo
+    under deuteranopia; the ring is a disambiguator, not a claim that "done" is
+    loud. `waiting` and `stopped` share the bare frame and separate on colour
+    (1.40:1 light / 1.58:1 dark simulated) and on wholly unlike words.
+- Shape convention, unchanged: solid border = decided, dashed = incomplete.
+- Badge text clears 4.5:1 against its own fill in both themes (measured range
+  5.13:1–8.39:1 light, 4.93:1–6.86:1 dark).
 
 ## State Styles
 - loading

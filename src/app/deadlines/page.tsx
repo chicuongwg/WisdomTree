@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listDeadlines, myCalendarToken } from "@/modules/pm/service";
 import { listMemberSpaces } from "@/modules/storage/service";
-import { deadlineKindLabel, T } from "@/lib/vi";
+import { badgeToneClass, deadlineKindLabel, T } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
 
 // Screen: Deadlines (`/deadlines`) — upcoming deadlines sorted by due date,
@@ -74,7 +74,10 @@ export default async function DeadlinesPage({
                       </td>
                       <td className="muted">{spaceName.get(d.spaceId) ?? ""}</td>
                       <td>
-                        <span className={`badge ${soon ? "warn" : ""}`}>
+                        {/* A date, not an enum state — but within a week it is
+                            something a human must act on, so it borrows the
+                            `attention` tone; otherwise it stays quiet. */}
+                        <span className={badgeToneClass(soon ? "attention" : "waiting")}>
                           {d.dueAt.toLocaleString("vi-VN")}
                         </span>
                       </td>

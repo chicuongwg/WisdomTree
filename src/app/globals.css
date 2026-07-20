@@ -43,8 +43,39 @@
   --color-seal-deep: #8c2b1a;
   --color-seal-wash: #f6e7e2;
   --color-amber-wash: #f5ecd6;
+  --color-cham-deep: #1f4468;      /* badge text on chàm wash (8.4:1) */
+  --color-cham-wash: #e4ebf4;
   --color-on-strong: #ffffff;      /* text on canopy/seal solids */
   --color-focus: var(--color-cham);
+
+  /* --- State tones ----------------------------------------------------
+     Five tones by MEANING, not one hue per enum value: thirty-odd states
+     collapse onto waiting / active / attention / done / stopped, so the
+     vocabulary is learnable in one sitting. src/lib/vi.ts owns the
+     state→tone table; this block owns what each tone looks like.
+
+     Every value below is a var() over the named palette and the wash
+     tokens above, all of which are already redefined in the dark block —
+     so these re-tune themselves and are deliberately NOT restated there,
+     exactly like --graph-branch-*. Restating them would be a second copy
+     to keep in sync. */
+  --tone-waiting-bg: var(--color-surface-sunken);
+  --tone-waiting-ink: var(--color-ink-muted);
+  --tone-waiting-edge: var(--color-line-strong);
+  --tone-active-bg: var(--color-cham-wash);
+  --tone-active-ink: var(--color-cham-deep);
+  --tone-active-edge: color-mix(in srgb, var(--color-cham) 45%, transparent);
+  --tone-active-bar: var(--color-cham);
+  --tone-attention-bg: var(--color-amber-wash);
+  --tone-attention-ink: var(--color-amber);
+  --tone-attention-edge: color-mix(in srgb, var(--color-amber) 45%, transparent);
+  --tone-attention-bar: var(--color-amber);
+  --tone-done-bg: var(--color-canopy-wash);
+  --tone-done-ink: var(--color-canopy-deep);
+  --tone-done-edge: color-mix(in srgb, var(--color-canopy) 45%, transparent);
+  --tone-stopped-bg: var(--color-seal-wash);
+  --tone-stopped-ink: var(--color-seal-deep);
+  --tone-stopped-edge: color-mix(in srgb, var(--color-seal) 45%, transparent);
 
   /* --- Map palette ---------------------------------------------------
      Branch colours for the knowledge map. Every one is derived from the
@@ -140,6 +171,8 @@
   --color-seal-deep: #e0764f;
   --color-seal-wash: #39201a;
   --color-amber-wash: #332a17;
+  --color-cham-deep: #8ab4dd;
+  --color-cham-wash: #1b2a3a;
   --color-on-strong: #121714;
 
   --shell-rail-bg: #101512;
@@ -403,9 +436,25 @@ table.list tbody tr:hover { background: var(--color-paper); }
 table.list tbody tr:last-child td { border-bottom: none; }
 
 /* ============================================================
-   Badges — stamped state marks. Always color + text label,
-   never color alone; shape varies with meaning:
-   solid border = decided, dashed border = incomplete.
+   Badges — stamped state marks. Always colour + text label, never
+   colour alone: every chip prints its state in Vietnamese, and the
+   tone only makes the column scannable.
+
+   Shape convention, unchanged: solid border = decided,
+   dashed border = incomplete (.tone-no-source).
+
+   Two extra shape marks disambiguate the tones whose colours
+   converge for a deuteranope (measured: attention/stopped separate by
+   only 1.14:1, active/done by 1.02:1 — colour alone cannot carry them):
+     · left bar (3px, full strength) = a person is on this, or must be
+       → active, attention
+     · 2px ring (border + inner inset) = read me before you skim
+       → attention, done
+   `done` earns the ring because green collapses towards both grey and
+   indigo under deuteranopia, so it needs an edge of its own — the ring
+   is a disambiguator, not a claim that "done" is loud. That leaves
+   waiting and stopped sharing the bare frame; they separate on colour
+   (1.40:1 light / 1.58:1 dark simulated) and on wholly unlike words.
    ============================================================ */
 .badge {
   display: inline-block;
@@ -416,48 +465,76 @@ table.list tbody tr:last-child td { border-bottom: none; }
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  background: var(--color-canopy-wash);
-  color: var(--color-canopy-deep);
-  border: 1px solid color-mix(in srgb, var(--color-canopy) 45%, transparent);
+  /* Neutral by default: an untoned chip never claims a meaning it lacks. */
+  background: var(--tone-waiting-bg);
+  color: var(--tone-waiting-ink);
+  border: 1px solid var(--tone-waiting-edge);
 }
-.badge.warn {
-  background: var(--color-amber-wash);
-  color: var(--color-amber);
-  border-color: color-mix(in srgb, var(--color-amber) 45%, transparent);
-}
-.badge.danger {
-  background: var(--color-seal-wash);
-  color: var(--color-seal-deep);
-  border-color: color-mix(in srgb, var(--color-seal) 45%, transparent);
-}
+/* The explicit neutral: kind/type/count chips, and the fallback chip an
+   unknown state degrades to (badgeClass() in src/lib/vi.ts). */
 .badge.muted {
-  background: var(--color-surface-sunken);
-  color: var(--color-ink-muted);
-  border-color: var(--color-line-strong);
+  background: var(--tone-waiting-bg);
+  color: var(--tone-waiting-ink);
+  border-color: var(--tone-waiting-edge);
 }
 
-/* Verification trust states (vocabulary-vi.md) */
-.badge.verified {
-  background: var(--color-canopy-wash);
-  color: var(--color-canopy-deep);
-  border-color: color-mix(in srgb, var(--color-canopy) 45%, transparent);
+/* --- The five state tones (src/lib/vi.ts owns which state is which) --- */
+
+/* waiting — queued, nothing has happened yet. Deliberately the quietest
+   chip in the app: no bar, hairline ring, sunken fill, muted ink. */
+.badge.tone-waiting {
+  background: var(--tone-waiting-bg);
+  color: var(--tone-waiting-ink);
+  border-color: var(--tone-waiting-edge);
 }
-.badge.unverified {
-  background: var(--color-amber-wash);
-  color: var(--color-amber);
-  border-color: color-mix(in srgb, var(--color-amber) 45%, transparent);
+/* active — someone is working on it right now. Chàm indigo + left bar. */
+.badge.tone-active {
+  background: var(--tone-active-bg);
+  color: var(--tone-active-ink);
+  border-color: var(--tone-active-edge);
+  box-shadow: inset 3px 0 0 var(--tone-active-bar);
+  padding-left: 0.7rem;
 }
+/* attention — a human must act, or it is at risk. Hổ phách amber,
+   bar + ring: the loudest chip, and the only one carrying both marks. */
+.badge.tone-attention {
+  background: var(--tone-attention-bg);
+  color: var(--tone-attention-ink);
+  border-color: var(--tone-attention-edge);
+  box-shadow:
+    inset 0 0 0 1px var(--tone-attention-edge),
+    inset 3px 0 0 var(--tone-attention-bar);
+  padding-left: 0.7rem;
+}
+/* done — finished, and finished well. Canopy green + ring. */
+.badge.tone-done {
+  background: var(--tone-done-bg);
+  color: var(--tone-done-ink);
+  border-color: var(--tone-done-edge);
+  box-shadow: inset 0 0 0 1px var(--tone-done-edge);
+}
+/* stopped — ended without succeeding, or withdrawn. Son vermilion. */
+.badge.tone-stopped {
+  background: var(--tone-stopped-bg);
+  color: var(--tone-stopped-ink);
+  border-color: var(--tone-stopped-edge);
+}
+
+/* --- Two states keep their own long-standing treatment --- */
+
 /* visibly incomplete: dashed edge, no fill commitment */
-.badge.no_source {
+.badge.tone-no-source {
   background: var(--color-surface);
   color: var(--color-ink-muted);
   border: 1px dashed var(--color-line-strong);
 }
-/* subdued inactive, not alarming (design-system.md: archived = subdued) */
-.badge.archived {
-  background: var(--color-surface-sunken);
-  color: var(--color-ink-muted);
-  border-color: var(--color-line-strong);
+/* subdued inactive, not alarming (design-system.md: archived = subdued).
+   Shares the quiet frame with `waiting` by design — an archived item is
+   not at risk and must never read as vermilion. */
+.badge.tone-archived {
+  background: var(--tone-waiting-bg);
+  color: var(--tone-waiting-ink);
+  border-color: var(--tone-waiting-edge);
 }
 
 /* ============================================================

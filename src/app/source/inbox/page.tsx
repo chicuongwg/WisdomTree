@@ -2,7 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listInbox } from "@/modules/storage/curation";
-import { curationLabel, gapLabel, T, trustStateLabel } from "@/lib/vi";
+import {
+  badgeClass,
+  curationLabel,
+  curationStateLabel,
+  gapLabel,
+  gapStateLabel,
+  T,
+  trustLabel,
+  trustStateLabel,
+} from "@/lib/vi";
 
 // Screen: Source Inbox (`/source/inbox`, admin-op-screen-specs.md) — triage
 // surface over all intake items: file-backed sources and gap requests.
@@ -57,11 +66,15 @@ export default async function SourceInboxPage() {
                   <Link href={`/source/${source.id}`}>{source.title}</Link>
                 </td>
                 <td>
-                  <span className="badge muted">{trustStateLabel(source.trustStatus)}</span>
+                  <span className={badgeClass(trustLabel, source.trustStatus)}>
+                    {trustStateLabel(source.trustStatus)}
+                  </span>
                 </td>
                 <td>
                   {curationState ? (
-                    <span className="badge muted">{curationLabel(curationState)}</span>
+                    <span className={badgeClass(curationStateLabel, curationState)}>
+                      {curationLabel(curationState)}
+                    </span>
                   ) : (
                     <span className="muted">—</span>
                   )}
@@ -93,7 +106,7 @@ export default async function SourceInboxPage() {
                   <Link href={`/source/${g.id}`}>{g.title}</Link>
                 </td>
                 <td>
-                  <span className="badge muted">{gapLabel(g.state)}</span>
+                  <span className={badgeClass(gapStateLabel, g.state)}>{gapLabel(g.state)}</span>
                 </td>
                 <td>{g.updatedAt.toLocaleString("vi-VN")}</td>
               </tr>

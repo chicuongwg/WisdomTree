@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { mySubmissions } from "@/modules/storage/service";
-import { gapLabel, T, trustStateLabel } from "@/lib/vi";
+import { badgeClass, gapLabel, gapStateLabel, T, trustLabel, trustStateLabel } from "@/lib/vi";
 
 // Screen: My Submissions (`/source/mine`) — unified intake history over the
 // intake_items view (sources + branch-gap requests).
@@ -36,7 +36,12 @@ export default async function MySubmissionsPage() {
                 </td>
                 <td>{item.itemType === "source" ? T.source : T.gapRequest}</td>
                 <td>
-                  <span className="badge muted">
+                  <span
+                    className={badgeClass(
+                      item.itemType === "source" ? trustLabel : gapStateLabel,
+                      item.state,
+                    )}
+                  >
                     {(item.itemType === "source" ? trustStateLabel : gapLabel)(item.state)}
                   </span>
                 </td>

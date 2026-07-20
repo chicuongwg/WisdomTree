@@ -7,7 +7,18 @@ import { sources } from "@/modules/storage/schema";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { getCurationWorkbench, getGapRequest } from "@/modules/storage/curation";
 import { listBranches, listNodeOptions } from "@/modules/knowledge/service";
-import { curationLabel, extractionStateLabel, gapLabel, T, trustStateLabel } from "@/lib/vi";
+import {
+  badgeClass,
+  curationLabel,
+  curationStateLabel,
+  extractionLabel,
+  extractionStateLabel,
+  gapLabel,
+  gapStateLabel,
+  T,
+  trustLabel,
+  trustStateLabel,
+} from "@/lib/vi";
 import { CurationAdminActions } from "@/app/components/curation-admin-actions";
 import { GapTriageActions } from "@/app/components/gap-triage-actions";
 
@@ -39,7 +50,8 @@ export default async function AdminSourceDetailPage({
           {T.gapRequest}: {gap.title}
         </h1>
         <p>
-          <span className="badge muted">{gapLabel(gap.state)}</span> · {T.uploader}:{" "}
+          <span className={badgeClass(gapStateLabel, gap.state)}>{gapLabel(gap.state)}</span> ·{" "}
+          {T.uploader}:{" "}
           {gap.submitterName ?? "—"}
         </p>
         {gap.description && <p>{gap.description}</p>}
@@ -75,10 +87,16 @@ export default async function AdminSourceDetailPage({
         {T.source}: {wb.source.title}
       </h1>
       <p>
-        <span className="badge muted">{trustStateLabel(wb.source.trustStatus)}</span>{" "}
-        <span className="badge muted">{extractionStateLabel(wb.version.extractionStatus)}</span>{" "}
+        <span className={badgeClass(trustLabel, wb.source.trustStatus)}>
+          {trustStateLabel(wb.source.trustStatus)}
+        </span>{" "}
+        <span className={badgeClass(extractionLabel, wb.version.extractionStatus)}>
+          {extractionStateLabel(wb.version.extractionStatus)}
+        </span>{" "}
         {wb.curation && (
-          <span className="badge muted">{curationLabel(wb.curation.state)}</span>
+          <span className={badgeClass(curationStateLabel, wb.curation.state)}>
+            {curationLabel(wb.curation.state)}
+          </span>
         )}{" "}
         · <Link href={`/library/${wb.source.id}`}>Xem trong {T.library}</Link> ·{" "}
         <Link href={`/source/task/${wb.source.id}`}>Mở bàn hiệu đính</Link>

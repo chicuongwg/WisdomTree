@@ -5,7 +5,17 @@ import { myAssignedTasks } from "@/modules/storage/curation";
 import { myTickets } from "@/modules/circulation/service";
 import { listNotificationsWithLinks } from "@/modules/notify/service";
 import { NotificationLink } from "@/app/components/notification-actions";
-import { curationLabel, eventLabel, extractionStateLabel, loanLabel, T } from "@/lib/vi";
+import {
+  badgeClass,
+  curationLabel,
+  curationStateLabel,
+  eventLabel,
+  extractionLabel,
+  extractionStateLabel,
+  loanLabel,
+  loanStateLabel,
+  T,
+} from "@/lib/vi";
 
 // Screen: Home (`/` — screen-inventory.md)
 export default async function Home() {
@@ -33,7 +43,9 @@ export default async function Home() {
             {recent.slice(0, 5).map((item) => (
               <li key={item.sourceId}>
                 <Link href={`/library/${item.sourceId}`}>{item.title}</Link>{" "}
-                <span className="badge muted">{extractionStateLabel(item.extractionStatus)}</span>
+                <span className={badgeClass(extractionLabel, item.extractionStatus)}>
+                  {extractionStateLabel(item.extractionStatus)}
+                </span>
               </li>
             ))}
           </ul>
@@ -45,7 +57,9 @@ export default async function Home() {
             {tickets.slice(0, 5).map(({ ticket, itemTitle }) => (
               <li key={ticket.id}>
                 <Link href={`/catalog/${ticket.itemId}`}>{itemTitle}</Link>{" "}
-                <span className="badge muted">{loanLabel(ticket.state)}</span>
+                <span className={badgeClass(loanStateLabel, ticket.state)}>
+                  {loanLabel(ticket.state)}
+                </span>
               </li>
             ))}
           </ul>
@@ -57,7 +71,9 @@ export default async function Home() {
               {assigned.slice(0, 5).map((a) => (
                 <li key={a.curation.id}>
                   <Link href={`/source/task/${a.sourceId}`}>{a.title}</Link>{" "}
-                  <span className="badge muted">{curationLabel(a.curation.state)}</span>
+                  <span className={badgeClass(curationStateLabel, a.curation.state)}>
+                    {curationLabel(a.curation.state)}
+                  </span>
                 </li>
               ))}
             </ul>

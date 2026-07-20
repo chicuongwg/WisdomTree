@@ -1,6 +1,13 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getSourceDetail } from "@/modules/storage/service";
-import { extractionStateLabel, T, trustStateLabel } from "@/lib/vi";
+import {
+  badgeClass,
+  extractionLabel,
+  extractionStateLabel,
+  T,
+  trustLabel,
+  trustStateLabel,
+} from "@/lib/vi";
 import { CommentsSection } from "@/app/components/comments-section";
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
@@ -31,7 +38,9 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
             <tr>
               <th>Độ tin cậy</th>
               <td>
-                <span className="badge muted">{trustStateLabel(source.trustStatus)}</span>
+                <span className={badgeClass(trustLabel, source.trustStatus)}>
+                  {trustStateLabel(source.trustStatus)}
+                </span>
               </td>
             </tr>
             {v && (
@@ -49,7 +58,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                 <tr>
                   <th>Trạng thái xử lý</th>
                   <td>
-                    <span className={`badge ${v.extractionStatus === "unprocessable" ? "warn" : v.extractionStatus === "pending" ? "muted" : ""}`}>
+                    <span className={badgeClass(extractionLabel, v.extractionStatus)}>
                       {extractionStateLabel(v.extractionStatus)}
                     </span>{" "}
                     {v.extractionStatus === "unprocessable" && (

@@ -1,7 +1,7 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCatalogItem } from "@/modules/catalog/service";
 import { listTicketsForItem, type ItemLoanRecord } from "@/modules/circulation/service";
-import { itemLabel, loanLabel, T } from "@/lib/vi";
+import { badgeClass, itemLabel, itemStatusLabel, loanLabel, loanStateLabel, T } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
 
 // Screen: Catalog Item Detail (`/catalog/:id`) — member view with loan request
@@ -28,9 +28,11 @@ const isOverdue = (t: ItemLoanRecord["ticket"]): boolean =>
 function StateBadge({ ticket }: { ticket: ItemLoanRecord["ticket"] }) {
   const overdue = isOverdue(ticket);
   // Colour never carries the meaning on its own: the badge prints the state in
-  // words, and an overdue loan says "Quá hạn" outright.
+  // words, and an overdue loan says "Quá hạn" outright. A loan that is overdue
+  // by the due date rather than by its stored state is toned as `overdue` too,
+  // so the chip and the word always agree.
   return (
-    <span className={`badge ${overdue ? "danger" : ticket.state === "returned" ? "muted" : ""}`}>
+    <span className={badgeClass(loanStateLabel, overdue ? "overdue" : ticket.state)}>
       {overdue ? T.overdueLabel : loanLabel(ticket.state)}
     </span>
   );
@@ -67,7 +69,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
             <tr>
               <th>Trạng thái</th>
               <td>
-                <span className={`badge ${item.status === "available" ? "" : "warn"}`}>
+                <span className={badgeClass(itemStatusLabel, item.status)}>
                   {itemLabel(item.status)}
                 </span>
               </td>

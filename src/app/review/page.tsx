@@ -2,7 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listReviewQueue } from "@/modules/storage/curation";
-import { reviewLabel, reviewStateLabel, reviewTaskTypeLabel, reviewTypeLabel, T } from "@/lib/vi";
+import {
+  badgeClass,
+  reviewLabel,
+  reviewStateLabel,
+  reviewTaskTypeLabel,
+  reviewTypeLabel,
+  T,
+} from "@/lib/vi";
 
 // Screen: Review Queue (`/review`, admin-op-screen-specs.md) — the central
 // decision surface; publish tasks open the Publish Review workbench.
@@ -88,7 +95,9 @@ export default async function ReviewQueuePage({
                   )}
                 </td>
                 <td>
-                  <span className="badge muted">{reviewLabel(t.state)}</span>
+                  <span className={badgeClass(reviewStateLabel, t.state)}>
+                    {reviewLabel(t.state)}
+                  </span>
                 </td>
                 <td>{t.assigneeName ?? <span className="muted">—</span>}</td>
                 <td>{t.updatedAt.toLocaleString("vi-VN")}</td>

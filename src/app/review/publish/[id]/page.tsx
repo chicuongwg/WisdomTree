@@ -3,7 +3,14 @@ import { notFound } from "next/navigation";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getPublishReview } from "@/modules/storage/curation";
 import { listBranches } from "@/modules/knowledge/service";
-import { curationLabel, reviewLabel, T } from "@/lib/vi";
+import {
+  badgeClass,
+  curationLabel,
+  curationStateLabel,
+  reviewLabel,
+  reviewStateLabel,
+  T,
+} from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { PublishDecision } from "@/app/components/publish-decision";
 
@@ -29,9 +36,13 @@ export default async function PublishReviewPage({
         {T.publishReview}: {review.source.title}
       </h1>
       <p>
-        <span className="badge muted">{reviewLabel(review.reviewTask.state)}</span>{" "}
+        <span className={badgeClass(reviewStateLabel, review.reviewTask.state)}>
+          {reviewLabel(review.reviewTask.state)}
+        </span>{" "}
         {review.curation && (
-          <span className="badge muted">{curationLabel(review.curation.state)}</span>
+          <span className={badgeClass(curationStateLabel, review.curation.state)}>
+            {curationLabel(review.curation.state)}
+          </span>
         )}{" "}
         · <Link href={`/source/${review.source.id}`}>Chi tiết tư liệu</Link>
       </p>

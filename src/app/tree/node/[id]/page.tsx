@@ -7,7 +7,7 @@ import {
   neighbourGraph,
   wikiIndex,
 } from "@/modules/knowledge/service";
-import { nodeLinkTypeLabel, T } from "@/lib/vi";
+import { badgeToneClass, nodeLinkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { NodeLink } from "@/app/components/node-link";
 import { KnowledgeMap } from "@/app/components/knowledge-map";
@@ -44,7 +44,8 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
       )}
       <h1>
         {node.title} <VerificationBadge verification={node.verification} />
-        {node.publish && <span className="badge verified">{T.publish}</span>}
+        {/* Published is an outcome, not an enum row of its own: `done` tone. */}
+        {node.publish && <span className={badgeToneClass("done")}>{T.publish}</span>}
       </h1>
       <p className="muted">
         {T.branch}: <Link href={`/tree/branch/${node.branchId}`}>{node.branchName}</Link>
