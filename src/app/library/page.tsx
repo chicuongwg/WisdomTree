@@ -4,6 +4,7 @@ import { LIBRARY_PAGE_SIZE, listLibrary, listMemberSpaces } from "@/modules/stor
 import { badgeClass, extractionLabel, extractionStateLabel, T, when } from "@/lib/vi";
 import { Pager } from "@/app/components/pager";
 import { Empty } from "@/app/components/empty";
+import { LibraryDropzone } from "@/app/components/library-dropzone";
 
 // Screen: Library (`/library`) — space-scoped, store-first: items appear at
 // `stored`, before extraction finishes.
@@ -22,6 +23,7 @@ export default async function LibraryPage({
   ]);
 
   return (
+    <LibraryDropzone spaces={spaces} spaceId={spaceId || undefined}>
     <main className="page">
       <h1>{T.library}</h1>
       <form className="inline" method="get" role="search">
@@ -50,7 +52,8 @@ export default async function LibraryPage({
         ) : (
           <Empty
             title={T.libraryEmptyTitle}
-            hint={T.libraryEmptyHint}
+            // TODO(vi): move to src/lib/vi.ts
+            hint={`${T.libraryEmptyHint} Hoặc kéo tệp thả vào đây.`}
             action={{ label: T.uploadCta, href: "/source/intake" }}
           />
         )
@@ -93,5 +96,6 @@ export default async function LibraryPage({
       )}
       <Pager page={page} pageSize={LIBRARY_PAGE_SIZE} count={items.length} params={{ q, spaceId }} />
     </main>
+    </LibraryDropzone>
   );
 }

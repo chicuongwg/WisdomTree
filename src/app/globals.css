@@ -1625,3 +1625,38 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
 /* The counterpart to .error-text: a mutation that worked should not be
    reported in the colour reserved for failure. */
 .success-text { color: var(--color-canopy-deep); }
+
+/* Drag-and-drop intake on the library (library-dropzone.tsx)
+   ------------------------------------------------------------------ */
+
+/* The wrapper adds behaviour, not a box: main.page's `>` child rules must
+   keep matching the server markup, so it generates no box of its own. */
+.dropzone-wrap { display: contents; }
+
+/* Shown only while a file hangs over the page — the same veil the palette
+   and the confirm dialog dim the app with. */
+.dropzone-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--shell-veil);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.dropzone-veil > .panel { align-items: center; text-align: center; }
+
+/* The per-file progress strip while a drop is being sent: a panel pinned to
+   the bottom of the viewport so it survives the reader scrolling the list. */
+.dropzone-progress {
+  position: fixed;
+  inset: auto var(--space-4) var(--space-4);
+  z-index: 55;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.dropzone-progress .upload-progress { flex: 1 1 16rem; margin-top: 0; }

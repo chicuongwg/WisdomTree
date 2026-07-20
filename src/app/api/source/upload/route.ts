@@ -10,14 +10,20 @@ export async function POST(request: NextRequest) {
     const form = await request.formData();
     const file = form.get("file");
     const spaceId = form.get("spaceId");
-    const title = form.get("title");
-    if (!(file instanceof File) || typeof spaceId !== "string" || typeof title !== "string" || !title.trim()) {
-      throw new ApiError(400, "invalid_upload", "Vui lòng chọn tệp, kho và nhập tiêu đề.");
+    if (!(file instanceof File) || typeof spaceId !== "string") {
+      throw new ApiError(400, "invalid_upload", "Vui lòng chọn tệp và kho.");
     }
+    // Title defaults to the filename, extension dropped. Drive taught everyone
+    // that storing a file demands no form; a mandatory title field was the
+    // single biggest reason "cất tệp" felt like paperwork. originalFilename was
+    // already captured and never used as a default.
+    const rawTitle = form.get("title");
+    const typed = typeof rawTitle === "string" ? rawTitle.trim() : "";
+    const title = typed || file.name.replace(/\.[^./\\]+$/, "").trim() || file.name;
     const description = form.get("description");
     const source = await uploadSource(actor, {
       spaceId,
-      title: title.trim(),
+      title,
       description: typeof description === "string" && description.trim() ? description.trim() : undefined,
       file,
     });
