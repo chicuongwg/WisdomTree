@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import { signDownload } from "@/lib/sign";
@@ -18,6 +18,7 @@ import {
   textChunks,
 } from "./schema";
 import { promotions } from "../knowledge/schema";
+import { users } from "../auth/schema";
 
 const MAX_SIZE_BYTES = 104_857_600; // 100 MB, intake-constraints.md
 /** Exported so the Library page's pager agrees with the query's LIMIT. */
@@ -368,4 +369,72 @@ export async function listMemberSpaces(actor: Principal) {
     .where(visible !== null ? (visible.length ? inArray(spaces.id, visible) : sql`false`) : undefined)
     .orderBy(spaces.name);
   return rows;
+}
+
+// --- Membership ------------------------------------------------------------
+// The screen these serve is the one the createSpace comment promised: until it
+// existed, a fresh install had no Kho and the storage product was unreachable
+// without the seed script.
+
+/** Members of one space, with names — the admin membership panel's read. */
+export async function listSpaceMembers(actor: Principal, spaceId: string) {
+  authorize(actor, "storage.space.manage", { kind: "read" });
+  return db
+    .select({ userId: users.id, displayName: users.displayName, role: users.role })
+    .from(spaceMembers)
+    .innerJoin(users, eq(spaceMembers.userId, users.id))
+    .where(eq(spaceMembers.spaceId, spaceId))
+    .orderBy(asc(users.displayName));
+}
+
+export async function addSpaceMember(actor: Principal, spaceId: string, userId: string) {
+  authorize(actor, "storage.space.manage", { kind: "write" });
+  const [space] = await db.select({ id: spaces.id }).from(spaces).where(eq(spaces.id, spaceId));
+  if (!space) throw notFound();
+  const [user] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, userId), isNull(users.disabledAt)));
+  if (!user) throw new ApiError(400, "unknown_user", "Người dùng không tồn tại.");
+  await db.transaction(async (tx) => {
+    // Re-adding an existing member is a no-op, not an error: the admin's goal
+    // ("this person is in the space") is already true.
+    await tx
+      .insert(spaceMembers)
+      .values({ spaceId, userId, addedBy: actor.userId })
+      .onConflictDoNothing();
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "space.member.add",
+      targetType: "space",
+      targetId: spaceId,
+      details: { userId },
+    });
+  });
+}
+
+export async function removeSpaceMember(actor: Principal, spaceId: string, userId: string) {
+  authorize(actor, "storage.space.manage", { kind: "write" });
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(spaceMembers)
+      .where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.userId, userId)));
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "space.member.remove",
+      targetType: "space",
+      targetId: spaceId,
+      details: { userId },
+    });
+  });
+}
+
+/** Every enabled member — the "add someone" picker on the membership panel. */
+export async function listAllMembers(actor: Principal) {
+  authorize(actor, "storage.space.manage", { kind: "read" });
+  return db
+    .select({ id: users.id, displayName: users.displayName, role: users.role })
+    .from(users)
+    .where(isNull(users.disabledAt))
+    .orderBy(asc(users.displayName));
 }

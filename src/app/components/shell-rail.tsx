@@ -78,6 +78,12 @@ const icons = {
       <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6M10.5 19a2 2 0 0 0 3 0" />
     </svg>
   ),
+  gear: (
+    <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M17.7 6.3l-1.8 1.8M8.1 15.9l-1.8 1.8" />
+    </svg>
+  ),
   more: (
     <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
       <circle cx="5.5" cy="12" r="1.1" />
@@ -112,6 +118,8 @@ export function ShellRail({
   }
   if (role === "admin_op") {
     items.push({ href: "/review", label: T.reviewQueue, icon: icons.review, pip: reviewOpen });
+    // TODO(vi): move to src/lib/vi.ts
+    items.push({ href: "/admin", label: "Quản trị", icon: icons.gear });
   }
   items.push({ href: "/notifications", label: T.notificationCenter, icon: icons.bell, pip: unread });
 

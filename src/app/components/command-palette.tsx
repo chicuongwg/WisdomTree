@@ -62,6 +62,8 @@ export function CommandPalette({ role }: { role: string }) {
       { key: "review", label: T.reviewQueue, hint: T.paletteHintGo, href: "/review" },
       { key: "inbox", label: T.sourceInbox, hint: T.paletteHintGo, href: "/source/inbox" },
       { key: "desk", label: T.librarianDesk, hint: T.paletteHintGo, href: "/catalog/admin" },
+      // TODO(vi): move to src/lib/vi.ts
+      { key: "admin", label: "Quản trị", hint: T.paletteHintGo, href: "/admin" },
     );
   }
 

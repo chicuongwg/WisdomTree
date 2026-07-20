@@ -17,7 +17,7 @@ export interface Mutation {
   /** Set on success when the caller passes one. */
   ok: string | null;
   /** Fire it. Resolves true on success so a caller can close a form after. */
-  run: (path: string, opts?: { body?: object; ok?: string }) => Promise<boolean>;
+  run: (path: string, opts?: { body?: object; ok?: string; method?: "POST" | "DELETE" }) => Promise<boolean>;
   /** Clear both messages — for a form that reopens. */
   reset: () => void;
 }
@@ -28,14 +28,17 @@ export function useMutation(): Mutation {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
-  async function run(path: string, opts?: { body?: object; ok?: string }): Promise<boolean> {
+  async function run(
+    path: string,
+    opts?: { body?: object; ok?: string; method?: "POST" | "DELETE" },
+  ): Promise<boolean> {
     setBusy(true);
     setError(null);
     setOk(null);
     let res: Response;
     try {
       res = await fetch(path, {
-        method: "POST",
+        method: opts?.method ?? "POST",
         headers: opts?.body ? { "Content-Type": "application/json" } : undefined,
         body: opts?.body ? JSON.stringify(opts.body) : undefined,
       });
