@@ -1715,3 +1715,43 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
 }
 /* The rail avatar became a link; it stays a circle, not underlined text. */
 a.rail-avatar { text-decoration: none; overflow: hidden; }
+
+/* --- Login portal (`/login`) ---------------------------------- */
+/* A narrow centered column: the seal, the name, one door. Tokens only, so
+   both themes come for free. The h1 skips the card head rule (it is not a
+   direct child of main.page) — the seal above it already stamps identity. */
+main.page.login-page {
+  max-width: 26rem;
+  align-items: stretch;
+  padding-top: clamp(var(--space-6), 10vh, 7rem);
+  text-align: center;
+}
+.login-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+.login-hero p { margin: 0; }
+/* The topbar's triện, enlarged to portal size. */
+.login-seal {
+  width: 3.4rem;
+  height: 3.4rem;
+  font-size: 1.3rem;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px var(--color-on-strong), inset 0 0 0 4.5px var(--color-seal);
+}
+.login-title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+.login-divider {
+  border: none;
+  border-top: 1px solid var(--color-line);
+  margin: var(--space-3) 0 0;
+}
+.login-demo-head { font-size: 0.95rem; }
+.login-page .panel { text-align: left; }

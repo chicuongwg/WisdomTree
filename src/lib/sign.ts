@@ -35,7 +35,7 @@ function secret(): string {
   return (cachedSecret = "wisdomtree-dev-secret");
 }
 
-type Purpose = "session" | "download";
+type Purpose = "session" | "download" | "oauth-state";
 
 /** How long a signed-in session stays valid without re-authenticating. */
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -97,4 +97,17 @@ export function verifyDownload(token: string): { objectKey: string; filename: st
   } catch {
     return null;
   }
+}
+
+/**
+ * OAuth state: CSRF proof for the OIDC round trip. Ten minutes is the window
+ * between "clicked Đăng nhập bằng Google" and "came back" — generous for a
+ * person, useless to an attacker replaying it later.
+ */
+export function signOAuthState(nonce: string): string {
+  return sign("oauth-state", nonce, 10 * 60_000);
+}
+
+export function verifyOAuthState(token: string): string | null {
+  return verify("oauth-state", token);
 }

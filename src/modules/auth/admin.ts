@@ -16,6 +16,44 @@ import { authorize } from "./authorize";
 import { users, type Role } from "./schema";
 import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
+import { invitedSentinel } from "./oidc";
+
+/**
+ * Invite: create the row a first Google sign-in will claim (oidc.ts binds the
+ * real sub to it by email). Until they sign in, the member exists, can be
+ * added to spaces, and can be mentioned — the sentinel sub just cannot log in.
+ */
+export async function inviteUser(
+  actor: Principal,
+  input: { email?: string; displayName?: string; role?: Role },
+) {
+  authorize(actor, "admin.users.manage", { kind: "write" });
+  const email = input.email?.trim().toLowerCase();
+  const displayName = input.displayName?.trim();
+  const role: Role = input.role ?? "user";
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApiError(400, "invalid_email", "Vui lòng nhập địa chỉ email hợp lệ.");
+  }
+  if (!displayName) {
+    throw new ApiError(400, "invalid_name", "Vui lòng nhập tên hiển thị.");
+  }
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
+  if (existing) throw new ApiError(409, "email_taken", "Email này đã có tài khoản.");
+  return db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(users)
+      .values({ googleSub: invitedSentinel(), email, displayName, role })
+      .returning({ id: users.id });
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "user.invite",
+      targetType: "user",
+      targetId: created.id,
+      details: { email, role },
+    });
+    return created;
+  });
+}
 
 export async function listUsers(actor: Principal) {
   authorize(actor, "admin.users.manage", { kind: "read" });
@@ -27,6 +65,9 @@ export async function listUsers(actor: Principal) {
       role: users.role,
       disabledAt: users.disabledAt,
       createdAt: users.createdAt,
+      // Invited but never signed in: the sentinel sub oidc.ts plants is still
+      // there — the first Google login replaces it with the real sub.
+      invited: sql<boolean>`${users.googleSub} like 'invited:%'`,
     })
     .from(users)
     .orderBy(users.displayName);

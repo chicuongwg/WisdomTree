@@ -17,6 +17,8 @@ type AdminUser = {
   displayName: string;
   role: string;
   disabled: boolean;
+  /** True until the person's first Google sign-in claims the row. */
+  invited: boolean;
 };
 
 const ROLES = ["user", "editor", "admin_op"] as const;
@@ -26,8 +28,76 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
   // Each row's pending role pick, only while it differs from the record.
   const [picks, setPicks] = useState<Record<string, string>>({});
 
+  // The invite form's own round trip, kept apart from the table's so its
+  // message reads next to the form that caused it.
+  const invite = useMutation();
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<string>("user");
+
   return (
     <>
+      {/* TODO(vi): move to src/lib/vi.ts */}
+      <h3>Mời thành viên</h3>
+      <SayMutation m={invite} />
+      <form
+        className="button-row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void invite
+            .run("/api/admin/users/invite", {
+              body: { email: inviteEmail, displayName: inviteName, role: inviteRole },
+              // TODO(vi): move to src/lib/vi.ts
+              ok: "Đã mời thành viên. Người này đăng nhập bằng Google với email đã mời.",
+            })
+            .then((done) => {
+              if (done) {
+                setInviteEmail("");
+                setInviteName("");
+                setInviteRole("user");
+              }
+            });
+        }}
+      >
+        <input
+          type="email"
+          required
+          // TODO(vi): move to src/lib/vi.ts
+          aria-label="Email"
+          placeholder="Email"
+          value={inviteEmail}
+          disabled={invite.busy}
+          onChange={(e) => setInviteEmail(e.target.value)}
+        />
+        <input
+          type="text"
+          required
+          // TODO(vi): move to src/lib/vi.ts
+          aria-label="Tên hiển thị"
+          placeholder="Tên hiển thị"
+          value={inviteName}
+          disabled={invite.busy}
+          onChange={(e) => setInviteName(e.target.value)}
+        />
+        <select
+          // TODO(vi): move to src/lib/vi.ts
+          aria-label="Vai trò của thành viên được mời"
+          value={inviteRole}
+          disabled={invite.busy}
+          onChange={(e) => setInviteRole(e.target.value)}
+        >
+          {ROLES.map((r) => (
+            <option key={r} value={r}>
+              {userRoleLabel(r)}
+            </option>
+          ))}
+        </select>
+        <button type="submit" disabled={invite.busy}>
+          {/* TODO(vi): move to src/lib/vi.ts */}
+          {invite.busy ? T.loading : "Mời thành viên"}
+        </button>
+      </form>
+
       <SayMutation m={change} />
       <div className="record-scroll">
         <table className="list">
@@ -95,6 +165,9 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                     {u.disabled ? (
                       // TODO(vi): move to src/lib/vi.ts
                       <span className="badge tone-stopped">Đã vô hiệu hoá</span>
+                    ) : u.invited ? (
+                      // TODO(vi): move to src/lib/vi.ts
+                      <span className="badge tone-waiting">Đã mời — chưa đăng nhập</span>
                     ) : (
                       // TODO(vi): move to src/lib/vi.ts
                       <span className="badge tone-done">Đang hoạt động</span>

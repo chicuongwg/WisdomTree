@@ -62,6 +62,12 @@ Seeded per the brief's acceptance criteria: 3 users (User/Editor/Admin-Op),
 Sign-in is the dev-mode user picker (demo substitution): open the app and
 choose a seeded member; V1 swaps in Google OIDC behind the same session shape.
 
+Real sign-in is Google OIDC: set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
+`APP_URL` (see [.env.example](.env.example)) and `/login` grows a Google button.
+Access is invite-only — an Admin/Op invites an email from the Admin Console,
+and that person's first Google login claims the account; anyone else is turned
+away as not invited.
+
 ### Configuration required before any real deployment
 
 The picker is an impersonation endpoint — it trades a user id for that user's

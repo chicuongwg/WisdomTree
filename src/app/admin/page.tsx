@@ -49,6 +49,7 @@ export default async function AdminPage() {
             displayName: u.displayName,
             role: u.role,
             disabled: u.disabledAt !== null,
+            invited: u.invited,
           }))}
         />
       </section>
