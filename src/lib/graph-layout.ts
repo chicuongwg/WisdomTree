@@ -23,6 +23,17 @@ function ringRadius(count: number): number {
 }
 
 /**
+ * Every ring below is rotated by this. Without it a ring of two lands on
+ * cos(-π/2) and cos(+π/2) — both exactly zero — so two branches of two pages
+ * seeded every node onto the same x. The simulation could then never separate
+ * them: repulsion works on dx, centring works on (cx - x), and both are zero
+ * for the whole column, so the map stayed a vertical line forever. An angle
+ * that is not a rational fraction of 2π cannot line a ring up with an axis;
+ * the golden angle is the usual choice and keeps the layout deterministic.
+ */
+const TILT = Math.PI * (3 - Math.sqrt(5)); // ≈ 2.3999 rad
+
+/**
  * Branch-constellation layout. `degree` (link count per node) only orders
  * nodes inside their ring — it never moves them off it, so adding a link
  * cannot scramble the map.
@@ -44,7 +55,7 @@ export function branchLayout(
 
   const placed: Record<string, Placed> = {};
   branchIds.forEach((branchId, bi) => {
-    const angle = (2 * Math.PI * bi) / Math.max(1, branchIds.length) - Math.PI / 2;
+    const angle = (2 * Math.PI * bi) / Math.max(1, branchIds.length) + TILT;
     const bx = cx + spread * Math.cos(angle);
     const by = cy + spread * Math.sin(angle) * 0.72; // the canvas is wider than tall
     const members = [...(byBranch.get(branchId) ?? [])].sort(
@@ -57,7 +68,7 @@ export function branchLayout(
         return;
       }
       // start each ring facing the canvas centre so hubs read first
-      const a = (2 * Math.PI * i) / members.length + angle + Math.PI;
+      const a = (2 * Math.PI * i) / members.length + angle + Math.PI + TILT;
       placed[node.id] = { id: node.id, x: bx + r * Math.cos(a), y: by + r * Math.sin(a) * 0.85 };
     });
   });
@@ -72,7 +83,7 @@ export function egoLayout(nodes: LayoutInput[], centerId: string): Record<string
   const placed: Record<string, Placed> = { [centerId]: { id: centerId, x: cx, y: cy } };
   const r = others.length <= 4 ? 190 : Math.min(250, 150 + others.length * 9);
   others.forEach((node, i) => {
-    const a = (2 * Math.PI * i) / others.length - Math.PI / 2;
+    const a = (2 * Math.PI * i) / others.length + TILT;
     placed[node.id] = { id: node.id, x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) * 0.7 };
   });
   return clampToCanvas(placed);

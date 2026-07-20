@@ -32,14 +32,22 @@ const PAD = 48;
  * other" is a physics question this product's readers should never be asked.
  */
 const TUNE = {
-  /** pull toward the canvas centre, so nothing drifts off the map */
-  centre: 0.033,
+  /**
+   * Pull toward the canvas centre, so nothing drifts off the map. Deliberately
+   * an order of magnitude weaker than it was: this force fights repulsion
+   * directly, and at 0.033 it won — every graph collapsed into a small clump
+   * in the middle of an empty canvas (measured: six pages filled 2.8% of it).
+   * It is a leash, not a magnet.
+   */
+  centre: 0.0035,
   /** pairwise repulsion */
-  repel: 1280,
+  repel: 3400,
   /** spring stiffness per edge */
-  link: 0.36,
+  link: 0.42,
   /** the length each edge wants to be, in canvas units */
-  distance: 110,
+  distance: 132,
+  /** clear space kept between two marks' edges, so labels have room */
+  collide: 16,
 };
 
 export type SimNode = {
@@ -48,6 +56,8 @@ export type SimNode = {
   y: number;
   vx: number;
   vy: number;
+  /** Drawn radius, so two marks can refuse to overlap. */
+  r: number;
   /** Dragged nodes and the local-map centre hold their place. */
   pinned: boolean;
 };
@@ -61,7 +71,7 @@ export type Simulation = {
 };
 
 export function createSimulation(
-  seed: Array<{ id: string; x: number; y: number; pinned?: boolean }>,
+  seed: Array<{ id: string; x: number; y: number; r?: number; pinned?: boolean }>,
   edges: Array<{ from: string; to: string }>,
 ): Simulation {
   const nodes: SimNode[] = seed.map((n) => ({
@@ -70,6 +80,7 @@ export function createSimulation(
     y: n.y,
     vx: 0,
     vy: 0,
+    r: n.r ?? 8,
     pinned: n.pinned ?? false,
   }));
   const index = new Map(nodes.map((n, i) => [n.id, i]));
@@ -111,14 +122,16 @@ export function createSimulation(
             dy = ((j % 5) - 2) * 0.5 || 0.5;
             d2 = dx * dx + dy * dy;
           }
-          const d = Math.sqrt(d2);
-          const f = k / d2;
-          const ux = (dx / d) * f;
-          const uy = (dy / d) * f;
-          a.vx -= ux;
-          a.vy -= uy;
-          b.vx += ux;
-          b.vy += uy;
+          // d3-force's law: w = k/d², applied along the raw delta, so the
+          // force itself falls off as 1/d. Multiplying by the *unit* vector
+          // instead (as this did) makes it fall off as 1/d², which is strong
+          // enough to stop two marks touching and far too weak to open a graph
+          // out — hence the clump.
+          const w = k / d2;
+          a.vx -= dx * w;
+          a.vy -= dy * w;
+          b.vx += dx * w;
+          b.vy += dy * w;
         }
       }
     }
@@ -141,7 +154,26 @@ export function createSimulation(
       b.vy -= dy * pull * biasB;
     }
 
-    // Centring, plus integration.
+    // Framing, then integration.
+    //
+    // Two different jobs, and the old code did both with one spring toward the
+    // centre — which is why the map collapsed. A per-node pull fights
+    // repulsion at every distance, so making it strong enough to keep an
+    // unlinked page on screen also crushed the linked ones into a knot.
+    //
+    // Split: recentring TRANSLATES the whole system so its middle sits in the
+    // middle, which frames the map without compressing it at all. The spring
+    // that remains is a tenth of what it was, and its only job is to stop two
+    // unconnected clusters from drifting to opposite corners.
+    let mx = 0;
+    let my = 0;
+    for (const p of nodes) {
+      mx += p.x;
+      my += p.y;
+    }
+    mx = cx - mx / n;
+    my = cy - my / n;
+
     const c = TUNE.centre * alpha;
     for (const p of nodes) {
       if (p.pinned) {
@@ -149,6 +181,8 @@ export function createSimulation(
         p.vy = 0;
         continue;
       }
+      p.x += mx;
+      p.y += my;
       p.vx += (cx - p.x) * c;
       p.vy += (cy - p.y) * c;
       p.vx *= VELOCITY_KEEP;
@@ -160,6 +194,41 @@ export function createSimulation(
       }
       p.x = Math.max(PAD, Math.min(CANVAS.width - PAD, p.x + p.vx));
       p.y = Math.max(PAD, Math.min(CANVAS.height - PAD, p.y + p.vy));
+    }
+
+    // Collision, resolved on positions rather than velocity so it cannot be
+    // outvoted by the springs and cannot ring. Repulsion alone never settled
+    // this: it is a smooth field, so two marks reach an equilibrium wherever
+    // the spring pulling them together balances it — which was on top of each
+    // other. Two pages are two things and must read as two.
+    for (let i = 0; i < n; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < n; j++) {
+        const b = nodes[j];
+        const want = a.r + b.r + TUNE.collide;
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let d = Math.hypot(dx, dy);
+        if (d >= want) continue;
+        if (d < 0.01) {
+          // Exactly coincident: separate along a fixed axis per pair, never
+          // Math.random, so two runs of the same graph still agree.
+          dx = (i % 2 ? 1 : -1) * 0.7;
+          dy = (j % 2 ? 1 : -1) * 0.7;
+          d = Math.hypot(dx, dy);
+        }
+        const push = (want - d) / d / 2;
+        const ox = dx * push;
+        const oy = dy * push;
+        if (!a.pinned) {
+          a.x -= ox;
+          a.y -= oy;
+        }
+        if (!b.pinned) {
+          b.x += ox;
+          b.y += oy;
+        }
+      }
     }
 
     alpha *= ALPHA_DECAY;

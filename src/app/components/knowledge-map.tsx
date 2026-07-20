@@ -57,6 +57,20 @@ const ZOOM_LIMIT = { min: 0.35, max: 4 };
 const LABEL_MAX = 26;
 const LABEL_CUT = 25;
 const LABEL_DY = 16;
+/** Rough advance width of one label character at the .g-label size, for framing. */
+const LABEL_EM = 5.6;
+/**
+ * Zoom at or above which every mark shows its title. Chosen against what
+ * fit-to-frame actually produces: a handful of pages frames at k≈1.4 and shows
+ * every title, while twenty frames at k≈0.9 and steps down to landmarks only,
+ * because at that size twenty titles overlap each other into a grey smear.
+ * Zooming in brings the rest back.
+ */
+const LABEL_ZOOM_ALL = 1.2;
+/** Below that, only the marks with links left to show — the shape's landmarks. */
+const LABEL_ZOOM_HUBS = 0.6;
+/** A mark needs this many links to count as a landmark. */
+const HUB_DEGREE = 2;
 
 type XY = { x: number; y: number };
 type ViewTransform = { k: number; tx: number; ty: number };
@@ -251,6 +265,15 @@ export function KnowledgeMap({
       "transform",
       `translate(${vt.tx.toFixed(2)} ${vt.ty.toFixed(2)}) scale(${vt.k.toFixed(4)})`,
     );
+    // Titles are drawn at a fixed size, so zooming out packs them until they
+    // overlap each other and the marks. Past the point where they stop being
+    // readable they are noise, and the shape of the graph is the thing worth
+    // looking at — so they step down: every title, then hubs only, then none.
+    // A hovered or focused mark keeps its title at any zoom (see .g-label).
+    svgRef.current?.setAttribute(
+      "data-labels",
+      vt.k >= LABEL_ZOOM_ALL ? "all" : vt.k >= LABEL_ZOOM_HUBS ? "hubs" : "none",
+    );
     for (const [id, el] of nodeEls.current) {
       const p = posRef.current.get(id);
       if (!p) continue;
@@ -279,11 +302,16 @@ export function KnowledgeMap({
       }
       const xs = points.map((p) => p.x);
       const ys = points.map((p) => p.y);
-      const pad = 70;
-      const minX = Math.min(...xs) - pad;
-      const maxX = Math.max(...xs) + pad;
-      const minY = Math.min(...ys) - pad;
-      const maxY = Math.max(...ys) + pad;
+      // A mark is not a point: its title hangs below it and runs wider than it
+      // in both directions, so a square margin frames the dots and clips the
+      // words. These are the label's own dimensions, not a guess.
+      const padX = (LABEL_MAX * LABEL_EM) / 2 + 12;
+      const padTop = 30;
+      const padBottom = LABEL_DY + 18;
+      const minX = Math.min(...xs) - padX;
+      const maxX = Math.max(...xs) + padX;
+      const minY = Math.min(...ys) - padTop;
+      const maxY = Math.max(...ys) + padBottom;
       const k = Math.max(
         ZOOM_LIMIT.min,
         Math.min(
@@ -350,6 +378,8 @@ export function KnowledgeMap({
         id: n.id,
         x: from?.x ?? CANVAS.width / 2,
         y: from?.y ?? CANVAS.height / 2,
+        // the drawn size, so collision keeps a hub's own clearance
+        r: radii.get(n.id) ?? 8,
         pinned: pinnedRef.current.has(n.id) || n.id === centerId,
       };
     });
@@ -363,7 +393,7 @@ export function KnowledgeMap({
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
     };
-  }, [view, animating, centerId, settle, runLoop]);
+  }, [view, animating, centerId, radii, settle, runLoop]);
 
   // After a re-render that rebuilt the marks, put the DOM back on the
   // simulated positions — the JSX carries the deterministic seed transform,
@@ -711,6 +741,8 @@ export function KnowledgeMap({
                   }}
                   className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
                     near ? " is-near" : " is-far"
+                  }${
+                    (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
                   }`}
                   role="link"
                   tabIndex={0}

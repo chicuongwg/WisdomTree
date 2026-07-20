@@ -1521,6 +1521,15 @@ svg.knowledge-map[data-dim="on"] .g-edge.is-near { stroke-width: 2.2; }
   pointer-events: none;
   transition: opacity var(--speed) ease;
 }
+/* Titles step down with the zoom, the way a map drops place names as you pull
+   back: every page, then the linked ones only, then none — the shape itself is
+   what a zoomed-out map is for. The mark under the pointer or the keyboard
+   always keeps its title, at any zoom. */
+svg.knowledge-map[data-labels="hubs"] .g-node:not(.is-hub) .g-label,
+svg.knowledge-map[data-labels="none"] .g-label { opacity: 0; }
+svg.knowledge-map .g-node:hover .g-label,
+svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
+
 .g-node:hover .g-mark { fill: var(--color-canopy-wash); }
 .g-node:focus-visible { outline: none; }
 .g-node:focus-visible .g-mark { stroke: var(--color-focus); stroke-width: 3.5; }
