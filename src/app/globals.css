@@ -331,10 +331,22 @@ main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; mar
   padding: var(--space-5);
   margin: 0;
   min-width: 0;
+  /* Same vertical flow as the canvas: the container owns the spacing, the
+     children carry none. This was the one holdout still using adjacent-sibling
+     margins, and the two models did not agree — `.panel > h2 + *` matched the
+     first DOM sibling whether or not it was in flow, so a panel holding the
+     (position: absolute, zero-height) live region gave its heading a 16px gap
+     while the identical panel without one gave 8px. Flex layout excludes
+     out-of-flow children outright, so the gap lands where it is seen. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
 }
-.panel > * { margin-top: 0; margin-bottom: 0; }
-.panel > * + * { margin-top: var(--space-4); }
-.panel > h2 + *, .panel > h3 + * { margin-top: var(--space-2); }
+.panel > * { margin: 0; }
+/* headings open a section exactly as they do on the canvas: one extra step
+   above, none below — the gap already spaces what follows */
+.panel > h2:not(:first-child), .panel > h3:not(:first-child) { margin-top: var(--space-2); }
 /* a panel's own heading may carry a badge or link inline */
 .panel > h2 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 /* a table filling a panel keeps one border, not two: the panel's.
@@ -853,7 +865,7 @@ li.notification-unread .notification-link { font-weight: 600; }
 /* a lane is a panel whose body is a stack of cards: tighter padding so
    the cards, not the chrome, get the column's width */
 .board-columns > .panel { padding: var(--space-4); }
-.board-columns > .panel > * + * { margin-top: var(--space-3); }
+.board-columns > .panel { gap: var(--space-3); }
 .board-card {
   border: 1px solid var(--color-line);
   border-left: 3px solid var(--color-line-strong);
