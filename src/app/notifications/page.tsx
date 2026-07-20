@@ -1,22 +1,20 @@
+import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { getPreferences, listNotificationsWithLinks } from "@/modules/notify/service";
+import { listNotificationsWithLinks } from "@/modules/notify/service";
 import { eventLabel, T, when } from "@/lib/vi";
 import { MarkReadButton, NotificationLink } from "@/app/components/notification-actions";
-import { NotificationPrefsForm } from "@/app/components/notification-prefs";
 import { Empty } from "@/app/components/empty";
 
 // Screen: Notification Center (`/notifications`) — the in-app channel of
-// docs/system/notifications.md plus the per-event channel preferences.
+// docs/system/notifications.md. The per-event channel preferences moved to
+// /account (one home per setting); the link below points there.
 // Every row that CAN be opened is a link to the object it is about
 // (modules/notify/links.ts); an event we cannot map stays plain text rather
 // than becoming a dead link.
 export default async function NotificationsPage() {
   const user = await requireUser();
   const actor = toPrincipal(user);
-  const [notes, prefs] = await Promise.all([
-    listNotificationsWithLinks(actor),
-    getPreferences(actor),
-  ]);
+  const notes = await listNotificationsWithLinks(actor);
 
   return (
     <main className="page">
@@ -84,10 +82,9 @@ export default async function NotificationsPage() {
         )}
       </div>
 
-      <h2>{T.notificationPrefs}</h2>
-      <div className="panel">
-        <NotificationPrefsForm initial={prefs} />
-      </div>
+      <p>
+        <Link href="/account">{T.notificationPrefs}</Link>
+      </p>
     </main>
   );
 }

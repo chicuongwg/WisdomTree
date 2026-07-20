@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
@@ -426,6 +427,33 @@ export async function myCalendarToken(actor: Principal) {
     .from(calendarTokens)
     .where(and(eq(calendarTokens.userId, actor.userId), isNull(calendarTokens.revokedAt)));
   return row ?? null;
+}
+
+/**
+ * Cut the old subscribe link and mint a fresh one, atomically: the token is
+ * a bearer credential (anyone holding the URL reads the feed), so "my link
+ * leaked" must be one act that both revokes and replaces — a revoke without
+ * a replacement would strand the member with no feed at all.
+ */
+export async function regenerateCalendarToken(actor: Principal) {
+  const token = randomBytes(24).toString("base64url"); // same entropy as the seed's tokens
+  await db.transaction(async (tx) => {
+    await tx
+      .update(calendarTokens)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(calendarTokens.userId, actor.userId), isNull(calendarTokens.revokedAt)));
+    await tx.insert(calendarTokens).values({ token, userId: actor.userId });
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "calendar.token.regenerate",
+      targetType: "user",
+      targetId: actor.userId,
+      // Never the token itself: the audit log must not become a place the
+      // credential can be read back from.
+      details: {},
+    });
+  });
+  return token;
 }
 
 const icsEscape = (s: string) =>

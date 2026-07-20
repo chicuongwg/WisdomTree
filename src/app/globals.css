@@ -1684,3 +1684,34 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   border-radius: var(--radius);
   background: var(--color-surface);
 }
+
+/* --- Account (`/account`) ------------------------------------- */
+/* The rail's initials circle, enlarged to portrait size; the same canopy
+   ground carries the same person identity at both scales. */
+.account-head { display: flex; align-items: center; gap: var(--space-4); }
+.account-head p { margin: 0; }
+.account-name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+.account-avatar {
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 50%;
+  background: var(--color-canopy);
+  color: var(--color-on-strong);
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  flex: none;
+  overflow: hidden;
+}
+/* An uploaded picture fills the same circle, in the rail and on /account. */
+.account-avatar img,
+.rail .rail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+/* The rail avatar became a link; it stays a circle, not underlined text. */
+a.rail-avatar { text-decoration: none; overflow: hidden; }

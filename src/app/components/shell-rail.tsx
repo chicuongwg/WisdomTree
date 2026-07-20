@@ -96,11 +96,14 @@ const icons = {
 export function ShellRail({
   role,
   displayName,
+  avatarUrl,
   unread,
   reviewOpen,
 }: {
   role: string;
   displayName: string;
+  /** Cache-busted /api/avatar URL, or null for the initials fallback. */
+  avatarUrl: string | null;
   unread: number;
   reviewOpen: number;
 }) {
@@ -167,9 +170,20 @@ export function ShellRail({
       </button>
       <span className="rail-spacer" />
       <ThemeToggle />
-      <span className="rail-avatar" title={`${displayName} · ${userRoleLabel(role)}`}>
-        {initials}
-      </span>
+      {/* The avatar is the door to the member's own settings — same corner
+          convention as every workspace app. */}
+      <Link
+        href="/account"
+        className="rail-avatar"
+        title={`${displayName} · ${userRoleLabel(role)}`}
+        // TODO(vi): move to src/lib/vi.ts
+        aria-label="Tài khoản"
+        aria-current={pathname.startsWith("/account") ? "page" : undefined}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- session-guarded
+            same-origin route; next/image cannot add anything at 1.85rem */}
+        {avatarUrl ? <img src={avatarUrl} alt="" /> : initials}
+      </Link>
     </nav>
   );
 }

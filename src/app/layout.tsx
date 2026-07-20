@@ -71,6 +71,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <ShellRail
             role={user.role}
             displayName={user.displayName}
+            avatarUrl={
+              user.avatarKey
+                ? `/api/avatar/${user.id}?v=${encodeURIComponent(user.avatarKey)}`
+                : null
+            }
             unread={unread}
             reviewOpen={reviewOpen}
           />
@@ -91,9 +96,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {children}
           </div>
           <footer className="statusbar">
-            <span className="sb-item">
+            <Link href="/account" className="sb-item">
               {user.displayName} · {userRoleLabel(user.role)}
-            </span>
+            </Link>
             <span className="sb-item">
               {user.spaceIds.length} {T.yourSpaces}
             </span>

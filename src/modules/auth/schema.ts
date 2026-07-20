@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   displayName: text("display_name").notNull(),
   role: text("role", { enum: ["user", "editor", "admin_op"] }).notNull(),
   zaloUserId: text("zalo_user_id"),
+  avatarKey: text("avatar_key"),
   locale: text("locale").notNull().default("vi"),
   disabledAt: timestamp("disabled_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

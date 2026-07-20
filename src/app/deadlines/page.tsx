@@ -1,15 +1,14 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { listDeadlines, myCalendarToken } from "@/modules/pm/service";
+import { listDeadlines } from "@/modules/pm/service";
 import { listMemberSpaces } from "@/modules/storage/service";
 import { badgeToneClass, day, deadlineKindLabel, T, untilLabel } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
 import { Empty } from "@/app/components/empty";
 
 // Screen: Deadlines (`/deadlines`) — upcoming deadlines sorted by due date,
-// filterable by project, with the calendar-feed subscribe link
-// (user-screen-specs.md § Deadlines).
+// filterable by project (user-screen-specs.md § Deadlines). The calendar
+// subscribe link moved to /account § Lịch của tôi (one home per setting).
 export default async function DeadlinesPage({
   searchParams,
 }: {
@@ -18,16 +17,12 @@ export default async function DeadlinesPage({
   const user = await requireUser();
   const actor = toPrincipal(user);
   const { spaceId } = await searchParams;
-  const [deadlines, spaces, token, headerList] = await Promise.all([
+  const [deadlines, spaces] = await Promise.all([
     listDeadlines(actor, spaceId || undefined),
     listMemberSpaces(actor),
-    myCalendarToken(actor),
-    headers(),
   ]);
   const teamSpaces = spaces.filter((s) => s.type === "team");
   const spaceName = new Map(spaces.map((s) => [s.id, s.name]));
-  const host = headerList.get("host") ?? "localhost:3000";
-  const proto = headerList.get("x-forwarded-proto") ?? "http";
   // One "now" for the whole table, so two rows can never disagree about today.
   const now = new Date();
 
@@ -113,19 +108,6 @@ export default async function DeadlinesPage({
           <div className="panel">
             <h2>{T.createDeadline}</h2>
             <DeadlineForm spaces={teamSpaces} />
-          </div>
-          <div className="panel">
-            <h2>{T.myCalendar}</h2>
-            {token ? (
-              <>
-                <p className="meta">
-                  {T.calendarSubscribeHint}
-                </p>
-                <code className="ics-url">{`${proto}://${host}/calendar/${token.token}.ics`}</code>
-              </>
-            ) : (
-              <p className="muted">Chưa có đường dẫn lịch cho tài khoản này.</p>
-            )}
           </div>
         </aside>
       </div>

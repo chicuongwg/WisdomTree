@@ -50,6 +50,8 @@ export function CommandPalette({ role }: { role: string }) {
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
     { key: "deadlines", label: T.deadline, hint: T.paletteHintGo, href: "/deadlines" },
     { key: "notifications", label: T.notificationCenter, hint: T.paletteHintGo, href: "/notifications" },
+    // TODO(vi): move to src/lib/vi.ts
+    { key: "account", label: "Tài khoản", hint: T.paletteHintGo, href: "/account" },
   ];
   if (role === "editor" || role === "admin_op") {
     screens.push(

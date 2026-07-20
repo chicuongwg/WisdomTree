@@ -17,7 +17,7 @@ export interface Mutation {
   /** Set on success when the caller passes one. */
   ok: string | null;
   /** Fire it. Resolves true on success so a caller can close a form after. */
-  run: (path: string, opts?: { body?: object; ok?: string; method?: "POST" | "DELETE" }) => Promise<boolean>;
+  run: (path: string, opts?: { body?: object; ok?: string; method?: "POST" | "PATCH" | "DELETE" }) => Promise<boolean>;
   /** Clear both messages — for a form that reopens. */
   reset: () => void;
 }
@@ -30,7 +30,7 @@ export function useMutation(): Mutation {
 
   async function run(
     path: string,
-    opts?: { body?: object; ok?: string; method?: "POST" | "DELETE" },
+    opts?: { body?: object; ok?: string; method?: "POST" | "PATCH" | "DELETE" },
   ): Promise<boolean> {
     setBusy(true);
     setError(null);
