@@ -35,6 +35,15 @@ const icons = {
       <circle cx="17" cy="20" r="1.5" />
     </svg>
   ),
+  graph: (
+    <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <circle cx="12" cy="12" r="2.6" />
+      <circle cx="5" cy="6" r="2" />
+      <circle cx="19" cy="7" r="2" />
+      <circle cx="7" cy="19" r="2" />
+      <path d="M6.6 7.4 10 10.2M17.4 8.4 14.2 10.6M10.6 13.8 8.2 17.2" />
+    </svg>
+  ),
   library: (
     <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
       <path d="M4 5h5l2 2h9v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5z" />
@@ -85,6 +94,7 @@ export function ShellRail({
   const pathname = usePathname();
 
   const items: RailItem[] = [
+    { href: "/graph", label: T.graph, icon: icons.graph },
     { href: "/tree", label: T.tree, icon: icons.tree },
     { href: "/library", label: T.library, icon: icons.library, also: ["/source"] },
     { href: "/catalog", label: T.catalog, icon: icons.catalog },

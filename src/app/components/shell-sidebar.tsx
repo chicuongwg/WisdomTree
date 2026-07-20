@@ -3,11 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { T, verificationStateLabel } from "@/lib/vi";
+import { T } from "@/lib/vi";
+import { NodeLink } from "./node-link";
 
-// Contextual sidebar (Obsidian explorer + Slack quick links): the knowledge
-// tree as a collapsible branch→page outline, recent pages, and role-gated
-// shortcuts. Data comes server-rendered from the layout (treeOutline).
+// Contextual sidebar. Two labelled destination groups come first — knowledge
+// surfaces and project/work surfaces — so the outline below can no longer be
+// read as "these folders are my project". The outline itself is node-centric,
+// not file-centric: a page row leads with its verification dot (the state of
+// the knowledge, not a file type) and opens the same hover/focus preview card
+// as every other node link, so the row behaves like a page reference rather
+// than a file in a tree. The disclosure twisty stays on branch rows only.
+// Data comes server-rendered from the layout (treeOutline).
 
 export type OutlineBranch = {
   id: string;
@@ -40,6 +46,15 @@ export function ShellSidebar({
     currentBranch ? { [currentBranch.id]: true } : {},
   );
 
+  const knowledgeNav = [
+    { href: "/graph", label: T.graph },
+    { href: "/tree", label: T.tree },
+    { href: "/tree/branches", label: T.navBranches },
+  ];
+  const workNav: { href: string; label: string }[] = [];
+  if (role === "editor" || role === "admin_op") workNav.push({ href: "/board", label: T.board });
+  workNav.push({ href: "/deadlines", label: T.deadline });
+
   const shortcuts: { href: string; label: string }[] = [
     { href: "/source/intake", label: T.sourceIntake },
     { href: "/source/mine", label: T.mySubmissions },
@@ -67,9 +82,37 @@ export function ShellSidebar({
         {T.quickSearch}…<kbd>Ctrl K</kbd>
       </button>
       <div className="side-body">
+        <nav className="side-sec" aria-label={T.navKnowledge}>
+          <div className="side-label side-label-know">{T.navKnowledge}</div>
+          {knowledgeNav.map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              className={`tree-item nav-item${
+                pathname === n.href || (n.href !== "/tree" && pathname.startsWith(n.href))
+                  ? " active"
+                  : ""
+              }`}
+            >
+              <span className="item-label">{n.label}</span>
+            </Link>
+          ))}
+        </nav>
+        <nav className="side-sec" aria-label={T.navWork}>
+          <div className="side-label side-label-work">{T.navWork}</div>
+          {workNav.map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
+            >
+              <span className="item-label">{n.label}</span>
+            </Link>
+          ))}
+        </nav>
         <div className="side-sec">
           <div className="side-label">
-            {T.tree}
+            {T.branch}
             {(role === "editor" || role === "admin_op") && (
               <Link href="/tree/branch/new" title={T.createBranch} aria-label={T.createBranch}>
                 +
@@ -100,20 +143,14 @@ export function ShellSidebar({
                       <span className="item-label muted">{T.openBranch}</span>
                     </Link>
                     {b.nodes.map((n) => (
-                      <Link
+                      <NodeLink
                         key={n.id}
-                        href={`/tree/node/${n.id}`}
-                        className={`tree-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
+                        nodeId={n.id}
+                        verification={n.verification}
+                        className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
                       >
                         <span className="item-label">{n.title}</span>
-                        <span
-                          className={`node-state ${n.verification}`}
-                          title={verificationStateLabel(n.verification)}
-                          aria-label={verificationStateLabel(n.verification)}
-                        >
-                          ●
-                        </span>
-                      </Link>
+                      </NodeLink>
                     ))}
                   </>
                 )}
@@ -126,14 +163,14 @@ export function ShellSidebar({
           <div className="side-sec">
             <div className="side-label">{T.recent}</div>
             {recent.map((n) => (
-              <Link
+              <NodeLink
                 key={n.id}
-                href={`/tree/node/${n.id}`}
-                className={`tree-item${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
+                nodeId={n.id}
+                className={`tree-item node-item${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
                 title={`${n.title} — ${n.branchName}`}
               >
                 <span className="item-label">{n.title}</span>
-              </Link>
+              </NodeLink>
             ))}
           </div>
         )}

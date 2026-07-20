@@ -118,6 +118,26 @@ export const T = {
   paletteHintGo: "mở nhanh", // NEW
   yourSpaces: "không gian", // NEW
   modules: "Mô-đun", // NEW
+  // Knowledge graph / wiki-links — NEW pending humanities review
+  graph: "Bản đồ tri thức", // NEW
+  graphIntro: "Mỗi chấm là một trang tri thức, mỗi đường là một liên kết giữa hai trang.", // NEW
+  backlinks: "Liên kết đến trang này", // NEW
+  outgoingLinks: "Trang này liên kết đến", // NEW
+  localMap: "Bản đồ quanh trang này", // NEW
+  wikiMissing: "Chưa có trang này", // NEW
+  wikiHelp: "Gõ [[Tiêu đề trang]] để liên kết sang một trang tri thức khác.", // NEW
+  legend: "Chú giải", // NEW
+  filterByBranch: "Lọc theo chuyên đề", // NEW
+  allBranches: "Tất cả chuyên đề", // NEW
+  filterByTitle: "Lọc theo tên trang", // NEW
+  graphEmpty: "Chưa có trang tri thức nào để vẽ bản đồ.", // NEW
+  graphNoMatch: "Không có trang nào khớp bộ lọc. Xóa bớt điều kiện để xem lại.", // NEW
+  graphCount: "trang · liên kết", // NEW
+  noBacklinks: "Chưa trang nào liên kết đến trang này.", // NEW
+  navKnowledge: "Tri thức", // NEW
+  navWork: "Dự án & công việc", // NEW
+  navBranches: "Danh sách chuyên đề", // NEW
+  openGraph: "Mở bản đồ tri thức", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

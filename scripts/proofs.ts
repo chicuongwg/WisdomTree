@@ -1038,6 +1038,184 @@ async function main() {
     `missing ${REQUIRED_EVENTS.filter((e) => !seenRenderedEvents.has(e)).join(", ")}`,
   );
 
+  // ---------- Proof 8: knowledge graph ----------
+  // Wiki-links are the authoring surface of the graph, so the proof follows
+  // one page through its whole life: a [[link]] written in the content
+  // becomes a node_links row in the same save, shows up as a backlink on the
+  // target, and disappears when the text does — while an explicitly declared
+  // typed link survives that content edit. Plus the two read surfaces the
+  // reader actually touches: the preview endpoint and /graph.
+  console.log("Proof 8 — knowledge graph");
+  const { rows: folkBranch } = await pg.query(
+    "SELECT id FROM branches WHERE name = 'Văn Hóa Dân Gian'",
+  );
+  const targetNodeId = visNode[0].id as string;
+  const { rows: targetRow } = await pg.query("SELECT title FROM tree_nodes WHERE id = $1", [
+    targetNodeId,
+  ]);
+  const targetTitle = targetRow[0].title as string;
+
+  // The wiki-link is written WITHOUT diacritics and in lower case: resolution
+  // must be as forgiving as search (immutable_unaccent), or authors have to
+  // type titles perfectly and nobody links anything.
+  const linkedContent =
+    "# Trang kiểm chứng liên kết\n\n" +
+    "Dẫn lại số liệu trong [[ket qua khao sat thuc dia 2025]] để đối chiếu.\n\n" +
+    "Phần này còn thiếu [[Một trang chưa ai viết 4242]].";
+  const createRes = await fetch(
+    `${BASE}/api/tree/nodes`,
+    asUser(minh, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        branchId: folkBranch[0].id,
+        title: "Trang kiểm chứng liên kết",
+        contentMd: linkedContent,
+      }),
+    }),
+  );
+  ok("editor creates a node carrying a wiki-link → 201", createRes.status === 201, `got ${createRes.status}`);
+  const wikiNode = (await createRes.json()) as { id: string; version: number };
+
+  const derived = async (fromId: string, type = "related") =>
+    (
+      await pg.query(
+        "SELECT to_node_id FROM node_links WHERE from_node_id = $1 AND link_type = $2",
+        [fromId, type],
+      )
+    ).rows.map((r: { to_node_id: string }) => r.to_node_id);
+
+  ok(
+    "saving [[Tiêu đề]] wrote the node_links row (diacritic-insensitive match)",
+    (await derived(wikiNode.id)).length === 1 && (await derived(wikiNode.id))[0] === targetNodeId,
+    JSON.stringify(await derived(wikiNode.id)),
+  );
+  ok(
+    "an unresolved [[…]] creates no link row",
+    (await derived(wikiNode.id)).length === 1,
+  );
+
+  // The target's incoming query (WHERE to_node_id = :id) is what the
+  // "Liên kết đến trang này" panel reads.
+  type NodeRead = {
+    backlinks: Array<{ fromNodeId: string; title: string; context: string; linkType: string }>;
+    links: Array<{ toNodeId: string; linkType: string }>;
+  };
+  const targetRead = (await (
+    await fetch(`${BASE}/api/tree/nodes/${targetNodeId}`, asUser(lan))
+  ).json()) as NodeRead;
+  const backlink = targetRead.backlinks.find((b) => b.fromNodeId === wikiNode.id);
+  ok("target's backlink query returns the linking page", backlink !== undefined);
+  ok(
+    "backlink carries the sentence around the link as context",
+    !!backlink && backlink.context.includes("Dẫn lại số liệu"),
+    JSON.stringify(backlink?.context),
+  );
+
+  // Rendered Node Detail: the resolved link is an anchor, the unresolved one
+  // is visibly marked and is NOT a link.
+  const wikiHtml = await (await fetch(`${BASE}/tree/node/${wikiNode.id}`, asUser(lan))).text();
+  ok(
+    "resolved wiki-link renders as an in-app node link",
+    wikiHtml.includes(`href="/tree/node/${targetNodeId}"`),
+  );
+  ok(
+    "unresolved wiki-link renders non-link and marked",
+    // rendered inside the wiki-missing span, never inside an anchor
+    /<span class="wiki-missing"[^>]*>Một trang chưa ai viết 4242<\/span>/.test(wikiHtml) &&
+      !/<a[^>]*>[^<]*Một trang chưa ai viết 4242/.test(wikiHtml),
+  );
+  ok("node detail carries the backlinks panel", wikiHtml.includes("Liên kết đến trang này"));
+  ok("node detail embeds the local map", wikiHtml.includes("g-node"));
+
+  // Merge rule: 'related' is the wiki-link channel (owned by the content),
+  // typed links are the explicit channel (untouched by a content save).
+  const explicitPatch = await fetch(
+    `${BASE}/api/tree/nodes/${wikiNode.id}`,
+    asUser(minh, {
+      method: "PATCH",
+      headers: json,
+      body: JSON.stringify({
+        links: [{ toNodeId: targetNodeId, linkType: "supports" }],
+        expectedVersion: wikiNode.version,
+      }),
+    }),
+  );
+  ok("explicit typed link editor still works → 200", explicitPatch.status === 200, `got ${explicitPatch.status}`);
+  const afterExplicit = (await explicitPatch.json()) as { version: number };
+
+  const removePatch = await fetch(
+    `${BASE}/api/tree/nodes/${wikiNode.id}`,
+    asUser(minh, {
+      method: "PATCH",
+      headers: json,
+      body: JSON.stringify({
+        contentMd: "# Trang kiểm chứng liên kết\n\nĐã bỏ liên kết wiki khỏi nội dung.",
+        expectedVersion: afterExplicit.version,
+      }),
+    }),
+  );
+  ok("editing the content out → 200", removePatch.status === 200, `got ${removePatch.status}`);
+  ok(
+    "removing the wiki-link removes the derived link row",
+    (await derived(wikiNode.id)).length === 0,
+    JSON.stringify(await derived(wikiNode.id)),
+  );
+  ok(
+    "explicitly declared typed link survives the content save",
+    (await derived(wikiNode.id, "supports")).length === 1,
+  );
+  const targetAfter = (await (
+    await fetch(`${BASE}/api/tree/nodes/${targetNodeId}`, asUser(lan))
+  ).json()) as NodeRead;
+  ok(
+    "the target keeps only the explicit backlink after the removal",
+    targetAfter.backlinks.filter((b) => b.fromNodeId === wikiNode.id && b.linkType === "related")
+      .length === 0,
+  );
+
+  // Preview endpoint: excerpt for a permitted reader, no leak otherwise.
+  const previewRes = await fetch(`${BASE}/api/tree/nodes/${targetNodeId}/preview`, asUser(lan));
+  ok("preview endpoint → 200 for a permitted user", previewRes.status === 200, `got ${previewRes.status}`);
+  const previewBody = (await previewRes.json()) as {
+    title: string;
+    verification: string;
+    excerpt: string;
+  };
+  ok(
+    "preview returns title, verification and an excerpt",
+    previewBody.title === targetTitle &&
+      previewBody.verification === "verified" &&
+      previewBody.excerpt.length > 0 &&
+      previewBody.excerpt.length <= 201 &&
+      !previewBody.excerpt.includes("[["),
+    JSON.stringify(previewBody),
+  );
+  ok(
+    "preview refuses an unauthenticated caller (401)",
+    (await fetch(`${BASE}/api/tree/nodes/${targetNodeId}/preview`)).status === 401,
+  );
+  ok(
+    "preview of an unknown node → 404 (no existence leak)",
+    (await fetch(
+      `${BASE}/api/tree/nodes/00000000-0000-4000-8000-000000000000/preview`,
+      asUser(lan),
+    )).status === 404,
+  );
+
+  // /graph renders marks and edges server-side for every role that can read.
+  for (const [who, cookie] of [
+    ["thành viên", lan],
+    ["quản trị", huong],
+  ] as const) {
+    const res = await fetch(`${BASE}/graph`, asUser(cookie));
+    ok(`/graph → 200 (${who})`, res.status === 200, `got ${res.status}`);
+    const html = await res.text();
+    ok(`/graph renders node marks (${who})`, (html.match(/class="g-node/g) ?? []).length >= 4);
+    ok(`/graph renders edges (${who})`, (html.match(/class="g-edge/g) ?? []).length >= 1);
+    ok(`/graph carries the verification legend (${who})`, html.includes("map-legend"));
+  }
+
   console.log(`\nAll proofs passed (${passed} checks).`);
 }
 

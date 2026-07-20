@@ -1,6 +1,13 @@
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
+import {
+  backlinkContext,
+  buildWikiIndex,
+  excerpt,
+  normalizeTitle,
+  wikiTargetKeys,
+} from "@/lib/wikilink";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
@@ -232,7 +239,7 @@ export async function getNode(actor: Principal, nodeId: string) {
     .where(eq(treeNodes.id, nodeId));
   if (!row) throw notFound();
 
-  const [tagRows, linkRows, provenance] = await Promise.all([
+  const [tagRows, linkRows, backlinkRows, provenance] = await Promise.all([
     db
       .select({ name: tags.name })
       .from(nodeTags)
@@ -243,6 +250,21 @@ export async function getNode(actor: Principal, nodeId: string) {
       .from(nodeLinks)
       .innerJoin(treeNodes, eq(nodeLinks.toNodeId, treeNodes.id))
       .where(eq(nodeLinks.fromNodeId, nodeId)),
+    // Backlinks — the incoming half of the graph (WHERE to_node_id = :id).
+    // Kept apart from provenance on purpose: provenance answers "what source
+    // backs this page", backlinks answer "which pages point here".
+    db
+      .select({
+        fromNodeId: nodeLinks.fromNodeId,
+        linkType: nodeLinks.linkType,
+        title: treeNodes.title,
+        contentMd: treeNodes.contentMd,
+        verification: treeNodes.verification,
+      })
+      .from(nodeLinks)
+      .innerJoin(treeNodes, eq(nodeLinks.fromNodeId, treeNodes.id))
+      .where(and(eq(nodeLinks.toNodeId, nodeId), ne(treeNodes.verification, "archived")))
+      .orderBy(asc(treeNodes.title)),
     // Provenance backbone: promotions → source version → source (Flow 2 NFR).
     db
       .select({
@@ -268,8 +290,129 @@ export async function getNode(actor: Principal, nodeId: string) {
     branchName: row.branchName,
     tags: tagRows.map((t) => t.name),
     links: linkRows,
+    backlinks: backlinkRows.map((b) => ({
+      fromNodeId: b.fromNodeId,
+      linkType: b.linkType,
+      title: b.title,
+      verification: b.verification,
+      // The sentence around the wiki-link when it is derivable, else the
+      // source page's opening line.
+      context: backlinkContext(b.contentMd, normalizeTitle(row.node.title)),
+    })),
     provenance,
   };
+}
+
+/** Hover/focus preview payload: title, verification, ~200 chars of content. */
+export async function nodePreview(actor: Principal, nodeId: string) {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const [node] = await db
+    .select({
+      id: treeNodes.id,
+      title: treeNodes.title,
+      verification: treeNodes.verification,
+      contentMd: treeNodes.contentMd,
+    })
+    .from(treeNodes)
+    .where(eq(treeNodes.id, nodeId));
+  if (!node) throw notFound();
+  return {
+    id: node.id,
+    title: node.title,
+    verification: node.verification,
+    excerpt: excerpt(node.contentMd, 200),
+  };
+}
+
+/** Title → node index used to resolve `[[wiki-links]]` while rendering. */
+export async function wikiIndex(actor: Principal) {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const rows = await db
+    .select({ id: treeNodes.id, title: treeNodes.title, verification: treeNodes.verification })
+    .from(treeNodes)
+    .where(ne(treeNodes.verification, "archived"))
+    .orderBy(asc(treeNodes.updatedAt));
+  return buildWikiIndex(rows);
+}
+
+// ---------------------------------------------------------------------------
+// Graph Explorer (screen-inventory.md) — nodes + edges for the map surface
+// ---------------------------------------------------------------------------
+
+export type GraphNode = {
+  id: string;
+  title: string;
+  branchId: string;
+  branchName: string;
+  verification: string;
+};
+export type GraphEdge = { from: string; to: string; linkType: string };
+export type KnowledgeGraph = { nodes: GraphNode[]; edges: GraphEdge[] };
+
+/** Whole live graph: every non-archived page and every link between two. */
+export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const nodes = await db
+    .select({
+      id: treeNodes.id,
+      title: treeNodes.title,
+      branchId: treeNodes.branchId,
+      branchName: branches.name,
+      verification: treeNodes.verification,
+    })
+    .from(treeNodes)
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(ne(treeNodes.verification, "archived"))
+    .orderBy(asc(treeNodes.title));
+  const live = new Set(nodes.map((n) => n.id));
+  const edgeRows = await db
+    .select({
+      from: nodeLinks.fromNodeId,
+      to: nodeLinks.toNodeId,
+      linkType: nodeLinks.linkType,
+    })
+    .from(nodeLinks);
+  return { nodes, edges: edgeRows.filter((e) => live.has(e.from) && live.has(e.to)) };
+}
+
+/** Local map on Node Detail: the page plus its 1-hop neighbours. */
+export async function neighbourGraph(actor: Principal, nodeId: string): Promise<KnowledgeGraph> {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const [self] = await db
+    .select({
+      id: treeNodes.id,
+      title: treeNodes.title,
+      branchId: treeNodes.branchId,
+      branchName: branches.name,
+      verification: treeNodes.verification,
+    })
+    .from(treeNodes)
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(eq(treeNodes.id, nodeId));
+  if (!self) throw notFound();
+  const incident = await db
+    .select({ from: nodeLinks.fromNodeId, to: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
+    .from(nodeLinks)
+    .where(sql`${nodeLinks.fromNodeId} = ${nodeId} OR ${nodeLinks.toNodeId} = ${nodeId}`);
+  const ids = [
+    ...new Set([nodeId, ...incident.flatMap((e) => [e.from, e.to])]),
+  ];
+  const nodes = await db
+    .select({
+      id: treeNodes.id,
+      title: treeNodes.title,
+      branchId: treeNodes.branchId,
+      branchName: branches.name,
+      verification: treeNodes.verification,
+    })
+    .from(treeNodes)
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(and(inArray(treeNodes.id, ids), ne(treeNodes.verification, "archived")))
+    .orderBy(asc(treeNodes.title));
+  const live = new Set(nodes.map((n) => n.id));
+  if (!live.has(nodeId)) nodes.unshift(self); // an archived page still maps itself
+  live.add(nodeId);
+  return { nodes, edges: incident.filter((e) => live.has(e.from) && live.has(e.to)) };
 }
 
 // ---------------------------------------------------------------------------
@@ -289,12 +432,27 @@ async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: string[
   }
 }
 
+/**
+ * Explicit link editor payload. Merge rule with the derived wiki-links:
+ *
+ *   link_type 'related' is the WIKI-LINK CHANNEL — it is owned by the node's
+ *   content and reconciled by syncDerivedLinks on every save. The typed links
+ *   ('supports' | 'contrasts' | 'part_of') are the EXPLICIT CHANNEL — they are
+ *   declared in the editor and a content save never touches them.
+ *
+ * So this function deletes and rewrites only the typed rows; any 'related'
+ * row it is handed is inserted idempotently but will be reconciled against
+ * the content on the next save (a hand-declared 'related' link survives only
+ * if the content also carries the wiki-link).
+ */
 async function syncLinks(
   tx: Tx,
   nodeId: string,
   links: Array<{ toNodeId: string; linkType: string }>,
 ) {
-  await tx.delete(nodeLinks).where(eq(nodeLinks.fromNodeId, nodeId));
+  await tx
+    .delete(nodeLinks)
+    .where(and(eq(nodeLinks.fromNodeId, nodeId), ne(nodeLinks.linkType, "related")));
   for (const link of links) {
     if (!["related", "supports", "contrasts", "part_of"].includes(link.linkType)) {
       throw new ApiError(400, "invalid_link_type", "Loại liên kết không hợp lệ.");
@@ -308,6 +466,50 @@ async function syncLinks(
       })
       .onConflictDoNothing();
   }
+}
+
+/**
+ * Wiki-links → node_links, inside the caller's transaction so a saved page
+ * and its outgoing links can never disagree. Targets resolve by title,
+ * case- and diacritic-insensitively (normalizeTitle mirrors the search
+ * path's immutable_unaccent); unresolved targets and self-links write
+ * nothing. Owns link_type 'related' entirely — see syncLinks for the rule.
+ */
+async function syncDerivedLinks(tx: Tx, nodeId: string, title: string, contentMd: string) {
+  const keys = wikiTargetKeys(contentMd);
+  let targetIds: string[] = [];
+  if (keys.length) {
+    const candidates = await tx
+      .select({ id: treeNodes.id, title: treeNodes.title })
+      .from(treeNodes)
+      .where(ne(treeNodes.verification, "archived"));
+    const index = buildWikiIndex(candidates);
+    const selfKey = normalizeTitle(title);
+    targetIds = [
+      ...new Set(
+        keys
+          .filter((k) => k !== selfKey)
+          .map((k) => index[k]?.id)
+          .filter((id): id is string => Boolean(id) && id !== nodeId),
+      ),
+    ];
+  }
+  await tx
+    .delete(nodeLinks)
+    .where(
+      and(
+        eq(nodeLinks.fromNodeId, nodeId),
+        eq(nodeLinks.linkType, "related"),
+        targetIds.length ? notInArray(nodeLinks.toNodeId, targetIds) : sql`true`,
+      ),
+    );
+  for (const toNodeId of targetIds) {
+    await tx
+      .insert(nodeLinks)
+      .values({ fromNodeId: nodeId, toNodeId, linkType: "related" })
+      .onConflictDoNothing();
+  }
+  return targetIds;
 }
 
 /** Manual node creation (Editor): enters `no_source` (state-machines.md). */
@@ -348,6 +550,9 @@ export async function createNode(
     });
     if (input.tags) await syncTags(tx, actor, node.id, input.tags);
     if (input.links) await syncLinks(tx, node.id, input.links);
+    // Same transaction as the node row: wiki-links in the content become
+    // node_links or the save does not happen at all.
+    await syncDerivedLinks(tx, node.id, input.title, input.contentMd);
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "node.create",
@@ -439,6 +644,11 @@ export async function updateNode(
         createdBy: actor.userId,
         changeSummary: "Cập nhật nội dung",
       });
+    }
+    // Derived wiki-links ride the same transaction as the node row (also on
+    // a title-only change: the self-link guard keys off the title).
+    if (patch.contentMd !== undefined || patch.title !== undefined) {
+      await syncDerivedLinks(tx, nodeId, updated.title, updated.contentMd);
     }
     await recordAudit(tx, actor, {
       accountability: actor.role === "admin_op" ? "approver_publisher" : "editor_updater",

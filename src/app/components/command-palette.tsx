@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { T, verificationStateLabel } from "@/lib/vi";
+import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
 
 // Command palette (VS Code / Obsidian, Ctrl+K): full-text search over tree
 // nodes via GET /api/tree/search, plus quick-open entries for every screen
@@ -121,6 +122,28 @@ export function CommandPalette({ role }: { role: string }) {
 
   useEffect(() => setSel(0), [query, hits.length]);
 
+  // Preview follows the selection, so the card is reachable by arrow keys and
+  // not only by pointer (same card component as every other node link).
+  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
+  const [peek, setPeek] = useState<{ top: number; left: number } | null>(null);
+  const [preview, setPreview] = useState<NodePreview | null>(null);
+  const selectedKey = results[sel]?.key;
+  useEffect(() => {
+    if (!open || !selectedKey?.startsWith("node:")) {
+      setPeek(null);
+      return;
+    }
+    const nodeId = selectedKey.slice(5);
+    const row = rowRefs.current.get(selectedKey);
+    if (row) setPeek(cardPosition(row));
+    setPreview(null);
+    let alive = true;
+    void loadPreview(nodeId).then((p) => alive && setPreview(p));
+    return () => {
+      alive = false;
+    };
+  }, [open, selectedKey]);
+
   if (!open) return null;
 
   const go = (entry: Entry) => {
@@ -162,8 +185,13 @@ export function CommandPalette({ role }: { role: string }) {
             <button
               key={entry.key}
               type="button"
+              ref={(el) => {
+                if (el) rowRefs.current.set(entry.key, el);
+                else rowRefs.current.delete(entry.key);
+              }}
               className={`pal-item${i === sel ? " sel" : ""}`}
               onMouseEnter={() => setSel(i)}
+              onFocus={() => setSel(i)}
               onClick={() => go(entry)}
             >
               <span className="item-label">{entry.label}</span>
@@ -174,6 +202,7 @@ export function CommandPalette({ role }: { role: string }) {
           ))}
         </div>
       </div>
+      {peek && <NodePreviewCard preview={preview} style={{ top: peek.top, left: peek.left }} />}
     </div>
   );
 }

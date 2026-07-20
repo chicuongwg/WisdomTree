@@ -1,109 +1,66 @@
 import type { ReactNode } from "react";
+import { inlineTokens, parseBlocks } from "./markdown-core";
+import { NodeLink } from "@/app/components/node-link";
+import { T } from "./vi";
 
-// Minimal, dependency-free Markdown rendering for node content and drafts:
-// headings, unordered lists, bold, paragraphs. One shared block parser feeds
-// two renderers: the React component (React escapes all text, so no raw-HTML
-// injection surface) and the HTML-string serializer used by the export
-// renderer stub. The full renderer (Quartz publishing) is V1.
+// React rendering for node content and drafts. Parsing lives in
+// markdown-core.ts (shared with the export serializer); this file only turns
+// tokens into elements. React escapes all text, so there is no raw-HTML
+// injection surface.
+//
+// Wiki-links: pass `wikiIndex` (normalized title → node) and every
+// `[[Tiêu đề]]` resolves to an in-app node link with a hover/focus preview.
+// A target with no page renders as a visibly distinct non-link, so the
+// reader can tell "not written yet" from "broken".
 
-type Block =
-  | { type: "h1" | "h2" | "h3" | "p"; text: string }
-  | { type: "ul"; items: string[] };
+export { parseBlocks, markdownToHtml } from "./markdown-core";
 
-export function parseBlocks(content: string): Block[] {
-  const blocks: Block[] = [];
-  const lines = content.split(/\r?\n/);
-  let paragraph: string[] = [];
-  let list: string[] = [];
+export type WikiIndex = Record<string, { id: string; title: string; verification: string }>;
 
-  const flush = () => {
-    if (paragraph.length) {
-      blocks.push({ type: "p", text: paragraph.join(" ") });
-      paragraph = [];
+function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
+  return inlineTokens(text).map((token, i) => {
+    if (token.kind === "bold") return <strong key={i}>{token.text}</strong>;
+    if (token.kind === "text") return <span key={i}>{token.text}</span>;
+    const target = wikiIndex[token.key];
+    if (!target) {
+      return (
+        <span key={i} className="wiki-missing" title={T.wikiMissing} aria-label={`${token.label} — ${T.wikiMissing}`}>
+          {token.label}
+        </span>
+      );
     }
-    if (list.length) {
-      blocks.push({ type: "ul", items: list });
-      list = [];
-    }
-  };
-
-  for (const line of lines) {
-    const heading = /^(#{1,3})\s+(.*)$/.exec(line);
-    const bullet = /^[-*]\s+(.*)$/.exec(line);
-    if (heading) {
-      flush();
-      blocks.push({ type: (["h1", "h2", "h3"] as const)[heading[1].length - 1], text: heading[2] });
-    } else if (bullet) {
-      if (paragraph.length) flush();
-      list.push(bullet[1]);
-    } else if (!line.trim()) {
-      flush();
-    } else {
-      if (list.length) flush();
-      paragraph.push(line.trim());
-    }
-  }
-  flush();
-  return blocks;
+    return (
+      <NodeLink
+        key={i}
+        nodeId={target.id}
+        className="wiki-link"
+        verification={target.verification}
+      >
+        {token.label}
+      </NodeLink>
+    );
+  });
 }
 
-/** `**bold**` split shared by both renderers: odd indices are bold runs. */
-function boldRuns(text: string): string[] {
-  return text.split(/\*\*(.+?)\*\*/g);
-}
-
-function inline(text: string): ReactNode[] {
-  return boldRuns(text).map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part));
-}
-
-export function Markdown({ content }: { content: string }) {
+export function Markdown({ content, wikiIndex = {} }: { content: string; wikiIndex?: WikiIndex }) {
   return (
     <div className="md-content">
       {parseBlocks(content).map((block, key) =>
         block.type === "ul" ? (
           <ul key={key}>
             {block.items.map((item, i) => (
-              <li key={i}>{inline(item)}</li>
+              <li key={i}>{inline(item, wikiIndex)}</li>
             ))}
           </ul>
         ) : block.type === "p" ? (
-          <p key={key}>{inline(block.text)}</p>
+          <p key={key}>{inline(block.text, wikiIndex)}</p>
         ) : (
           (() => {
             const H = block.type;
-            return <H key={key}>{inline(block.text)}</H>;
+            return <H key={key}>{inline(block.text, wikiIndex)}</H>;
           })()
         ),
       )}
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-// HTML string serializer (export renderer stub) — same parse, escaped output.
-// ---------------------------------------------------------------------------
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function inlineHtml(text: string): string {
-  return boldRuns(text)
-    .map((part, i) => (i % 2 === 1 ? `<strong>${escapeHtml(part)}</strong>` : escapeHtml(part)))
-    .join("");
-}
-
-/** Render node Markdown to an HTML fragment through the same block parser. */
-export function markdownToHtml(content: string): string {
-  return parseBlocks(content)
-    .map((block) =>
-      block.type === "ul"
-        ? `<ul>${block.items.map((item) => `<li>${inlineHtml(item)}</li>`).join("")}</ul>`
-        : `<${block.type}>${inlineHtml(block.text)}</${block.type}>`,
-    )
-    .join("\n");
 }

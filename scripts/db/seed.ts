@@ -209,7 +209,7 @@ async function main() {
         publish: true,
         fromSource: "Báo cáo khảo sát thực địa 2025",
         contentMd:
-          "# Kết quả khảo sát thực địa 2025\n\nTổng hợp các phát hiện chính từ đợt khảo sát thực địa năm 2025.\n\n- Ghi nhận **12 địa điểm** có giá trị tư liệu.\n- Phỏng vấn 34 người dân địa phương.\n\n## Kết luận\n\nCần số hóa toàn bộ tư liệu viết tay trước mùa mưa.",
+          "# Kết quả khảo sát thực địa 2025\n\nTổng hợp các phát hiện chính từ đợt khảo sát thực địa năm 2025.\n\n- Ghi nhận **12 địa điểm** có giá trị tư liệu.\n- Phỏng vấn 34 người dân địa phương.\n- Đối chiếu với [[Ghi chép các cuộc họp cộng đồng]] để thống nhất lịch số hóa.\n\n## Kết luận\n\nCần số hóa toàn bộ tư liệu viết tay trước mùa mưa.",
       },
       {
         branch: branchFolk,
@@ -219,7 +219,7 @@ async function main() {
         publish: false,
         fromSource: "Tổng hợp phỏng vấn người dân",
         contentMd:
-          "# Tri thức dân gian qua phỏng vấn người dân\n\nCác mảng tri thức truyền miệng thu thập được qua chuỗi phỏng vấn.\n\n- Kinh nghiệm canh tác theo con nước.\n- Bài thuốc dân gian từ cây quanh nhà.",
+          "# Tri thức dân gian qua phỏng vấn người dân\n\nCác mảng tri thức truyền miệng thu thập được qua chuỗi phỏng vấn.\n\n- Kinh nghiệm canh tác theo con nước.\n- Bài thuốc dân gian từ cây quanh nhà.\n- Phần nghi lễ được tách riêng sang [[Lễ hội đình làng: phác thảo ban đầu|phác thảo lễ hội đình làng]].",
       },
       {
         branch: branchHistory,
@@ -229,7 +229,7 @@ async function main() {
         publish: false,
         fromSource: "Biên bản họp nhóm tháng 6",
         contentMd:
-          "# Ghi chép các cuộc họp cộng đồng\n\nTóm tắt biên bản họp nhóm tháng 6, chờ đối chiếu thêm nguồn.\n\n- Thống nhất lịch số hóa tư liệu.\n- Phân công người phụ trách từng kho.",
+          "# Ghi chép các cuộc họp cộng đồng\n\nTóm tắt biên bản họp nhóm tháng 6, chờ đối chiếu thêm nguồn.\n\n- Thống nhất lịch số hóa tư liệu.\n- Phân công người phụ trách từng kho.\n- Số liệu nền lấy từ [[Kết quả khảo sát thực địa 2025]].",
       },
       {
         branch: branchFolk,
@@ -238,7 +238,7 @@ async function main() {
         verification: "no_source",
         publish: false,
         contentMd:
-          "# Lễ hội đình làng: phác thảo ban đầu\n\nTrang tạo thủ công, chưa gắn tư liệu dẫn chứng.\n\n- Cần bổ sung ảnh chụp và lời kể của người cao tuổi.",
+          "# Lễ hội đình làng: phác thảo ban đầu\n\nTrang tạo thủ công, chưa gắn tư liệu dẫn chứng.\n\n- Cần bổ sung ảnh chụp và lời kể của người cao tuổi.\n- Nền tri thức truyền miệng: [[Tri thức dân gian qua phỏng vấn người dân]].",
       },
     ];
     const nodeIdBySlug: Record<string, string> = {};
@@ -274,6 +274,25 @@ async function main() {
           [src.versionId, minh.id, huong.id],
         );
       }
+    }
+
+    // Wiki-links between the seeded pages, mirrored into node_links exactly
+    // as the service's derived sync would write them (link_type 'related').
+    // Without these a fresh seed opens on an empty map and empty backlink
+    // panels, which is precisely the "the tree looks like a folder tree"
+    // impression we are fixing.
+    const seededWikiLinks: Array<[string, string]> = [
+      ["ket-qua-khao-sat-thuc-dia-2025", "ghi-chep-cac-cuoc-hop-cong-dong"],
+      ["tri-thuc-dan-gian-qua-phong-van", "le-hoi-dinh-lang-phac-thao-ban-dau"],
+      ["ghi-chep-cac-cuoc-hop-cong-dong", "ket-qua-khao-sat-thuc-dia-2025"],
+      ["le-hoi-dinh-lang-phac-thao-ban-dau", "tri-thuc-dan-gian-qua-phong-van"],
+    ];
+    for (const [fromSlug, toSlug] of seededWikiLinks) {
+      await client.query(
+        `INSERT INTO node_links (from_node_id, to_node_id, link_type)
+         VALUES ($1,$2,'related') ON CONFLICT DO NOTHING`,
+        [nodeIdBySlug[fromSlug], nodeIdBySlug[toSlug]],
+      );
     }
 
     // 1 curation mid-flow: ready_for_review with corrected text + draft, and
@@ -429,7 +448,7 @@ async function main() {
     await client.query("COMMIT");
     console.log(
       "Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan, " +
-        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 1 curation ready_for_review (queue non-empty), 1 gap request, " +
+        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 4 wiki-links between them, 1 curation ready_for_review (queue non-empty), 1 gap request, " +
         "3 deadlines (1 due in 5 days), 2 tasks, 2 comments (1 with mention), calendar tokens per user.",
     );
   } catch (err) {

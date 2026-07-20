@@ -29,7 +29,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { markdownToHtml } from "@/lib/markdown";
+import { markdownToHtml } from "@/lib/markdown-core";
 
 const run = promisify(execFile);
 
