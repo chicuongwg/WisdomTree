@@ -131,7 +131,7 @@ export function ShellRail({
           aria-label={
             item.pip ? `${item.label} (${item.pip} ${T.unread.toLowerCase()})` : item.label
           }
-          aria-current={isActive(item) ? "true" : undefined}
+          aria-current={isActive(item) ? "page" : undefined}
         >
           {item.icon}
           {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}

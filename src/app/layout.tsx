@@ -63,6 +63,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           own: browser extensions (Grammarly and friends) stamp attributes on
           <body> before React hydrates, and that is not our mismatch to fix. */}
       <body suppressHydrationWarning>
+        <a href="#main" className="skip-link">
+          Bỏ qua điều hướng
+        </a>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <div className="shell">
           <ShellRail
@@ -77,7 +80,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             role={user.role}
             spaceCount={user.spaceIds.length}
           />
-          <div className="main-area">{children}</div>
+          {/* ponytail: tabIndex 0, not -1. The skip link only needs a
+              focusable target (either value would do), but .main-area is also
+              the app's scroll container (overflow-y: auto), and a scroll
+              container is keyboard-scrollable only when it is in the tab
+              order — -1 would land the skip link and leave the reader unable
+              to page through the content they just skipped to. One attribute,
+              both jobs. */}
+          <div className="main-area" id="main" tabIndex={0}>
+            {children}
+          </div>
           <footer className="statusbar">
             <span className="sb-item">
               {user.displayName} · {userRoleLabel(user.role)}

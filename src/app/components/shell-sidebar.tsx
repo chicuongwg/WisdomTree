@@ -84,19 +84,19 @@ export function ShellSidebar({
       <div className="side-body">
         <nav className="side-sec" aria-label={T.navKnowledge}>
           <div className="side-label side-label-know">{T.navKnowledge}</div>
-          {knowledgeNav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={`tree-item nav-item${
-                pathname === n.href || (n.href !== "/tree" && pathname.startsWith(n.href))
-                  ? " active"
-                  : ""
-              }`}
-            >
-              <span className="item-label">{n.label}</span>
-            </Link>
-          ))}
+          {knowledgeNav.map((n) => {
+            const here = pathname === n.href || (n.href !== "/tree" && pathname.startsWith(n.href));
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`tree-item nav-item${here ? " active" : ""}`}
+                aria-current={here ? "page" : undefined}
+              >
+                <span className="item-label">{n.label}</span>
+              </Link>
+            );
+          })}
         </nav>
         <nav className="side-sec" aria-label={T.navWork}>
           <div className="side-label side-label-work">{T.navWork}</div>
@@ -105,6 +105,7 @@ export function ShellSidebar({
               key={n.href}
               href={n.href}
               className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
+              aria-current={pathname.startsWith(n.href) ? "page" : undefined}
             >
               <span className="item-label">{n.label}</span>
             </Link>
@@ -139,6 +140,7 @@ export function ShellSidebar({
                     <Link
                       href={`/tree/branch/${b.id}`}
                       className={`tree-item depth-1${pathname === `/tree/branch/${b.id}` ? " active" : ""}`}
+                      aria-current={pathname === `/tree/branch/${b.id}` ? "page" : undefined}
                     >
                       <span className="item-label muted">{T.openBranch}</span>
                     </Link>
@@ -148,6 +150,9 @@ export function ShellSidebar({
                         nodeId={n.id}
                         verification={n.verification}
                         className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
+                        aria-current={
+                          pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined
+                        }
                       >
                         <span className="item-label">{n.title}</span>
                       </NodeLink>
@@ -168,6 +173,7 @@ export function ShellSidebar({
                 nodeId={n.id}
                 className={`tree-item node-item${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
                 title={`${n.title} — ${n.branchName}`}
+                aria-current={pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined}
               >
                 <span className="item-label">{n.title}</span>
               </NodeLink>
@@ -181,6 +187,7 @@ export function ShellSidebar({
               key={s.href}
               href={s.href}
               className={`tree-item${pathname.startsWith(s.href) ? " active" : ""}`}
+              aria-current={pathname.startsWith(s.href) ? "page" : undefined}
             >
               <span className="item-label">{s.label}</span>
             </Link>

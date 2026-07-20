@@ -1,20 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { T } from "@/lib/vi";
 
 // Light/dark switch. An inline script in the root layout stamps
 // data-theme on <html> before first paint; this button just flips it
 // and persists the choice.
+//
+// <html> is the single source of truth, read through useSyncExternalStore:
+// useState + useEffect painted the sun for one frame in dark mode, because the
+// effect only ran after the first paint. The server has no theme to read, so
+// the server snapshot is "light" — React re-reads the real value at the end of
+// hydration, before the browser paints, and without a hydration mismatch.
 
 const KEY = "wt-theme";
 
-export function ThemeToggle() {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    setDark(document.documentElement.dataset.theme === "dark");
-  }, []);
+const readTheme = () => document.documentElement.dataset.theme === "dark";
+const readServerTheme = () => false;
+const subscribe = (onChange: () => void) => {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => observer.disconnect();
+};
 
+// TODO(vi): move to src/lib/vi.ts — the button is a toggle, so it is named for
+// the thing being switched on ("dark theme, on/off"), not for the act.
+const DARK_THEME = "Giao diện tối";
+
+export function ThemeToggle() {
+  const dark = useSyncExternalStore(subscribe, readTheme, readServerTheme);
+
+  // No setState: stamping <html> is the change, and the observer tells React.
   const toggle = () => {
     const next = dark ? "light" : "dark";
     document.documentElement.dataset.theme = next;
@@ -23,7 +42,6 @@ export function ThemeToggle() {
     } catch {
       /* private mode: theme just won't persist */
     }
-    setDark(!dark);
   };
 
   const stroke = {
@@ -35,7 +53,14 @@ export function ThemeToggle() {
   };
 
   return (
-    <button type="button" className="rail-btn" onClick={toggle} title={T.themeToggle} aria-label={T.themeToggle}>
+    <button
+      type="button"
+      className="rail-btn"
+      onClick={toggle}
+      title={T.themeToggle}
+      aria-label={DARK_THEME}
+      aria-pressed={dark}
+    >
       {dark ? (
         <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
           <circle cx="12" cy="12" r="4.5" />

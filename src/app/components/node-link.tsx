@@ -139,6 +139,7 @@ export function NodeLink({
   className,
   title,
   verification,
+  "aria-current": ariaCurrent,
 }: {
   nodeId: string;
   children: ReactNode;
@@ -146,19 +147,29 @@ export function NodeLink({
   title?: string;
   /** rendered as a leading state dot when given (outline / wiki-link rows) */
   verification?: string;
+  /** the sidebar marks the open page; without this the row says "current" in colour only */
+  "aria-current"?: "page";
 }) {
   const { handlers, card } = useNodePreview(nodeId);
   return (
     <>
-      <Link href={`/tree/node/${nodeId}`} className={className} title={title} {...handlers}>
+      <Link
+        href={`/tree/node/${nodeId}`}
+        className={className}
+        title={title}
+        aria-current={ariaCurrent}
+        {...handlers}
+      >
         {verification ? (
-          <span
-            className={`node-state ${verification}`}
-            title={verificationStateLabel(verification)}
-            aria-label={verificationStateLabel(verification)}
-          >
-            ●
-          </span>
+          <>
+            {/* The dot is decoration; the word beside it is the fact. aria-label
+                on a bare <span> has no role to hang off and is not reliably
+                announced, so the state is spelled out in .sr-only text. */}
+            <span className={`node-state ${verification}`} aria-hidden="true">
+              ●
+            </span>
+            <span className="sr-only">{verificationStateLabel(verification)} — </span>
+          </>
         ) : null}
         {children}
       </Link>

@@ -701,6 +701,22 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--radius);
 }
 
+/* The first thing a keyboard reader meets. Before this, every page cost them
+   the whole rail plus the whole outline before the first word of content. */
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: var(--space-2);
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible { transform: none; text-decoration: none; }
+
 /* --- The 44px floor, where the pointer is coarse -------------------------
    The app's primary controls carry the floor at every size. This block is for
    the second tier — rows, chips and bar items tuned tight for a mouse, which
@@ -931,7 +947,7 @@ html, body { height: 100%; }
   color: var(--shell-rail-active);
   text-decoration: none;
 }
-.rail a.rail-btn[aria-current="true"] {
+.rail a.rail-btn[aria-current="page"] {
   color: var(--shell-rail-active);
   border-left-color: var(--color-seal);
 }
