@@ -84,7 +84,7 @@ export function ShellSidebar({
       </button>
       <div className="side-body">
         <nav className="side-sec" aria-label={T.navKnowledge}>
-          <div className="side-label side-label-know">{T.navKnowledge}</div>
+          <div className="side-label">{T.navKnowledge}</div>
           {knowledgeNav.map((n) => {
             const here = pathname === n.href || (n.href !== "/tree" && pathname.startsWith(n.href));
             return (
@@ -100,7 +100,7 @@ export function ShellSidebar({
           })}
         </nav>
         <nav className="side-sec" aria-label={T.navWork}>
-          <div className="side-label side-label-work">{T.navWork}</div>
+          <div className="side-label">{T.navWork}</div>
           {workNav.map((n) => (
             <Link
               key={n.href}

@@ -21,7 +21,10 @@ export default async function GraphPage({
   const [graph, { node }] = await Promise.all([knowledgeGraph(toPrincipal(user)), searchParams]);
 
   return (
-    <main className="page">
+    // `wide`: the map is the work surface of this screen, and the floating
+    // control panel takes a bite out of it as well, so it gets the window
+    // instead of the reading column (see main.page.wide in globals.css).
+    <main className="page wide">
       <h1>{T.graph}</h1>
       <p className="muted">
         {T.graphIntro} <Link href="/tree">{T.tree}</Link> ·{" "}

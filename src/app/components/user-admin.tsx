@@ -39,8 +39,13 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
     <>
       <h3>{T.inviteMember}</h3>
       <SayMutation m={invite} />
+      {/* The plain form layout every other form in the app uses: one labelled
+          field per row, each the same width, the button under them. This one
+          was a .button-row of three bare placeholder inputs, so the three
+          controls came out three different widths on one centred line and
+          matched nothing else on the screen — and a placeholder is not a
+          label: it leaves the moment you type in the box. */}
       <form
-        className="button-row"
         onSubmit={(e) => {
           e.preventDefault();
           void invite
@@ -57,36 +62,43 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
             });
         }}
       >
-        <input
-          type="email"
-          required
-          aria-label={T.email}
-          placeholder={T.email}
-          value={inviteEmail}
-          disabled={invite.busy}
-          onChange={(e) => setInviteEmail(e.target.value)}
-        />
-        <input
-          type="text"
-          required
-          aria-label={T.displayNameLabel}
-          placeholder={T.displayNameLabel}
-          value={inviteName}
-          disabled={invite.busy}
-          onChange={(e) => setInviteName(e.target.value)}
-        />
-        <select
-          aria-label={T.inviteRoleAria}
-          value={inviteRole}
-          disabled={invite.busy}
-          onChange={(e) => setInviteRole(e.target.value)}
-        >
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {userRoleLabel(r)}
-            </option>
-          ))}
-        </select>
+        <div className="field">
+          <label htmlFor="invite-email">{T.email}</label>
+          <input
+            id="invite-email"
+            type="email"
+            required
+            value={inviteEmail}
+            disabled={invite.busy}
+            onChange={(e) => setInviteEmail(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="invite-name">{T.displayNameLabel}</label>
+          <input
+            id="invite-name"
+            type="text"
+            required
+            value={inviteName}
+            disabled={invite.busy}
+            onChange={(e) => setInviteName(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="invite-role">{T.roleColumn}</label>
+          <select
+            id="invite-role"
+            value={inviteRole}
+            disabled={invite.busy}
+            onChange={(e) => setInviteRole(e.target.value)}
+          >
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {userRoleLabel(r)}
+              </option>
+            ))}
+          </select>
+        </div>
         <button type="submit" disabled={invite.busy}>
           {invite.busy ? T.loading : T.inviteMember}
         </button>

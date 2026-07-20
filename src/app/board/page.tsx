@@ -89,7 +89,10 @@ export default async function BoardPage({
   const lanes = ["todo", "doing", "done"] as const;
 
   return (
-    <main className="page">
+    // `wide`: three lanes of cards are read across, not down a column of prose,
+    // and the reading measure was leaving each lane about a third of what the
+    // window had spare (see main.page.wide in globals.css).
+    <main className="page wide">
       <h1>{T.board}</h1>
       <nav className="segmented" aria-label={T.boardViews}>
         {VIEWS.map((v) => (
@@ -101,13 +104,13 @@ export default async function BoardPage({
       {/* The create form used to hold a permanent 19rem rail, which left the
           three lanes about 230px each — a quarter of the work surface spent on
           a form nobody has open most of the time. A disclosure gives it back;
-          .graph-panel is the app's own disclosure look.
+          .disclosure is the app’s own in-flow disclosure look.
           ponytail: no `open` prop, deliberately. Deriving it from the board
           (open when empty) means the refresh after the first task flips it back
           to closed under the reader's cursor, taking focus with it. */}
-      <details className="graph-panel">
+      <details className="disclosure">
         <summary>{T.createTask}</summary>
-        <div className="graph-panel-body">
+        <div className="disclosure-body">
           <TaskCreateForm assignees={members} />
         </div>
       </details>

@@ -284,8 +284,19 @@ main.page {
 @media (max-width: 40rem) {
   main.page { padding: var(--space-5) var(--space-4) var(--space-6); }
 }
-/* headings open a section: one extra step above, none below (gap) */
-main.page > h2, main.page > h3 { margin: var(--space-3) 0 0; }
+/* A work surface, not a text. The board's lanes and the knowledge map are read
+   ACROSS — three columns of cards, a field of marks — and --page-max starves
+   them of the width the window already has, while the page keeps spending
+   2rem of side padding on top of it. A reading page must NOT get this: prose
+   set to the full width of a wide screen loses the reader between the end of
+   one line and the start of the next, which is what --page-max is for. So the
+   width is opted into per screen (`className="page wide"`) rather than raised
+   for everything. */
+main.page.wide {
+  max-width: none;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
 main.page > p, main.page > ul, main.page > ol { margin: 0; }
 main.page > section { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
 
@@ -327,6 +338,59 @@ main.page h2, .panel h2 {
 main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; margin: 0; }
 
 /* ============================================================
+   Section identity — ONE rule every surface inherits.
+
+   The complaint this answers: two stacked sections were being read
+   as a single oversized section, because a heading differed from
+   the text under it by weight alone and by nothing at all from the
+   block above it. So a heading that opens a section now carries
+   two marks it cannot lose: a vermilion tick at its left edge, and
+   — when something precedes it — a hairline seam across the top of
+   the section it opens, with the extra step of air above that seam
+   rather than below the heading.
+
+   Shape and space, never colour alone: with the hue stripped out
+   the tick is still a bar and the seam is still a line, which is
+   the same rule the map follows for verification state.
+
+   Deliberately scoped to direct children of the canvas and of a
+   panel. A heading inside rendered knowledge content (.md-content)
+   is part of the author's prose, not a section of the interface,
+   and must not be stamped as one.
+   ============================================================ */
+main.page > h2, main.page > h3,
+.panel > h2, .panel > h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+main.page > h2::before, main.page > h3::before,
+.panel > h2::before, .panel > h3::before {
+  content: "";
+  flex: none;
+  align-self: stretch;
+  width: 0.2rem;
+  min-height: 1.05em;
+  border-radius: 1px;
+  background: var(--color-seal);
+}
+/* A subheading is a part of its section, not a new one, so it takes the tick
+   at half weight and never the seam. */
+main.page > h3::before, .panel > h3::before { background: var(--color-line-strong); }
+/* The seam belongs to h2 only, and only when there is a section above to end.
+   A panel's first heading needs none — the panel's own border already draws
+   that boundary — and neither does the one that follows the h1's rule. */
+main.page > h2:not(:first-child),
+.panel > h2:not(:first-child) {
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: var(--space-3); }
+
+/* ============================================================
    Panels — content and inspector surfaces.
    A panel owns its inner rhythm: children carry no margins, the
    panel spaces them, and a heading binds tighter to what follows.
@@ -356,11 +420,9 @@ main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; mar
    text blocks; a lone button as a direct child was being pulled to the full
    panel width — a banner nobody designed ("Đề cử lên cây tri thức"). */
 .panel > button, .panel > .button, .panel > form > button { align-self: flex-start; }
-/* headings open a section exactly as they do on the canvas: one extra step
-   above, none below — the gap already spaces what follows */
-.panel > h2:not(:first-child), .panel > h3:not(:first-child) { margin-top: var(--space-2); }
-/* a panel's own heading may carry a badge or link inline */
-.panel > h2 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+/* Headings open a section exactly as they do on the canvas, and by exactly the
+   same rule — see "Section identity" above, which also gives a panel heading
+   the flex row it needs to carry a badge or a link inline. */
 /* a table filling a panel keeps one border, not two: the panel's.
    Every table.list is wrapped in .record-scroll now (see the drawer note
    there), so the panel's child is the scroller and it is the thing that
@@ -762,7 +824,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .board-card .board-actions button,
   .graph-check { min-height: 2.75rem; }
   .side-sec > .side-label a { min-width: 2.75rem; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; }
-  .graph-panel > summary { min-height: 3rem; }
+  .graph-panel > summary,
+  .disclosure > summary { min-height: 3rem; }
   .checkbox-row, .graph-check { align-items: center; }
   input[type="checkbox"] { width: 1.35rem; height: 1.35rem; }
 }
@@ -1098,15 +1161,33 @@ button.searchbox kbd {
 }
 .side-body { overflow-y: auto; flex: 1; padding: 0.2rem 0.5rem 1rem; }
 .side-sec { margin-top: 0.7rem; }
+/* The sidebar's groups follow the same section rule as the canvas: a seam
+   above the group and a tick beside its name. They used to differ from each
+   other instead — two of the five carried an identity colour and the other
+   three were muted grey, so "TRI THỨC" read as a heading and "GẦN ĐÂY" read as
+   another row in the list above it. One appearance for all five: the reader
+   should be able to tell a new group has started without knowing which group
+   it is. */
+.side-sec + .side-sec { border-top: 1px solid var(--color-line); padding-top: 0.5rem; }
 .side-sec > .side-label {
   display: flex;
   align-items: center;
+  gap: 0.4rem;
   padding: 0.25rem 0.5rem;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-ink-muted);
+  color: var(--color-ink);
+}
+.side-sec > .side-label::before {
+  content: "";
+  flex: none;
+  align-self: stretch;
+  width: 0.18rem;
+  min-height: 0.85em;
+  border-radius: 1px;
+  background: var(--color-seal);
 }
 .side-sec > .side-label a { margin-left: auto; font-size: 0.85rem; line-height: 1; }
 a.tree-item, button.tree-item {
@@ -1353,8 +1434,9 @@ a.wiki-link .node-state, .link-list .node-state { font-size: 0.6em; margin-right
 
 /* --- Sidebar: node rows read as pages, not files ---------------- */
 a.tree-item.node-item .node-state { margin-left: 0; margin-right: 0.1rem; }
-.side-sec > .side-label.side-label-know { color: var(--color-canopy-deep); }
-.side-sec > .side-label.side-label-work { color: var(--color-seal-deep); }
+/* The two identity colours that used to live here are gone: they made two of
+   the five group headings louder than the other three, which is the fault the
+   owner reported. Every group heading now looks the same (see .side-label). */
 a.tree-item.nav-item { font-weight: 500; }
 
 /* --- Backlink / outgoing link lists ---------------------------- */
@@ -1386,6 +1468,23 @@ a.tree-item.nav-item { font-weight: 500; }
    paper and hairlines rather than Obsidian's chrome, and still a <details>, so
    it costs the map no height while shut and its controls are in the server
    HTML either way. */
+/* A disclosure in the page flow — the app's plain "open this section" look,
+   which is what the board's create form has always been. It gets its own class
+   because the map's panel became a floating card over the canvas, and a class
+   two surfaces share is a class that breaks one of them when the other moves:
+   the create form turned into a 16rem card hovering over the lanes. Same
+   summary and same chevron, which is why those selectors are shared below;
+   only the box around them differs. */
+.disclosure {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.disclosure-body {
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
 .graph-panel {
   position: absolute;
   z-index: 2;
@@ -1402,7 +1501,8 @@ a.tree-item.nav-item { font-weight: 500; }
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
 }
-.graph-panel > summary {
+.graph-panel > summary,
+.disclosure > summary {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1414,9 +1514,11 @@ a.tree-item.nav-item { font-weight: 500; }
   cursor: pointer;
   list-style: none;
 }
-.graph-panel > summary::-webkit-details-marker { display: none; }
+.graph-panel > summary::-webkit-details-marker,
+.disclosure > summary::-webkit-details-marker { display: none; }
 /* Chevron drawn from borders: no glyph, no icon font, inherits the text colour. */
-.graph-panel > summary::before {
+.graph-panel > summary::before,
+.disclosure > summary::before {
   content: "";
   flex: none;
   width: 0.45rem;
@@ -1426,8 +1528,10 @@ a.tree-item.nav-item { font-weight: 500; }
   transform: rotate(-45deg);
   transition: transform var(--speed) ease;
 }
-.graph-panel[open] > summary::before { transform: rotate(45deg); }
-.graph-panel > summary:focus-visible {
+.graph-panel[open] > summary::before,
+.disclosure[open] > summary::before { transform: rotate(45deg); }
+.graph-panel > summary:focus-visible,
+.disclosure > summary:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
   border-radius: var(--radius-lg);
