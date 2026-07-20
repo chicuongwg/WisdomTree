@@ -3,6 +3,7 @@ import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCurationWorkbench } from "@/modules/storage/curation";
 import { badgeClass, badgeToneClass, curationLabel, curationStateLabel, T } from "@/lib/vi";
 import { CurationWorkbench } from "@/app/components/curation-workbench";
+import { RawChunks } from "@/app/components/raw-chunks";
 
 // Screen: Assigned Source Task (`/source/task/:id`, user-screen-specs.md) —
 // the assigned editor corrects text and refines the draft; raw text is the
@@ -64,17 +65,7 @@ export default async function AssignedSourceTaskPage({
         </div>
         <aside>
           <div className="panel">
-            <h2>{T.rawText}</h2>
-            {wb.chunks.length === 0 ? (
-              <p className="muted">Chưa có văn bản trích xuất cho tư liệu này.</p>
-            ) : (
-              wb.chunks.map((c) => (
-                <div key={c.id} className="stack-item">
-                  <span className="badge muted">{c.refLabel}</span>
-                  <pre className="raw-text">{c.content}</pre>
-                </div>
-              ))
-            )}
+            <RawChunks chunks={wb.chunks} empty="Chưa có văn bản trích xuất cho tư liệu này." />
           </div>
           <div className="panel">
             <h2>Ghi chú</h2>

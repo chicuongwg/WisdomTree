@@ -22,6 +22,7 @@ import {
 } from "@/lib/vi";
 import { CurationAdminActions } from "@/app/components/curation-admin-actions";
 import { GapTriageActions } from "@/app/components/gap-triage-actions";
+import { RawChunks } from "@/app/components/raw-chunks";
 
 // Screen: Source Detail (`/source/:id`, admin-op-screen-specs.md) —
 // type-aware: file-backed evidence review or branch-gap triage.
@@ -101,22 +102,14 @@ export default async function AdminSourceDetailPage({
 
       <div className="with-side">
         <div>
-          <h2>{T.rawText}</h2>
-          {wb.chunks.length === 0 ? (
-            <p className="muted">
-              Chưa có văn bản trích xuất.{" "}
-              {wb.version.extractionStatus === "unprocessable"
-                ? "Tệp không xử lý được — vẫn được lưu và tải xuống bình thường."
-                : ""}
-            </p>
-          ) : (
-            wb.chunks.map((c) => (
-              <div key={c.id} className="stack-item">
-                <span className="badge muted">{c.refLabel}</span>
-                <pre className="raw-text">{c.content}</pre>
-              </div>
-            ))
-          )}
+          <RawChunks
+            chunks={wb.chunks}
+            empty={
+              wb.version.extractionStatus === "unprocessable"
+                ? "Chưa có văn bản trích xuất. Tệp không xử lý được — vẫn được lưu và tải xuống bình thường."
+                : "Chưa có văn bản trích xuất."
+            }
+          />
           <h2>{T.correctedText}</h2>
           {wb.correctedLatest ? (
             <pre className="raw-text">{wb.correctedLatest.content}</pre>
