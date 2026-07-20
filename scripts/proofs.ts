@@ -1134,7 +1134,13 @@ async function main() {
       !/<a[^>]*>[^<]*Một trang chưa ai viết 4242/.test(wikiHtml),
   );
   ok("node detail carries the backlinks panel", wikiHtml.includes("Liên kết đến trang này"));
-  ok("node detail embeds the local map", wikiHtml.includes("g-node"));
+  // The knowledge page no longer embeds a map: 600px of page to draw two dots
+  // that the backlink panels beside it already state in words. It links out to
+  // the real map, scoped to this page.
+  ok(
+    "node detail links out to the map, scoped to this page",
+    wikiHtml.includes(`/graph?node=${wikiNode.id}`),
+  );
 
   // Merge rule: 'related' is the wiki-link channel (owned by the content),
   // typed links are the explicit channel (untouched by a content save).

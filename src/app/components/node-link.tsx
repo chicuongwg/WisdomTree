@@ -76,11 +76,23 @@ export function NodePreviewCard({
   );
 }
 
+/** The width the card is actually given, read from the token that gives it:
+ * mirroring `--node-card-w` by hand mispositions every card the day it moves.
+ * ponytail: rem is the only unit that token has ever held; anything else falls
+ * through as a raw number, and an unreadable value falls back to 18rem @ 16px. */
+function cardWidth(): number {
+  const root = document.documentElement;
+  const token = getComputedStyle(root).getPropertyValue("--node-card-w").trim();
+  const n = parseFloat(token);
+  const px = token.endsWith("rem") ? n * parseFloat(getComputedStyle(root).fontSize) : n;
+  return px > 0 ? px : 288;
+}
+
 /** Where the card goes for a given trigger: below it, flipped up near the
  * bottom edge, always inside the viewport. Shared by the hook and the map. */
 export function cardPosition(target: Element): { top: number; left: number } {
   const rect = target.getBoundingClientRect();
-  const width = 288; // matches --node-card-w in globals.css
+  const width = cardWidth();
   const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
   const below = rect.bottom + 8;
   const top = below + 160 > window.innerHeight ? Math.max(8, rect.top - 168) : below;

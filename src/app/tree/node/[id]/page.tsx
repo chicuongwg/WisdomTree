@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getNode, listNodeOptions, neighbourGraph, wikiIndex } from "@/modules/knowledge/service";
-import { badgeToneClass, nodeLinkTypeLabel, T } from "@/lib/vi";
+import { getNode, listNodeOptions, wikiIndex } from "@/modules/knowledge/service";
+import { badgeToneClass, day, nodeLinkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { NodeLink } from "@/app/components/node-link";
-import { KnowledgeMap } from "@/app/components/knowledge-map";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
 import { NodeExportActions } from "@/app/components/node-export-actions";
@@ -20,7 +19,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const isAdmin = user.role === "admin_op";
   const canEdit = isAdmin || (user.role === "editor" && node.createdBy === user.id);
   const candidates = isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
-  const [wiki, localGraph] = await Promise.all([wikiIndex(actor), neighbourGraph(actor, id)]);
+  const wiki = await wikiIndex(actor);
 
   return (
     <main className="page">
@@ -48,15 +47,14 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
       <div className="with-side">
         <div>
           <Markdown content={node.contentMd} wikiIndex={wiki} />
-          <section className="panel" aria-labelledby="local-map-h">
-            <h2 id="local-map-h">{T.localMap}</h2>
-            <KnowledgeMap
-              nodes={localGraph.nodes}
-              edges={localGraph.edges}
-              centerId={node.id}
-              height={340}
-            />
-          </section>
+          {/* A second map lived here: ~600px of settings, zoom buttons, canvas,
+              mouse-and-keyboard help and legend, to draw two dots and one line.
+              The two link panels in the rail already name those relationships,
+              in words and with context. One link into the real map instead.
+              TODO(vi): move this label to src/lib/vi.ts */}
+          <p>
+            <Link href={`/graph?node=${node.id}`}>{T.openOnMap}</Link>
+          </p>
           <CommentsSection anchorType="tree_node" anchorId={node.id} />
         </div>
         <aside>
@@ -74,7 +72,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
                   <li key={i}>
                     <Link href={`/library/${p.sourceId}`}>{p.sourceTitle}</Link>
                     <div className="meta">
-                      {T.approve}: {p.approvedByName} · {p.createdAt.toLocaleDateString("vi-VN")}
+                      {T.approve}: {p.approvedByName} · {day(p.createdAt)}
                       {p.excerptChunkIds?.length ? ` · ${p.excerptChunkIds.length} trích đoạn` : ""}
                     </div>
                   </li>

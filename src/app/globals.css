@@ -1234,8 +1234,10 @@ dialog.confirm .confirm-actions { margin-top: var(--space-5); justify-content: f
   text-underline-offset: 0.15em;
 }
 /* the leading dot is the target page state (NodeLink renders it), so the
-   link says both "this is a page" and "this is how verified it is" */
-.md-content a.wiki-link .node-state { font-size: 0.6em; margin-right: 0.15em; }
+   link says both "this is a page" and "this is how verified it is".
+   Scoped to the dot, not to .md-content: the same link appears in the backlink
+   panels, where the dot was landing hard against the preceding word. */
+a.wiki-link .node-state, .link-list .node-state { font-size: 0.6em; margin-right: 0.35em; }
 /* A target with no page yet: readable, obviously not a link, and it says
    what is missing on hover and to assistive tech. */
 .wiki-missing {
@@ -1352,18 +1354,22 @@ a.tree-item.nav-item { font-weight: 500; }
   outline-offset: -2px;
   border-radius: var(--radius-lg);
 }
+/* Flex, not auto-fit grid: the link-type fieldset is three times the height of
+   the two filters beside it, and a grid row sized to the tallest cell left a
+   150px hole under them with the reset button floating in it. */
 .graph-panel-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-4);
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-4);
   border-top: 1px solid var(--color-line);
-  padding-top: var(--space-4);
 }
 .graph-group {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex: 1 1 15rem;
   min-width: 0;
   margin: 0;
   padding: var(--space-3);
@@ -1379,7 +1385,7 @@ a.tree-item.nav-item { font-weight: 500; }
   text-transform: uppercase;
   color: var(--color-ink-muted);
 }
-.graph-panel-foot { grid-column: 1 / -1; }
+.graph-panel-foot { flex-basis: 100%; }
 
 /* Row height is tuned to the input device: compact enough on a mouse-driven
    desktop that the panel does not out-weigh the map it controls, and a full

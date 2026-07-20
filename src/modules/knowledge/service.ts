@@ -375,55 +375,6 @@ export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> 
   return { nodes, edges: edgeRows.filter((e) => live.has(e.from) && live.has(e.to)) };
 }
 
-/**
- * Local map on Node Detail: the page and the pages one link away from it.
- *
- * Exactly two queries, both bounded by this page's own link count. A
- * multi-hop version walked outward through archived pages (the archived
- * filter only applies to the node fetch at the end, so an archived page still
- * pulled in its own neighbours and left them looking like orphans) and fed an
- * unbounded frontier to `inArray`, which Postgres caps at 65535 bind
- * parameters. One hop is what the local map draws, so one hop is what it asks
- * for.
- */
-export async function neighbourGraph(actor: Principal, nodeId: string): Promise<KnowledgeGraph> {
-  authorize(actor, "knowledge.node.read", { kind: "read" });
-  const [self] = await db
-    .select({
-      id: treeNodes.id,
-      title: treeNodes.title,
-      branchId: treeNodes.branchId,
-      branchName: branches.name,
-      verification: treeNodes.verification,
-    })
-    .from(treeNodes)
-    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(eq(treeNodes.id, nodeId));
-  if (!self) throw notFound();
-
-  const incident = await db
-    .select({ from: nodeLinks.fromNodeId, to: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
-    .from(nodeLinks)
-    .where(or(eq(nodeLinks.fromNodeId, nodeId), eq(nodeLinks.toNodeId, nodeId)));
-  const ids = [...new Set([nodeId, ...incident.flatMap((e) => [e.from, e.to])])];
-  const nodes = await db
-    .select({
-      id: treeNodes.id,
-      title: treeNodes.title,
-      branchId: treeNodes.branchId,
-      branchName: branches.name,
-      verification: treeNodes.verification,
-    })
-    .from(treeNodes)
-    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(and(inArray(treeNodes.id, ids), ne(treeNodes.verification, "archived")))
-    .orderBy(asc(treeNodes.title));
-  const live = new Set(nodes.map((n) => n.id));
-  if (!live.has(nodeId)) nodes.unshift(self); // an archived page still maps itself
-  live.add(nodeId);
-  return { nodes, edges: incident.filter((e) => live.has(e.from) && live.has(e.to)) };
-}
-
 // ---------------------------------------------------------------------------
 // Node mutations
 // ---------------------------------------------------------------------------

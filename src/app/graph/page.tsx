@@ -8,9 +8,17 @@ import { KnowledgeMap } from "../components/knowledge-map";
 // seen as a map instead of an outline. This is the answer to "the knowledge
 // tree looks like a project folder tree": here a page is a mark among its
 // neighbours, not a file in a folder.
-export default async function GraphPage() {
+//
+// `?node=<id>` is the whole map centred on one page — where Node Detail sends
+// a reader who wants to see the page in context. Node Detail used to embed a
+// second copy of this component to say the same thing in 600px of its own.
+export default async function GraphPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ node?: string }>;
+}) {
   const user = await requireUser();
-  const graph = await knowledgeGraph(toPrincipal(user));
+  const [graph, { node }] = await Promise.all([knowledgeGraph(toPrincipal(user)), searchParams]);
 
   return (
     <main className="page">
@@ -19,7 +27,7 @@ export default async function GraphPage() {
         {T.graphIntro} <Link href="/tree">{T.tree}</Link> ·{" "}
         <Link href="/tree/branches">{T.navBranches}</Link>
       </p>
-      <KnowledgeMap nodes={graph.nodes} edges={graph.edges} showFilters />
+      <KnowledgeMap nodes={graph.nodes} edges={graph.edges} centerId={node} />
     </main>
   );
 }

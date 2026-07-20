@@ -177,7 +177,7 @@ export const T = {
   graphIntro: "Mỗi chấm là một trang tri thức, mỗi đường là một liên kết giữa hai trang.", // NEW
   backlinks: "Liên kết đến trang này", // NEW
   outgoingLinks: "Trang này liên kết đến", // NEW
-  localMap: "Bản đồ quanh trang này", // NEW
+  openOnMap: "Xem trang này trên bản đồ tri thức", // NEW
   wikiMissing: "Chưa có trang này", // NEW
   wikiHelp: "Gõ [[Tiêu đề trang]] để liên kết sang một trang tri thức khác.", // NEW
   legend: "Chú giải", // NEW

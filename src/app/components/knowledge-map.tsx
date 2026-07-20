@@ -52,8 +52,30 @@ const SHAPE_LABEL: Record<string, string> = {
 const DRAG_THRESHOLD = 4;
 const ZOOM_LIMIT = { min: 0.35, max: 4 };
 
+/** Label geometry. Pairs with the `.g-label` rule in globals.css, which owns
+ *  everything else about a label (font, size, anchor, colour). */
+const LABEL_MAX = 26;
+const LABEL_CUT = 25;
+const LABEL_DY = 16;
+
 type XY = { x: number; y: number };
 type ViewTransform = { k: number; tx: number; ty: number };
+
+/**
+ * A media query as state. `false` on the server AND on the first client render
+ * — the truth arrives one tick later — so hydration can never disagree.
+ */
+function useMedia(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const sync = () => setMatches(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, [query]);
+  return matches;
+}
 
 /** sqrt keeps a hub from swamping the map: 16 links is twice the radius of 4. */
 function markRadius(base: number, degree: number): number {
@@ -73,15 +95,11 @@ export function KnowledgeMap({
   nodes,
   edges,
   centerId,
-  showFilters = false,
-  height = 640,
 }: {
   nodes: MapNode[];
   edges: MapEdge[];
-  /** local map: this page sits at the centre, is pinned there, and is drawn larger */
+  /** this page sits at the centre, is pinned there, and is drawn larger */
   centerId?: string;
-  showFilters?: boolean;
-  height?: number;
 }) {
   const router = useRouter();
   // React's generated ids contain punctuation that is not valid in an HTML id,
@@ -93,21 +111,17 @@ export function KnowledgeMap({
   // render are identical; the stored values arrive in an effect below.
   const [settings, setSettings] = useState<GraphSettings>(DEFAULT_SETTINGS);
   const [term, setTerm] = useState("");
-  const [panelOpen, setPanelOpen] = useState(showFilters);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  // Closed by default everywhere: open, the panel pushed the map it controls
+  // ~350px down the page, which is the wrong thing to show first.
+  const [panelOpen, setPanelOpen] = useState(false);
+  const reducedMotion = useMedia("(prefers-reduced-motion: reduce)");
+  /** A mouse-and-keyboard help paragraph is noise to someone holding a phone. */
+  const coarsePointer = useMedia("(pointer: coarse)");
   /** Nothing to persist until the reader actually changes something. */
   const dirty = useRef(false);
 
   useEffect(() => {
     setSettings(readSettings());
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReducedMotion(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
   }, []);
 
   // Persisting from inside a `setSettings` updater would be a side effect in a
@@ -218,6 +232,10 @@ export function KnowledgeMap({
   const simRef = useRef<Simulation | null>(null);
   const rafRef = useRef(0);
   const viewT = useRef<ViewTransform>({ k: 1, tx: 0, ty: 0 });
+  // ponytail: rather than detect "the simulation has settled", the view refits
+  // every tick until the reader zooms or pans. Fewer lines, and the map is
+  // framed at every instant instead of only at the end.
+  const autoFit = useRef(true);
 
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
   // The rebuild effect deliberately does not list `pinned` as a dependency
@@ -249,6 +267,47 @@ export function KnowledgeMap({
     }
   }, []);
 
+  /** Frame every mark. `speak` is off for the automatic fit — a live region
+   *  must not talk to itself, and per-frame React state is banned here. */
+  const fitToView = useCallback(
+    (speak = true) => {
+      const points = [...posRef.current.values()];
+      if (points.length === 0) {
+        viewT.current = { k: 1, tx: 0, ty: 0 };
+        paint();
+        return;
+      }
+      const xs = points.map((p) => p.x);
+      const ys = points.map((p) => p.y);
+      const pad = 70;
+      const minX = Math.min(...xs) - pad;
+      const maxX = Math.max(...xs) + pad;
+      const minY = Math.min(...ys) - pad;
+      const maxY = Math.max(...ys) + pad;
+      const k = Math.max(
+        ZOOM_LIMIT.min,
+        Math.min(
+          ZOOM_LIMIT.max,
+          Math.min(CANVAS.width / (maxX - minX), CANVAS.height / (maxY - minY)),
+        ),
+      );
+      viewT.current = {
+        k,
+        tx: CANVAS.width / 2 - ((minX + maxX) / 2) * k,
+        ty: CANVAS.height / 2 - ((minY + maxY) / 2) * k,
+      };
+      paint();
+      if (speak) setAnnounce(`${T.graphZoomReset} · ${Math.round(k * 100)}%`);
+    },
+    [paint],
+  );
+
+  /** Paint, but keep the view framed while the reader has not moved it. */
+  const settle = useCallback(() => {
+    if (autoFit.current) fitToView(false);
+    else paint();
+  }, [fitToView, paint]);
+
   const runLoop = useCallback(() => {
     if (rafRef.current) return;
     const step = () => {
@@ -257,12 +316,12 @@ export function KnowledgeMap({
       if (!sim) return;
       const alive = sim.tick();
       for (const n of sim.nodes) posRef.current.set(n.id, { x: n.x, y: n.y });
-      paint();
+      settle();
       // Stopping at the alpha floor is what keeps an idle tab at 0% CPU.
       if (alive) rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
-  }, [paint]);
+  }, [settle]);
 
   // Build (or rebuild) the simulation whenever the drawn set of nodes/edges
   // changes. Surviving nodes keep the position they already had, so changing a
@@ -281,7 +340,7 @@ export function KnowledgeMap({
         if (p) still.set(n.id, { x: p.x, y: p.y });
       }
       posRef.current = still;
-      paint();
+      settle();
       return;
     }
 
@@ -304,7 +363,7 @@ export function KnowledgeMap({
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
     };
-  }, [view, animating, centerId, paint, runLoop]);
+  }, [view, animating, centerId, settle, runLoop]);
 
   // After a re-render that rebuilt the marks, put the DOM back on the
   // simulated positions — the JSX carries the deterministic seed transform,
@@ -326,6 +385,7 @@ export function KnowledgeMap({
 
   const zoomAround = useCallback(
     (factor: number, anchor?: XY) => {
+      autoFit.current = false; // the reader owns the view from here on
       const vt = viewT.current;
       const k = Math.max(ZOOM_LIMIT.min, Math.min(ZOOM_LIMIT.max, vt.k * factor));
       const a = anchor ?? { x: CANVAS.width / 2, y: CANVAS.height / 2 };
@@ -337,33 +397,6 @@ export function KnowledgeMap({
     },
     [paint],
   );
-
-  const fitToView = useCallback(() => {
-    const points = [...posRef.current.values()];
-    if (points.length === 0) {
-      viewT.current = { k: 1, tx: 0, ty: 0 };
-      paint();
-      return;
-    }
-    const xs = points.map((p) => p.x);
-    const ys = points.map((p) => p.y);
-    const pad = 70;
-    const minX = Math.min(...xs) - pad;
-    const maxX = Math.max(...xs) + pad;
-    const minY = Math.min(...ys) - pad;
-    const maxY = Math.max(...ys) + pad;
-    const k = Math.max(
-      ZOOM_LIMIT.min,
-      Math.min(ZOOM_LIMIT.max, Math.min(CANVAS.width / (maxX - minX), CANVAS.height / (maxY - minY))),
-    );
-    viewT.current = {
-      k,
-      tx: CANVAS.width / 2 - ((minX + maxX) / 2) * k,
-      ty: CANVAS.height / 2 - ((minY + maxY) / 2) * k,
-    };
-    paint();
-    setAnnounce(`${T.graphZoomReset} · ${Math.round(k * 100)}%`);
-  }, [paint]);
 
   // ---- wheel: never trap the page scroll ----------------------------------
   // Plain wheel is left entirely alone, so the page scrolls exactly as it does
@@ -510,6 +543,7 @@ export function KnowledgeMap({
     if (!p || p.pointerId !== e.pointerId) return;
     const svg = svgRef.current;
     if (!svg) return;
+    autoFit.current = false; // the reader owns the view from here on
     // Screen pixels → viewBox units, so the map tracks the pointer exactly.
     const scale = CANVAS.width / (svg.getBoundingClientRect().width || CANVAS.width);
     viewT.current = {
@@ -568,16 +602,29 @@ export function KnowledgeMap({
       />
 
       <div className="map-toolbar">
-        <div className="map-zoom" role="group" aria-label={T.graphZoomReset}>
-          <button type="button" className="secondary" onClick={() => zoomAround(1.25)}>
-            {T.graphZoomIn}
-          </button>
-          <button type="button" className="secondary" onClick={() => zoomAround(0.8)}>
-            {T.graphZoomOut}
-          </button>
-          <button type="button" className="secondary" onClick={fitToView}>
-            {T.graphZoomReset}
-          </button>
+        {/* Glyphs, not sentences: three full-width rows of Vietnamese prose
+            above the map cost more room than the map itself gained. The
+            wording survives intact as the accessible name and the tooltip.
+            TODO(vi): move "Thu phóng bản đồ" to src/lib/vi.ts */}
+        <div className="map-zoom" role="group" aria-label="Thu phóng bản đồ">
+          {(
+            [
+              ["+", T.graphZoomIn, () => zoomAround(1.25)],
+              ["−", T.graphZoomOut, () => zoomAround(0.8)],
+              ["⤢", T.graphZoomReset, () => fitToView()],
+            ] as const
+          ).map(([glyph, label, act]) => (
+            <button
+              key={label}
+              type="button"
+              className="secondary"
+              aria-label={label}
+              title={label}
+              onClick={act}
+            >
+              {glyph}
+            </button>
+          ))}
         </div>
         <p className="map-count" aria-live="polite">
           {view.visible.length} {T.node.toLowerCase()} · {view.links.length} liên kết
@@ -596,7 +643,8 @@ export function KnowledgeMap({
           ref={attachSvg}
           className="knowledge-map"
           viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
-          style={{ maxHeight: `${height}px` }}
+          /* never taller than 1:1 — past that the map is only bigger dots */
+          style={{ maxHeight: CANVAS.height }}
           role="group"
           aria-label={T.graph}
           aria-describedby={`${uid}-help`}
@@ -663,8 +711,8 @@ export function KnowledgeMap({
                     };
                   }}
                   className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
-                    isPinned ? " is-pinned" : ""
-                  }${near ? " is-near" : " is-far"}`}
+                    near ? " is-near" : " is-far"
+                  }`}
                   role="link"
                   tabIndex={0}
                   aria-label={label}
@@ -696,8 +744,8 @@ export function KnowledgeMap({
                   ) : (
                     <rect className="g-mark" x={-r} y={-r} width={r * 2} height={r * 2} rx="2" />
                   )}
-                  <text className="g-label" y={r + 16}>
-                    {n.title.length > 26 ? `${n.title.slice(0, 25)}…` : n.title}
+                  <text className="g-label" y={r + LABEL_DY}>
+                    {n.title.length > LABEL_MAX ? `${n.title.slice(0, LABEL_CUT)}…` : n.title}
                   </text>
                 </g>
               );
@@ -710,8 +758,13 @@ export function KnowledgeMap({
         <NodePreviewCard preview={preview} id={cardId} style={{ top: peek.top, left: peek.left }} />
       )}
 
+      {/* Help for the input device actually in the reader's hand. A phone was
+          being told to hold Ctrl and use the scroll wheel.
+          TODO(vi): move the touch sentence to src/lib/vi.ts */}
       <p className="map-help" id={`${uid}-help`}>
-        {T.graphHelp} {T.graphKeyboardHelp}
+        {coarsePointer
+          ? "Chạm một chấm để mở trang. Kéo một chấm để ghim nó vào chỗ mới. Kéo nền để di chuyển bản đồ."
+          : `${T.graphHelp} ${T.graphKeyboardHelp}`}
       </p>
 
       <ul className="map-legend" aria-label={T.legend}>
