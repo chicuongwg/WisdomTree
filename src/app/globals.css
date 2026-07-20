@@ -518,9 +518,17 @@ form { display: flex; flex-direction: column; gap: var(--space-4); align-items: 
 form > .field, form > fieldset, form > table { align-self: stretch; }
 form.inline { flex-direction: row; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
 
-input[type="text"], input[type="search"], input[type="date"], select, textarea {
+/* Every field the app actually renders belongs here. A type left out of this
+   list does not fall back to something plausible — it renders raw browser
+   chrome, in the browser's locale: `datetime-local` was showing mm/dd/yyyy and
+   AM/PM next to Việt-hoá siblings. */
+input[type="text"], input[type="search"], input[type="date"],
+input[type="datetime-local"], input[type="number"], select, textarea {
   padding: 0.5rem 0.7rem;
   min-height: 2.75rem;
+  /* A <select> sizes to its longest option, so one long space name pushed the
+     filter bar past the edge of a phone. The field yields to its column. */
+  max-width: 100%;
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius);
   font: inherit;
@@ -548,10 +556,13 @@ button, .button {
     color var(--speed) ease;
 }
 button:hover, .button:hover { background: var(--color-canopy-deep); border-color: var(--color-canopy-deep); }
-button.secondary { background: var(--color-surface); color: var(--color-canopy); }
-button.secondary:hover { background: var(--color-canopy-wash); color: var(--color-canopy-deep); }
-button.danger { background: var(--color-surface); color: var(--color-seal-deep); border-color: var(--color-seal); }
-button.danger:hover { background: var(--color-seal-wash); }
+/* The variants match .button too, not just <button>: a Link and a <label> both
+   wear .button in this app, and an element-scoped selector silently rendered
+   them as filled primaries — the file-picker trigger was one. */
+:is(button, .button).secondary { background: var(--color-surface); color: var(--color-canopy); }
+:is(button, .button).secondary:hover { background: var(--color-canopy-wash); color: var(--color-canopy-deep); }
+:is(button, .button).danger { background: var(--color-surface); color: var(--color-seal-deep); border-color: var(--color-seal); }
+:is(button, .button).danger:hover { background: var(--color-seal-wash); }
 button:disabled { opacity: 0.5; cursor: default; }
 button:disabled:hover { background: var(--color-canopy); border-color: var(--color-canopy); }
 button.secondary:disabled:hover { background: var(--color-surface); color: var(--color-canopy); }
@@ -560,6 +571,14 @@ button.danger:disabled:hover { background: var(--color-surface); }
 .field { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; max-width: 34rem; width: 100%; }
 .field.wide { max-width: none; }
 .field label { font-size: 0.88rem; font-weight: 600; color: var(--color-ink-muted); }
+
+/* The file control is the one field the browser fills with its own words, in
+   its own language — "Browse… / No file selected." in an app that is Vietnamese
+   everywhere else. So the input is hidden behind a label styled as a button and
+   the form prints the chosen name itself. Focus still lands on the real input,
+   so the label wears the ring on its behalf. */
+.file-field { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.file-field:focus-within > .button { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 .error-text { color: var(--color-seal-deep); margin: 0; }
 .ok-text { color: var(--color-canopy-deep); margin: 0; }

@@ -18,6 +18,7 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
   const [busy, setBusy] = useState(false);
   const [percent, setPercent] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -85,9 +86,20 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
   return (
     <form onSubmit={onSubmit}>
       {error && <p className="error-text">{error}</p>}
-      <div className="field">
-        <label htmlFor="file">{T.file}</label>
-        <input id="file" name="file" type="file" required disabled={busy} />
+      {/* The browser writes its own words into a file input — "Browse… / No
+          file selected", English, in a Vietnamese screen. So the real input is
+          hidden and its <label> is the visible trigger; the name of the chosen
+          file is printed here instead of by the control.
+          ponytail: no .field wrapper on this one — `.field label` would repaint
+          the trigger muted-on-canopy, and .file-field already lays out the row. */}
+      <div className="file-field">
+        <input id="file" name="file" type="file" required disabled={busy} className="sr-only"
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
+        <label htmlFor="file" className="button secondary">
+          Chọn {T.file.toLowerCase()}
+        </label>
+        {/* TODO(vi): move to src/lib/vi.ts */}
+        <span className="muted">{fileName ?? "Chưa chọn tệp"}</span>
       </div>
       <div className="field">
         <label htmlFor="spaceId">{T.space}</label>
@@ -132,8 +144,10 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
             {T.cancel}
           </button>
         )}
+        {/* Two panels on this screen, two buttons both reading "Gửi" — a control
+            has to say what it sends. T.uploadCta is already that sentence. */}
         <button type="submit" disabled={busy}>
-          {busy ? T.loading : T.submit}
+          {busy ? T.loading : T.uploadCta}
         </button>
       </div>
     </form>
