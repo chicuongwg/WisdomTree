@@ -106,17 +106,28 @@ export function CommentsSection({
    * not a link: a member's name has nowhere to go, and a fake link teaches the
    * reader to distrust the real ones. Longest name first so "@Lan Anh" wins
    * over "@Lan".
+   *
+   * The search is case-insensitive because the server's is: matchMentions()
+   * lowercases both sides, so "@phạm thu hương" resolves to Phạm Thu Hương and
+   * is stored as a real mention. This looked for the canonical spelling only,
+   * found nothing, and left the text plain — and since the highlight is the
+   * ONLY sign a mention was understood, a mention that worked perfectly read as
+   * one that had failed. Both sides now assume lowercasing preserves length,
+   * which holds for Vietnamese.
+   *
+   * The token prints the member's real display name rather than the letters
+   * that were typed, so the reader sees who was actually pulled in.
    */
   function renderBody(c: CommentRow) {
     const names = [...c.mentionNames].sort((a, b) => b.length - a.length);
     if (names.length === 0) return c.body;
     const parts: Array<string | { name: string }> = [c.body];
     for (const name of names) {
-      const needle = `@${name}`;
+      const needle = `@${name}`.toLowerCase();
       for (let i = 0; i < parts.length; i++) {
         const piece = parts[i];
         if (typeof piece !== "string") continue;
-        const at = piece.indexOf(needle);
+        const at = piece.toLowerCase().indexOf(needle);
         if (at < 0) continue;
         parts.splice(
           i,
