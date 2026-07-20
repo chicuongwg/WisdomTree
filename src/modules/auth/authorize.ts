@@ -52,6 +52,12 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   // GET /admin/health "Admin/Op") — keyed pending a catalog addendum like
   // storage.curation.assign; flagged in the report.
   "admin.health.read": { roles: ["admin_op"], scope: "global" },
+  // Catalog addendum rows (authorization-design.md § addendum): the Admin
+  // Console's user management and audit reads. Role changes are additionally
+  // required by that doc (:151) to audit old and new values — the service
+  // enforces it, this key only gates who may try.
+  "admin.users.manage": { roles: ["admin_op"], scope: "global" },
+  "admin.audit.read": { roles: ["admin_op"], scope: "global" },
   // --- Notify + PM modules (authorization-design.md § Permission Catalog) ---
   // notify.comment.create's catalog scope is "anchor (delegates to the
   // anchor's read permission)": the role gate lives here; the anchor-scope
