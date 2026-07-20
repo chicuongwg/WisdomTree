@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
+import { foldName } from "@/lib/mention-fold";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
@@ -101,6 +102,11 @@ async function anchorSpaceId(anchorType: AnchorType, anchorId: string): Promise<
  * Longest-name-first scan over the body. Matched spans are consumed so that
  * "@Lan Anh" cannot also count as a mention of "Lan"; a name must end on a
  * non-letter/digit so "@Lan" does not fire inside "@Lanh".
+ *
+ * Comparison goes through foldName, so case and Vietnamese diacritics are both
+ * ignored — "@pham thu huong" reaches Phạm Thu Hương. The fold is
+ * length-preserving because this walks the folded string and blanks spans by
+ * those indices.
  */
 function matchMentions(
   body: string,
@@ -108,11 +114,11 @@ function matchMentions(
 ): string[] {
   const byName = new Map<string, string[]>();
   for (const c of candidates) {
-    const key = c.displayName.trim().toLowerCase();
+    const key = foldName(c.displayName.trim());
     if (!key) continue;
     byName.set(key, [...(byName.get(key) ?? []), c.id]);
   }
-  let hay = body.toLowerCase();
+  let hay = foldName(body);
   const boundary = /[\p{L}\p{N}]/u;
   const found = new Set<string>();
   for (const name of [...byName.keys()].sort((a, b) => b.length - a.length)) {
@@ -155,6 +161,17 @@ async function mentionCandidates(anchorType: AnchorType, anchorId: string) {
     .where(eq(spaceMembers.spaceId, spaceId));
   const inSpace = new Set(members.map((m) => m.userId));
   return enabled.filter((u) => u.role === "admin_op" || inSpace.has(u.id));
+}
+
+/**
+ * The same list the resolver will match against, for the comment box's
+ * suggestions. It has to be this list and not "everyone enabled": suggesting a
+ * member the resolver then cannot see would put the reader back where they
+ * started — a mention that looks accepted and silently notifies nobody.
+ */
+export async function listMentionCandidates(anchorType: AnchorType, anchorId: string) {
+  const rows = await mentionCandidates(anchorType, anchorId);
+  return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
 }
 
 /** Display names for the mentioned ids, so a stored comment still reads right. */

@@ -9,6 +9,7 @@ import {
   trustStateLabel,
   when,
 } from "@/lib/vi";
+import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { ExtractionWatcher } from "@/app/components/extraction-watcher";
 import { SourceOwnerActions } from "@/app/components/source-owner-actions";
@@ -94,7 +95,11 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           description={source.description}
         />
       )}
-      <CommentsSection anchorType="source" anchorId={source.id} />
+      <CommentsSection
+            anchorType="source"
+            anchorId={source.id}
+            members={await listMentionCandidates("source", source.id)}
+          />
     </main>
   );
 }

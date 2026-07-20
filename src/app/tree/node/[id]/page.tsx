@@ -7,6 +7,7 @@ import { NodeLink } from "@/app/components/node-link";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
 import { NodeExportActions } from "@/app/components/node-export-actions";
+import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 
 // Screen: Node Detail (`/tree/node/:id`) — the primary reading surface with
@@ -54,7 +55,11 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           <p>
             <Link href={`/graph?node=${node.id}`}>{T.openOnMap}</Link>
           </p>
-          <CommentsSection anchorType="tree_node" anchorId={node.id} />
+          <CommentsSection
+            anchorType="tree_node"
+            anchorId={node.id}
+            members={await listMentionCandidates("tree_node", node.id)}
+          />
         </div>
         <aside>
           <div className="panel">

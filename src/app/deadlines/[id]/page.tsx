@@ -3,6 +3,7 @@ import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getDeadlineLinks } from "@/modules/pm/service";
 import { day, deadlineKindLabel, T, taskLabel } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
+import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { Empty } from "@/app/components/empty";
 
@@ -62,7 +63,11 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
               </ul>
             )}
           </div>
-          <CommentsSection anchorType="deadline" anchorId={deadline.id} />
+          <CommentsSection
+            anchorType="deadline"
+            anchorId={deadline.id}
+            members={await listMentionCandidates("deadline", deadline.id)}
+          />
         </div>
         <aside>
           <div className="panel">
