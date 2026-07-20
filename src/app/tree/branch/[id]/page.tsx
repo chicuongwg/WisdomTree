@@ -70,11 +70,7 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
           </tbody>
         </table>
       )}
-      {canEdit && (
-        <div style={{ marginTop: "1rem" }}>
-          <NodeCreateForm branchId={branch.id} />
-        </div>
-      )}
+      {canEdit && <NodeCreateForm branchId={branch.id} />}
 
       {gaps.length > 0 && (
         <>

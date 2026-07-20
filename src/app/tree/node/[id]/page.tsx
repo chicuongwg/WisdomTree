@@ -46,13 +46,11 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
       <div className="with-side">
         <div>
           <Markdown content={node.contentMd} />
-          <div style={{ marginTop: "1rem" }}>
-            <CommentsSection anchorType="tree_node" anchorId={node.id} mentionOptions={mentionOptions} />
-          </div>
+          <CommentsSection anchorType="tree_node" anchorId={node.id} mentionOptions={mentionOptions} />
         </div>
         <aside>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.provenance}</h2>
+            <h2>{T.provenance}</h2>
             {node.provenance.length === 0 ? (
               <p className="muted">
                 {node.verification === "no_source"
@@ -64,7 +62,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
                 {node.provenance.map((p, i) => (
                   <li key={i}>
                     <Link href={`/library/${p.sourceId}`}>{p.sourceTitle}</Link>
-                    <div className="muted" style={{ fontSize: "0.85rem" }}>
+                    <div className="meta">
                       {T.approve}: {p.approvedByName} · {p.createdAt.toLocaleDateString("vi-VN")}
                       {p.excerptChunkIds?.length ? ` · ${p.excerptChunkIds.length} trích đoạn` : ""}
                     </div>
@@ -74,7 +72,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.relatedNodes}</h2>
+            <h2>{T.relatedNodes}</h2>
             {node.links.length === 0 ? (
               <p className="muted">{T.empty}</p>
             ) : (

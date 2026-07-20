@@ -43,7 +43,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
       <div className="with-side">
         <div>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.checklistAndDocs}</h2>
+            <h2>{T.checklistAndDocs}</h2>
             {deadline.links.length === 0 ? (
               <p className="muted">{T.empty}</p>
             ) : (
@@ -73,7 +73,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
         </div>
         <aside>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.editDeadline}</h2>
+            <h2>{T.editDeadline}</h2>
             <DeadlineForm
               spaces={[{ id: deadline.spaceId, name: T.project }]}
               existing={{

@@ -107,7 +107,7 @@ export function CommentsSection({
 
   return (
     <section className="panel" aria-label={T.comments}>
-      <h2 style={{ marginTop: 0 }}>{T.comments}</h2>
+      <h2>{T.comments}</h2>
       {comments === null ? (
         <p className="muted">{T.loading}</p>
       ) : topLevel.length === 0 ? (
@@ -125,7 +125,7 @@ export function CommentsSection({
             </button>
           </p>
         )}
-        <div className="field" style={{ maxWidth: "none" }}>
+        <div className="field wide">
           <label htmlFor={`${fieldId}-body`}>{T.comments}</label>
           <textarea
             id={`${fieldId}-body`}
@@ -138,7 +138,7 @@ export function CommentsSection({
         <fieldset className="mention-fieldset">
           <legend>{T.mentionMembers}</legend>
           {mentionOptions.map((m) => (
-            <label key={m.id} className="checkbox-row" style={{ display: "inline-flex", marginRight: "1rem" }}>
+            <label key={m.id} className="checkbox-row">
               <input
                 type="checkbox"
                 checked={mentions.includes(m.id)}

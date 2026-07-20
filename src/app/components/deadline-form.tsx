@@ -107,7 +107,7 @@ export function DeadlineForm({
       <div className="field">
         <label htmlFor="dl-offsets">{T.reminderOffsets}</label>
         <input id="dl-offsets" type="text" value={offsets} onChange={(e) => setOffsets(e.target.value)} />
-        <span className="muted" style={{ fontSize: "0.8rem" }}>
+        <span className="meta">
           Ví dụ: 7 days, 1 day
         </span>
       </div>

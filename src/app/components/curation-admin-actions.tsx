@@ -46,7 +46,7 @@ export function CurationAdminActions({
   const base = `/api/source/${sourceId}/version/${versionId}`;
   return (
     <div className="panel">
-      <h2 style={{ marginTop: 0 }}>{T.assign}</h2>
+      <h2>{T.assign}</h2>
       {error && <p className="error-text">{error}</p>}
       <div className="field">
         <label htmlFor="assignee">{T.assignee}</label>

@@ -79,11 +79,11 @@ export function CurationWorkbench(props: Props) {
   return (
     <div>
       {error && <p className="error-text" role="alert">{error}</p>}
-      {ok && <p style={{ color: "var(--accent)" }} role="status">{ok}</p>}
+      {ok && <p className="ok-text" role="status">{ok}</p>}
 
       <h2>{T.correctedText}</h2>
       <p className="muted">Mỗi lần lưu tạo một bản mới trong chuỗi hiệu đính (không ghi đè).</p>
-      <div className="field" style={{ maxWidth: "none" }}>
+      <div className="field wide">
         <label htmlFor="corrected">{T.correctedText}</label>
         <textarea
           id="corrected"
@@ -98,7 +98,7 @@ export function CurationWorkbench(props: Props) {
       </button>
 
       <h2>{T.markdownDraft}</h2>
-      <div className="field" style={{ maxWidth: "none" }}>
+      <div className="field wide">
         <label htmlFor="draft">{T.contentMd}</label>
         <textarea
           id="draft"

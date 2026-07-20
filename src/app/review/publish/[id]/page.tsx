@@ -40,7 +40,7 @@ export default async function PublishReviewPage({
       )}
 
       <div className="panel">
-        <h2 style={{ marginTop: 0 }}>Chuỗi trách nhiệm</h2>
+        <h2>Chuỗi trách nhiệm</h2>
         <ul>
           <li>
             {T.uploader}: {review.uploader?.name ?? "—"}

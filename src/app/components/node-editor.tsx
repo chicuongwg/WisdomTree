@@ -82,7 +82,7 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
         <input id="node-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </div>
       <div className="split">
-        <div className="field" style={{ maxWidth: "none" }}>
+        <div className="field wide">
           <label htmlFor="node-content">{T.contentMd}</label>
           <textarea
             id="node-content"
@@ -93,7 +93,7 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
           />
         </div>
         <div>
-          <p className="muted" style={{ marginTop: 0 }}>{T.preview}</p>
+          <p className="muted">{T.preview}</p>
           <pre className="raw-text" aria-label={T.preview}>{contentMd}</pre>
         </div>
       </div>

@@ -37,7 +37,7 @@ export function NodeAdminActions({
 
   return (
     <div className="panel">
-      <h2 style={{ marginTop: 0 }}>Quản trị trang</h2>
+      <h2>Quản trị trang</h2>
       {error && <p className="error-text">{error}</p>}
       <p>
         <button className="danger" disabled={busy} onClick={() => act(`/api/tree/nodes/${nodeId}/archive`)}>

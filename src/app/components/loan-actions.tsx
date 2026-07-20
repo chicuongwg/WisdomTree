@@ -32,7 +32,7 @@ export function LoanActions({ ticketId, state }: { ticketId: string; state: stri
     <div>
       {error && <p className="error-text">{error}</p>}
       {state === "requested" && (
-        <span style={{ display: "inline-flex", gap: "0.5rem" }}>
+        <span className="button-row">
           <button disabled={busy} onClick={() => act("approve")}>
             {T.approve}
           </button>
@@ -42,7 +42,7 @@ export function LoanActions({ ticketId, state }: { ticketId: string; state: stri
         </span>
       )}
       {state === "approved" && (
-        <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center" }}>
+        <span className="button-row">
           <input
             type="date"
             value={dueAt}

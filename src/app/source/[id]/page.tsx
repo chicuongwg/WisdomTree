@@ -96,7 +96,7 @@ export default async function AdminSourceDetailPage({
             </p>
           ) : (
             wb.chunks.map((c) => (
-              <div key={c.id} style={{ marginBottom: "0.75rem" }}>
+              <div key={c.id} className="stack-item">
                 <span className="badge muted">{c.refLabel}</span>
                 <pre className="raw-text">{c.content}</pre>
               </div>

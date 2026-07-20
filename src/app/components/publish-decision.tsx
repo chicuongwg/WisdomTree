@@ -75,7 +75,7 @@ export function PublishDecision({
 
   return (
     <div className="panel">
-      <h2 style={{ marginTop: 0 }}>Quyết định {T.publish.toLowerCase()}</h2>
+      <h2>Quyết định {T.publish.toLowerCase()}</h2>
       {error && <p className="error-text" role="alert">{error}</p>}
       <div className="field">
         <label htmlFor="target-branch">{T.branch} đích</label>
@@ -89,8 +89,8 @@ export function PublishDecision({
         </select>
       </div>
       {chunks.length > 0 && (
-        <fieldset style={{ border: "none", padding: 0, margin: "0 0 0.75rem" }}>
-          <legend className="muted" style={{ padding: 0 }}>
+        <fieldset className="plain">
+          <legend>
             {T.excerpts}
           </legend>
           {chunks.map((c) => (
@@ -106,7 +106,7 @@ export function PublishDecision({
           ))}
         </fieldset>
       )}
-      <p style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      <p className="button-row">
         <button disabled={busy || !branchId} onClick={() => publish("verified")}>
           {T.publishVerified}
         </button>

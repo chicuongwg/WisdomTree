@@ -28,7 +28,7 @@ export default async function BranchListPage() {
         <div className="cards">
           {branches.map((b) => (
             <div className="panel" key={b.id}>
-              <h2 style={{ marginTop: 0 }}>
+              <h2>
                 <Link href={`/tree/branch/${b.id}`}>{b.name}</Link>
               </h2>
               {b.description && <p className="muted">{b.description}</p>}

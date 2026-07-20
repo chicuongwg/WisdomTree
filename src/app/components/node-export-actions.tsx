@@ -61,7 +61,7 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
 
   return (
     <div className="panel">
-      <h2 style={{ marginTop: 0 }}>Xuất tài liệu</h2>
+      <h2>Xuất tài liệu</h2>
       {error && <p className="error-text">{error}</p>}
       <p>
         <button disabled={busy} onClick={() => start("docx")}>
@@ -78,7 +78,7 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
             Tải tệp đã xuất
           </a>
           {job.result.converterWarnings.length > 0 && (
-            <span className="muted" style={{ display: "block", fontSize: "0.85rem" }}>
+            <span className="meta">
               Lưu ý: {job.result.converterWarnings.join("; ")}
             </span>
           )}

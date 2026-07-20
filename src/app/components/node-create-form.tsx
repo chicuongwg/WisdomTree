@@ -51,7 +51,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
         <label htmlFor="new-node-title">{T.title}</label>
         <input id="new-node-title" name="title" type="text" required />
       </div>
-      <div className="field" style={{ maxWidth: "none" }}>
+      <div className="field wide">
         <label htmlFor="new-node-content">{T.contentMd}</label>
         <textarea id="new-node-content" name="contentMd" className="editor" required />
       </div>

@@ -56,12 +56,12 @@ export default async function AssignedSourceTaskPage({
         </div>
         <aside>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.rawText}</h2>
+            <h2>{T.rawText}</h2>
             {wb.chunks.length === 0 ? (
               <p className="muted">Chưa có văn bản trích xuất cho tư liệu này.</p>
             ) : (
               wb.chunks.map((c) => (
-                <div key={c.id} style={{ marginBottom: "0.75rem" }}>
+                <div key={c.id} className="stack-item">
                   <span className="badge muted">{c.refLabel}</span>
                   <pre className="raw-text">{c.content}</pre>
                 </div>
@@ -69,7 +69,7 @@ export default async function AssignedSourceTaskPage({
             )}
           </div>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>Ghi chú</h2>
+            <h2>Ghi chú</h2>
             <p className="muted">
               Đã có {wb.correctedCount} bản hiệu đính. Khi hoàn tất, chọn “{T.markReady}” để chuyển
               cho Quản trị/Vận hành duyệt xuất bản.

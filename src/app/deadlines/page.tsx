@@ -88,14 +88,14 @@ export default async function DeadlinesPage({
 
         <aside>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.createDeadline}</h2>
+            <h2>{T.createDeadline}</h2>
             <DeadlineForm spaces={teamSpaces} />
           </div>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.myCalendar}</h2>
+            <h2>{T.myCalendar}</h2>
             {token ? (
               <>
-                <p className="muted" style={{ fontSize: "0.85rem" }}>
+                <p className="meta">
                   {T.calendarSubscribeHint}
                 </p>
                 <code className="ics-url">{`${proto}://${host}/calendar/${token.token}.ics`}</code>

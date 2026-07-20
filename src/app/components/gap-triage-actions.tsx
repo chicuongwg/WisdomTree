@@ -41,7 +41,7 @@ export function GapTriageActions({
 
   return (
     <div className="panel">
-      <h2 style={{ marginTop: 0 }}>{T.triage}</h2>
+      <h2>{T.triage}</h2>
       {error && <p className="error-text">{error}</p>}
       {state === "submitted" && (
         <button disabled={busy} onClick={() => act("triage")}>

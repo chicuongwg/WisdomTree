@@ -59,7 +59,7 @@ export default async function TreeBrowsePage({
                   <tr key={r.id}>
                     <td>
                       <Link href={`/tree/node/${r.id}`}>{r.title}</Link>
-                      <div className="muted" style={{ fontSize: "0.85rem" }}>
+                      <div className="meta">
                         {r.snippet}…
                       </div>
                     </td>
@@ -77,9 +77,9 @@ export default async function TreeBrowsePage({
         </section>
       )}
 
-      <div className="cards" style={{ marginTop: "1rem" }}>
+      <div className="cards">
         <div className="panel">
-          <h2 style={{ marginTop: 0 }}>
+          <h2>
             <Link href="/tree/branches">{T.branch}</Link>
           </h2>
           {branches.length === 0 && <p className="muted">{T.empty}</p>}
@@ -95,7 +95,7 @@ export default async function TreeBrowsePage({
           </ul>
         </div>
         <div className="panel">
-          <h2 style={{ marginTop: 0 }}>Trang cập nhật gần đây</h2>
+          <h2>Trang cập nhật gần đây</h2>
           {recent.length === 0 && <p className="muted">{T.empty}</p>}
           <ul>
             {recent.map((n) => (

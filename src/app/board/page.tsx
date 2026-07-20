@@ -23,7 +23,7 @@ export default async function BoardPage() {
             const laneTasks = tasks.filter((t) => t.state === lane);
             return (
               <section key={lane} className="panel" aria-label={taskStateLabel[lane]}>
-                <h2 style={{ marginTop: 0 }}>
+                <h2>
                   {taskStateLabel[lane]} <span className="badge muted">{laneTasks.length}</span>
                 </h2>
                 {laneTasks.length === 0 ? (
@@ -32,7 +32,7 @@ export default async function BoardPage() {
                   laneTasks.map((t) => (
                     <div key={t.id} className="board-card">
                       <div>{t.title}</div>
-                      <div className="muted" style={{ fontSize: "0.85rem" }}>
+                      <div className="meta">
                         {T.assignee}: {t.assigneeName ?? T.noAssignee}
                       </div>
                       <TaskStateButtons taskId={t.id} state={t.state} version={t.version} />
@@ -45,7 +45,7 @@ export default async function BoardPage() {
         </div>
         <aside>
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.createTask}</h2>
+            <h2>{T.createTask}</h2>
             <TaskCreateForm assignees={members} />
           </div>
         </aside>

@@ -6,7 +6,13 @@ import { requireUser, toPrincipal } from "@/lib/page";
 import { listLibrary } from "@/modules/storage/service";
 import { myAssignedTasks } from "@/modules/storage/curation";
 import { myTickets } from "@/modules/circulation/service";
-import { curationStateLabel, extractionLabel, loanStateLabel, T } from "@/lib/vi";
+import {
+  curationStateLabel,
+  extractionLabel,
+  loanStateLabel,
+  notificationEventLabel,
+  T,
+} from "@/lib/vi";
 
 // Screen: Home (`/` — screen-inventory.md)
 export default async function Home() {
@@ -31,7 +37,7 @@ export default async function Home() {
       <h1>Chào {user.displayName}!</h1>
       <div className="cards">
         <div className="panel">
-          <h2 style={{ marginTop: 0 }}>
+          <h2>
             <Link href="/library">{T.library}</Link>
           </h2>
           {recent.length === 0 && <p className="muted">{T.empty}</p>}
@@ -45,7 +51,7 @@ export default async function Home() {
           </ul>
         </div>
         <div className="panel">
-          <h2 style={{ marginTop: 0 }}>{T.loanTicket}</h2>
+          <h2>{T.loanTicket}</h2>
           {tickets.length === 0 && <p className="muted">{T.empty}</p>}
           <ul>
             {tickets.slice(0, 5).map(({ ticket, itemTitle }) => (
@@ -58,7 +64,7 @@ export default async function Home() {
         </div>
         {assigned.length > 0 && (
           <div className="panel">
-            <h2 style={{ marginTop: 0 }}>{T.assignedTask}</h2>
+            <h2>{T.assignedTask}</h2>
             <ul>
               {assigned.slice(0, 5).map((a) => (
                 <li key={a.curation.id}>
@@ -70,13 +76,15 @@ export default async function Home() {
           </div>
         )}
         <div className="panel">
-          <h2 style={{ marginTop: 0 }}>{T.notifications}</h2>
+          <h2>{T.notifications}</h2>
           {notes.length === 0 && <p className="muted">{T.empty}</p>}
           <ul>
             {notes.map((n) => (
               <li key={n.id}>
-                <span className="badge muted">{loanStateLabel[n.eventType.replace("loan.", "")] ?? n.eventType}</span>{" "}
-                <span className="muted">{n.createdAt.toLocaleString("vi-VN")}</span>
+                <Link href="/notifications">
+                  {notificationEventLabel[n.eventType] ?? n.eventType}
+                </Link>
+                <span className="meta">{n.createdAt.toLocaleString("vi-VN")}</span>
               </li>
             ))}
           </ul>
