@@ -3,6 +3,7 @@ import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import {
   getNode,
   listNodeOptions,
+  MAX_LOCAL_DEPTH,
   neighbourGraph,
   wikiIndex,
 } from "@/modules/knowledge/service";
@@ -27,7 +28,10 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const candidates = isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
   const [wiki, localGraph] = await Promise.all([
     wikiIndex(actor),
-    neighbourGraph(actor, id),
+    // Fetch the deepest neighbourhood the local map's depth control offers, so
+    // moving that slider re-draws from data already on the page instead of
+    // making the reader wait for another round trip.
+    neighbourGraph(actor, id, MAX_LOCAL_DEPTH),
   ]);
 
   return (

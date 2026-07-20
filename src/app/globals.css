@@ -46,6 +46,22 @@
   --color-on-strong: #ffffff;      /* text on canopy/seal solids */
   --color-focus: var(--color-cham);
 
+  /* --- Map palette ---------------------------------------------------
+     Branch colours for the knowledge map. Every one is derived from the
+     named palette above — the two mixes give a teal and a plum that the
+     base six hues don't cover, without introducing a raw hex. Because the
+     inputs are theme-aware, the whole set re-tunes itself in dark mode.
+     Six slots cycle: colour groups branches, the branch legend names them. */
+  --graph-branch-1: var(--color-canopy);
+  --graph-branch-2: var(--color-seal);
+  --graph-branch-3: var(--color-cham);
+  --graph-branch-4: var(--color-amber);
+  --graph-branch-5: color-mix(in oklab, var(--color-canopy) 55%, var(--color-cham));
+  --graph-branch-6: color-mix(in oklab, var(--color-seal) 50%, var(--color-cham));
+  /* Dimming for nodes outside the hovered neighbourhood. Stays well above
+     the 0.2 floor where faded content stops being legible. */
+  --graph-dim: 0.28;
+
   /* --- Type roles ---------------------------------------------------- */
   /* Display + long-form knowledge content: bookish serif with full
      Vietnamese coverage (self-hosted files unavailable → system stack) */
@@ -137,6 +153,11 @@
   --shell-veil: rgba(0, 0, 0, 0.55);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  /* --graph-branch-* and --graph-dim are deliberately NOT redefined here:
+     each one is written as var()/color-mix() over the named palette above,
+     which is substituted at point of use, so they already re-tune themselves
+     from the dark values of --color-canopy, --color-seal, --color-cham and
+     --color-amber. Restating them would be a second copy to keep in sync. */
 }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -1154,35 +1175,255 @@ a.tree-item.nav-item { font-weight: 500; }
 }
 
 /* --- The map ---------------------------------------------------- */
+/* The map is interactive: marks can be dragged and pinned, the surface pans,
+   and Ctrl/⌘ + wheel or a pinch zooms. Positions are written straight to the
+   DOM by the simulation loop, so nothing below animates node positions in
+   CSS — the only CSS motion here is colour, which the global reduced-motion
+   rule already quiets. */
 .map-wrap { display: block; }
-.map-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-4);
+
+/* Tùy chỉnh bản đồ — the display settings disclosure. Same paper, same
+   hairlines and the same field vocabulary as every other panel in the app;
+   deliberately not a floating overlay borrowed from another product. */
+.graph-panel {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
   margin-bottom: var(--space-3);
 }
-.map-controls .field { margin: 0; }
-.map-controls .map-count { margin: 0 0 var(--space-2); color: var(--color-ink-muted); font-size: 0.82rem; }
+.graph-panel > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0.5rem var(--space-4);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--color-canopy-deep);
+  cursor: pointer;
+  list-style: none;
+}
+.graph-panel > summary::-webkit-details-marker { display: none; }
+/* Chevron drawn from borders: no glyph, no icon font, inherits the text colour. */
+.graph-panel > summary::before {
+  content: "";
+  flex: none;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--speed) ease;
+}
+.graph-panel[open] > summary::before { transform: rotate(45deg); }
+.graph-panel > summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+  border-radius: var(--radius-lg);
+}
+.graph-panel-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-line);
+  padding-top: var(--space-4);
+}
+.graph-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+}
+.graph-group > legend {
+  padding: 0 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.graph-subgroup {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) 0 0;
+  border: none;
+  border-top: 1px solid var(--color-line);
+}
+.graph-subgroup > legend {
+  padding: 0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
+.graph-panel-foot { grid-column: 1 / -1; }
+
+/* Row height is tuned to the input device: compact enough on a mouse-driven
+   desktop that the panel does not out-weigh the map it controls, and a full
+   44px target wherever the pointer is coarse. */
+.graph-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.15rem;
+}
+@media (pointer: coarse) {
+  .graph-check { min-height: 2.75rem; }
+  .graph-panel > summary { min-height: 3rem; }
+}
+.graph-check input[type="checkbox"] {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-canopy);
+}
+.graph-check label { font-size: 0.9rem; cursor: pointer; }
+
+.graph-slider { display: flex; flex-direction: column; gap: 0.1rem; }
+.graph-slider > label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
+/* The number is spelled out beside the slider: a thumb position alone is not
+   a readable value. */
+.graph-slider-value {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--color-ink);
+}
+.graph-slider input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 2.75rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.graph-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-line-strong);
+}
+.graph-slider input[type="range"]::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-line-strong);
+}
+/* The thumb is the seal again — the same vermilion that marks a pinned node,
+   reused as "the part you take hold of". */
+.graph-slider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: -0.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  background: var(--color-seal);
+}
+.graph-slider input[type="range"]::-moz-range-thumb {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  background: var(--color-seal);
+}
+.graph-slider input[type="range"]:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Toolbar: zoom, motion, pinning, and the live count. */
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.map-zoom { display: inline-flex; flex-wrap: wrap; gap: var(--space-1); }
+.map-toolbar .map-count {
+  margin: 0 0 0 auto;
+  color: var(--color-ink-muted);
+  font-size: 0.82rem;
+}
+.map-notice {
+  margin: 0 0 var(--space-2);
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--color-amber);
+  border-radius: var(--radius);
+  background: var(--color-amber-wash);
+  color: var(--color-ink);
+  font-size: 0.85rem;
+}
+.map-help {
+  margin-top: var(--space-2);
+  max-width: var(--reading-measure);
+  color: var(--color-ink-muted);
+  font-size: 0.8rem;
+}
+
 svg.knowledge-map {
   width: 100%;
   height: auto;
   background: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
+  /* The map handles its own drag, pan and pinch inside its own rectangle.
+     The page still scrolls from anywhere outside it, and plain wheel over
+     the map is never intercepted. */
+  touch-action: none;
 }
+.g-surface { fill: var(--color-surface); cursor: grab; }
+.g-surface:active { cursor: grabbing; }
 svg.knowledge-map .g-edge {
   stroke: var(--color-line-strong);
   stroke-width: 1.4;
 }
+svg.knowledge-map .g-edge.t-related { stroke: var(--color-line-strong); }
 svg.knowledge-map .g-edge.t-supports { stroke: var(--color-canopy); }
 svg.knowledge-map .g-edge.t-contrasts { stroke: var(--color-seal); stroke-dasharray: 5 4; }
 svg.knowledge-map .g-edge.t-part_of { stroke: var(--color-cham); }
+.g-arrow { fill: var(--color-line-strong); }
+.g-arrow.t-supports { fill: var(--color-canopy); }
+.g-arrow.t-contrasts { fill: var(--color-seal); }
+.g-arrow.t-part_of { fill: var(--color-cham); }
+
+/* Hover or focus a mark: it and its neighbours stay lit, the rest recede.
+   The dim level stays well above the point where faded content becomes
+   unreadable, and dimmed marks remain focusable and clickable. */
+svg.knowledge-map[data-dim="on"] .g-node.is-far,
+svg.knowledge-map[data-dim="on"] .g-edge.is-far { opacity: var(--graph-dim); }
+svg.knowledge-map[data-dim="on"] .g-edge.is-near { stroke-width: 2.2; }
+
 .g-node { cursor: pointer; }
 .g-node .g-mark {
   fill: var(--color-surface);
   stroke-width: 2;
   transition: fill var(--speed) ease;
+}
+/* Ghim = a seal stamped on the page: a mark held in place wears a vermilion
+   chop ring. The local map's centre is pinned by definition, so its existing
+   seal stroke and this ring say the same thing. */
+.g-node .g-seal {
+  fill: none;
+  stroke: var(--color-seal);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3.5;
 }
 .g-node.v-verified .g-mark { fill: var(--color-canopy); stroke: var(--color-canopy-deep); }
 .g-node.v-unverified .g-mark { fill: var(--color-amber-wash); stroke: var(--color-amber); }
@@ -1191,14 +1432,34 @@ svg.knowledge-map .g-edge.t-part_of { stroke: var(--color-cham); }
 .g-node.is-focus .g-mark { stroke: var(--color-seal); stroke-width: 3; }
 .g-node .g-label {
   fill: var(--color-ink);
-  font-family: var(--font-ui);
+  /* A node label is the title of a knowledge page, so it is set in the
+     knowledge serif rather than the interface sans. */
+  font-family: var(--font-display);
   font-size: 12px;
   text-anchor: middle;
   pointer-events: none;
+  transition: opacity var(--speed) ease;
 }
 .g-node:hover .g-mark { fill: var(--color-canopy-wash); }
 .g-node:focus-visible { outline: none; }
 .g-node:focus-visible .g-mark { stroke: var(--color-focus); stroke-width: 3.5; }
+
+/* Colour by branch. Shape still carries verification, so this only swaps the
+   colour axis — the map never falls back to colour alone. */
+svg.knowledge-map[data-colour="branch"] .g-node .g-mark {
+  fill: color-mix(in oklab, var(--mark-colour) 25%, var(--color-surface));
+  stroke: var(--mark-colour);
+}
+svg.knowledge-map[data-colour="branch"] .g-node:hover .g-mark {
+  fill: color-mix(in oklab, var(--mark-colour) 45%, var(--color-surface));
+}
+
+/* Label visibility: always / on hover / hidden. */
+svg.knowledge-map[data-labels="hidden"] .g-label { display: none; }
+svg.knowledge-map[data-labels="hover"] .g-label { opacity: 0; }
+svg.knowledge-map[data-labels="hover"][data-dim="on"] .g-node.is-near .g-label { opacity: 1; }
+svg.knowledge-map[data-labels="hover"] .g-node:hover .g-label,
+svg.knowledge-map[data-labels="hover"] .g-node:focus-visible .g-label { opacity: 1; }
 .map-legend {
   display: flex;
   flex-wrap: wrap;
@@ -1211,3 +1472,11 @@ svg.knowledge-map .g-edge.t-part_of { stroke: var(--color-cham); }
 }
 .map-legend li { display: inline-flex; align-items: center; gap: 0.35rem; }
 .map-legend .legend-mark { width: 1rem; height: 1rem; flex: none; }
+.map-legend .legend-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: none;
+  border-radius: 3px;
+  border: 1px solid var(--color-line-strong);
+  background: var(--mark-colour);
+}

@@ -155,6 +155,48 @@ export const T = {
   navWork: "Dự án & công việc", // NEW
   navBranches: "Danh sách chuyên đề", // NEW
   openGraph: "Mở bản đồ tri thức", // NEW
+  // Bản đồ tri thức: thao tác và tùy chỉnh hiển thị — NEW pending humanities review
+  graphSettings: "Tùy chỉnh bản đồ", // NEW
+  graphGroupFilter: "Bộ lọc", // NEW
+  graphGroupDisplay: "Hiển thị", // NEW
+  graphGroupForce: "Lực kéo đẩy", // NEW
+  graphGroupLocal: "Bản đồ quanh trang", // NEW
+  graphShowOrphans: "Hiện cả trang chưa có liên kết", // NEW
+  graphColourBy: "Tô màu theo", // NEW
+  graphColourVerification: "Mức thẩm định", // NEW
+  graphColourBranch: "Chuyên đề", // NEW
+  graphSizeByLinks: "Chấm to dần theo số liên kết", // NEW
+  graphShowArrows: "Hiện mũi tên chỉ chiều liên kết", // NEW
+  graphLabels: "Tên trang", // NEW
+  graphLabelsAlways: "Luôn hiện", // NEW
+  graphLabelsHover: "Hiện khi trỏ tới", // NEW
+  graphLabelsHidden: "Ẩn", // NEW
+  graphLinkTypes: "Loại liên kết", // NEW
+  graphCentreForce: "Lực hút vào giữa", // NEW
+  graphRepelForce: "Lực đẩy giữa các chấm", // NEW
+  graphLinkForce: "Lực kéo của liên kết", // NEW
+  graphLinkDistance: "Độ dài liên kết", // NEW
+  graphDepth: "Số bước lan tỏa", // NEW
+  graphDirection: "Chiều liên kết", // NEW
+  graphDirectionBoth: "Cả hai chiều", // NEW
+  graphDirectionOutgoing: "Liên kết đi ra", // NEW
+  graphDirectionIncoming: "Liên kết đi vào", // NEW
+  graphZoomIn: "Phóng to bản đồ", // NEW
+  graphZoomOut: "Thu nhỏ bản đồ", // NEW
+  graphZoomReset: "Vừa khung", // NEW
+  graphPause: "Dừng chuyển động", // NEW
+  graphResume: "Cho chuyển động", // NEW
+  graphUnpinAll: "Bỏ ghim tất cả", // NEW
+  graphResetSettings: "Khôi phục mặc định", // NEW
+  graphPinned: "đã ghim", // NEW
+  graphPinnedOne: "Đã ghim tại chỗ", // NEW
+  graphHelp: "Kéo một chấm để ghim nó vào chỗ mới. Giữ Ctrl và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
+  graphKeyboardHelp: "Bàn phím: Tab để đi giữa các trang, Enter để mở, phím mũi tên để dời chấm đang chọn, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
+  graphWheelHint: "Giữ Ctrl rồi lăn chuột để phóng to bản đồ.", // NEW
+  graphCapNotice: "Bản đồ vượt mức chuyển động được nên đang giữ bố cục tĩnh. Hãy lọc bớt để bản đồ chuyển động trở lại.", // NEW
+  graphCapLimit: "Mức tối đa", // NEW
+  graphShapeNote: "Hình dạng luôn cho biết mức thẩm định, kể cả khi tô màu theo chuyên đề.", // NEW
+  graphMotionOff: "Bản đồ đang đứng yên theo thiết lập giảm chuyển động của máy bạn.", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

@@ -67,7 +67,7 @@
 
 ## Proposed Terms (pending humanities review)
 
-Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator, requiring humanities sign-off before V1 ships. The table below now lists every `// NEW` marker in `src/lib/vi.ts` (162 strings as of 2026-07-20), in file order: the core state and role terms first, then the screen microcopy from the catalog loan-record, knowledge, graph, notification, deadline, board, and workspace-shell surfaces. Entries taken from a state or event map are prefixed with that map's concept; entries from the `T` string table are listed under their key. `Graph` is not repeated here because it is already an approved term above.
+Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src/lib/vi.ts`; provisionally approved by the coordinator, requiring humanities sign-off before V1 ships. The table below now lists every `// NEW` marker in `src/lib/vi.ts` (203 strings as of 2026-07-20), in file order: the core state and role terms first, then the screen microcopy from the catalog loan-record, knowledge, graph, notification, deadline, board, and workspace-shell surfaces, ending with the interactive knowledge-map controls (drag-to-pin, zoom, motion, and the display settings panel). Entries taken from a state or event map are prefixed with that map's concept; entries from the `T` string table are listed under their key. `Graph` is not repeated here because it is already an approved term above.
 
 | Internal term | Proposed Vietnamese UI copy |
 | --- | --- |
@@ -189,6 +189,47 @@ Introduced by the demo and V1-local builds (2026-07-20), marked `// NEW` in `src
 | navWork | Dự án & công việc |
 | navBranches | Danh sách chuyên đề |
 | openGraph | Mở bản đồ tri thức |
+| graphSettings | Tùy chỉnh bản đồ |
+| graphGroupFilter | Bộ lọc |
+| graphGroupDisplay | Hiển thị |
+| graphGroupForce | Lực kéo đẩy |
+| graphGroupLocal | Bản đồ quanh trang |
+| graphShowOrphans | Hiện cả trang chưa có liên kết |
+| graphColourBy | Tô màu theo |
+| graphColourVerification | Mức thẩm định |
+| graphColourBranch | Chuyên đề |
+| graphSizeByLinks | Chấm to dần theo số liên kết |
+| graphShowArrows | Hiện mũi tên chỉ chiều liên kết |
+| graphLabels | Tên trang |
+| graphLabelsAlways | Luôn hiện |
+| graphLabelsHover | Hiện khi trỏ tới |
+| graphLabelsHidden | Ẩn |
+| graphLinkTypes | Loại liên kết |
+| graphCentreForce | Lực hút vào giữa |
+| graphRepelForce | Lực đẩy giữa các chấm |
+| graphLinkForce | Lực kéo của liên kết |
+| graphLinkDistance | Độ dài liên kết |
+| graphDepth | Số bước lan tỏa |
+| graphDirection | Chiều liên kết |
+| graphDirectionBoth | Cả hai chiều |
+| graphDirectionOutgoing | Liên kết đi ra |
+| graphDirectionIncoming | Liên kết đi vào |
+| graphZoomIn | Phóng to bản đồ |
+| graphZoomOut | Thu nhỏ bản đồ |
+| graphZoomReset | Vừa khung |
+| graphPause | Dừng chuyển động |
+| graphResume | Cho chuyển động |
+| graphUnpinAll | Bỏ ghim tất cả |
+| graphResetSettings | Khôi phục mặc định |
+| graphPinned | đã ghim |
+| graphPinnedOne | Đã ghim tại chỗ |
+| graphHelp | Kéo một chấm để ghim nó vào chỗ mới. Giữ Ctrl và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ. |
+| graphKeyboardHelp | Bàn phím: Tab để đi giữa các trang, Enter để mở, phím mũi tên để dời chấm đang chọn, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước. |
+| graphWheelHint | Giữ Ctrl rồi lăn chuột để phóng to bản đồ. |
+| graphCapNotice | Bản đồ vượt mức chuyển động được nên đang giữ bố cục tĩnh. Hãy lọc bớt để bản đồ chuyển động trở lại. |
+| graphCapLimit | Mức tối đa |
+| graphShapeNote | Hình dạng luôn cho biết mức thẩm định, kể cả khi tô màu theo chuyên đề. |
+| graphMotionOff | Bản đồ đang đứng yên theo thiết lập giảm chuyển động của máy bạn. |
 | Curation: under_correction | Đang hiệu đính |
 | Curation: ready_for_review | Chờ duyệt xuất bản |
 | Curation: promoted | Đã xuất bản |

@@ -130,7 +130,7 @@
 - Key regions:
   - page header with verification badge
   - Markdown content canvas
-  - contextual mini-graph
+  - contextual mini-graph: the same interactive map component centred on this node, with the centre pinned. Its settings panel (collapsed by default) adds depth 1–3 hops and link direction (both / outgoing / incoming); the page fetches the deepest neighbourhood the control offers, so changing depth redraws without another round trip
   - related nodes
   - source excerpt and provenance summary
 - User actions:
@@ -151,11 +151,26 @@
 ### Graph Explorer
 - Goal:
   - support exploratory relation navigation
+  - let the reader arrange the map themselves and keep that arrangement
 - Key regions:
-  - graph canvas: an SVG map of every non-archived node, drawn with verification encoded by both colour and shape
+  - graph canvas: an interactive SVG map of every non-archived node, drawn with verification encoded by both colour and shape. The server renders a deterministic seed layout; an in-repo force simulation takes over from those exact positions on mount, then cools to a stop
   - hover or focus preview card for the node under the pointer, and click or Enter to open that node
-  - filters by branch and by node title, with a live count of visible nodes and links
-  - legend for the verification marks
+  - `Tùy chỉnh bản đồ` settings panel, collapsible, open by default here:
+    - filters: title search, branch, and show/hide orphan nodes
+    - display: colour by verification or branch, size by link count, link arrows, label visibility (always / on hover / hidden), and one visibility toggle per link type (`related`, `supports`, `contrasts`, `part_of`)
+    - forces: centre, repel, link, and link distance sliders that retune the running simulation live
+    - `Khôi phục mặc định` to reset
+  - toolbar: zoom in / out / `Vừa khung`, pause or resume motion, `Bỏ ghim tất cả`, and a live count of visible nodes, links and pinned nodes
+  - legend for the verification marks, plus a branch-colour legend when colouring by branch
+- User actions:
+  - drag a mark (pointer, touch or pen) to pin it where it is dropped; a pinned mark wears a vermilion seal ring
+  - hover or focus a mark to highlight it and its immediate neighbours and dim the rest
+  - pan by dragging the background; zoom by button, by `Ctrl`/`⌘` + wheel, or by two-finger pinch. Plain wheel scrolls the page and is never intercepted
+  - keyboard only: Tab between marks, Enter to open, arrow keys to nudge and pin, `P` to pin or unpin, `Esc` to dismiss the preview
+- Constraints:
+  - settings persist in `localStorage` under `wisdomtree.graph.v1`, read in an effect so SSR and hydration agree; the free-text search is deliberately not persisted
+  - `prefers-reduced-motion: reduce` renders the settled layout with no animation and says so
+  - above 300 simulated nodes the map keeps the static layout and says so in the UI rather than truncating silently
 
 ### Deadlines
 - Goal:
