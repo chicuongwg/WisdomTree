@@ -19,14 +19,12 @@ export function NominateSource({ sourceId, nominated }: { sourceId: string; nomi
         <button
           onClick={() =>
             void m.run(`/api/source/${sourceId}/nominate`, {
-              // TODO(vi): move to src/lib/vi.ts
-              ok: "Đã đề cử. Quản trị viên sẽ giao biên tập viên hiệu đính.",
+              ok: T.nominateSent,
             })
           }
           disabled={m.busy}
         >
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          {m.busy ? T.loading : "Đề cử lên cây tri thức"}
+          {m.busy ? T.loading : T.nominateCta}
         </button>
       )}
     </div>

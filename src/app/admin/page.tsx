@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { when } from "@/lib/vi";
+import { T, when } from "@/lib/vi";
 import { listAllMembers, listMemberSpaces } from "@/modules/storage/service";
 import { listAuditEvents, listUsers } from "@/modules/auth/admin";
 import { databaseReachable, healthReport } from "@/modules/export/service";
@@ -35,13 +35,11 @@ export default async function AdminPage() {
 
   return (
     <main className="page">
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h1>Quản trị</h1>
+      <h1>{T.adminConsole}</h1>
       <SpaceAdmin spaces={spaces} allMembers={allMembers} />
 
       <section className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Thành viên</h2>
+        <h2>{T.membersHeading}</h2>
         <UserAdmin
           users={accounts.map((u) => ({
             id: u.id,
@@ -55,35 +53,30 @@ export default async function AdminPage() {
       </section>
 
       <section className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Nhật ký hệ thống</h2>
+        <h2>{T.auditHeading}</h2>
         <AuditLog initial={auditRows} />
       </section>
 
       <section className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Sức khoẻ hệ thống</h2>
+        <h2>{T.healthHeading}</h2>
         <div className="record-scroll">
           <table className="list">
             <tbody>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Cơ sở dữ liệu</th>
+                <th scope="row">{T.healthDatabase}</th>
                 <td>
                   {dbOk ? (
-                    <span className="badge tone-done">Hoạt động bình thường</span>
+                    <span className="badge tone-done">{T.healthDbOk}</span>
                   ) : (
-                    <span className="badge tone-attention">Không kết nối được</span>
+                    <span className="badge tone-attention">{T.healthDbDown}</span>
                   )}
                 </td>
               </tr>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Công việc nền</th>
+                <th scope="row">{T.healthJobs}</th>
                 <td>
                   {Object.keys(health.jobCounts).length === 0 ? (
-                    // TODO(vi): move to src/lib/vi.ts
-                    <span className="muted">Chưa có công việc nào</span>
+                    <span className="muted">{T.healthJobsEmpty}</span>
                   ) : (
                     // The raw jobType/state keys stay: an operator surface,
                     // same rule as the audit trail's action column.
@@ -99,18 +92,15 @@ export default async function AdminPage() {
                 </td>
               </tr>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Phiếu mượn quá hạn</th>
+                <th scope="row">{T.healthOverdueLoans}</th>
                 <td>{health.overdueLoanCount}</td>
               </tr>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Sự kiện chờ gửi</th>
+                <th scope="row">{T.healthOutbox}</th>
                 <td>{health.outboxUndispatchedCount}</td>
               </tr>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Xuất dữ liệu gần nhất</th>
+                <th scope="row">{T.healthLastExport}</th>
                 <td>
                   {health.lastExport ? (
                     <>
@@ -123,18 +113,15 @@ export default async function AdminPage() {
                       )}
                     </>
                   ) : (
-                    // TODO(vi): move to src/lib/vi.ts
-                    <span className="muted">Chưa xuất lần nào</span>
+                    <span className="muted">{T.healthNoExport}</span>
                   )}
                 </td>
               </tr>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Sao lưu</th>
+                <th scope="row">{T.healthBackup}</th>
                 <td>
                   {health.backupStatus === "not_configured" ? (
-                    // TODO(vi): move to src/lib/vi.ts
-                    <span className="muted">Chưa cấu hình sao lưu</span>
+                    <span className="muted">{T.healthBackupNotConfigured}</span>
                   ) : (
                     <>
                       <code className="muted">{health.backupStatus}</code> · {when(health.lastBackupAt)}
@@ -143,12 +130,10 @@ export default async function AdminPage() {
                 </td>
               </tr>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="row">Thành phần suy giảm</th>
+                <th scope="row">{T.healthDegraded}</th>
                 <td>
                   {health.degradedComponents.length === 0 ? (
-                    // TODO(vi): move to src/lib/vi.ts
-                    <span className="muted">Không có</span>
+                    <span className="muted">{T.healthNone}</span>
                   ) : (
                     health.degradedComponents.map((c) => (
                       <div key={c}>

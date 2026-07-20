@@ -18,8 +18,7 @@ export function FolderCreate({ spaceId, parentId }: { spaceId: string; parentId:
   if (!open) {
     return (
       <button type="button" className="secondary" onClick={() => setOpen(true)}>
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        Thư mục mới
+        {T.newFolder}
       </button>
     );
   }
@@ -41,9 +40,8 @@ export function FolderCreate({ spaceId, parentId }: { spaceId: string; parentId:
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        // TODO(vi): move to src/lib/vi.ts
-        placeholder="Tên thư mục"
-        aria-label="Tên thư mục"
+        placeholder={T.folderName}
+        aria-label={T.folderName}
         autoFocus
         disabled={m.busy}
       />

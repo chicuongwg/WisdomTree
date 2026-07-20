@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
+import { T } from "@/lib/vi";
 import { signDownload } from "@/lib/sign";
 import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
@@ -673,8 +674,7 @@ export async function removeSpaceMember(actor: Principal, spaceId: string, userI
 function rethrowFolderNameTaken(err: unknown): never {
   const raw = err as { code?: string; cause?: { code?: string } };
   if (raw?.code === "23505" || raw?.cause?.code === "23505") {
-    // TODO(vi): move to src/lib/vi.ts
-    throw new ApiError(409, "folder_exists", "Đã có thư mục tên này ở đây.");
+    throw new ApiError(409, "folder_exists", T.folderNameTaken);
   }
   throw err;
 }
@@ -699,8 +699,7 @@ export async function createFolder(
 ) {
   authorize(actor, "storage.upload", { spaceId: input.spaceId, kind: "write" });
   const name = input.name?.trim();
-  // TODO(vi): move to src/lib/vi.ts
-  if (!name) throw new ApiError(400, "invalid_folder", "Vui lòng nhập tên thư mục.");
+  if (!name) throw new ApiError(400, "invalid_folder", T.folderNameRequired);
   const parentId = input.parentId || null;
   if (parentId) {
     const [parent] = await db
@@ -708,8 +707,7 @@ export async function createFolder(
       .from(folders)
       .where(eq(folders.id, parentId));
     if (!parent || parent.spaceId !== input.spaceId) {
-      // TODO(vi): move to src/lib/vi.ts
-      throw new ApiError(400, "unknown_folder", "Thư mục cha không tồn tại trong kho này.");
+      throw new ApiError(400, "unknown_folder", T.folderParentMissing);
     }
   }
   try {
@@ -743,8 +741,7 @@ async function loadOwnedFolder(actor: Principal, folderId: string) {
 export async function renameFolder(actor: Principal, folderId: string, name: string) {
   const folder = await loadOwnedFolder(actor, folderId);
   const next = name?.trim();
-  // TODO(vi): move to src/lib/vi.ts
-  if (!next) throw new ApiError(400, "invalid_folder", "Vui lòng nhập tên thư mục.");
+  if (!next) throw new ApiError(400, "invalid_folder", T.folderNameRequired);
   try {
     await db.transaction(async (tx) => {
       await tx.update(folders).set({ name: next }).where(eq(folders.id, folderId));
@@ -780,8 +777,7 @@ export async function deleteFolder(actor: Principal, folderId: string) {
     .where(eq(sources.folderId, folderId))
     .limit(1);
   if (child || filed) {
-    // TODO(vi): move to src/lib/vi.ts
-    throw new ApiError(409, "folder_not_empty", "Thư mục còn nội dung — chuyển hết ra trước khi xoá.");
+    throw new ApiError(409, "folder_not_empty", T.folderNotEmpty);
   }
   await db.transaction(async (tx) => {
     await tx.delete(folders).where(eq(folders.id, folderId));

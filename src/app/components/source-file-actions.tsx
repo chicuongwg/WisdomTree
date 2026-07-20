@@ -63,15 +63,13 @@ export function SourceFileActions({
     if (!canRestore) return null;
     return (
       <div className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Khôi phục</h2>
+        <h2>{T.restoreHeading}</h2>
         <Say error={m.error} ok={m.ok} />
         <ConfirmButton
           disabled={m.busy}
-          // TODO(vi): move to src/lib/vi.ts
-          label="Khôi phục tư liệu"
-          title="Khôi phục tư liệu này?"
-          body="Tư liệu sẽ trở lại thư viện và tải xuống được như trước khi thu hồi."
+          label={T.restoreSource}
+          title={T.confirmRestoreSourceTitle}
+          body={T.confirmRestoreSourceBody}
           onConfirm={() => void m.run(`/api/source/${sourceId}/restore`)}
         />
       </div>
@@ -83,16 +81,13 @@ export function SourceFileActions({
 
   return (
     <div className="panel">
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h2>Tệp và thư mục</h2>
+      <h2>{T.fileAndFolderHeading}</h2>
       <Say error={m.error ?? uploadError} ok={m.ok} />
       <div className="field">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <label htmlFor="move-folder">Chuyển thư mục</label>
+        <label htmlFor="move-folder">{T.moveFolder}</label>
         <div className="inline">
           <select id="move-folder" value={target} onChange={(e) => setTarget(e.target.value)} disabled={busy}>
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            <option value="">— Gốc kho —</option>
+            <option value="">{T.folderRootOption}</option>
             {folders.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
@@ -104,8 +99,7 @@ export function SourceFileActions({
             disabled={busy || target === (folderId ?? "")}
             onClick={() => void m.run(`/api/source/${sourceId}/move`, { body: { folderId: target || null } })}
           >
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            {m.busy ? T.loading : "Chuyển"}
+            {m.busy ? T.loading : T.moveAction}
           </button>
         </div>
       </div>
@@ -127,8 +121,7 @@ export function SourceFileActions({
           }}
         />
         <label htmlFor="new-version-file" className="button secondary">
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          {uploading ? T.loading : "Tải bản mới"}
+          {uploading ? T.loading : T.uploadNewVersion}
         </label>
         <span className="muted">{fileName || "Bản mới thay thế bản hiện tại; các bản cũ vẫn được giữ."}</span>
       </div>

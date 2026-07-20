@@ -40,9 +40,8 @@ export function LibraryDropzone({
   async function run(files: File[], to: string) {
     setError(null);
     const { ids, failed } = await start(files, to);
-    // TODO(vi): move to src/lib/vi.ts
     if (failed.length > 0)
-      setError(`Không gửi được: ${failed.join(", ")}. Kéo thả lại các tệp đó để thử lần nữa.`);
+      setError(`${T.uploadFailedPrefix} ${failed.join(", ")}. ${T.uploadRetryDropHint}`);
     if (ids.length > 0) router.refresh();
   }
 
@@ -81,8 +80,7 @@ export function LibraryDropzone({
         // that is mid-drag; there is nothing here for assistive tech.
         <div className="dropzone-veil" aria-hidden="true">
           <div className="panel">
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            <p>Thả tệp để lưu vào kho…</p>
+            <p>{T.dropVeilPrompt}</p>
             {targetName && (
               <p className="muted">
                 {T.space}: {targetName}
@@ -102,9 +100,8 @@ export function LibraryDropzone({
           ) : (
             <>
               <Say error={error} />
-              {/* TODO(vi): move to src/lib/vi.ts */}
               <button type="button" className="secondary" onClick={() => setError(null)}>
-                Đóng
+                {T.close}
               </button>
             </>
           )}
@@ -123,8 +120,7 @@ export function LibraryDropzone({
         }}
       >
         <form method="dialog">
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          <h2>Lưu vào {T.space.toLowerCase()} nào?</h2>
+          <h2>{T.dropSpaceQuestion}</h2>
           <div className="field">
             <label htmlFor="dropzone-space">{T.space}</label>
             <select id="dropzone-space" ref={selectRef} defaultValue={spaces[0]?.id}>

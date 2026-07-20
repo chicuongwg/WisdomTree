@@ -319,6 +319,168 @@ export const T = {
   signingIn: "Đang đăng nhập…", // NEW
   // Loan request result — NEW pending humanities review
   loanRequestSent: "Đã gửi yêu cầu mượn. Vui lòng chờ thủ thư duyệt.", // NEW
+  // Sign-in page (NEW — not yet in vocabulary-vi.md)
+  loginTagline: "Nền tảng lưu trữ và tri thức của nhóm", // NEW — same string as the layout's metadata description
+  loginNotInvited: "Tài khoản Google này chưa được mời vào WisdomTree. Liên hệ quản trị viên.", // NEW
+  loginFailed: "Đăng nhập không thành công. Vui lòng thử lại.", // NEW
+  signInWithGoogle: "Đăng nhập bằng Google", // NEW
+  loginDemoHeading: "Bản demo — chọn một thành viên để đăng nhập", // NEW
+  // Workspace shell: the two rail/palette entries that were still inline
+  // (NEW — not yet in vocabulary-vi.md)
+  account: "Tài khoản", // NEW
+  adminConsole: "Quản trị", // NEW
+  // Library: archive view, folders, drag-drop filing (NEW — not yet in vocabulary-vi.md)
+  viewingArchivedNotice: "Đang xem tư liệu đã thu hồi.", // NEW
+  backToLibrary: "Quay lại thư viện", // NEW
+  viewArchivedLink: "Xem tư liệu đã thu hồi", // NEW
+  folderEmptyTitle: "Thư mục trống.", // NEW
+  folderEmptyHint: "Chuyển tư liệu vào đây từ trang chi tiết, hoặc tải tệp lên rồi chọn thư mục này.", // NEW
+  libraryEmptyDropHint: "Hoặc kéo tệp thả vào đây.", // NEW
+  newFolder: "Thư mục mới", // NEW
+  folderName: "Tên thư mục", // NEW
+  dropVeilPrompt: "Thả tệp để lưu vào kho…", // NEW
+  dropSpaceQuestion: "Lưu vào kho nào?", // NEW
+  close: "Đóng", // NEW
+  // Upload progress and failures. The two prefixes are completed in the
+  // component: "Đang gửi 1/3: tên-tệp", "Không gửi được: a.pdf, b.pdf. …"
+  // (NEW — not yet in vocabulary-vi.md)
+  uploadSendingPrefix: "Đang gửi", // NEW
+  uploadFailedPrefix: "Không gửi được:", // NEW
+  uploadRetryChooseHint: "Chọn lại các tệp đó để thử lần nữa.", // NEW
+  uploadRetryDropHint: "Kéo thả lại các tệp đó để thử lần nữa.", // NEW
+  optionalSuffix: "(không bắt buộc)", // NEW
+  // Source detail: extraction, versions, restore, filing, nomination
+  // (NEW — not yet in vocabulary-vi.md)
+  extractionNoText: "Chưa đọc được nội dung", // NEW
+  extractionNoTextDetail:
+    "Tệp được lưu và tải xuống bình thường; hệ thống chưa đọc được chữ bên trong nên tìm toàn văn chưa quét tệp này.", // NEW
+  sourceWithdrawnNotice: "Tư liệu đã được thu hồi — không tải xuống được.", // NEW
+  storedVersionsHeading: "Các bản đã lưu", // NEW
+  versionColumn: "Bản", // NEW
+  restoreHeading: "Khôi phục", // NEW
+  restoreSource: "Khôi phục tư liệu", // NEW
+  confirmRestoreSourceTitle: "Khôi phục tư liệu này?", // NEW
+  confirmRestoreSourceBody: "Tư liệu sẽ trở lại thư viện và tải xuống được như trước khi thu hồi.", // NEW
+  fileAndFolderHeading: "Tệp và thư mục", // NEW
+  moveFolder: "Chuyển thư mục", // NEW
+  folderRootOption: "— Gốc kho —", // NEW
+  moveAction: "Chuyển", // NEW
+  uploadNewVersion: "Tải bản mới", // NEW
+  nominateCta: "Đề cử lên cây tri thức", // NEW
+  nominateSent: "Đã đề cử. Quản trị viên sẽ giao biên tập viên hiệu đính.", // NEW
+  nominatedAwaitingAssign: "Đã đề cử — chờ giao", // NEW
+  nextStepColumn: "Bước tiếp theo", // NEW
+  // What happens to this file next, one sentence per state — the values of
+  // nextActionLabel in src/lib/source-status.ts. NEW pending humanities review.
+  nextActionArchived: "Đã thu hồi.", // NEW
+  nextActionReading: "Hệ thống đang đọc nội dung tệp.", // NEW
+  nextActionStored: "Đã lưu — dùng được ngay. Bạn có thể đề cử đưa lên cây tri thức.", // NEW
+  nextActionNominated: "Đã đề cử — chờ giao biên tập viên.", // NEW
+  nextActionUnderCorrection: "Đang hiệu đính.", // NEW
+  nextActionReadyForReview: "Chờ duyệt xuất bản.", // NEW
+  nextActionPromoted: "Đã xuất bản lên cây tri thức.", // NEW
+  nextActionRejected: "Đề cử không được duyệt — tệp vẫn được lưu.", // NEW
+  // Node export: the one converter warning said in consequences
+  // (NEW — not yet in vocabulary-vi.md)
+  exportPandocMissing: "máy chủ chưa cài pandoc nên tệp xuất là bản HTML đơn giản, không phải docx/pdf.", // NEW
+  // Admin Console: headings and the health table (NEW — not yet in vocabulary-vi.md)
+  membersHeading: "Thành viên", // NEW
+  auditHeading: "Nhật ký hệ thống", // NEW
+  healthHeading: "Sức khoẻ hệ thống", // NEW
+  healthDatabase: "Cơ sở dữ liệu", // NEW
+  healthDbOk: "Hoạt động bình thường", // NEW
+  healthDbDown: "Không kết nối được", // NEW
+  healthJobs: "Công việc nền", // NEW
+  healthJobsEmpty: "Chưa có công việc nào", // NEW
+  healthOverdueLoans: "Phiếu mượn quá hạn", // NEW
+  healthOutbox: "Sự kiện chờ gửi", // NEW
+  healthLastExport: "Xuất dữ liệu gần nhất", // NEW
+  healthNoExport: "Chưa xuất lần nào", // NEW
+  healthBackup: "Sao lưu", // NEW
+  healthBackupNotConfigured: "Chưa cấu hình sao lưu", // NEW
+  healthDegraded: "Thành phần suy giảm", // NEW
+  healthNone: "Không có", // NEW
+  // Audit trail (NEW — not yet in vocabulary-vi.md)
+  auditEmpty: "Chưa có sự kiện nào được ghi lại.", // NEW
+  timeColumn: "Thời điểm", // NEW
+  actorColumn: "Người thực hiện", // NEW
+  actionColumn: "Hành động", // NEW
+  targetColumn: "Đối tượng", // NEW
+  detailsColumn: "Chi tiết", // NEW
+  systemActor: "Hệ thống", // NEW — no actor on the row (a system job)
+  loadMore: "Tải thêm", // NEW
+  // Team spaces and membership admin (NEW — not yet in vocabulary-vi.md)
+  spaceCreated: "Đã tạo kho.", // NEW
+  spacesEmptyTitle: "Chưa có kho nào.", // NEW
+  spacesEmptyHint: "Tạo kho đầu tiên bằng biểu mẫu bên dưới.", // NEW
+  spaceNameColumn: "Tên kho", // NEW
+  memberCountColumn: "Số thành viên", // NEW
+  newSpaceName: "Tên kho mới", // NEW
+  createSpace: "Tạo kho", // NEW
+  spaceMembersHeading: "Thành viên theo kho", // NEW
+  spaceMembersFirstHint: "Tạo một kho trước, rồi thêm thành viên tại đây.", // NEW
+  spaceMembersEmpty: "Kho này chưa có thành viên.", // NEW
+  roleColumn: "Vai trò", // NEW
+  actionsColumn: "Thao tác", // NEW
+  removeFromSpace: "Gỡ khỏi kho", // NEW
+  confirmRemoveMemberTitle: "Gỡ thành viên khỏi kho?", // NEW
+  // The member's name precedes this in the dialog: "«Tên» sẽ không còn…"
+  confirmRemoveMemberBody: "sẽ không còn xem hoặc nộp tư liệu trong kho này. Có thể thêm lại sau.", // NEW
+  memberRemoved: "Đã gỡ thành viên.", // NEW
+  addMember: "Thêm thành viên", // NEW
+  chooseMember: "— Chọn thành viên —", // NEW
+  memberAdded: "Đã thêm thành viên.", // NEW
+  addAction: "Thêm", // NEW
+  // Member accounts admin (NEW — not yet in vocabulary-vi.md)
+  inviteMember: "Mời thành viên", // NEW
+  inviteSent: "Đã mời thành viên. Người này đăng nhập bằng Google với email đã mời.", // NEW
+  email: "Email", // NEW
+  displayNameLabel: "Tên hiển thị", // NEW
+  inviteRoleAria: "Vai trò của thành viên được mời", // NEW
+  // Completed with the member's name: "Vai trò của «Tên»"
+  roleOfPrefix: "Vai trò của", // NEW
+  changeRole: "Đổi vai trò", // NEW
+  roleChanged: "Đã đổi vai trò.", // NEW
+  userDisabledBadge: "Đã vô hiệu hoá", // NEW
+  userInvitedBadge: "Đã mời — chưa đăng nhập", // NEW
+  userActiveBadge: "Đang hoạt động", // NEW
+  reenableUser: "Kích hoạt lại", // NEW
+  userReenabledOk: "Đã kích hoạt lại tài khoản.", // NEW
+  disableUser: "Vô hiệu hoá", // NEW
+  confirmDisableUserTitle: "Vô hiệu hoá tài khoản?", // NEW
+  // The member's name precedes this in the dialog: "«Tên» sẽ không đăng nhập…"
+  confirmDisableUserBody:
+    "sẽ không đăng nhập được cho đến khi được kích hoạt lại. Dữ liệu của người này được giữ nguyên.", // NEW
+  userDisabledOk: "Đã vô hiệu hoá tài khoản.", // NEW
+  // Account page and profile (NEW — not yet in vocabulary-vi.md)
+  profileHeading: "Hồ sơ", // NEW
+  roleAssignedNote: "Vai trò do quản trị viên phân.", // NEW
+  mySpacesHeading: "Kho của tôi", // NEW
+  accountNoSpacesHint: "Bạn chưa thuộc kho nào. Quản trị viên sẽ thêm bạn vào kho của nhóm.", // NEW
+  calendarLinkMissing: "Chưa có đường dẫn lịch cho tài khoản này. Bấm nút dưới để tạo.", // NEW
+  viewMySubmissions: "Xem tư liệu tôi đã gửi →", // NEW
+  profileSaved: "Đã lưu hồ sơ.", // NEW
+  zaloIdLabel: "Zalo ID", // NEW
+  zaloIdHint: "Dùng để nhận thông báo qua Zalo, nếu bạn bật kênh này.", // NEW
+  chooseAvatar: "Chọn ảnh đại diện", // NEW
+  avatarConstraint: "PNG, JPEG hoặc WebP, tối đa 2 MB.", // NEW
+  regenerateCalendarLink: "Tạo liên kết mới", // NEW
+  confirmRegenerateCalendarTitle: "Tạo liên kết lịch mới?", // NEW
+  confirmRegenerateCalendarBody:
+    "Liên kết cũ sẽ ngừng hoạt động ngay: ứng dụng lịch nào đang dùng nó sẽ không nhận được hạn chót nữa, và bạn cần dán liên kết mới vào đó.", // NEW
+  calendarLinkRegenerated: "Đã tạo liên kết mới. Liên kết cũ không còn hoạt động.", // NEW
+  // Service and route errors, said in words (NEW — not yet in vocabulary-vi.md)
+  sourceNotNominatable: "Tư liệu này không ở trạng thái có thể đề cử.", // NEW
+  sourceAlreadyNominated: "Tư liệu này đã được đề cử.", // NEW
+  folderNameTaken: "Đã có thư mục tên này ở đây.", // NEW
+  folderNameRequired: "Vui lòng nhập tên thư mục.", // NEW
+  folderParentMissing: "Thư mục cha không tồn tại trong kho này.", // NEW
+  folderNotEmpty: "Thư mục còn nội dung — chuyển hết ra trước khi xoá.", // NEW
+  invalidTimeCursor: "Mốc thời gian không hợp lệ.", // NEW
+  fileRequired: "Vui lòng chọn tệp.", // NEW
+  avatarFileRequired: "Chưa chọn tệp ảnh.", // NEW
+  invalidUserChange: "Thay đổi tài khoản không hợp lệ.", // NEW
+  invalidProfile: "Thông tin hồ sơ không hợp lệ.", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

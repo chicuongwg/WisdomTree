@@ -1,4 +1,4 @@
-import { extractionStateLabel, type BadgeTone } from "./vi";
+import { extractionStateLabel, T, type BadgeTone } from "./vi";
 
 // Display-level truth for a stored file. The extraction stub marks PDF/DOCX
 // `processed` while writing zero text_chunks, so the status flag alone cannot
@@ -17,8 +17,7 @@ export function extractionDisplay(
   if (hasText) return { label: extractionStateLabel(status), tone: "done" };
   // `processed` with no text: the file is stored and fine, but full-text
   // search has not scanned it. Dashed chip — incomplete by shape.
-  // TODO(vi): move to src/lib/vi.ts
-  return { label: "Chưa đọc được nội dung", tone: "no_source" };
+  return { label: T.extractionNoText, tone: "no_source" };
 }
 
 // ---------------------------------------------------------------------------
@@ -57,14 +56,13 @@ export function nextActionFor(input: {
   return "stored";
 }
 
-// TODO(vi): move to src/lib/vi.ts once humanities review the copy
 export const nextActionLabel: Record<NextActionKey, string> = {
-  archived: "Đã thu hồi.",
-  reading: "Hệ thống đang đọc nội dung tệp.",
-  stored: "Đã lưu — dùng được ngay. Bạn có thể đề cử đưa lên cây tri thức.",
-  nominated_unassigned: "Đã đề cử — chờ giao biên tập viên.",
-  under_correction: "Đang hiệu đính.",
-  ready_for_review: "Chờ duyệt xuất bản.",
-  promoted: "Đã xuất bản lên cây tri thức.",
-  rejected: "Đề cử không được duyệt — tệp vẫn được lưu.",
+  archived: T.nextActionArchived,
+  reading: T.nextActionReading,
+  stored: T.nextActionStored,
+  nominated_unassigned: T.nextActionNominated,
+  under_correction: T.nextActionUnderCorrection,
+  ready_for_review: T.nextActionReadyForReview,
+  promoted: T.nextActionPromoted,
+  rejected: T.nextActionRejected,
 };

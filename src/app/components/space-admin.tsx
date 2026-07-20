@@ -52,8 +52,7 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
 
   async function createSpace(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // TODO(vi): move to src/lib/vi.ts
-    if (await create.run("/api/spaces", { body: { name }, ok: "Đã tạo kho." })) setName("");
+    if (await create.run("/api/spaces", { body: { name }, ok: T.spaceCreated })) setName("");
   }
 
   return (
@@ -61,16 +60,14 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
       <section className="panel">
         <h2>{T.space}</h2>
         {spaces.length === 0 ? (
-          // TODO(vi): move to src/lib/vi.ts
-          <Empty title="Chưa có kho nào." hint="Tạo kho đầu tiên bằng biểu mẫu bên dưới." panel={false} />
+          <Empty title={T.spacesEmptyTitle} hint={T.spacesEmptyHint} panel={false} />
         ) : (
           <div className="record-scroll">
             <table className="list">
               <thead>
                 <tr>
-                  {/* TODO(vi): move to src/lib/vi.ts */}
-                  <th scope="col">Tên kho</th>
-                  <th scope="col">Số thành viên</th>
+                  <th scope="col">{T.spaceNameColumn}</th>
+                  <th scope="col">{T.memberCountColumn}</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,23 +89,19 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
         <form onSubmit={createSpace}>
           <SayMutation m={create} />
           <div className="field">
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            <label htmlFor="sa-name">Tên kho mới</label>
+            <label htmlFor="sa-name">{T.newSpaceName}</label>
             <input id="sa-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <button type="submit" disabled={create.busy || !name.trim()}>
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            {create.busy ? T.loading : "Tạo kho"}
+            {create.busy ? T.loading : T.createSpace}
           </button>
         </form>
       </section>
 
       <section className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Thành viên theo kho</h2>
+        <h2>{T.spaceMembersHeading}</h2>
         {spaces.length === 0 ? (
-          // TODO(vi): move to src/lib/vi.ts
-          <p className="muted">Tạo một kho trước, rồi thêm thành viên tại đây.</p>
+          <p className="muted">{T.spaceMembersFirstHint}</p>
         ) : (
           <>
             <SayMutation m={change} />
@@ -125,18 +118,16 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
             {members === null ? (
               <p className="muted">{T.loading}</p>
             ) : members.length === 0 ? (
-              // TODO(vi): move to src/lib/vi.ts
-              <Empty title="Kho này chưa có thành viên." panel={false} />
+              <Empty title={T.spaceMembersEmpty} panel={false} />
             ) : (
               <div className="record-scroll">
                 <table className="list">
                   <thead>
                     <tr>
                       <th scope="col">Thành viên</th>
-                      {/* TODO(vi): move to src/lib/vi.ts */}
-                      <th scope="col">Vai trò</th>
+                      <th scope="col">{T.roleColumn}</th>
                       <th scope="col">
-                        <span className="muted">Thao tác</span>
+                        <span className="muted">{T.actionsColumn}</span>
                       </th>
                     </tr>
                   </thead>
@@ -147,18 +138,16 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                         <td>{userRoleLabel(m.role)}</td>
                         <td>
                           <ConfirmButton
-                            // TODO(vi): move to src/lib/vi.ts
-                            label="Gỡ khỏi kho"
-                            title="Gỡ thành viên khỏi kho?"
-                            body={`${m.displayName} sẽ không còn xem hoặc nộp tư liệu trong kho này. Có thể thêm lại sau.`}
+                            label={T.removeFromSpace}
+                            title={T.confirmRemoveMemberTitle}
+                            body={`${m.displayName} ${T.confirmRemoveMemberBody}`}
                             className="danger"
                             disabled={change.busy}
                             onConfirm={() => {
                               void change
                                 .run(`/api/spaces/${spaceId}/members/${m.userId}`, {
                                   method: "DELETE",
-                                  // TODO(vi): move to src/lib/vi.ts
-                                  ok: "Đã gỡ thành viên.",
+                                  ok: T.memberRemoved,
                                 })
                                 .then((done) => done && setTick((t) => t + 1));
                             }}
@@ -173,11 +162,9 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
             {candidates.length > 0 && members !== null && (
               <div className="button-row">
                 <div className="field">
-                  {/* TODO(vi): move to src/lib/vi.ts */}
-                  <label htmlFor="sa-add">Thêm thành viên</label>
+                  <label htmlFor="sa-add">{T.addMember}</label>
                   <select id="sa-add" value={addId} onChange={(e) => setAddId(e.target.value)}>
-                    {/* TODO(vi): move to src/lib/vi.ts */}
-                    <option value="">— Chọn thành viên —</option>
+                    <option value="">{T.chooseMember}</option>
                     {candidates.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.displayName} · {userRoleLabel(m.role)}
@@ -190,8 +177,7 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                   disabled={change.busy || !addId}
                   onClick={() => {
                     void change
-                      // TODO(vi): move to src/lib/vi.ts
-                      .run(`/api/spaces/${spaceId}/members`, { body: { userId: addId }, ok: "Đã thêm thành viên." })
+                      .run(`/api/spaces/${spaceId}/members`, { body: { userId: addId }, ok: T.memberAdded })
                       .then((done) => {
                         if (done) {
                           setAddId("");
@@ -200,8 +186,7 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                       });
                   }}
                 >
-                  {/* TODO(vi): move to src/lib/vi.ts */}
-                  {change.busy ? T.loading : "Thêm"}
+                  {change.busy ? T.loading : T.addAction}
                 </button>
               </div>
             )}

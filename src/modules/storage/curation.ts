@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
+import { T } from "@/lib/vi";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
@@ -143,16 +144,14 @@ export async function nominateSource(actor: Principal, sourceId: string) {
   // Nominating your own upload is managing your source; Admin/Op passes by role.
   authorize(actor, "storage.source.manage", { ownerIds: [row.source.submittedBy], kind: "write" });
   if (row.version.storageState !== "stored") {
-    // TODO(vi): move to src/lib/vi.ts
-    throw new ApiError(409, "not_stored", "Tư liệu này không ở trạng thái có thể đề cử.");
+    throw new ApiError(409, "not_stored", T.sourceNotNominatable);
   }
   const [existing] = await db
     .select({ id: curations.id })
     .from(curations)
     .where(eq(curations.sourceVersionId, row.version.id));
   if (existing) {
-    // TODO(vi): move to src/lib/vi.ts
-    throw new ApiError(409, "already_nominated", "Tư liệu này đã được đề cử.");
+    throw new ApiError(409, "already_nominated", T.sourceAlreadyNominated);
   }
 
   return db.transaction(async (tx) => {

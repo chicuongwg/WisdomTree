@@ -47,8 +47,7 @@ export function AccountProfile({
     await m.run("/api/account", {
       method: "PATCH",
       body: { displayName, zaloUserId: zaloUserId.trim() || null },
-      // TODO(vi): move to src/lib/vi.ts
-      ok: "Đã lưu hồ sơ.",
+      ok: T.profileSaved,
     });
   }
 
@@ -57,8 +56,7 @@ export function AccountProfile({
   return (
     <>
       <div className="field">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <label htmlFor="acc-name">Tên hiển thị</label>
+        <label htmlFor="acc-name">{T.displayNameLabel}</label>
         <input
           id="acc-name"
           type="text"
@@ -69,8 +67,7 @@ export function AccountProfile({
         />
       </div>
       <div className="field">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <label htmlFor="acc-zalo">Zalo ID</label>
+        <label htmlFor="acc-zalo">{T.zaloIdLabel}</label>
         <input
           id="acc-zalo"
           type="text"
@@ -78,8 +75,7 @@ export function AccountProfile({
           disabled={busy}
           onChange={(e) => setZaloUserId(e.target.value)}
         />
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <span className="muted">Dùng để nhận thông báo qua Zalo, nếu bạn bật kênh này.</span>
+        <span className="muted">{T.zaloIdHint}</span>
       </div>
       {/* Same hidden-input trigger as the upload form: the browser's own
           file-control words are English in a Vietnamese screen. */}
@@ -93,11 +89,9 @@ export function AccountProfile({
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
         <label htmlFor="acc-avatar" className="button secondary">
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          Chọn ảnh đại diện
+          {T.chooseAvatar}
         </label>
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <span className="muted">{file ? file.name : "PNG, JPEG hoặc WebP, tối đa 2 MB."}</span>
+        <span className="muted">{file ? file.name : T.avatarConstraint}</span>
       </div>
       <SayMutation m={m} />
       <Say error={uploadError} />

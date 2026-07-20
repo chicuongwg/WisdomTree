@@ -37,8 +37,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
 
   return (
     <>
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h3>Mời thành viên</h3>
+      <h3>{T.inviteMember}</h3>
       <SayMutation m={invite} />
       <form
         className="button-row"
@@ -47,8 +46,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
           void invite
             .run("/api/admin/users/invite", {
               body: { email: inviteEmail, displayName: inviteName, role: inviteRole },
-              // TODO(vi): move to src/lib/vi.ts
-              ok: "Đã mời thành viên. Người này đăng nhập bằng Google với email đã mời.",
+              ok: T.inviteSent,
             })
             .then((done) => {
               if (done) {
@@ -62,9 +60,8 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
         <input
           type="email"
           required
-          // TODO(vi): move to src/lib/vi.ts
-          aria-label="Email"
-          placeholder="Email"
+          aria-label={T.email}
+          placeholder={T.email}
           value={inviteEmail}
           disabled={invite.busy}
           onChange={(e) => setInviteEmail(e.target.value)}
@@ -72,16 +69,14 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
         <input
           type="text"
           required
-          // TODO(vi): move to src/lib/vi.ts
-          aria-label="Tên hiển thị"
-          placeholder="Tên hiển thị"
+          aria-label={T.displayNameLabel}
+          placeholder={T.displayNameLabel}
           value={inviteName}
           disabled={invite.busy}
           onChange={(e) => setInviteName(e.target.value)}
         />
         <select
-          // TODO(vi): move to src/lib/vi.ts
-          aria-label="Vai trò của thành viên được mời"
+          aria-label={T.inviteRoleAria}
           value={inviteRole}
           disabled={invite.busy}
           onChange={(e) => setInviteRole(e.target.value)}
@@ -93,8 +88,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
           ))}
         </select>
         <button type="submit" disabled={invite.busy}>
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          {invite.busy ? T.loading : "Mời thành viên"}
+          {invite.busy ? T.loading : T.inviteMember}
         </button>
       </form>
 
@@ -103,13 +97,12 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
         <table className="list">
           <thead>
             <tr>
-              {/* TODO(vi): move to src/lib/vi.ts */}
-              <th scope="col">Thành viên</th>
-              <th scope="col">Email</th>
-              <th scope="col">Vai trò</th>
-              <th scope="col">Trạng thái</th>
+              <th scope="col">{T.membersHeading}</th>
+              <th scope="col">{T.email}</th>
+              <th scope="col">{T.roleColumn}</th>
+              <th scope="col">{T.state}</th>
               <th scope="col">
-                <span className="muted">Thao tác</span>
+                <span className="muted">{T.actionsColumn}</span>
               </th>
             </tr>
           </thead>
@@ -123,8 +116,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                   <td>
                     <div className="button-row">
                       <select
-                        // TODO(vi): move to src/lib/vi.ts
-                        aria-label={`Vai trò của ${u.displayName}`}
+                        aria-label={`${T.roleOfPrefix} ${u.displayName}`}
                         value={pick}
                         disabled={change.busy}
                         onChange={(e) => setPicks((p) => ({ ...p, [u.id]: e.target.value }))}
@@ -144,8 +136,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                             .run(`/api/admin/users/${u.id}`, {
                               method: "PATCH",
                               body: { role: pick },
-                              // TODO(vi): move to src/lib/vi.ts
-                              ok: "Đã đổi vai trò.",
+                              ok: T.roleChanged,
                             })
                             .then((done) => {
                               // Success: the refreshed server row now carries the
@@ -156,21 +147,17 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                             });
                         }}
                       >
-                        {/* TODO(vi): move to src/lib/vi.ts */}
-                        Đổi vai trò
+                        {T.changeRole}
                       </button>
                     </div>
                   </td>
                   <td>
                     {u.disabled ? (
-                      // TODO(vi): move to src/lib/vi.ts
-                      <span className="badge tone-stopped">Đã vô hiệu hoá</span>
+                      <span className="badge tone-stopped">{T.userDisabledBadge}</span>
                     ) : u.invited ? (
-                      // TODO(vi): move to src/lib/vi.ts
-                      <span className="badge tone-waiting">Đã mời — chưa đăng nhập</span>
+                      <span className="badge tone-waiting">{T.userInvitedBadge}</span>
                     ) : (
-                      // TODO(vi): move to src/lib/vi.ts
-                      <span className="badge tone-done">Đang hoạt động</span>
+                      <span className="badge tone-done">{T.userActiveBadge}</span>
                     )}
                   </td>
                   <td>
@@ -183,28 +170,24 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                           void change.run(`/api/admin/users/${u.id}`, {
                             method: "PATCH",
                             body: { disabled: false },
-                            // TODO(vi): move to src/lib/vi.ts
-                            ok: "Đã kích hoạt lại tài khoản.",
+                            ok: T.userReenabledOk,
                           });
                         }}
                       >
-                        {/* TODO(vi): move to src/lib/vi.ts */}
-                        {change.busy ? T.loading : "Kích hoạt lại"}
+                        {change.busy ? T.loading : T.reenableUser}
                       </button>
                     ) : (
                       <ConfirmButton
-                        // TODO(vi): move to src/lib/vi.ts
-                        label="Vô hiệu hoá"
-                        title="Vô hiệu hoá tài khoản?"
-                        body={`${u.displayName} sẽ không đăng nhập được cho đến khi được kích hoạt lại. Dữ liệu của người này được giữ nguyên.`}
+                        label={T.disableUser}
+                        title={T.confirmDisableUserTitle}
+                        body={`${u.displayName} ${T.confirmDisableUserBody}`}
                         className="danger"
                         disabled={change.busy}
                         onConfirm={() => {
                           void change.run(`/api/admin/users/${u.id}`, {
                             method: "PATCH",
                             body: { disabled: true },
-                            // TODO(vi): move to src/lib/vi.ts
-                            ok: "Đã vô hiệu hoá tài khoản.",
+                            ok: T.userDisabledOk,
                           });
                         }}
                       />

@@ -83,14 +83,10 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
             <span className="meta">
               {/* The renderer's warnings are internal English ("stub: pandoc
                   unavailable"); the reader gets the consequence in Vietnamese —
-                  what file they actually got and why. TODO(vi) */}
+                  what file they actually got and why. */}
               {T.exportWarnings}{" "}
               {job.result.converterWarnings
-                .map((w) =>
-                  w.includes("pandoc unavailable")
-                    ? "máy chủ chưa cài pandoc nên tệp xuất là bản HTML đơn giản, không phải docx/pdf."
-                    : w,
-                )
+                .map((w) => (w.includes("pandoc unavailable") ? T.exportPandocMissing : w))
                 .join("; ")}
             </span>
           )}

@@ -30,36 +30,33 @@ export default async function LoginPage({
           WT
         </span>
         <h1 className="login-title">{T.appName}</h1>
-        {/* TODO(vi): move to src/lib/vi.ts — same string as the layout's metadata description */}
-        <p className="muted">Nền tảng lưu trữ và tri thức của nhóm</p>
+        {/* Same string as the layout's metadata description */}
+        <p className="muted">{T.loginTagline}</p>
       </div>
 
       {error === "not_invited" && (
         <p className="notice" role="alert">
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          Tài khoản Google này chưa được mời vào WisdomTree. Liên hệ quản trị viên.
+          {T.loginNotInvited}
         </p>
       )}
       {error === "oidc_failed" && (
         <p className="notice" role="alert">
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          Đăng nhập không thành công. Vui lòng thử lại.
+          {T.loginFailed}
         </p>
       )}
 
       {oidc && (
-        // TODO(vi): move to src/lib/vi.ts
         <a className="button" href="/api/auth/oidc/start">
-          Đăng nhập bằng Google
+          {T.signInWithGoogle}
         </a>
       )}
 
       {dev && (
         <>
           <hr className="login-divider" />
-          {/* TODO(vi): move to src/lib/vi.ts. The heading is the whole
-              explanation — a second sentence restating it was chrome. */}
-          <h2 className="muted login-demo-head">Bản demo — chọn một thành viên để đăng nhập</h2>
+          {/* The heading is the whole explanation — a second sentence
+              restating it was chrome. */}
+          <h2 className="muted login-demo-head">{T.loginDemoHeading}</h2>
           <LoginPicker users={seeded} />
         </>
       )}

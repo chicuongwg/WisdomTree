@@ -36,12 +36,10 @@ export default async function AccountPage() {
 
   return (
     <main className="page">
-      {/* TODO(vi): move to src/lib/vi.ts */}
-      <h1>Tài khoản</h1>
+      <h1>{T.account}</h1>
 
       <div className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Hồ sơ</h2>
+        <h2>{T.profileHeading}</h2>
         <div className="account-head">
           {profile.avatarKey ? (
             /* eslint-disable-next-line @next/next/no-img-element -- served by
@@ -61,8 +59,7 @@ export default async function AccountPage() {
             <p className="muted">
               {profile.email} · {userRoleLabel(profile.role)}
             </p>
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            <p className="muted">Vai trò do quản trị viên phân.</p>
+            <p className="muted">{T.roleAssignedNote}</p>
           </div>
         </div>
         <AccountProfile
@@ -71,11 +68,9 @@ export default async function AccountPage() {
       </div>
 
       <div className="panel">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        <h2>Kho của tôi</h2>
+        <h2>{T.mySpacesHeading}</h2>
         {spaces.length === 0 ? (
-          // TODO(vi): move to src/lib/vi.ts
-          <p className="muted">Bạn chưa thuộc kho nào. Quản trị viên sẽ thêm bạn vào kho của nhóm.</p>
+          <p className="muted">{T.accountNoSpacesHint}</p>
         ) : (
           <ul>
             {spaces.map((s) => (
@@ -98,8 +93,7 @@ export default async function AccountPage() {
             <code className="ics-url">{`${proto}://${host}/calendar/${token.token}.ics`}</code>
           </>
         ) : (
-          // TODO(vi): move to src/lib/vi.ts
-          <p className="muted">Chưa có đường dẫn lịch cho tài khoản này. Bấm nút dưới để tạo.</p>
+          <p className="muted">{T.calendarLinkMissing}</p>
         )}
         <RegenerateCalendarLink />
       </div>
@@ -107,8 +101,7 @@ export default async function AccountPage() {
       <div className="panel">
         <h2>{T.mySubmissions}</h2>
         <p>
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          <Link href="/source/mine">Xem tư liệu tôi đã gửi →</Link>
+          <Link href="/source/mine">{T.viewMySubmissions}</Link>
         </p>
       </div>
     </main>

@@ -74,8 +74,7 @@ export default async function SourceInboxPage() {
                   <td>
                     {curationState === "under_correction" && !curationAssignedTo ? (
                       // A member's self-nomination waiting for an editor.
-                      // TODO(vi): move to src/lib/vi.ts
-                      <span className={badgeToneClass("active")}>Đã đề cử — chờ giao</span>
+                      <span className={badgeToneClass("active")}>{T.nominatedAwaitingAssign}</span>
                     ) : curationState ? (
                       <span className={badgeClass(curationStateLabel, curationState)}>
                         {curationLabel(curationState)}

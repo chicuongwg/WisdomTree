@@ -50,8 +50,7 @@ export function CommandPalette({ role }: { role: string }) {
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
     { key: "deadlines", label: T.deadline, hint: T.paletteHintGo, href: "/deadlines" },
     { key: "notifications", label: T.notificationCenter, hint: T.paletteHintGo, href: "/notifications" },
-    // TODO(vi): move to src/lib/vi.ts
-    { key: "account", label: "Tài khoản", hint: T.paletteHintGo, href: "/account" },
+    { key: "account", label: T.account, hint: T.paletteHintGo, href: "/account" },
   ];
   if (role === "editor" || role === "admin_op") {
     screens.push(
@@ -64,8 +63,7 @@ export function CommandPalette({ role }: { role: string }) {
       { key: "review", label: T.reviewQueue, hint: T.paletteHintGo, href: "/review" },
       { key: "inbox", label: T.sourceInbox, hint: T.paletteHintGo, href: "/source/inbox" },
       { key: "desk", label: T.librarianDesk, hint: T.paletteHintGo, href: "/catalog/admin" },
-      // TODO(vi): move to src/lib/vi.ts
-      { key: "admin", label: "Quản trị", hint: T.paletteHintGo, href: "/admin" },
+      { key: "admin", label: T.adminConsole, hint: T.paletteHintGo, href: "/admin" },
     );
   }
 

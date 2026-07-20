@@ -111,8 +111,7 @@ export function UploadProgressLine({ progress }: { progress: UploadProgress }) {
           which is exactly right while lengthComputable is false. */}
       <progress {...(progress.percent === null ? {} : { value: progress.percent, max: 100 })} />
       <span className="muted">
-        {/* TODO(vi): move to src/lib/vi.ts */}
-        {`Đang gửi ${progress.index}/${progress.total}: ${progress.name}`}
+        {`${T.uploadSendingPrefix} ${progress.index}/${progress.total}: ${progress.name}`}
         {progress.percent === null
           ? ""
           : progress.percent < 100
@@ -123,9 +122,8 @@ export function UploadProgressLine({ progress }: { progress: UploadProgress }) {
   );
 }
 
-// TODO(vi): move to src/lib/vi.ts
 const failedList = (names: string[]) =>
-  `Không gửi được: ${names.join(", ")}. Chọn lại các tệp đó để thử lần nữa.`;
+  `${T.uploadFailedPrefix} ${names.join(", ")}. ${T.uploadRetryChooseHint}`;
 
 export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: string }> }) {
   const router = useRouter();
@@ -205,8 +203,7 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
       {!many && (
         <>
           <div className="field">
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            <label htmlFor="title">{T.title} (không bắt buộc)</label>
+            <label htmlFor="title">{T.title} {T.optionalSuffix}</label>
             <input id="title" name="title" type="text" disabled={disabled} />
           </div>
           <div className="field">

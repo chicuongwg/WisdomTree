@@ -56,19 +56,17 @@ export function AuditLog({ initial }: { initial: AuditRow[] }) {
   return (
     <>
       {rows.length === 0 ? (
-        // TODO(vi): move to src/lib/vi.ts
-        <p className="muted">Chưa có sự kiện nào được ghi lại.</p>
+        <p className="muted">{T.auditEmpty}</p>
       ) : (
         <div className="record-scroll">
           <table className="list">
             <thead>
               <tr>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="col">Thời điểm</th>
-                <th scope="col">Người thực hiện</th>
-                <th scope="col">Hành động</th>
-                <th scope="col">Đối tượng</th>
-                <th scope="col">Chi tiết</th>
+                <th scope="col">{T.timeColumn}</th>
+                <th scope="col">{T.actorColumn}</th>
+                <th scope="col">{T.actionColumn}</th>
+                <th scope="col">{T.targetColumn}</th>
+                <th scope="col">{T.detailsColumn}</th>
               </tr>
             </thead>
             <tbody>
@@ -77,8 +75,8 @@ export function AuditLog({ initial }: { initial: AuditRow[] }) {
                 return (
                   <tr key={r.id}>
                     <td>{when(r.createdAt)}</td>
-                    {/* TODO(vi): move to src/lib/vi.ts — "Hệ thống" = no actor (system job) */}
-                    <td>{r.actorName ?? <span className="muted">Hệ thống</span>}</td>
+                    {/* "Hệ thống" = no actor (system job) */}
+                    <td>{r.actorName ?? <span className="muted">{T.systemActor}</span>}</td>
                     <td>
                       <code className="muted">{r.action}</code>
                     </td>
@@ -102,8 +100,7 @@ export function AuditLog({ initial }: { initial: AuditRow[] }) {
       <Say error={error} />
       {!done && rows.length > 0 && (
         <button type="button" className="secondary" disabled={busy} onClick={() => void loadMore()}>
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          {busy ? T.loading : "Tải thêm"}
+          {busy ? T.loading : T.loadMore}
         </button>
       )}
     </>

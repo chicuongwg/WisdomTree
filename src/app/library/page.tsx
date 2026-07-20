@@ -115,23 +115,20 @@ export default async function LibraryPage({
         <button type="submit">{T.search}</button>
       </form>
       {archived ? (
-        // TODO(vi): move to src/lib/vi.ts
         <p className="muted" role="status">
-          Đang xem tư liệu đã thu hồi. <Link href={href({ archived: undefined })}>Quay lại thư viện</Link>
+          {T.viewingArchivedNotice} <Link href={href({ archived: undefined })}>{T.backToLibrary}</Link>
         </p>
       ) : (
         isAdmin && (
           <p className="muted">
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            <Link href={href({ archived: "1", folderId: undefined })}>Xem tư liệu đã thu hồi</Link>
+            <Link href={href({ archived: "1", folderId: undefined })}>{T.viewArchivedLink}</Link>
           </p>
         )
       )}
       {browsing && spaceId && (
-        <nav className="breadcrumb" aria-label="Vị trí">{/* TODO(vi) */}
+        <nav className="breadcrumb" aria-label={T.shelfLocation}>
           <Link href={href({ folderId: undefined })}>
-            {/* TODO(vi): move to src/lib/vi.ts */}
-            Kho {spaces.find((s) => s.id === spaceId)?.name ?? ""}
+            {T.space} {spaces.find((s) => s.id === spaceId)?.name ?? ""}
           </Link>
           {crumbs.map((c) => (
             <span key={c.id}>
@@ -146,15 +143,13 @@ export default async function LibraryPage({
         // An empty list is the most common first screen a new team sees, so it
         // carries the next action rather than only reporting emptiness.
         folderId ? (
-          // TODO(vi): move to src/lib/vi.ts
-          <Empty title="Thư mục trống." hint="Chuyển tư liệu vào đây từ trang chi tiết, hoặc tải tệp lên rồi chọn thư mục này." />
+          <Empty title={T.folderEmptyTitle} hint={T.folderEmptyHint} />
         ) : q || spaceId || archived ? (
           <Empty title={T.noMatches} action={<Link href="/library">{T.clearFilters}</Link>} />
         ) : (
           <Empty
             title={T.libraryEmptyTitle}
-            // TODO(vi): move to src/lib/vi.ts
-            hint={`${T.libraryEmptyHint} Hoặc kéo tệp thả vào đây.`}
+            hint={`${T.libraryEmptyHint} ${T.libraryEmptyDropHint}`}
             action={{ label: T.uploadCta, href: "/source/intake" }}
           />
         )
@@ -165,8 +160,7 @@ export default async function LibraryPage({
               <tr>
                 {sortHeader("title", T.title)}
                 <th scope="col">{T.space}</th>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="col">Người gửi</th>
+                <th scope="col">{T.uploader}</th>
                 {sortHeader("storedAt", T.storedAtLabel)}
                 <th scope="col">Trạng thái xử lý</th>
               </tr>

@@ -1,5 +1,6 @@
 "use client";
 
+import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "@/app/components/say";
 import { ConfirmButton } from "@/app/components/confirm-button";
@@ -15,17 +16,15 @@ export function RegenerateCalendarLink() {
     <>
       <SayMutation m={m} />
       <ConfirmButton
-        // TODO(vi): move to src/lib/vi.ts
-        label="Tạo liên kết mới"
-        title="Tạo liên kết lịch mới?"
-        body="Liên kết cũ sẽ ngừng hoạt động ngay: ứng dụng lịch nào đang dùng nó sẽ không nhận được hạn chót nữa, và bạn cần dán liên kết mới vào đó."
-        confirmLabel="Tạo liên kết mới"
+        label={T.regenerateCalendarLink}
+        title={T.confirmRegenerateCalendarTitle}
+        body={T.confirmRegenerateCalendarBody}
+        confirmLabel={T.regenerateCalendarLink}
         className="secondary"
         disabled={m.busy}
         onConfirm={() =>
           void m.run("/api/account/calendar-token", {
-            // TODO(vi): move to src/lib/vi.ts
-            ok: "Đã tạo liên kết mới. Liên kết cũ không còn hoạt động.",
+            ok: T.calendarLinkRegenerated,
           })
         }
       />

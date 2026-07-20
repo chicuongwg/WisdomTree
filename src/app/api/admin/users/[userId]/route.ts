@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
+import { T } from "@/lib/vi";
 import { requirePrincipal } from "@/lib/request";
 import { setUserDisabled, setUserRole } from "@/modules/auth/admin";
 
@@ -28,8 +29,7 @@ export async function PATCH(
       (hasRole && !ROLES.includes(body.role as Role)) ||
       (hasDisabled && typeof body.disabled !== "boolean")
     ) {
-      // TODO(vi): move to src/lib/vi.ts
-      throw new ApiError(400, "invalid_user_change", "Thay đổi tài khoản không hợp lệ.");
+      throw new ApiError(400, "invalid_user_change", T.invalidUserChange);
     }
     if (hasRole) await setUserRole(actor, userId, body.role as Role);
     if (hasDisabled) await setUserDisabled(actor, userId, body.disabled as boolean);

@@ -66,11 +66,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                         <span className="muted">Tệp gốc vẫn được lưu và tải xuống bình thường.</span>
                       )}
                       {v.extractionStatus === "processed" && !v.hasText && (
-                        // TODO(vi): move to src/lib/vi.ts
-                        <span className="muted">
-                          Tệp được lưu và tải xuống bình thường; hệ thống chưa đọc được chữ bên
-                          trong nên tìm toàn văn chưa quét tệp này.
-                        </span>
+                        <span className="muted">{T.extractionNoTextDetail}</span>
                       )}
                       <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
                     </td>
@@ -112,20 +108,17 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           </p>
         )}
         {v && !stored && (
-          // TODO(vi): move to src/lib/vi.ts
-          <p className="muted">Tư liệu đã được thu hồi — không tải xuống được.</p>
+          <p className="muted">{T.sourceWithdrawnNotice}</p>
         )}
       </div>
       {source.versions.length > 1 && (
         <div className="panel">
-          {/* TODO(vi): move to src/lib/vi.ts */}
-          <h2>Các bản đã lưu</h2>
+          <h2>{T.storedVersionsHeading}</h2>
           <div className="record-scroll">
             <table className="list">
               <thead>
                 <tr>
-                  {/* TODO(vi): move to src/lib/vi.ts */}
-                  <th scope="col">Bản</th>
+                  <th scope="col">{T.versionColumn}</th>
                   <th scope="col">{T.file}</th>
                   <th scope="col">Người tải lên</th>
                   <th scope="col">{T.storedAtLabel}</th>

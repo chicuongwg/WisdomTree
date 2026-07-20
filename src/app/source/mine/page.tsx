@@ -37,8 +37,7 @@ export default async function MySubmissionsPage() {
                 <th scope="col">{T.title}</th>
                 <th scope="col">Loại</th>
                 <th scope="col">Trạng thái</th>
-                {/* TODO(vi): move to src/lib/vi.ts */}
-                <th scope="col">Bước tiếp theo</th>
+                <th scope="col">{T.nextStepColumn}</th>
                 <th scope="col">Cập nhật</th>
               </tr>
             </thead>

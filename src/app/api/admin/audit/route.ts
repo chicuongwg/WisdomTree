@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
+import { T } from "@/lib/vi";
 import { requirePrincipal } from "@/lib/request";
 import { listAuditEvents } from "@/modules/auth/admin";
 
@@ -12,8 +13,7 @@ export async function GET(request: NextRequest) {
     const limitRaw = request.nextUrl.searchParams.get("limit");
     const before = beforeRaw ? new Date(beforeRaw) : undefined;
     if (before && Number.isNaN(before.getTime())) {
-      // TODO(vi): move to src/lib/vi.ts
-      throw new ApiError(400, "invalid_cursor", "Mốc thời gian không hợp lệ.");
+      throw new ApiError(400, "invalid_cursor", T.invalidTimeCursor);
     }
     const rows = await listAuditEvents(actor, {
       before,

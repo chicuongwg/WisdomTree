@@ -121,8 +121,7 @@ export function ShellRail({
   }
   if (role === "admin_op") {
     items.push({ href: "/review", label: T.reviewQueue, icon: icons.review, pip: reviewOpen });
-    // TODO(vi): move to src/lib/vi.ts
-    items.push({ href: "/admin", label: "Quản trị", icon: icons.gear });
+    items.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
   }
   items.push({ href: "/notifications", label: T.notificationCenter, icon: icons.bell, pip: unread });
 
@@ -176,8 +175,7 @@ export function ShellRail({
         href="/account"
         className="rail-avatar"
         title={`${displayName} · ${userRoleLabel(role)}`}
-        // TODO(vi): move to src/lib/vi.ts
-        aria-label="Tài khoản"
+        aria-label={T.account}
         aria-current={pathname.startsWith("/account") ? "page" : undefined}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- session-guarded

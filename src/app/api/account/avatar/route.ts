@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
+import { T } from "@/lib/vi";
 import { requirePrincipal } from "@/lib/request";
 import { setAvatar } from "@/modules/auth/profile";
 
@@ -11,8 +12,7 @@ export async function POST(request: NextRequest) {
     const form = await request.formData().catch(() => null);
     const file = form?.get("file");
     if (!(file instanceof File)) {
-      // TODO(vi): move to src/lib/vi.ts
-      throw new ApiError(400, "missing_file", "Chưa chọn tệp ảnh.");
+      throw new ApiError(400, "missing_file", T.avatarFileRequired);
     }
     await setAvatar(actor, file);
     return new Response(null, { status: 204 });

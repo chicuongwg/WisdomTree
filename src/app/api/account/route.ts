@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
+import { T } from "@/lib/vi";
 import { requirePrincipal } from "@/lib/request";
 import { getProfile, updateProfile } from "@/modules/auth/profile";
 
@@ -26,8 +27,7 @@ export async function PATCH(request: NextRequest) {
       (body.displayName !== undefined && typeof body.displayName !== "string") ||
       (body.zaloUserId !== undefined && body.zaloUserId !== null && typeof body.zaloUserId !== "string")
     ) {
-      // TODO(vi): move to src/lib/vi.ts
-      throw new ApiError(400, "invalid_profile", "Thông tin hồ sơ không hợp lệ.");
+      throw new ApiError(400, "invalid_profile", T.invalidProfile);
     }
     await updateProfile(actor, {
       displayName: body.displayName as string | undefined,
