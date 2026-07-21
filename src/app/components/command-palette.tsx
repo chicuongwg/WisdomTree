@@ -34,9 +34,12 @@ export function CommandPalette({ role }: { role: string }) {
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [sel, setSel] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Which search the answers belong to; a stale answer is discarded. */
+  const searchToken = useRef(0);
   const baseId = useId();
   const listId = `${baseId}list`;
   const rowId = (key: string) => `${baseId}${key}`;
@@ -132,14 +135,29 @@ export function CommandPalette({ role }: { role: string }) {
       return;
     }
     setBusy(true);
+    setFailed(false);
+    // Type "lịch", then "lịch sử": if the first request answers second, its
+    // results used to land on top of the newer ones and clear the spinner
+    // early. The debounce alone cannot prevent that — it stops a request being
+    // SENT, not one already in flight — so every answer carries the number of
+    // the search it belongs to, and a stale one is dropped on the floor.
+    const mine = ++searchToken.current;
     timer.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/tree/search?q=${encodeURIComponent(term)}`);
-        setHits(res.ok ? ((await res.json()) as SearchHit[]).slice(0, 8) : []);
+        if (!res.ok) throw new Error("search");
+        const rows = ((await res.json()) as SearchHit[]).slice(0, 8);
+        if (mine !== searchToken.current) return;
+        setHits(rows);
       } catch {
+        if (mine !== searchToken.current) return;
+        // A search that failed is not a search that found nothing: saying
+        // "Không có kết quả" about a broken request sends the reader off to
+        // look for a page they were never told the app could not reach.
         setHits([]);
+        setFailed(true);
       } finally {
-        setBusy(false);
+        if (mine === searchToken.current) setBusy(false);
       }
     }, 200);
     return () => {
@@ -215,7 +233,11 @@ export function CommandPalette({ role }: { role: string }) {
           when the search is still running. */}
       <div role="status" aria-live="polite">
         {busy && <p className="pal-empty">{T.paletteSearching}</p>}
-        {!busy && q && results.length === 0 && <p className="pal-empty">{T.paletteNoResults}</p>}
+        {!busy && q && results.length === 0 && (
+          <p className={failed ? "pal-empty error-text" : "pal-empty"}>
+            {failed ? T.paletteSearchFailed : T.paletteNoResults}
+          </p>
+        )}
       </div>
       <div className="pal-list" id={listId} role="listbox">
         {results.map((entry, i) => (

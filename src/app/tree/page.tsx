@@ -45,7 +45,12 @@ export default async function TreeBrowsePage({
         <section aria-label="Kết quả tìm kiếm">
           <h2>Kết quả cho “{q}”</h2>
           {results.length === 0 ? (
-            <p className="muted">Không tìm thấy trang tri thức nào. Thử từ khóa khác.</p>
+            <Empty
+              title={T.treeSearchEmpty}
+              hint={T.treeSearchEmptyHint}
+              action={{ label: T.navBranches, href: "/tree/branches" }}
+              panel={false}
+            />
           ) : (
             <div className="record-scroll">
               <table className="list">

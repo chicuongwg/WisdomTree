@@ -64,17 +64,23 @@ export function GapTriageActions({
             </select>
           </div>
           <div className="button-row">
-            <button
+            {/* It asks, like its neighbours. This attaches the request to a
+                subject and closes it, with no button anywhere that puts it
+                back — the only irreversible act on the panel that was firing
+                on a single press while reject and archive both stopped to
+                ask. */}
+            <ConfirmButton
               disabled={m.busy || (!branchId && !nodeId)}
-              onClick={() =>
+              label={m.busy ? T.loading : T.convertToBranch}
+              title={T.confirmConvertGapTitle}
+              body={T.confirmConvertGapBody}
+              onConfirm={() =>
                 act("convert", {
                   ...(branchId ? { branchId } : {}),
                   ...(nodeId ? { nodeId } : {}),
                 })
               }
-            >
-              {m.busy ? T.loading : T.convertToBranch}
-            </button>
+            />
             <ConfirmButton
               className="danger"
               disabled={m.busy}

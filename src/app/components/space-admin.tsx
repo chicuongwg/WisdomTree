@@ -21,6 +21,7 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
   const [name, setName] = useState("");
   const [spaceId, setSpaceId] = useState(spaces[0]?.id ?? "");
   const [members, setMembers] = useState<SpaceMember[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [addId, setAddId] = useState("");
   // Bumped after add/remove so the effect refetches; useMutation's own
   // router.refresh() only re-renders the server props, not this fetch.
@@ -38,11 +39,20 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
       return;
     }
     let alive = true;
-    setMembers(null);
+    setLoadFailed(false);
+    // The old rows stay on screen while the new ones are fetched. Clearing to
+    // null first collapsed the table to nothing and re-expanded it on every
+    // add, every removal and every change of space — the page jumped under the
+    // hand that had just pressed something.
     void fetch(`/api/spaces/${spaceId}/members`)
-      .then(async (res) => (res.ok ? ((await res.json()) as SpaceMember[]) : []))
-      .catch(() => [] as SpaceMember[])
-      .then((rows) => alive && setMembers(rows));
+      .then(async (res) => {
+        if (!res.ok) throw new Error("load");
+        return (await res.json()) as SpaceMember[];
+      })
+      .then((rows) => alive && setMembers(rows))
+      // A list that would not load is not an empty list: resolving to [] here
+      // printed "chưa có thành viên" about a space that may be full of them.
+      .catch(() => alive && setLoadFailed(true));
     return () => {
       alive = false;
     };
@@ -115,7 +125,14 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                 ))}
               </select>
             </div>
-            {members === null ? (
+            {loadFailed ? (
+              <p className="error-text" role="alert">
+                {T.membersLoadFailed}{" "}
+                <button type="button" className="secondary" onClick={() => setTick((t) => t + 1)}>
+                  {T.retry}
+                </button>
+              </p>
+            ) : members === null ? (
               <p className="muted">{T.loading}</p>
             ) : members.length === 0 ? (
               <Empty title={T.spaceMembersEmpty} panel={false} />

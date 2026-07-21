@@ -72,7 +72,7 @@ export default async function PublishReviewPage({
           {review.correctedText ? (
             <pre className="raw-text">{review.correctedText.content}</pre>
           ) : (
-            <p className="muted">Chưa có bản hiệu đính.</p>
+            <p className="muted">{T.noCorrectedText}</p>
           )}
         </section>
         <section aria-label={T.markdownDraft}>
@@ -80,7 +80,7 @@ export default async function PublishReviewPage({
           {review.draft ? (
             <Markdown content={review.draft.contentMd} />
           ) : (
-            <p className="muted">Chưa có bản thảo — không thể xuất bản.</p>
+            <p className="muted">{T.noDraftCannotPublish}</p>
           )}
         </section>
       </div>
@@ -92,6 +92,12 @@ export default async function PublishReviewPage({
           branches={branches.map((b) => ({ id: b.id, name: b.name }))}
           suggestedBranchId={review.draft?.suggestedBranchId ?? null}
           chunks={review.chunks.map((c) => ({ id: c.id, refLabel: c.refLabel }))}
+          /* There is nothing to publish without a draft — the section above
+             says so in words. The two publish buttons were live anyway, and
+             the only thing stopping them was the server's refusal after the
+             press. Reject stays available: rejecting a submission that never
+             produced a draft is exactly what it is for. */
+          canPublish={review.draft !== null}
         />
       )}
     </main>

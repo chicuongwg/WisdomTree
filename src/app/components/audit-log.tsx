@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Empty } from "./empty";
 import {
   T,
   when,
@@ -167,7 +168,7 @@ export function AuditLog({ initial }: { initial: AuditRow[] }) {
   return (
     <>
       {rows.length === 0 ? (
-        <p className="muted">{T.auditEmpty}</p>
+        <Empty title={T.auditEmpty} panel={false} />
       ) : (
         <div className="record-scroll">
           <table className="list">

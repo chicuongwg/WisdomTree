@@ -18,12 +18,15 @@ export function PublishDecision({
   branches,
   suggestedBranchId,
   chunks,
+  canPublish,
 }: {
   sourceId: string;
   versionId: string;
   branches: Array<{ id: string; name: string }>;
   suggestedBranchId: string | null;
   chunks: Array<{ id: string; refLabel: string }>;
+  /** False when there is no draft: there is nothing to publish. */
+  canPublish: boolean;
 }) {
   const router = useRouter();
   const m = useMutation();
@@ -103,7 +106,7 @@ export function PublishDecision({
           pending label rather than only the one that was pressed. */}
       <div className="button-row">
         <ConfirmButton
-          disabled={busy || !branchId}
+          disabled={busy || !branchId || !canPublish}
           label={busy ? T.loading : T.publishVerified}
           title={T.confirmPublishVerifiedTitle}
           body={T.confirmPublishVerifiedBody}
@@ -112,7 +115,7 @@ export function PublishDecision({
         />
         <ConfirmButton
           className="secondary"
-          disabled={busy || !branchId}
+          disabled={busy || !branchId || !canPublish}
           label={busy ? T.loading : T.publishUnverified}
           title={T.confirmPublishUnverifiedTitle}
           body={T.confirmPublishUnverifiedBody}

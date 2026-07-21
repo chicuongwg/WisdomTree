@@ -19,6 +19,9 @@ export const T = {
   librarianDesk: "Bàn thủ thư",
   gapRequest: "Đề xuất bổ sung",
   accessDenied: "Không có quyền truy cập",
+  // A refusal without a next step leaves the reader on a page with nothing on
+  // it but the word no.
+  accessDeniedHint: "Trang này dành cho người phụ trách thư viện. Bạn vẫn có thể xem danh mục sách.", // NEW
   search: "Tìm kiếm",
   download: "Tải xuống",
   signIn: "Đăng nhập",
@@ -219,6 +222,7 @@ export const T = {
   // A thread that would not load says so, and offers the way out.
   commentsLoadFailed: "Không tải được thảo luận.", // NEW
   retry: "Thử lại", // NEW
+  checkAgain: "Kiểm tra lại", // NEW
   // Mentions are typed into the comment itself; the picker is gone.
   mentionHelp: "Gõ @ rồi tên thành viên (ví dụ @Phạm Thu Hương) để nhắc họ vào thảo luận này.", // NEW
   // Announced when the name list opens — a textbox cannot carry aria-expanded,
@@ -298,6 +302,7 @@ export const T = {
   palettePlaceholder: "Gõ để tìm trang tri thức hoặc mở nhanh một mục…", // NEW
   paletteNoResults: "Không tìm thấy kết quả.", // NEW
   paletteSearching: "Đang tìm…", // NEW
+  paletteSearchFailed: "Không tìm được — hãy thử lại.", // NEW
   paletteHintTree: "trang tri thức", // NEW
   paletteHintGo: "mở nhanh", // NEW
   yourSpaces: "không gian", // NEW
@@ -380,6 +385,9 @@ export const T = {
   confirmRejectCurationTitle: "Đóng hồ sơ hiệu đính này ở mức Không dùng?", // NEW
   confirmRejectCurationBody:
     "Tư liệu sẽ không được xuất bản và không hiệu đính tiếp được. Tệp gốc vẫn nằm trong Kho tư liệu. Không thể hoàn tác — muốn dùng lại phải gửi tư liệu mới.", // NEW
+  confirmConvertGapTitle: "Chuyển đề xuất này thành chuyên đề?", // NEW
+  confirmConvertGapBody:
+    "Đề xuất sẽ được gắn vào chuyên đề đã chọn và khép lại. Không có nút mở lại đề xuất.", // NEW
   confirmRejectGapTitle: "Không dùng đề xuất bổ sung này?", // NEW
   confirmRejectGapBody:
     "Đề xuất chuyển sang Không dùng và không tiếp nhận lại được. Người gửi vẫn xem được đề xuất của mình.", // NEW
@@ -400,6 +408,8 @@ export const T = {
   // Curation workbench and the publish decision (NEW — not yet in vocabulary-vi.md)
   correctedTextHint: "Mỗi lần lưu tạo một bản mới trong chuỗi hiệu đính (không ghi đè).", // NEW
   correctedTextSaved: "Đã lưu bản hiệu đính mới.", // NEW
+  curationNotYours: "Việc hiệu đính này chưa được giao cho bạn, nên các ô bên dưới chỉ để đọc.", // NEW
+  curationNotUnderCorrection: "Bản này không còn ở bước hiệu đính, nên không sửa được nữa.", // NEW
   draftSaved: "Đã lưu bản thảo.", // NEW
   chooseBranchNotYet: "— chưa chọn —", // NEW
   sentForReview: "Đã gửi duyệt. Quản trị/Vận hành sẽ ra quyết định xuất bản.", // NEW
@@ -519,6 +529,11 @@ export const T = {
   healthNone: "Không có", // NEW
   // Audit trail (NEW — not yet in vocabulary-vi.md)
   auditEmpty: "Chưa có sự kiện nào được ghi lại.", // NEW
+  treeSearchEmpty: "Không tìm thấy trang tri thức nào.", // NEW
+  treeSearchEmptyHint: "Thử một từ khóa khác, hoặc mở danh sách chuyên đề để duyệt theo chủ đề.", // NEW
+  noCorrectedText: "Chưa có bản hiệu đính.", // NEW
+  noDraft: "Chưa có bản thảo.", // NEW
+  noDraftCannotPublish: "Chưa có bản thảo — không thể xuất bản.", // NEW
   timeColumn: "Thời điểm", // NEW
   actorColumn: "Người thực hiện", // NEW
   actionColumn: "Hành động", // NEW
@@ -573,6 +588,7 @@ export const T = {
   spaceMembersHeading: "Thành viên theo kho", // NEW
   spaceMembersFirstHint: "Tạo một kho trước, rồi thêm thành viên tại đây.", // NEW
   spaceMembersEmpty: "Kho này chưa có thành viên.", // NEW
+  membersLoadFailed: "Không tải được danh sách thành viên.", // NEW
   roleColumn: "Vai trò", // NEW
   actionsColumn: "Thao tác", // NEW
   removeFromSpace: "Gỡ khỏi kho", // NEW

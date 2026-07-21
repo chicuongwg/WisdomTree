@@ -29,6 +29,19 @@ export function CurationWorkbench(props: Props) {
 
   const base = `/api/source/${props.sourceId}/version/${props.versionId}`;
   const active = !props.readOnly && props.curationState === "under_correction";
+  /**
+   * Why the controls are dead, when they are.
+   *
+   * Every field on this screen simply stopped responding and said nothing —
+   * the only clue was a badge in the page header, which is not where anyone
+   * looks after clicking a textarea that will not take their text. A disabled
+   * form owes the reader the reason.
+   */
+  const frozenBecause = active
+    ? null
+    : props.readOnly
+      ? T.curationNotYours
+      : T.curationNotUnderCorrection;
 
   async function saveDraft() {
     const saved = await m.run(`${base}/md-draft`, {
@@ -52,7 +65,7 @@ export function CurationWorkbench(props: Props) {
   // against the "Bản thảo" heading below it.
   return (
     <>
-      <SayMutation m={m} />
+      {frozenBecause && <p className="notice">{frozenBecause}</p>}
 
       <h2>{T.correctedText}</h2>
       <p className="muted">{T.correctedTextHint}</p>
@@ -77,6 +90,11 @@ export function CurationWorkbench(props: Props) {
       >
         {m.busy ? T.loading : T.save}
       </button>
+      {/* Beside the button that caused it. There is one <Say> at the top of
+          this screen and two full-height editors between it and these buttons,
+          so "Đã lưu" was arriving a screenful above the press that earned it —
+          reported as nothing happening. */}
+      <SayMutation m={m} />
 
       <h2>{T.markdownDraft}</h2>
       <div className="field wide">
@@ -123,6 +141,7 @@ export function CurationWorkbench(props: Props) {
           {m.busy ? T.loading : T.markReady}
         </button>
       </div>
+      <SayMutation m={m} />
     </>
   );
 }

@@ -13,9 +13,17 @@ export default async function LibrarianDeskPage() {
   const user = await requireUser();
   if (user.role !== "admin_op") {
     return (
+      // Refused, with a way out. A red sentence on a page whose only other
+      // element is its own title leaves the reader with the browser's back
+      // button and no idea where they are allowed to be — shared-states.md
+      // asks every dead end for a safe next step.
       <main className="page">
         <h1>{T.librarianDesk}</h1>
-        <p className="error-text">{T.accessDenied}</p>
+        <Empty
+          title={T.accessDenied}
+          hint={T.accessDeniedHint}
+          action={{ label: T.catalog, href: "/catalog" }}
+        />
       </main>
     );
   }

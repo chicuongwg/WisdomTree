@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 import { Say } from "./say";
-import { UploadProgressLine, useSequentialUpload } from "./upload-form";
+import { failedList, UploadProgressLine, useSequentialUpload } from "./upload-form";
 
 /**
  * Drag-and-drop intake on the library. Enhancement only: the normal
@@ -40,8 +40,7 @@ export function LibraryDropzone({
   async function run(files: File[], to: string) {
     setError(null);
     const { ids, failed } = await start(files, to);
-    if (failed.length > 0)
-      setError(`${T.uploadFailedPrefix} ${failed.join(", ")}. ${T.uploadRetryDropHint}`);
+    if (failed.length > 0) setError(failedList(failed, T.uploadRetryDropHint));
     if (ids.length > 0) router.refresh();
   }
 

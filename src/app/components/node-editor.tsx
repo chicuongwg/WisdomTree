@@ -121,6 +121,10 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
           </div>
         </>
       )}
+      {/* The answer sits with the button, not only at the top of a form whose
+          middle is a full-height editor. The one above stays: a version
+          conflict is read on the way back UP to the reload button. */}
+      <SayMutation m={m} />
       <p>
         <button type="submit" disabled={m.busy}>
           {m.busy ? T.loading : T.save}

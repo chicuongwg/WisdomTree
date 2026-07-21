@@ -33,7 +33,9 @@ export function useSequentialUpload() {
 
   function uploadOne(
     form: FormData,
-  ): Promise<{ status: "ok"; id: string } | { status: "failed" } | { status: "aborted" }> {
+  ): Promise<
+    { status: "ok"; id: string } | { status: "failed"; reason: string | null } | { status: "aborted" }
+  > {
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -48,10 +50,23 @@ export function useSequentialUpload() {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve({ status: "ok", id: (JSON.parse(xhr.responseText) as { id: string }).id });
         } else {
-          resolve({ status: "failed" });
+          // The server says WHY in Vietnamese — "Tệp vượt quá giới hạn 100 MB",
+          // "Định dạng tệp này không được chấp nhận". That answer used to be
+          // thrown away here and replaced with a bare "Không gửi được: <tên>",
+          // which tells the reader to try again at the one thing that cannot
+          // work twice.
+          const body = (() => {
+            try {
+              return JSON.parse(xhr.responseText) as { message?: string };
+            } catch {
+              return null;
+            }
+          })();
+          resolve({ status: "failed", reason: body?.message ?? null });
         }
       };
-      xhr.onerror = () => resolve({ status: "failed" });
+      // A transport error has no body and no sentence of its own.
+      xhr.onerror = () => resolve({ status: "failed", reason: null });
       xhr.onabort = () => resolve({ status: "aborted" });
       xhr.send(form);
     });
@@ -61,10 +76,10 @@ export function useSequentialUpload() {
     files: File[],
     spaceId: string,
     extras?: { title?: string; description?: string },
-  ): Promise<{ ids: string[]; failed: string[]; aborted: boolean }> {
+  ): Promise<{ ids: string[]; failed: UploadFailure[]; aborted: boolean }> {
     stopRef.current = false;
     const ids: string[] = [];
-    const failed: string[] = [];
+    const failed: UploadFailure[] = [];
     let aborted = false;
     for (let i = 0; i < files.length; i++) {
       if (stopRef.current) {
@@ -85,7 +100,7 @@ export function useSequentialUpload() {
       }
       const result = await uploadOne(form);
       if (result.status === "ok") ids.push(result.id);
-      else if (result.status === "failed") failed.push(file.name);
+      else if (result.status === "failed") failed.push({ name: file.name, reason: result.reason });
       else {
         aborted = true;
         break;
@@ -128,8 +143,20 @@ export function UploadProgressLine({ progress }: { progress: UploadProgress }) {
   );
 }
 
-const failedList = (names: string[]) =>
-  `${T.uploadFailedPrefix} ${names.join(", ")}. ${T.uploadRetryChooseHint}`;
+/** One file that did not go, and the server's reason if it gave one. */
+export type UploadFailure = { name: string; reason: string | null };
+
+/**
+ * What to tell the reader. A file refused for a reason they can act on ("quá
+ * giới hạn 100 MB") gets that reason printed beside its name; only the ones
+ * that failed silently get the generic "choose them again" hint, because that
+ * hint is wrong advice for a file that will be refused every time.
+ */
+export function failedList(failed: UploadFailure[], retryHint: string): string {
+  const lines = failed.map((f) => (f.reason ? `${f.name} — ${f.reason}` : f.name));
+  const anyUnexplained = failed.some((f) => !f.reason);
+  return `${T.uploadFailedPrefix} ${lines.join("; ")}.${anyUnexplained ? ` ${retryHint}` : ""}`;
+}
 
 export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: string }> }) {
   const router = useRouter();
@@ -162,7 +189,7 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
     if (ids.length > 0) router.refresh();
     if (aborted) return;
     if (failed.length > 0) {
-      setError(failedList(failed));
+      setError(failedList(failed, T.uploadRetryChooseHint));
       return;
     }
     // Stay disabled through the navigation: re-enabling here would let an

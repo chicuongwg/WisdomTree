@@ -110,13 +110,13 @@ export default async function AdminSourceDetailPage({
           {wb.correctedLatest ? (
             <pre className="raw-text">{wb.correctedLatest.content}</pre>
           ) : (
-            <p className="muted">Chưa có bản hiệu đính.</p>
+            <p className="muted">{T.noCorrectedText}</p>
           )}
           <h2>{T.markdownDraft}</h2>
           {wb.draft ? (
             <pre className="raw-text">{wb.draft.contentMd}</pre>
           ) : (
-            <p className="muted">Chưa có bản thảo.</p>
+            <p className="muted">{T.noDraft}</p>
           )}
         </div>
         <div>
