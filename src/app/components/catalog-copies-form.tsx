@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
-import { SayMutation } from "./say";
+import { Say, SayMutation } from "./say";
+import { ConfirmButton } from "./confirm-button";
 
 /**
  * Librarian-only: correct how many books sit under one item code.
@@ -43,5 +45,45 @@ export function CatalogCopiesForm({ itemId, copies }: { itemId: string; copies: 
         {m.busy ? T.loading : T.updateCopies}
       </button>
     </form>
+  );
+}
+
+/**
+ * Retire a title the library no longer holds, or one entered by mistake.
+ *
+ * It lives beside the copies form because both are the librarian's corrections
+ * to the same record, and neither is a thing a borrower does. The confirmation
+ * says what happens — off the list, still on record — rather than asking
+ * whether the librarian is sure.
+ */
+export function CatalogArchiveButton({ itemId }: { itemId: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
+  async function archive() {
+    setError(null);
+    const res = await fetch(`/api/catalog/${itemId}/archive`, { method: "POST" });
+    if (!res.ok) {
+      // The refusal that matters is "a copy is still out", and only the server
+      // knows how many — so its sentence is the one shown.
+      const body = (await res.json().catch(() => null)) as { message?: string } | null;
+      setError(body?.message ?? T.genericError);
+      return;
+    }
+    router.push("/catalog");
+    router.refresh();
+  }
+
+  return (
+    <>
+      <ConfirmButton
+        label={T.archiveCatalogItem}
+        title={T.confirmArchiveItemTitle}
+        body={T.confirmArchiveItemBody}
+        className="secondary"
+        onConfirm={archive}
+      />
+      <Say error={error} />
+    </>
   );
 }

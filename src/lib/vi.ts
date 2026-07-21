@@ -47,6 +47,10 @@ export const T = {
   copiesAllOut: "Đã mượn hết", // NEW
   copiesOf: (free: number, total: number) => `${free}/${total} cuốn`, // NEW
   copiesSaved: "Đã cập nhật số lượng.", // NEW
+  archiveCatalogItem: "Lưu trữ đầu sách", // NEW
+  confirmArchiveItemTitle: "Lưu trữ đầu sách này?", // NEW
+  confirmArchiveItemBody:
+    "Đầu sách rời khỏi danh sách thư viện nhưng vẫn được lưu lại trong hồ sơ, kèm lịch sử mượn trả. Không có nút mở lại đầu sách.", // NEW
   updateCopies: "Cập nhật số lượng", // NEW
   // Quantity and state are two questions, so two columns (owner, 2026-07-21).
   copiesColumn: "Số lượng", // NEW
@@ -544,7 +548,6 @@ export const T = {
   inviteSent: "Đã mời thành viên. Người này đăng nhập bằng Google với email đã mời.", // NEW
   email: "Email", // NEW
   displayNameLabel: "Tên hiển thị", // NEW
-  inviteRoleAria: "Vai trò của thành viên được mời", // NEW
   // Completed with the member's name: "Vai trò của «Tên»"
   roleOfPrefix: "Vai trò của", // NEW
   changeRole: "Đổi vai trò", // NEW

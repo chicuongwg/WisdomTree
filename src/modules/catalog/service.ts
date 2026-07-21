@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
@@ -176,6 +176,8 @@ export async function listCatalog(actor: Principal, opts: { q?: string; page?: n
     .from(catalogItems)
     .where(
       and(
+        // A retired title is off the shelf list entirely.
+        isNull(catalogItems.archivedAt),
         visible !== null
           ? visible.length
             ? inArray(catalogItems.spaceId, visible)
@@ -195,7 +197,9 @@ export async function listCatalog(actor: Principal, opts: { q?: string; page?: n
 
 export async function getCatalogItem(actor: Principal, itemId: string) {
   const [item] = await db.select().from(catalogItems).where(eq(catalogItems.id, itemId));
-  if (!item) throw notFound();
+  // A retired title reads as gone: 404, the same answer a link to a deleted
+  // page gives, rather than a page that exists but can never be borrowed.
+  if (!item || item.archivedAt) throw notFound();
   // Out-of-scope read → 404 (authorization-design.md).
   authorize(actor, "catalog.browse", { spaceId: item.spaceId, kind: "read" });
 
@@ -210,4 +214,45 @@ export async function getCatalogItem(actor: Principal, itemId: string) {
   // it can no longer answer "is anything left" — the count does.
   const onLoan = await activeLoanCount(db, item.id);
   return { ...item, activeLoan: activeLoan ?? null, availableCopies: Math.max(item.copies - onLoan, 0) };
+}
+
+/**
+ * Retire a catalogue entry — a title the library no longer holds, or one
+ * entered by mistake. Archived rather than deleted, because a title that has
+ * ever been borrowed has loan tickets pointing at it and deleting the row
+ * would leave that history dangling.
+ *
+ * Refused while a copy is still out: "we no longer hold this" cannot be true
+ * of a book somebody is carrying, and hiding the title would hide the loan
+ * with it. Idempotent otherwise, so a second click is not an error.
+ */
+export async function archiveCatalogItem(actor: Principal, itemId: string) {
+  authorize(actor, "catalog.item.manage", { kind: "write" });
+  const [item] = await db.select().from(catalogItems).where(eq(catalogItems.id, itemId));
+  if (!item) throw notFound();
+  if (item.archivedAt) return item;
+  const out = await activeLoanCount(db, itemId);
+  if (out > 0) {
+    throw new ApiError(
+      409,
+      "copies_on_loan",
+      `Hiện có ${out} cuốn chưa được trả, chưa thể lưu trữ đầu sách này. Hãy nhận lại sách trước.`,
+    );
+  }
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(catalogItems)
+      .set({ archivedAt: new Date(), updatedAt: new Date(), version: item.version + 1 })
+      .where(and(eq(catalogItems.id, itemId), eq(catalogItems.version, item.version)))
+      .returning();
+    if (!updated) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "catalog.item.archive",
+      targetType: "catalog_item",
+      targetId: itemId,
+      details: { itemCode: item.itemCode, title: item.title },
+    });
+    return updated;
+  });
 }

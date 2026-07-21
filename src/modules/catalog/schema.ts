@@ -17,6 +17,8 @@ export const catalogItems = pgTable("catalog_items", {
   status: text("status", { enum: ["available", "borrowed", "lost", "repair"] })
     .notNull()
     .default("available"),
+  /** Retired from the shelf list. Set = hidden from every read, kept on record. */
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   spaceId: uuid("space_id").notNull().references(() => spaces.id),
   linkedSourceId: uuid("linked_source_id").references(() => sources.id),
   importId: uuid("import_id"),

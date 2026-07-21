@@ -12,7 +12,7 @@ import {
   when,
 } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
-import { CatalogCopiesForm } from "@/app/components/catalog-copies-form";
+import { CatalogArchiveButton, CatalogCopiesForm } from "@/app/components/catalog-copies-form";
 
 // Screen: Catalog Item Detail (`/catalog/:id`) — member view with loan request
 // and the loan record.
@@ -108,7 +108,12 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
           itemId={item.id}
           disabled={item.status === "lost" || item.status === "repair" || item.availableCopies === 0}
         />
-        {user.role === "admin_op" && <CatalogCopiesForm itemId={item.id} copies={item.copies} />}
+        {user.role === "admin_op" && (
+          <>
+            <CatalogCopiesForm itemId={item.id} copies={item.copies} />
+            <CatalogArchiveButton itemId={item.id} />
+          </>
+        )}
       </div>
 
       <section className="panel" aria-labelledby="loan-record-heading">
