@@ -71,6 +71,8 @@ export function ShellSidebar({
     shortcuts.push(
       { href: "/source/inbox", label: T.sourceInbox },
       { href: "/catalog/admin", label: T.librarianDesk },
+      // The health dashboard is its own screen now, so it needs its own way in.
+      { href: "/admin/health", label: T.healthPageTitle },
     );
   }
 

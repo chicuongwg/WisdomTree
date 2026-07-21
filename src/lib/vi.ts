@@ -478,6 +478,42 @@ export const T = {
   targetColumn: "Đối tượng", // NEW
   detailsColumn: "Chi tiết", // NEW
   systemActor: "Hệ thống", // NEW — no actor on the row (a system job)
+  // NEW — System Health screen (`/admin/health`) and the readable audit trail.
+  // The health screen answers what this app knows about ITSELF; the metric
+  // stack the team runs beside it (Prometheus/Grafana/Loki) answers the rest,
+  // which is why background job counts left this page entirely.
+  healthPageTitle: "Sức khoẻ hệ thống", // NEW
+  healthPageIntro:
+    "Những gì chính ứng dụng tự biết về mình. Số liệu vận hành chi tiết nằm ở hệ thống theo dõi riêng.", // NEW
+  healthOpen: "Xem sức khoẻ hệ thống", // NEW
+  healthBackToAdmin: "Về Bảng quản trị", // NEW
+  healthCheckedAt: "Số liệu đọc lúc", // NEW
+  healthUptime: "Thời gian chạy liên tục", // NEW
+  healthUptimeHint: "Tính từ lần khởi động máy chủ gần nhất.", // NEW
+  healthReviewWaiting: "Việc chờ duyệt", // NEW
+  healthReviewWaitingHint: "Hồ sơ đang nằm trong hàng đợi duyệt.", // NEW
+  healthOverdueLoansHint: "Phiếu mượn đã qua hạn trả mà chưa ghi nhận trả sách.", // NEW
+  healthOutboxHint: "Thông báo đã ghi nhận nhưng chưa gửi đi.", // NEW
+  healthDatabaseHint: "Máy chủ có đọc được cơ sở dữ liệu hay không.", // NEW
+  healthLastExportHint: "Lần đưa cây tri thức ra bản xuất bản gần nhất.", // NEW
+  healthBackupHint: "Bản sao lưu dữ liệu gần nhất.", // NEW
+  healthDegradedHint: "Thành phần thiếu hoặc chạy ở chế độ hạn chế.", // NEW
+  // The service names a degraded component in English for the operator log;
+  // on screen the reader gets the consequence in their own language.
+  healthPandocMissing: "Chưa cài pandoc: tệp xuất ra là bản HTML đơn giản, không phải docx/pdf.", // NEW
+  healthPdfEngineMissing: "Chưa có bộ tạo PDF: bản xuất PDF là bản HTML đơn giản.", // NEW
+  healthAllWell: "Mọi thứ đang bình thường", // NEW
+  healthNeedsAttention: "Có mục cần xem lại", // NEW
+  auditOpenTarget: "Mở", // NEW — the link text is the object's own name; this is its aria hint
+  auditNoDetails: "Không có chi tiết", // NEW
+  auditBefore: "Trước khi đổi", // NEW — a payload that recorded only the old value
+  auditAfter: "Sau khi đổi", // NEW — a payload that recorded only the new value
+  auditChange: "Thay đổi", // NEW — a details payload that records only an old and a new value
+  auditChangeFromTo: "từ", // NEW — "từ X sang Y", built in audit-log.tsx
+  auditChangeTo: "sang", // NEW
+  auditEmptyValue: "để trống", // NEW
+  auditYes: "có", // NEW
+  auditNo: "không", // NEW
   loadMore: "Tải thêm", // NEW
   // Team spaces and membership admin (NEW — not yet in vocabulary-vi.md)
   spaceCreated: "Đã tạo kho.", // NEW
@@ -766,6 +802,181 @@ export const userRoleLabel = (v: string | null | undefined): string =>
   guarded(roleLabel, "roleLabel", v, FALLBACK.role);
 export const notifyChannelLabel = (v: string | null | undefined): string =>
   guarded(channelLabel, "channelLabel", v, FALLBACK.channel);
+
+// ---------------------------------------------------------------------------
+// NEW — the audit trail in words.
+//
+// Every module records a dotted key (`task.update`, `loan.approve`) because
+// that is what the guards and the docs call the event. A reader of Nhật ký hệ
+// thống is a humanities researcher, not an operator, so the dotted key never
+// reaches the screen: this is where it becomes a Vietnamese phrase. The keys
+// below are the complete set recorded under src/modules as of 2026-07-21;
+// anything added later falls through to `FALLBACK.action`, which is neutral
+// Vietnamese and warns in development so the gap gets closed.
+// ---------------------------------------------------------------------------
+
+/** Audit action key → what a person did, said as a phrase. */
+export const auditActionLabel: Record<string, string> = {
+  // auth
+  "user.invite": "Mời thành viên", // NEW
+  "user.role.change": "Đổi vai trò thành viên", // NEW
+  "user.oidc.bind": "Liên kết tài khoản đăng nhập", // NEW
+  "user.profile.update": "Sửa hồ sơ cá nhân", // NEW
+  "user.avatar.set": "Đổi ảnh đại diện", // NEW
+  "calendar.token.regenerate": "Tạo lại đường dẫn lịch", // NEW
+  "notification.preferences.update": "Đổi cài đặt nhận thông báo", // NEW
+  // storage — sources, spaces, folders
+  "source.upload": "Gửi tư liệu mới", // NEW
+  "source.version.add": "Thêm bản mới cho tư liệu", // NEW
+  "source.rename": "Đổi tên tư liệu", // NEW
+  "source.move": "Chuyển tư liệu sang thư mục khác", // NEW
+  "source.withdraw": "Rút tư liệu khỏi kho", // NEW
+  "source.restore": "Khôi phục tư liệu", // NEW
+  "space.create": "Tạo kho", // NEW
+  "space.member.add": "Thêm thành viên vào kho", // NEW
+  "space.member.remove": "Bỏ thành viên khỏi kho", // NEW
+  "folder.create": "Tạo thư mục", // NEW
+  "folder.rename": "Đổi tên thư mục", // NEW
+  "folder.delete": "Xoá thư mục", // NEW
+  // storage — curation
+  "source.nominate": "Đề cử tư liệu đưa vào hiệu đính", // NEW
+  "source.assign": "Giao việc hiệu đính", // NEW
+  "corrected_text.append": "Ghi thêm phần văn bản đã hiệu đính", // NEW
+  "draft.save": "Lưu bản thảo", // NEW
+  "curation.ready_for_review": "Trình bản thảo để duyệt", // NEW
+  "curation.approve": "Nhận duyệt bản thảo", // NEW
+  "curation.reject": "Trả lại bản thảo", // NEW
+  "node.publish": "Xuất bản tư liệu lên cây tri thức", // NEW
+  "gap.submit": "Gửi đề xuất bổ sung", // NEW
+  // knowledge
+  "branch.create": "Tạo nhánh tri thức", // NEW
+  "branch.update": "Sửa nhánh tri thức", // NEW
+  "branch.archive": "Lưu trữ nhánh tri thức", // NEW
+  "node.create": "Tạo trang tri thức", // NEW
+  "node.update": "Sửa trang tri thức", // NEW
+  "node.archive": "Lưu trữ trang tri thức", // NEW
+  "node.merge": "Gộp trang tri thức", // NEW
+  "node.verification.change": "Đổi mức thẩm định của trang", // NEW
+  "node.verification.downgrade": "Hạ mức thẩm định của trang", // NEW
+  // pm
+  "task.create": "Tạo công việc", // NEW
+  "task.update": "Sửa công việc", // NEW
+  "task.claim": "Nhận công việc", // NEW
+  "task.archive": "Lưu trữ công việc", // NEW
+  "deadline.create": "Tạo hạn chót", // NEW
+  "deadline.update": "Sửa hạn chót", // NEW
+  "achievement.log": "Ghi nhận thành quả", // NEW
+  // catalog + circulation
+  "catalog.item.create": "Thêm đầu sách", // NEW
+  "catalog.item.update": "Sửa đầu sách", // NEW
+  "loan.request": "Yêu cầu mượn sách", // NEW
+  "loan.approve": "Duyệt phiếu mượn", // NEW
+  "loan.decline": "Từ chối phiếu mượn", // NEW
+  "loan.borrow": "Giao sách cho người mượn", // NEW
+  "loan.return": "Ghi nhận trả sách", // NEW
+  // notify + export
+  "comment.create": "Viết thảo luận", // NEW
+  "export.trigger": "Chạy xuất dữ liệu", // NEW
+};
+
+/** Audit target type → the kind of thing the row is about. */
+export const auditTargetLabel: Record<string, string> = {
+  user: "Thành viên", // NEW
+  space: "Kho", // NEW
+  folder: "Thư mục", // NEW
+  source: "Tư liệu", // NEW
+  source_version: "Bản tư liệu", // NEW
+  markdown_draft: "Bản thảo", // NEW
+  tree_node: "Trang tri thức", // NEW
+  branch: "Nhánh tri thức", // NEW
+  branch_gap_request: "Đề xuất bổ sung", // NEW
+  task: "Công việc", // NEW
+  deadline: "Hạn chót", // NEW
+  achievement: "Thành quả", // NEW
+  comment: "Thảo luận", // NEW
+  catalog_item: "Đầu sách", // NEW
+  loan_ticket: "Phiếu mượn", // NEW
+  export_job: "Lượt xuất dữ liệu", // NEW
+};
+
+/** A key inside an audit row's details → the name of that fact in Vietnamese. */
+export const auditFieldLabel: Record<string, string> = {
+  title: "Tiêu đề", // NEW
+  name: "Tên", // NEW
+  filename: "Tên tệp", // NEW
+  email: "Địa chỉ email", // NEW
+  role: "Vai trò", // NEW
+  state: "Trạng thái", // NEW
+  assignedTo: "Người phụ trách", // NEW
+  assigneeId: "Người được giao", // NEW
+  userId: "Thành viên", // NEW
+  mentions: "Người được nhắc đến", // NEW
+  dueAt: "Hạn hoàn thành", // NEW
+  startAt: "Bắt đầu làm", // NEW
+  notes: "Ghi chú", // NEW
+  copies: "Số bản", // NEW
+  itemCode: "Mã đầu sách", // NEW
+  itemId: "Đầu sách", // NEW
+  scope: "Phạm vi", // NEW
+  seq: "Lần hiệu đính thứ", // NEW
+  version: "Phiên bản", // NEW
+  verification: "Mức thẩm định", // NEW
+  contentChanged: "Nội dung có thay đổi", // NEW
+  excerptChunkIds: "Đoạn trích dẫn", // NEW
+  anchorType: "Gắn với", // NEW
+  anchorId: "Mã đối tượng được gắn", // NEW
+  prefs: "Cài đặt nhận thông báo", // NEW
+  branchId: "Nhánh tri thức", // NEW
+  canonicalNodeId: "Trang được gộp vào", // NEW
+  spaceId: "Kho", // NEW
+  parentId: "Thư mục cha", // NEW
+  sourceId: "Tư liệu", // NEW
+  sourceVersionId: "Bản tư liệu", // NEW
+  versionId: "Bản tư liệu", // NEW
+  promotionId: "Lượt xuất bản", // NEW
+  from: "Trước", // NEW
+  to: "Sau", // NEW
+};
+
+/**
+ * Enum values that appear INSIDE details, in one table — a details value is a
+ * bare string with no column to say which enum it came from, so the lookup is
+ * by value. The words are copied from the state maps above; where two enums
+ * share a value (`archived`, `rejected`) they already share a Vietnamese word,
+ * so the merge loses nothing.
+ */
+export const auditValueLabel: Record<string, string> = {
+  ...taskStateLabel,
+  ...loanStateLabel,
+  ...verificationLabel,
+  ...roleLabel,
+  ...auditTargetLabel, // anchorType and targetType-shaped values
+  edited: "đã sửa", // NEW — task.update records only that the note changed
+  full_tree: "toàn bộ cây tri thức", // NEW — export scope
+};
+
+/** Export job state → a word, for the health screen's last-export row. */
+export const exportStateLabel: Record<string, string> = {
+  queued: "Đang chờ", // NEW
+  running: "Đang chạy", // NEW
+  succeeded: "Thành công", // NEW
+  failed: "Thất bại", // NEW
+};
+
+const AUDIT_FALLBACK = {
+  action: "Thao tác khác", // NEW
+  target: "Đối tượng khác", // NEW
+  field: "Thông tin khác", // NEW
+} as const;
+
+export const actionLabel = (v: string | null | undefined): string =>
+  guarded(auditActionLabel, "auditActionLabel", v, AUDIT_FALLBACK.action);
+export const targetKindLabel = (v: string | null | undefined): string =>
+  guarded(auditTargetLabel, "auditTargetLabel", v, AUDIT_FALLBACK.target);
+export const detailFieldLabel = (v: string | null | undefined): string =>
+  guarded(auditFieldLabel, "auditFieldLabel", v, AUDIT_FALLBACK.field);
+export const exportJobStateLabel = (v: string | null | undefined): string =>
+  guarded(exportStateLabel, "exportStateLabel", v, FALLBACK.state);
 
 // ---------------------------------------------------------------------------
 // Dates. `toLocaleString("vi-VN")` with no options prints seconds — every row

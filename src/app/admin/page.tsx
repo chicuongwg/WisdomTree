@@ -1,9 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { T, when } from "@/lib/vi";
+import { T } from "@/lib/vi";
 import { listAllMembers, listMemberSpaces } from "@/modules/storage/service";
 import { listAuditEvents, listUsers } from "@/modules/auth/admin";
-import { databaseReachable, healthReport } from "@/modules/export/service";
 import { SpaceAdmin } from "@/app/components/space-admin";
 import { UserAdmin } from "@/app/components/user-admin";
 import { AuditLog, type AuditRow } from "@/app/components/audit-log";
@@ -18,13 +18,11 @@ export default async function AdminPage() {
 
   const actor = toPrincipal(user);
   // listMemberSpaces: Admin/Op is unscoped, so this is every space.
-  const [spaces, allMembers, accounts, audit, health, dbOk] = await Promise.all([
+  const [spaces, allMembers, accounts, audit] = await Promise.all([
     listMemberSpaces(actor),
     listAllMembers(actor),
     listUsers(actor),
     listAuditEvents(actor, { limit: 50 }),
-    healthReport(actor),
-    databaseReachable(),
   ]);
 
   const auditRows: AuditRow[] = audit.map((r) => ({
@@ -57,95 +55,15 @@ export default async function AdminPage() {
         <AuditLog initial={auditRows} />
       </section>
 
+      {/* Health moved to a page of its own (`/admin/health`), laid out as a
+          dashboard. The console keeps the doorway so the section is still
+          found where readers learned to look for it. */}
       <section className="panel">
         <h2>{T.healthHeading}</h2>
-        <div className="record-scroll">
-          <table className="list">
-            <tbody>
-              <tr>
-                <th scope="row">{T.healthDatabase}</th>
-                <td>
-                  {dbOk ? (
-                    <span className="badge tone-done">{T.healthDbOk}</span>
-                  ) : (
-                    <span className="badge tone-attention">{T.healthDbDown}</span>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">{T.healthJobs}</th>
-                <td>
-                  {Object.keys(health.jobCounts).length === 0 ? (
-                    <span className="muted">{T.healthJobsEmpty}</span>
-                  ) : (
-                    // The raw jobType/state keys stay: an operator surface,
-                    // same rule as the audit trail's action column.
-                    Object.entries(health.jobCounts).map(([jobType, states]) => (
-                      <div key={jobType}>
-                        <code className="muted">{jobType}</code>{" "}
-                        {Object.entries(states)
-                          .map(([state, n]) => `${state}: ${n}`)
-                          .join(" · ")}
-                      </div>
-                    ))
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">{T.healthOverdueLoans}</th>
-                <td>{health.overdueLoanCount}</td>
-              </tr>
-              <tr>
-                <th scope="row">{T.healthOutbox}</th>
-                <td>{health.outboxUndispatchedCount}</td>
-              </tr>
-              <tr>
-                <th scope="row">{T.healthLastExport}</th>
-                <td>
-                  {health.lastExport ? (
-                    <>
-                      <code className="muted">{health.lastExport.state}</code> · {when(health.lastExport.updatedAt)}
-                      {health.lastExport.commitSha && (
-                        <>
-                          {" "}
-                          · <code className="muted">{health.lastExport.commitSha.slice(0, 12)}</code>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <span className="muted">{T.healthNoExport}</span>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">{T.healthBackup}</th>
-                <td>
-                  {health.backupStatus === "not_configured" ? (
-                    <span className="muted">{T.healthBackupNotConfigured}</span>
-                  ) : (
-                    <>
-                      <code className="muted">{health.backupStatus}</code> · {when(health.lastBackupAt)}
-                    </>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">{T.healthDegraded}</th>
-                <td>
-                  {health.degradedComponents.length === 0 ? (
-                    <span className="muted">{T.healthNone}</span>
-                  ) : (
-                    health.degradedComponents.map((c) => (
-                      <div key={c}>
-                        <code className="muted">{c}</code>
-                      </div>
-                    ))
-                  )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p className="muted">{T.healthPageIntro}</p>
+        <p>
+          <Link href="/admin/health">{T.healthOpen}</Link>
+        </p>
       </section>
     </main>
   );

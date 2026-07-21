@@ -70,6 +70,7 @@ export function CommandPalette({ role }: { role: string }) {
       { key: "inbox", label: T.sourceInbox, hint: T.paletteHintGo, href: "/source/inbox" },
       { key: "desk", label: T.librarianDesk, hint: T.paletteHintGo, href: "/catalog/admin" },
       { key: "admin", label: T.adminConsole, hint: T.paletteHintGo, href: "/admin" },
+      { key: "health", label: T.healthPageTitle, hint: T.paletteHintGo, href: "/admin/health" },
     );
   }
 

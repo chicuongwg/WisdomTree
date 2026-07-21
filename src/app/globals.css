@@ -2407,3 +2407,47 @@ button.login-person:hover .login-person-role { color: inherit; }
 /* The quantity box holds two digits and a spinner, nothing more; left at
    full width it reads as though a paragraph belongs in it. */
 .copies-input { max-width: 7rem; }
+
+/* ------------------------------------------------------------------
+   System Health (`/admin/health`) — a board of readings.
+
+   Each card answers one question and says why it matters underneath, so
+   the page can be read by someone who does not know what an outbox is.
+   The number is the largest thing in the card because the number is what
+   is being checked; the tone only reinforces it, and the card always
+   prints its state in words, as every badge here does.
+   ------------------------------------------------------------------ */
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+.health-card { gap: var(--space-2); }
+.health-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.health-value {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+.health-value.tone-ok { color: var(--color-canopy-deep); }
+.health-value.tone-warn { color: var(--color-amber); }
+.health-hint { font-size: 0.8rem; }
+/* A second fact under the headline value — a timestamp, one degraded
+   component per line — set back at reading size. */
+.health-line {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* The audit trail reads as prose now, not as a payload: one fact per line,
+   and the object's kind sits under its name in the smaller size so the name
+   is what the eye lands on. */
+.audit-detail { line-height: 1.5; }
+.audit-detail + .audit-detail { margin-top: var(--space-1); }
+.audit-kind { font-size: 0.8rem; }
