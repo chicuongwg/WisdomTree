@@ -67,7 +67,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
             members={await listMentionCandidates("tree_node", node.id)}
           />
         </div>
-        <aside>
+        <div>
           <div className="panel">
             <h2>{T.provenance}</h2>
             {node.provenance.length === 0 ? (
@@ -137,7 +137,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           {isAdmin && node.verification !== "archived" && (
             <NodeAdminActions nodeId={node.id} candidates={candidates} />
           )}
-        </aside>
+        </div>
       </div>
     </main>
   );

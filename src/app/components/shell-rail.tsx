@@ -14,6 +14,8 @@ type RailItem = {
   label: string;
   icon: ReactNode;
   pip?: number;
+  /** What the pip counts, in words. "3 chưa đọc" is wrong for a review queue. */
+  pipNoun?: string;
   /** extra path prefixes that light this item up */
   also?: string[];
   /**
@@ -175,7 +177,13 @@ export function ShellRail({
     { href: "/deadlines", label: T.deadline, icon: icons.deadlines, group: T.navProjects },
   ];
   if (role === "admin_op") {
-    items.push({ href: "/review", label: T.reviewQueue, icon: icons.review, pip: reviewOpen });
+    items.push({
+      href: "/review",
+      label: T.reviewQueue,
+      icon: icons.review,
+      pip: reviewOpen,
+      pipNoun: T.pipOpenTasks,
+    });
     items.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
   }
   items.push({ href: "/notifications", label: T.notificationCenter, icon: icons.bell, pip: unread });
@@ -202,7 +210,11 @@ export function ShellRail({
           href={item.href}
           className="rail-btn"
           title={name}
-          aria-label={item.pip ? `${name} (${item.pip} ${T.unread.toLowerCase()})` : name}
+          aria-label={
+            item.pip
+              ? `${name} (${item.pip} ${(item.pipNoun ?? T.unread).toLowerCase()})`
+              : name
+          }
           aria-current={isActive(item) ? "page" : undefined}
         >
           {item.icon}

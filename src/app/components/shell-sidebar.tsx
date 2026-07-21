@@ -77,7 +77,12 @@ export function ShellSidebar({
   }
 
   return (
-    <aside className="sidebar">
+    /* Named, because it is a landmark: a screen reader listing the regions of
+       the page would otherwise offer "complementary" with nothing to say which
+       one it is. (The five unnamed <aside>s on the detail screens went the
+       other way — they became plain <div>s. A region with no name worth giving
+       it is not a region.) */
+    <aside className="sidebar" aria-label={T.navPanel}>
       <div className="side-head">
         <div className="space-name">{T.appName}</div>
         <div className="space-sub">

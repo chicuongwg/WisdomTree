@@ -58,6 +58,11 @@ export function NotificationLink({
       }}
     >
       {children}
+      {/* On the home panel an unread row is a vermilion bar and bolder text and
+          nothing else — the /notifications table has a state column, this list
+          has no column to put one in. So the word rides along inside the link,
+          for a reader who gets neither the bar nor the weight. */}
+      {unread && <span className="sr-only"> — {T.unread}</span>}
     </Link>
   );
 }

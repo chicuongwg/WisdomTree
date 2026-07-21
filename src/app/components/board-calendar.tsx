@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { badgeClass, T, taskStateLabel, weekdayShort } from "@/lib/vi";
+import { badgeClass, T, taskLabel, taskStateLabel, weekdayShort } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
 
 // The board's two calendar shapes — a month grid and a week grid — over the
@@ -97,6 +97,13 @@ function TaskChip({ task, taskHref }: { task: Schedule["tasks"][number]; taskHre
       href={taskHref(task.id)}
       className={`${badgeClass(taskStateLabel, task.state)} cal-chip`}
       title={`${task.title} — ${task.assigneeName ?? T.noAssignee}`}
+      /* The chip's state rides on the badge tone, and its holder on a single
+         initial — neither of which a screen reader can make anything of. Said
+         in full here, so the name is the whole row: what it is, what state it
+         is in, whose it is. */
+      aria-label={`${T.taskType}: ${task.title} — ${taskLabel(task.state)} — ${
+        task.assigneeName ?? T.noAssignee
+      }`}
     >
       <span className="cal-chip-text">{task.title}</span>
       <span className="cal-chip-who">{initial}</span>
@@ -106,9 +113,15 @@ function TaskChip({ task, taskHref }: { task: Schedule["tasks"][number]; taskHre
 
 function DeadlineChip({ deadline }: { deadline: Schedule["deadlines"][number] }) {
   // Deadlines are not tasks and must not read as one: a left bar and the flag
-  // mark carry it without relying on hue alone.
+  // mark carry it for the eye. Neither reaches a screen reader — the flag is
+  // aria-hidden, as a decorative glyph should be — so the word "Hạn chót"
+  // carries it there, or a deadline and a task announce identically.
   return (
-    <span className="badge cal-chip cal-chip-deadline" title={deadline.title}>
+    <span
+      className="badge cal-chip cal-chip-deadline"
+      title={deadline.title}
+      aria-label={`${T.deadline}: ${deadline.title}`}
+    >
       <span aria-hidden="true">⚑</span>
       <span className="cal-chip-text">{deadline.title}</span>
     </span>

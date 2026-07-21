@@ -104,12 +104,12 @@ export default async function DeadlinesPage({
           )}
         </div>
 
-        <aside>
+        <div>
           <div className="panel">
             <h2>{T.createDeadline}</h2>
             <DeadlineForm spaces={teamSpaces} />
           </div>
-        </aside>
+        </div>
       </div>
     </main>
   );

@@ -119,7 +119,7 @@ export default async function AdminSourceDetailPage({
             <p className="muted">Chưa có bản thảo.</p>
           )}
         </div>
-        <aside>
+        <div>
           <CurationAdminActions
             sourceId={wb.source.id}
             versionId={wb.version.id}
@@ -129,7 +129,7 @@ export default async function AdminSourceDetailPage({
               !!wb.curation && ["under_correction", "ready_for_review"].includes(wb.curation.state)
             }
           />
-        </aside>
+        </div>
       </div>
     </main>
   );

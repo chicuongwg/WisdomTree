@@ -69,7 +69,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
             members={await listMentionCandidates("deadline", deadline.id)}
           />
         </div>
-        <aside>
+        <div>
           <div className="panel">
             <h2>{T.editDeadline}</h2>
             <DeadlineForm
@@ -85,7 +85,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
               }}
             />
           </div>
-        </aside>
+        </div>
       </div>
     </main>
   );

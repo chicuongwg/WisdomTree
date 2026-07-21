@@ -213,11 +213,17 @@ export const T = {
   newComment: "Viết thảo luận mới", // NEW
   reply: "Trả lời", // NEW
   commentsEmpty: "Chưa có thảo luận nào. Hãy là người mở đầu.", // NEW
+  commentPosted: "Đã gửi thảo luận.", // NEW
   // A thread that would not load says so, and offers the way out.
   commentsLoadFailed: "Không tải được thảo luận.", // NEW
   retry: "Thử lại", // NEW
   // Mentions are typed into the comment itself; the picker is gone.
   mentionHelp: "Gõ @ rồi tên thành viên (ví dụ @Phạm Thu Hương) để nhắc họ vào thảo luận này.", // NEW
+  // Announced when the name list opens — a textbox cannot carry aria-expanded,
+  // so this sentence is how a reader who cannot see the list learns it is
+  // there and how to move through it.
+  mentionMatches: (n: number) =>
+    `${n} tên khớp. Dùng phím mũi tên để chọn, Enter để chèn.`, // NEW
   notificationCenter: "Thông báo", // NEW
   markRead: "Đánh dấu đã đọc", // NEW
   unread: "Chưa đọc", // NEW
@@ -281,6 +287,9 @@ export const T = {
   recent: "Gần đây", // NEW
   shortcuts: "Lối tắt", // NEW
   themeToggle: "Đổi giao diện sáng/tối", // NEW
+  // The rail's review pip counts open review tasks, not unread anything. It
+  // was announcing "Hàng chờ duyệt (3 chưa đọc)".
+  pipOpenTasks: "việc đang chờ", // NEW
   // The theme button is a toggle, so its accessible name is the thing being
   // switched on ("dark theme, on/off"), not the act.
   darkTheme: "Giao diện tối", // NEW
@@ -291,6 +300,7 @@ export const T = {
   paletteHintGo: "mở nhanh", // NEW
   yourSpaces: "không gian", // NEW
   modules: "Mô-đun", // NEW
+  navPanel: "Bảng điều hướng", // NEW
   // Knowledge graph / wiki-links — NEW pending humanities review
   graph: "Bản đồ tri thức", // NEW
   graphIntro: "Mỗi chấm là một trang tri thức, mỗi đường là một liên kết giữa hai trang.", // NEW
@@ -324,7 +334,10 @@ export const T = {
   graphPinnedOne: "Đã ghim tại chỗ", // NEW
   graphUnpinned: "Đã bỏ ghim", // NEW
   graphHelp: "Kéo một chấm để ghim nó vào chỗ mới. Giữ Ctrl và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
-  graphKeyboardHelp: "Bàn phím: Tab để đi giữa các trang, Enter để mở, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
+  // The map is one tab stop; the arrows move between marks inside it. Saying
+  // "Tab để đi giữa các trang" was both wrong and a promise of two hundred
+  // presses of it.
+  graphKeyboardHelp: "Bàn phím: Tab để vào bản đồ, các phím mũi tên để đi giữa các trang, Enter để mở, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
   graphMotionOff: "Bản đồ đang đứng yên theo thiết lập giảm chuyển động của máy bạn.", // NEW
   graphZoomGroup: "Thu phóng bản đồ", // NEW
   graphTouchHelp:

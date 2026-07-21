@@ -63,7 +63,7 @@ export default async function AssignedSourceTaskPage({
             readOnly={readOnly}
           />
         </div>
-        <aside>
+        <div>
           <div className="panel">
             <RawChunks chunks={wb.chunks} empty="Chưa có văn bản trích xuất cho tư liệu này." />
           </div>
@@ -74,7 +74,7 @@ export default async function AssignedSourceTaskPage({
               cho Quản trị/Vận hành duyệt xuất bản.
             </p>
           </div>
-        </aside>
+        </div>
       </div>
     </main>
   );

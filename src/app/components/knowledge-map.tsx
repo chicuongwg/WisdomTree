@@ -665,6 +665,19 @@ export function KnowledgeMap({
     [onPeek],
   );
 
+  /**
+   * Focus does what hover does, and additionally moves the map's single tab
+   * stop to the mark that now has it — so leaving the map and coming back
+   * returns to where the reader was, not to the first mark in the layout.
+   */
+  const onNodeFocus = useCallback(
+    (e: React.FocusEvent<SVGGElement>) => {
+      setActiveId(nodeId(e));
+      onPeek(nodeId(e), e.currentTarget);
+    },
+    [onPeek],
+  );
+
   const onBackgroundPointerDown = (e: React.PointerEvent<SVGRectElement>) => {
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -700,6 +713,31 @@ export function KnowledgeMap({
     }
   };
 
+  /**
+   * The map is one tab stop, not one per mark.
+   *
+   * Every visible mark used to carry tabIndex={0}, so a two-hundred-page map
+   * was two hundred presses of Tab between the toolbar above it and the help
+   * text below — with no way past except the browser's address bar. That is
+   * the shape of a keyboard trap even though nothing technically traps.
+   *
+   * So: one mark in the tab order, arrows move between marks, Home and End
+   * reach the ends. The same pattern a listbox or a toolbar uses, and the
+   * reason the arrow keys were free to take it is that the surface pans with
+   * the pointer, never with the keyboard.
+   */
+  const [activeId, setActiveId] = useState<string | null>(null);
+  // The remembered mark can be filtered away; fall back to the first visible
+  // one so the map never ends up with no tab stop at all.
+  const tabStopId = view.visible.some((n) => n.id === activeId)
+    ? activeId
+    : view.visible[0]?.id ?? null;
+
+  const focusMark = useCallback((id: string) => {
+    setActiveId(id);
+    nodeEls.current.get(id)?.focus();
+  }, []);
+
   const onMarkKeyDown = useCallback(
     (e: React.KeyboardEvent<SVGGElement>) => {
       const id = nodeId(e);
@@ -712,6 +750,28 @@ export function KnowledgeMap({
         onLeave();
         return;
       }
+      const order = view.visible;
+      const here = order.findIndex((n) => n.id === id);
+      const step =
+        e.key === "ArrowRight" || e.key === "ArrowDown"
+          ? 1
+          : e.key === "ArrowLeft" || e.key === "ArrowUp"
+            ? -1
+            : 0;
+      if (step !== 0 && here !== -1) {
+        e.preventDefault();
+        // Wraps, so the last mark leads back to the first rather than into a
+        // dead end the reader has to guess their way out of.
+        const next = order[(here + step + order.length) % order.length];
+        if (next) focusMark(next.id);
+        return;
+      }
+      if (e.key === "Home" || e.key === "End") {
+        e.preventDefault();
+        const edge = e.key === "Home" ? order[0] : order[order.length - 1];
+        if (edge) focusMark(edge.id);
+        return;
+      }
       if (e.key === "p" || e.key === "P") {
         e.preventDefault();
         const was = pinnedRef.current.has(id);
@@ -719,7 +779,7 @@ export function KnowledgeMap({
         setAnnounce(was ? T.graphUnpinned : T.graphPinnedOne);
       }
     },
-    [onLeave, open, pinNode],
+    [focusMark, onLeave, open, pinNode, view.visible],
   );
 
   if (nodes.length === 0) return <p className="muted">{T.graphEmpty}</p>;
@@ -898,7 +958,7 @@ export function KnowledgeMap({
                     (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
                   }`}
                   role="link"
-                  tabIndex={0}
+                  tabIndex={n.id === tabStopId ? 0 : -1}
                   aria-label={label}
                   aria-describedby={peek?.id === n.id ? cardId : undefined}
                   transform={`translate(${at.x}, ${at.y})`}
@@ -909,7 +969,7 @@ export function KnowledgeMap({
                   onKeyDown={onMarkKeyDown}
                   onMouseEnter={onNodeEnter}
                   onMouseLeave={onLeave}
-                  onFocus={onNodeEnter}
+                  onFocus={onNodeFocus}
                   onBlur={onLeave}
                 >
                   {/* The seal ring: a pinned mark is stamped in place. */}

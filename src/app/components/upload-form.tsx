@@ -108,8 +108,14 @@ export function UploadProgressLine({ progress }: { progress: UploadProgress }) {
   return (
     <div className="upload-progress">
       {/* <progress> with no value renders the platform's indeterminate bar,
-          which is exactly right while lengthComputable is false. */}
-      <progress {...(progress.percent === null ? {} : { value: progress.percent, max: 100 })} />
+          which is exactly right while lengthComputable is false.
+          The name says which file: the sentence beside the bar is a sibling,
+          so without this the bar announces as an unnamed progress indicator
+          during an upload of six things. */}
+      <progress
+        aria-label={`${T.uploadSendingPrefix} ${progress.index}/${progress.total}: ${progress.name}`}
+        {...(progress.percent === null ? {} : { value: progress.percent, max: 100 })}
+      />
       <span className="muted">
         {`${T.uploadSendingPrefix} ${progress.index}/${progress.total}: ${progress.name}`}
         {progress.percent === null

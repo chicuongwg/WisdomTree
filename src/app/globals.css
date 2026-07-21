@@ -950,19 +950,23 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
   max-width: 34rem;
 }
 .mention-list li + li { margin-top: 1px; }
-button.mention-option {
+/* The row is the option (an <li>), not a button inside one — an option may not
+   contain a focusable element, and the keyboard drives this list from the
+   textarea. So it keeps the button's shape and gains the pointer that says it
+   can be clicked. */
+.mention-option {
   display: flex;
   width: 100%;
   justify-content: flex-start;
+  align-items: center;
   min-height: 2.25rem;
   padding: 0.25rem var(--space-3);
-  background: none;
-  border: none;
   border-radius: var(--radius);
   color: var(--color-ink);
   font-weight: 400;
+  cursor: pointer;
 }
-button.mention-option:hover, button.mention-option.sel {
+.mention-option:hover, .mention-option.sel {
   background: var(--color-canopy-wash);
   border-color: transparent;
   color: var(--color-canopy-deep);

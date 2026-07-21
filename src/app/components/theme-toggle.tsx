@@ -54,7 +54,11 @@ export function ThemeToggle() {
       className="rail-btn"
       onClick={toggle}
       title={T.themeToggle}
-      aria-label={T.darkTheme}
+      /* The same words the tooltip shows. They differed — tooltip "Đổi giao
+         diện sáng/tối", name "Giao diện tối" — and a name that does not contain
+         its own visible label is a control a voice user cannot ask for by the
+         only words they can see (WCAG 2.5.3). */
+      aria-label={T.themeToggle}
       aria-pressed={dark}
     >
       {dark ? (

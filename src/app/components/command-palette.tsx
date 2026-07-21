@@ -209,9 +209,14 @@ export function CommandPalette({ role }: { role: string }) {
           }
         }}
       />
-      {/* Outside the listbox: a status line is not one of its options. */}
-      {busy && <p className="pal-empty">{T.paletteSearching}</p>}
-      {!busy && q && results.length === 0 && <p className="pal-empty">{T.paletteNoResults}</p>}
+      {/* Outside the listbox: a status line is not one of its options. It is a
+          live region because focus never leaves the input — without one, a
+          reader who cannot see the list is told nothing when it empties or
+          when the search is still running. */}
+      <div role="status" aria-live="polite">
+        {busy && <p className="pal-empty">{T.paletteSearching}</p>}
+        {!busy && q && results.length === 0 && <p className="pal-empty">{T.paletteNoResults}</p>}
+      </div>
       <div className="pal-list" id={listId} role="listbox">
         {results.map((entry, i) => (
           <button
@@ -220,6 +225,11 @@ export function CommandPalette({ role }: { role: string }) {
             type="button"
             role="option"
             aria-selected={i === sel}
+            /* Out of the tab order: the input owns the keyboard here and
+               points at the chosen row with aria-activedescendant. Left
+               tabbable, Tab walked every result and DOM focus drifted away
+               from the row aria-selected was naming. Still clickable. */
+            tabIndex={-1}
             ref={(el) => {
               if (el) rowRefs.current.set(entry.key, el);
               else rowRefs.current.delete(entry.key);

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { T, when } from "@/lib/vi";
 import { foldName } from "@/lib/mention-fold";
+import { Say } from "./say";
 
 // The ONE comment block (docs/system/notifications.md § Comments): anchored
 // discussion reused verbatim on Node Detail, Stored Item Detail and Deadline
@@ -41,6 +42,7 @@ export function CommentsSection({
   members?: Array<{ id: string; displayName: string }>;
 }) {
   const [comments, setComments] = useState<CommentRow[] | null>(null);
+  const [posted, setPosted] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<CommentRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -140,6 +142,7 @@ export function CommentsSection({
     if (!body.trim()) return;
     setBusy(true);
     setError(null);
+    setPosted(null);
     let res: Response;
     try {
       res = await fetch("/api/comments", {
@@ -168,6 +171,7 @@ export function CommentsSection({
     setBody("");
     setReplyTo(null);
     setBusy(false);
+    setPosted(T.commentPosted);
     await load();
   }
 
@@ -332,8 +336,13 @@ export function CommentsSection({
             rows={3}
             required
             aria-describedby={`${fieldId}-help`}
-            role="combobox"
-            aria-expanded={mention !== null && matches.length > 0}
+            /* No role="combobox" here. ARIA 1.2 only allows that role on a
+               single-line text input, and this is a textarea — the paragraph
+               being written is the point. A textbox may still own a list and
+               point into it, which is what aria-controls and
+               aria-activedescendant below do; how many names are on offer is
+               announced by the live region under the list, since aria-expanded
+               is not a thing a textbox can say. */
             aria-controls={`${fieldId}-mentions`}
             aria-activedescendant={
               mention !== null && matches.length > 0 ? `${fieldId}-m${pick}` : undefined
@@ -342,28 +351,43 @@ export function CommentsSection({
           {mention !== null && matches.length > 0 && (
             <ul className="mention-list" id={`${fieldId}-mentions`} role="listbox">
               {matches.map((m, i) => (
-                <li key={m.id} id={`${fieldId}-m${i}`} role="option" aria-selected={i === pick}>
-                  <button
-                    type="button"
-                    className={`mention-option${i === pick ? " sel" : ""}`}
-                    // onMouseDown, not onClick: the textarea's blur closes the
-                    // list, and blur lands first.
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      choose(m.displayName);
-                    }}
-                  >
-                    {m.displayName}
-                  </button>
+                /* The option IS the row. There used to be a <button> inside it,
+                   which put every suggestion in the tab order and broke the
+                   aria-activedescendant the textarea points with — an option
+                   may not contain a focusable element. The keyboard never
+                   needed it: arrows and Enter are handled on the textarea. */
+                <li
+                  key={m.id}
+                  id={`${fieldId}-m${i}`}
+                  role="option"
+                  aria-selected={i === pick}
+                  className={`mention-option${i === pick ? " sel" : ""}`}
+                  // onMouseDown, not onClick: the textarea's blur closes the
+                  // list, and blur lands first.
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    choose(m.displayName);
+                  }}
+                >
+                  {m.displayName}
                 </li>
               ))}
             </ul>
           )}
+          {/* What the list did with what was typed, for a reader who cannot
+              see it appear. Off the same state, so it cannot disagree. */}
+          <p role="status" aria-live="polite" className="sr-only">
+            {mention !== null && matches.length > 0 ? T.mentionMatches(matches.length) : ""}
+          </p>
           <p id={`${fieldId}-help`} className="meta">
             {T.mentionHelp}
           </p>
         </div>
-        {error && <p className="error-text">{error}</p>}
+        {/* Every other form in the app answers through <Say>; this one painted
+            its failure and said nothing, and said nothing at all on success —
+            the posted comment appears far up the thread, out of view of the
+            box it was typed in. */}
+        <Say error={error} ok={posted} />
         <button type="submit" disabled={busy || !body.trim()}>
           {busy ? T.loading : T.addComment}
         </button>
