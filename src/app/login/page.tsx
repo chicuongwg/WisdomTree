@@ -56,7 +56,7 @@ export default async function LoginPage({
           <hr className="login-divider" />
           {/* The heading is the whole explanation — a second sentence
               restating it was chrome. */}
-          <h2 className="muted login-demo-head">{T.loginDemoHeading}</h2>
+          <h2 className="meta">{T.loginDemoHeading}</h2>
           <LoginPicker users={seeded} />
         </>
       )}

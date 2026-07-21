@@ -12,7 +12,9 @@
    miniature scale by the vermilion band on the topbar and the square
    seal next to the brand.
 
-   Single token layer: components reference semantic tokens only.
+   Single token layer: components reference semantic tokens only. The one
+   exception is src/app/global-error.tsx, which replaces <html> and so never
+   loads this file — it repeats a handful of hexes on purpose, and says so.
    ============================================================ */
 
 * { box-sizing: border-box; }
@@ -129,8 +131,13 @@
     ui-monospace, monospace;
 
   /* --- Rhythm -------------------------------------------------------- */
-  /* One 4px-based spacing scale. Every gap, pad and margin in the app is
-     a step on it — no ad-hoc rem values, no inline margin patches. */
+  /* One 4px-based spacing scale. Every gap, pad and margin on the CANVAS is a
+     step on it — the page, panels, forms, tables, badges.
+     Not yet true of the shell: the rail, sidebar and status strip run on a
+     private 0.2/0.22/0.3/0.45/0.6/0.8rem scale and touch these tokens almost
+     nowhere. That is a real inconsistency, written down here rather than
+     claimed away — the block that fixes it is a re-tuning of the whole shell's
+     density, not a search and replace. */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -162,18 +169,10 @@
   --shell-status-ink: #e2eee6;
   --shell-veil: rgba(23, 29, 26, 0.45);
 
-  /* --- Legacy aliases (older inline references) ---------------------- */
-  --bg: var(--color-paper);
-  --panel: var(--color-surface);
-  --ink: var(--color-ink);
-  --muted: var(--color-ink-muted);
-  --line: var(--color-line);
-  --accent: var(--color-canopy);
-  --accent-soft: var(--color-canopy-wash);
-  --warn: var(--color-amber);
-  --warn-soft: var(--color-amber-wash);
-  --danger: var(--color-seal);
-  --danger-soft: var(--color-seal-wash);
+  /* The twelve "legacy alias" tokens that used to close this block are gone:
+     var(--bg), var(--panel), var(--ink) and the rest had zero references left
+     anywhere in src/. What they mostly did was offer a second name for a
+     colour that already had one. */
 }
 
 /* ============================================================
@@ -403,12 +402,13 @@ main.page > h2, main.page > h3,
   margin: 0;
 }
 main.page > h2::before, main.page > h3::before,
-.panel > h2::before, .panel > h3::before {
+.panel > h2::before, .panel > h3::before,
+.side-sec > .side-label::before {
   content: "";
   flex: none;
   align-self: stretch;
-  width: 0.2rem;
-  min-height: 1.05em;
+  width: var(--tick-w, 0.2rem);
+  min-height: var(--tick-h, 1.05em);
   border-radius: 1px;
   background: var(--color-seal);
 }
@@ -440,12 +440,18 @@ main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: va
   margin: 0;
   min-width: 0;
   /* Same vertical flow as the canvas: the container owns the spacing, the
-     children carry none. This was the one holdout still using adjacent-sibling
-     margins, and the two models did not agree — `.panel > h2 + *` matched the
-     first DOM sibling whether or not it was in flow, so a panel holding the
-     (position: absolute, zero-height) live region gave its heading a 16px gap
-     while the identical panel without one gave 8px. Flex layout excludes
-     out-of-flow children outright, so the gap lands where it is seen. */
+     children carry none. This block used to use adjacent-sibling margins, and
+     the two models did not agree — `.panel > h2 + *` matched the first DOM
+     sibling whether or not it was in flow, so a panel holding the (position:
+     absolute, zero-height) live region gave its heading a 16px gap while the
+     identical panel without one gave 8px. Flex layout excludes out-of-flow
+     children outright, so the gap lands where it is seen.
+     It was not the last holdout, whatever this comment claimed: `+` margins
+     still set the rhythm inside lists (.panel li + li, .link-list, .md-content
+     li, .mention-list) and in .audit-detail. Those parents are not flex
+     containers, so the two models do not meet there — but the list is worth
+     knowing, because the day one of them becomes a flex container the gaps
+     compound silently. */
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -491,12 +497,19 @@ main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: va
 main.page ul, main.page ol, .panel ul, .panel ol { padding-left: 1.15rem; }
 .panel li + li, main.page > ul > li + li { margin-top: var(--space-2); }
 
-/* Small print under a title: the one metadata role, replacing
-   per-instance font-size patches. */
+/* Small print under a title. The metadata role for 0.85rem muted text —
+   .comment-meta, .field-help and .breadcrumb were three more names for it and
+   are gone. Four smaller ones remain and are genuinely smaller, not duplicates
+   of this: .gp-help and .side-hint (0.72/0.74rem, inside the 16rem panel and
+   the sidebar) and .map-count / .backlink-context at 0.8–0.82rem. If those
+   four ever want one name, it is a size step on this rule, not a fifth class. */
 .meta {
   color: var(--color-ink-muted);
   font-size: 0.85rem;
   line-height: 1.45;
+  /* Carries the reset so a <p> can wear it: .comment-meta and .field-help were
+     two more names for this rule that existed only because it did not. */
+  margin: 0;
 }
 /* in a list, metadata is the second line of the entry, not a run-on */
 li > .meta { display: block; margin-top: var(--space-1); }
@@ -713,7 +726,11 @@ button.danger:disabled:hover { background: var(--color-surface); }
 .file-field:focus-within > .button { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 .error-text { color: var(--color-seal-deep); margin: 0; }
-.ok-text { color: var(--color-canopy-deep); margin: 0; }
+/* Its counterpart: a mutation that worked must not be reported in the colour
+   reserved for failure. (.ok-text was a third name for this same rule, used by
+   nothing, and .success-text was declared twice — once here, once beside the
+   upload progress bar.) */
+.success-text { color: var(--color-canopy-deep); margin: 0; }
 .muted { color: var(--color-ink-muted); }
 .cards {
   display: grid;
@@ -906,7 +923,6 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
 .comment:first-child { border-top: none; padding-top: 0; }
 .comment-list .comment-list { margin: var(--space-3) 0 0 var(--space-2); padding-left: var(--space-3); border-left: 2px solid var(--color-line-strong); }
 .comment-list .comment-list .comment { border-top: none; padding-top: var(--space-2); }
-.comment-meta { font-size: 0.85rem; color: var(--color-ink-muted); }
 .comment-body { margin: var(--space-1) 0 var(--space-2); white-space: pre-wrap; }
 .comment-reply-btn { min-height: 2.25rem; padding: 0.1rem 0.7rem; font-size: 0.82rem; }
 /* An @Tên written in the body reads as a resolved name, not a link: it marks
@@ -918,7 +934,6 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
   padding: 0 0.2rem;
   font-weight: 600;
 }
-.field-help { font-size: 0.85rem; color: var(--color-ink-muted); margin: 0; }
 
 /* Names offered while an @mention is typed. In the flow rather than floating
    over the box: the list is three or four rows in a team this size, a popover
@@ -1169,19 +1184,27 @@ html, body { height: 100%; }
   font-family: var(--font-ui);
 }
 .rail .rail-spacer { flex: 1; }
-.rail .rail-avatar {
-  width: 1.85rem;
-  height: 1.85rem;
+/* One person, one disc, two sizes — see .rail .rail-avatar / .account-avatar
+   below, which are this rule at --avatar-size. It was written out twice, and
+   the two copies had already drifted: only one of them declared the interface
+   face for the initials. */
+.rail .rail-avatar, .account-avatar {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
   border-radius: 50%;
   background: var(--color-canopy);
   color: var(--color-on-strong);
   display: grid;
   place-items: center;
-  font-size: 0.72rem;
+  font-family: var(--font-ui);
   font-weight: 700;
-  margin: 0.35rem 0;
   flex: none;
+  overflow: hidden;
 }
+/* The initials are sized per instance rather than as a fraction of the disc:
+   the two ratios were never the same (0.39 in the rail, 0.35 on the account
+   page), and a smaller disc needs the relatively larger letters. */
+.rail .rail-avatar { --avatar-size: 1.85rem; font-size: 0.72rem; margin: 0.35rem 0; }
 
 /* --- Sidebar -------------------------------------------------- */
 .sidebar {
@@ -1248,15 +1271,10 @@ button.searchbox kbd {
   text-transform: uppercase;
   color: var(--color-ink);
 }
-.side-sec > .side-label::before {
-  content: "";
-  flex: none;
-  align-self: stretch;
-  width: 0.18rem;
-  min-height: 0.85em;
-  border-radius: 1px;
-  background: var(--color-seal);
-}
+/* The sidebar's group heading opens a section exactly as a canvas heading
+   does, so it wears the same vermilion tick — the same rule, up in "Section
+   identity", at the smaller size this smaller heading wants. */
+.side-sec > .side-label { --tick-w: 0.18rem; --tick-h: 0.85em; }
 .side-sec > .side-label a { margin-left: auto; font-size: 0.85rem; line-height: 1; }
 a.tree-item, button.tree-item {
   display: flex;
@@ -1345,9 +1363,11 @@ a.tree-item.active {
 
 /* --- Command palette ------------------------------------------
    A native <dialog> opened with showModal(), like the confirm box: the focus
-   trap, Escape and the inert background come from the browser. The hand-rolled
-   .palette-veil that used to dim the page went with the div it wrapped —
-   ::backdrop does that job now, off the same veil token. */
+   trap, Escape and the inert background come from the browser; ::backdrop
+   dims the page, off the same veil token the confirm box uses.
+   The padding and margin below are the two UA <dialog> defaults being
+   overridden — the component used to repeat them as an inline style as well,
+   with a comment claiming this rule did not have them. */
 .palette {
   width: min(36rem, 92vw);
   padding: 0;
@@ -1606,22 +1626,32 @@ a.tree-item.nav-item { font-weight: 500; }
 }
 .graph-panel > summary::-webkit-details-marker,
 .disclosure > summary::-webkit-details-marker { display: none; }
-/* Chevron drawn from borders: no glyph, no icon font, inherits the text colour. */
+/* Chevron drawn from borders: no glyph, no icon font, inherits the text colour.
+   One rule for every disclosure in the app — the map's panel, the board's
+   create form, and the panel's own sections, which had a byte-identical copy
+   of this a hundred lines further down at a smaller size. */
 .graph-panel > summary::before,
-.disclosure > summary::before {
+.disclosure > summary::before,
+.gp-section > summary::before {
   content: "";
   flex: none;
-  width: 0.45rem;
-  height: 0.45rem;
+  width: var(--chevron, 0.45rem);
+  height: var(--chevron, 0.45rem);
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(-45deg);
   transition: transform var(--speed) ease;
 }
 .graph-panel[open] > summary::before,
-.disclosure[open] > summary::before { transform: rotate(45deg); }
+.disclosure[open] > summary::before,
+.gp-section[open] > summary::before { transform: rotate(45deg); }
+/* <summary> is not in the app-wide focus rule's selector list — it is not a
+   link, a button or a field — so every disclosure in the file states its ring
+   here, once, rather than three times in three places. The offset is inward:
+   these summaries sit flush against the edge of a card. */
 .graph-panel > summary:focus-visible,
-.disclosure > summary:focus-visible {
+.disclosure > summary:focus-visible,
+.gp-section > summary:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
   border-radius: var(--radius-lg);
@@ -1656,7 +1686,7 @@ a.tree-item.nav-item { font-weight: 500; }
   cursor: pointer;
 }
 .gp-icon:hover { background: var(--color-surface-sunken); color: var(--color-ink); }
-.gp-icon:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.gp-icon:focus-visible { outline-offset: 1px; } /* the ring itself comes from the app-wide rule */
 
 /* A section of the panel. Collapsible, because a reader tuning the forces does
    not also need the four link-type checkboxes on screen. */
@@ -1674,20 +1704,9 @@ a.tree-item.nav-item { font-weight: 500; }
   list-style: none;
 }
 .gp-section > summary::-webkit-details-marker { display: none; }
-/* Same border-drawn chevron as the panel's own summary: no glyph, no icon
-   font, and it inherits the text colour. */
-.gp-section > summary::before {
-  content: "";
-  flex: none;
-  width: 0.35rem;
-  height: 0.35rem;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(-45deg);
-  transition: transform var(--speed) ease;
-}
-.gp-section[open] > summary::before { transform: rotate(45deg); }
-.gp-section > summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+/* A section inside the panel is a smaller heading, so it gets a smaller
+   chevron — the size is all that differs, and it is now all that is said. */
+.gp-section { --chevron: 0.35rem; }
 .gp-section-body {
   display: flex;
   flex-direction: column;
@@ -1706,10 +1725,6 @@ a.tree-item.nav-item { font-weight: 500; }
   width: 100%;
   margin: 0;
   accent-color: var(--color-canopy);
-}
-.gp-slider input[type="range"]:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }
 .gp-help {
   margin: 0;
@@ -1793,15 +1808,9 @@ a.tree-item.nav-item { font-weight: 500; }
   color: var(--color-ink-muted);
   font-size: 0.82rem;
 }
-.map-notice {
-  margin: 0 0 var(--space-2);
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--color-amber);
-  border-radius: var(--radius);
-  background: var(--color-amber-wash);
-  color: var(--color-ink);
-  font-size: 0.85rem;
-}
+/* The map's own amber callout is gone: it was .notice with a different
+   padding and a different text colour, i.e. the same idea said twice and
+   answered differently. The map uses .notice. */
 .map-help {
   margin-top: var(--space-2);
   max-width: var(--reading-measure);
@@ -1971,10 +1980,6 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   accent-color: var(--color-canopy);
 }
 
-/* The counterpart to .error-text: a mutation that worked should not be
-   reported in the colour reserved for failure. */
-.success-text { color: var(--color-canopy-deep); }
-
 /* Drag-and-drop intake on the library (library-dropzone.tsx)
    ------------------------------------------------------------------ */
 
@@ -2020,7 +2025,6 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   vertical-align: -0.25em;
   margin-right: var(--space-2);
 }
-.breadcrumb { color: var(--color-ink-muted); }
 
 /* Stored-item preview: image at natural size capped to the panel, PDF in a
    tall frame — both above the download button, never instead of it. */
@@ -2043,20 +2047,7 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
 .account-head { display: flex; align-items: center; gap: var(--space-4); }
 .account-head p { margin: 0; }
 .account-name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
-.account-avatar {
-  width: 4.25rem;
-  height: 4.25rem;
-  border-radius: 50%;
-  background: var(--color-canopy);
-  color: var(--color-on-strong);
-  display: grid;
-  place-items: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  font-family: var(--font-ui);
-  flex: none;
-  overflow: hidden;
-}
+.account-avatar { --avatar-size: 4.25rem; font-size: 1.5rem; }
 /* An uploaded picture fills the same circle, in the rail and on /account. */
 .account-avatar img,
 .rail .rail-avatar img {
@@ -2535,10 +2526,23 @@ button.login-person:hover .login-person-role { color: inherit; }
   gap: var(--space-4);
 }
 .health-card { gap: var(--space-2); }
-.health-label {
+/* Written as `.panel > h2.health-label`, and it has to be: `.panel > h2` (one
+   class, one element) out-specifies a lone `.health-label`, so BOTH of this
+   rule's declarations were being discarded and nobody noticed.
+   The size is the visible half — the card was heading the reading at 1.16rem,
+   competing with the 1.5rem number the block comment above says is meant to be
+   the largest thing in the card. The wrap is the broken half: the section rule
+   gives a panel heading `flex-wrap: wrap` so it can carry a badge, and in a
+   15rem card that wrapped the heading itself — the vermilion tick took line one
+   alone and the words dropped underneath it, on three of the eight cards.
+   Nothing is ever inline with these labels, so the row does not wrap; the words
+   wrap inside their own item and the tick stretches beside them, which is what
+   the tick means everywhere else in the app. */
+.panel > h2.health-label {
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+  flex-wrap: nowrap;
 }
 .health-value {
   font-size: 1.5rem;
@@ -2546,8 +2550,12 @@ button.login-person:hover .login-person-role { color: inherit; }
   font-variant-numeric: tabular-nums;
   color: var(--color-ink);
 }
-.health-value.tone-ok { color: var(--color-canopy-deep); }
-.health-value.tone-warn { color: var(--color-amber); }
+/* The five tone words of the state vocabulary, not a private ok/warn pair:
+   a reading that is fine is `done` and a reading that wants a person is
+   `attention`, exactly as a badge would say it. Two vocabularies for one idea
+   is how a design system stops being one. */
+.health-value.tone-done { color: var(--color-canopy-deep); }
+.health-value.tone-attention { color: var(--color-amber); }
 .health-hint { font-size: 0.8rem; }
 /* A second fact under the headline value — a timestamp, one degraded
    component per line — set back at reading size. */

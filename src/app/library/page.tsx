@@ -126,7 +126,7 @@ export default async function LibraryPage({
         )
       )}
       {browsing && spaceId && (
-        <nav className="breadcrumb" aria-label={T.shelfLocation}>
+        <nav className="muted" aria-label={T.shelfLocation}>
           <Link href={href({ folderId: undefined })}>
             {T.space} {spaces.find((s) => s.id === spaceId)?.name ?? ""}
           </Link>

@@ -234,7 +234,7 @@ export function CommentsSection({
         c.id === targetId ? " comment-targeted" : ""
       }`}
     >
-      <div className="comment-meta">
+      <div className="meta">
         <strong>{c.authorName}</strong>
         <span className="muted"> · {when(c.createdAt)}</span>
       </div>
@@ -359,7 +359,7 @@ export function CommentsSection({
               ))}
             </ul>
           )}
-          <p id={`${fieldId}-help`} className="field-help">
+          <p id={`${fieldId}-help`} className="meta">
             {T.mentionHelp}
           </p>
         </div>

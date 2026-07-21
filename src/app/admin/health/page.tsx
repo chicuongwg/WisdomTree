@@ -20,7 +20,7 @@ import { listReviewQueue } from "@/modules/storage/curation";
 // something feels wrong; a reload is the refresh. Add a trend when someone
 // asks "since when", which is the question a graph answers and a number does not.
 
-type Tone = "ok" | "warn";
+type Tone = "done" | "attention";
 
 /** One reading on the board: a label, the number or word, and why it matters. */
 function Metric({
@@ -38,7 +38,7 @@ function Metric({
     <section className="panel health-card">
       <h2 className="health-label">{label}</h2>
       <p className={tone ? `health-value tone-${tone}` : "health-value"}>{value}</p>
-      <p className="muted health-hint">{hint}</p>
+      <p className="meta health-hint">{hint}</p>
     </section>
   );
 }
@@ -112,7 +112,7 @@ export default async function HealthPage() {
           label={T.healthDatabase}
           value={dbOk ? T.healthDbOk : T.healthDbDown}
           hint={T.healthDatabaseHint}
-          tone={dbOk ? "ok" : "warn"}
+          tone={dbOk ? "done" : "attention"}
         />
         <Metric
           label={T.healthDegraded}
@@ -130,7 +130,7 @@ export default async function HealthPage() {
             )
           }
           hint={T.healthDegradedHint}
-          tone={health.degradedComponents.length === 0 ? "ok" : "warn"}
+          tone={health.degradedComponents.length === 0 ? "done" : "attention"}
         />
         <Metric
           label={T.healthLastExport}
@@ -145,7 +145,7 @@ export default async function HealthPage() {
             )
           }
           hint={T.healthLastExportHint}
-          tone={health.lastExport?.state === "failed" ? "warn" : undefined}
+          tone={health.lastExport?.state === "failed" ? "attention" : undefined}
         />
         <Metric
           label={T.healthReviewWaiting}
@@ -158,13 +158,13 @@ export default async function HealthPage() {
           label={T.healthOverdueLoans}
           value={health.overdueLoanCount}
           hint={T.healthOverdueLoansHint}
-          tone={health.overdueLoanCount > 0 ? "warn" : "ok"}
+          tone={health.overdueLoanCount > 0 ? "attention" : "done"}
         />
         <Metric
           label={T.healthOutbox}
           value={health.outboxUndispatchedCount}
           hint={T.healthOutboxHint}
-          tone={health.outboxUndispatchedCount > 0 ? "warn" : "ok"}
+          tone={health.outboxUndispatchedCount > 0 ? "attention" : "done"}
         />
         <Metric
           label={T.healthBackup}
@@ -174,7 +174,7 @@ export default async function HealthPage() {
               : when(health.lastBackupAt)
           }
           hint={T.healthBackupHint}
-          tone={health.backupStatus === "not_configured" ? "warn" : "ok"}
+          tone={health.backupStatus === "not_configured" ? "attention" : "done"}
         />
         {/* Uptime comes from the process itself, so it costs nothing and needs
             no module read of its own — and it is the one number that says

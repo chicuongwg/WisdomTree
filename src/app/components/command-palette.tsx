@@ -187,10 +187,6 @@ export function CommandPalette({ role }: { role: string }) {
         // children, so hitting the element itself means the backdrop.
         if (e.target === e.currentTarget) close();
       }}
-      // ponytail: the two UA <dialog> defaults .palette does not already
-      // override — 1em of padding, and margin:auto centring it vertically
-      // where the design puts it 12vh from the top.
-      style={{ padding: 0, margin: "12vh auto auto" }}
     >
       <input
         type="text"

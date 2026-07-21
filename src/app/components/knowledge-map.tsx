@@ -755,7 +755,7 @@ export function KnowledgeMap({
         </p>
       </div>
 
-      {reducedMotion && <p className="map-notice">{T.graphMotionOff}</p>}
+      {reducedMotion && <p className="notice">{T.graphMotionOff}</p>}
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
@@ -843,8 +843,8 @@ export function KnowledgeMap({
             onPointerCancel={onBackgroundPointerUp}
           />
 
-          <g ref={viewportRef} className="g-viewport">
-            <g className="g-edges">
+          <g ref={viewportRef}>
+            <g>
               {view.links.map((e) => {
                 const key = `${e.from}-${e.to}-${e.linkType}`;
                 const a = view.seed[e.from];
