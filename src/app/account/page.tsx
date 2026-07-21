@@ -10,6 +10,8 @@ import { AccountProfile } from "@/app/components/account-profile";
 import { RegenerateCalendarLink } from "@/app/components/account-calendar";
 import { NotificationPrefsForm } from "@/app/components/notification-prefs";
 
+export const metadata = { title: T.account };
+
 // Screen: Account (`/account`) — the one place a member's own settings live:
 // profile (name, picture, Zalo id), the spaces they belong to, notification
 // channels (moved here from /notifications), the calendar link (moved here

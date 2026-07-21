@@ -4,6 +4,8 @@ import { listBranches } from "@/modules/knowledge/service";
 import { badgeToneClass, T } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.navBranches };
+
 // Screen: Branch List (`/tree/branches`) — branch cards with node counts and
 // verification progress (user-screen-specs.md).
 export default async function BranchListPage() {

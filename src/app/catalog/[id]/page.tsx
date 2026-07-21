@@ -1,3 +1,4 @@
+import { Crumbs } from "@/app/components/crumbs";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getCatalogItem } from "@/modules/catalog/service";
 import { listTicketsForItem, type ItemLoanRecord } from "@/modules/circulation/service";
@@ -13,6 +14,13 @@ import {
 } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
 import { CatalogArchiveButton, CatalogCopiesForm } from "@/app/components/catalog-copies-form";
+
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.catalogItem };
 
 // Screen: Catalog Item Detail (`/catalog/:id`) — member view with loan request
 // and the loan record.
@@ -59,6 +67,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
 
   return (
     <main className="page">
+      <Crumbs items={[{ label: T.catalog, href: "/catalog" }]} />
       <h1>{item.title}</h1>
       <div className="panel">
         <div className="record-scroll">

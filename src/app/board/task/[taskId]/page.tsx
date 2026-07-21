@@ -1,6 +1,14 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getTask } from "@/modules/pm/service";
 import { TaskDetail } from "@/app/components/task-detail";
+import { T } from "@/lib/vi";
+
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.taskDetail };
 
 // Screen: Task Detail (`/board/task/:id`) — the full-page half of the pair the
 // owner asked for ("side page or fullpage with toggle"). Same body as the panel

@@ -45,6 +45,11 @@ export function CommandPalette({ role }: { role: string }) {
   const rowId = (key: string) => `${baseId}${key}`;
 
   const screens: Entry[] = [
+    // The map was missing from this list, and the palette is the ONLY way in
+    // below 56rem: the side panel is hidden there and the rail's narrow-screen
+    // button opens this dialog. A screen the app hides on a phone and does not
+    // list in its own search is a screen a phone cannot reach at all.
+    { key: "graph", label: T.graph, hint: T.paletteHintGo, href: "/graph" },
     { key: "tree", label: T.tree, hint: T.paletteHintGo, href: "/tree" },
     { key: "branches", label: T.navBranches, hint: T.paletteHintGo, href: "/tree/branches" },
     { key: "library", label: T.library, hint: T.paletteHintGo, href: "/library" },

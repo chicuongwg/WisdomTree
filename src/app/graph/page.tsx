@@ -4,6 +4,8 @@ import { knowledgeGraph } from "@/modules/knowledge/service";
 import { T } from "@/lib/vi";
 import { KnowledgeMap } from "../components/knowledge-map";
 
+export const metadata = { title: T.graph };
+
 // Screen: Graph Explorer (`/graph`, screen-inventory.md) — the knowledge tree
 // seen as a map instead of an outline. This is the answer to "the knowledge
 // tree looks like a project folder tree": here a page is a mark among its

@@ -13,6 +13,8 @@ import {
 import { nextActionFor, nextActionLabel } from "@/lib/source-status";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.mySubmissions };
+
 // Screen: My Submissions (`/source/mine`) — unified intake history (sources +
 // branch-gap requests), each source row carrying the one sentence about what
 // happens to it next (functional-spec.md:57).

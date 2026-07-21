@@ -1,3 +1,4 @@
+import { Crumbs } from "@/app/components/crumbs";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
@@ -22,6 +23,13 @@ import { CurationAdminActions } from "@/app/components/curation-admin-actions";
 import { GapTriageActions } from "@/app/components/gap-triage-actions";
 import { RawChunks } from "@/app/components/raw-chunks";
 
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.sourceDetail };
+
 // Screen: Source Detail (`/source/:id`, admin-op-screen-specs.md) —
 // type-aware: file-backed evidence review or branch-gap triage.
 export default async function AdminSourceDetailPage({
@@ -45,6 +53,7 @@ export default async function AdminSourceDetailPage({
     const [branches, nodes] = await Promise.all([listBranches(actor), listNodeOptions(actor)]);
     return (
       <main className="page">
+        <Crumbs items={[{ label: T.library, href: "/library" }]} />
         <h1>
           {T.gapRequest}: {gap.title}
         </h1>

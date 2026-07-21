@@ -5,6 +5,8 @@ import { badgeClass, itemLabelShort, itemStatusLabel, T } from "@/lib/vi";
 import { Pager } from "@/app/components/pager";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.catalog };
+
 /**
  * How many books, and what is happening to them, are two different questions,
  * so they are two columns (owner decision 2026-07-21). They were briefly one

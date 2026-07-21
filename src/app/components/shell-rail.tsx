@@ -200,8 +200,25 @@ export function ShellRail({
   }
   items.push({ href: "/notifications", label: T.notificationCenter, icon: icons.bell, pip: unread });
 
-  const isActive = (item: RailItem) =>
-    pathname.startsWith(item.href) || (item.also ?? []).some((p) => pathname.startsWith(p));
+  /**
+   * How current an item is. The rail names MODULES, not pages: on
+   * /source/mine, "Kho tư liệu" is the module you are in, and the sidebar's
+   * own shortcut is the page you are on. Marking both `aria-current="page"`
+   * announced two current pages in one document, which is one more than a
+   * document can have.
+   *
+   * So the exact match keeps "page" (the rail item IS the page, e.g. /board),
+   * and a module match takes "true" — ARIA's "current item within a set",
+   * which is exactly what a highlighted activity-bar icon means. The left seal
+   * bar in CSS keys off both, so nothing changes visually.
+   */
+  const current = (item: RailItem): "page" | "true" | undefined => {
+    if (pathname === item.href) return "page";
+    const inModule =
+      pathname.startsWith(`${item.href}/`) ||
+      (item.also ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    return inModule ? "true" : undefined;
+  };
 
   const initials = displayName
     .split(/\s+/)
@@ -227,7 +244,7 @@ export function ShellRail({
               ? `${name} (${item.pip} ${(item.pipNoun ?? T.unread).toLowerCase()})`
               : name
           }
-          aria-current={isActive(item) ? "page" : undefined}
+          aria-current={current(item)}
         >
           {item.icon}
           {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}

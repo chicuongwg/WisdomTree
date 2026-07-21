@@ -4,6 +4,8 @@ import { T } from "@/lib/vi";
 import { UploadForm } from "@/app/components/upload-form";
 import { GapRequestForm } from "@/app/components/gap-request-form";
 
+export const metadata = { title: T.sourceIntake };
+
 // Screen: Source Intake (`/source/intake`) — upload into a member space;
 // store-first: the item is available in Library the moment upload returns.
 export default async function SourceIntakePage() {

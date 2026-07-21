@@ -5,6 +5,8 @@ import { eventLabel, T, when } from "@/lib/vi";
 import { MarkReadButton, NotificationLink } from "@/app/components/notification-actions";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.notificationCenter };
+
 // Screen: Notification Center (`/notifications`) — the in-app channel of
 // docs/system/notifications.md. The per-event channel preferences moved to
 // /account (one home per setting); the link below points there.

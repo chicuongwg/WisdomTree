@@ -6,6 +6,8 @@ import { LoanActions } from "@/app/components/loan-actions";
 import { CatalogItemForm } from "@/app/components/catalog-item-form";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.librarianDesk };
+
 // Screen: Librarian Desk (`/catalog/admin`) — Admin/Op circulation surface.
 // UI hiding is convenience only; the service layer enforces
 // circulation.loan.manage regardless (authorization-design.md).

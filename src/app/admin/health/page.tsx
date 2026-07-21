@@ -5,6 +5,8 @@ import { T, when, exportJobStateLabel } from "@/lib/vi";
 import { databaseReachable, healthReport } from "@/modules/export/service";
 import { listReviewQueue } from "@/modules/storage/curation";
 
+export const metadata = { title: T.healthPageTitle };
+
 // Screen: System Health (`/admin/health`) — the health section lifted off the
 // Admin Console onto a page of its own, laid out as a dashboard.
 //

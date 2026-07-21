@@ -14,6 +14,8 @@ import {
 } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.sourceInbox };
+
 // Screen: Source Inbox (`/source/inbox`, admin-op-screen-specs.md) — triage
 // surface over all intake items: file-backed sources and gap requests.
 export default async function SourceInboxPage() {

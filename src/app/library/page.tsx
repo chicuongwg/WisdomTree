@@ -8,6 +8,8 @@ import { Empty } from "@/app/components/empty";
 import { LibraryDropzone } from "@/app/components/library-dropzone";
 import { FolderCreate } from "@/app/components/folder-create";
 
+export const metadata = { title: T.library };
+
 // The 24×24 stroke-1.7 hand of the rail icons (shell-rail.tsx), shrunk to sit
 // in a table row — an SVG rather than 📁 so it takes the text colour and the
 // two themes for free.

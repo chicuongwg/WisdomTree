@@ -10,6 +10,13 @@ import { Empty } from "@/app/components/empty";
 import { authorize } from "@/modules/auth/authorize";
 import type { Principal } from "@/modules/auth/dev-auth";
 
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.branch };
+
 /**
  * May this reader archive the branch? Asked of the real policy rather than
  * re-stated here: `authorize` throws, so a try/catch is the honest way to turn

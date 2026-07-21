@@ -5,6 +5,13 @@ import { badgeClass, badgeToneClass, curationLabel, curationStateLabel, T } from
 import { CurationWorkbench } from "@/app/components/curation-workbench";
 import { RawChunks } from "@/app/components/raw-chunks";
 
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.assignedTask };
+
 // Screen: Assigned Source Task (`/source/task/:id`, user-screen-specs.md) —
 // the assigned editor corrects text and refines the draft; raw text is the
 // reference pane; approve/publish is out of reach here by design.

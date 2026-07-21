@@ -16,6 +16,7 @@ export const T = {
   sourceIntake: "Gửi tư liệu",
   mySubmissions: "Tư liệu tôi đã gửi",
   storedItem: "Tư liệu đã lưu",
+  sourceDetail: "Hồ sơ tư liệu", // NEW
   librarianDesk: "Bàn thủ thư",
   gapRequest: "Đề xuất bổ sung",
   accessDenied: "Không có quyền truy cập",
@@ -207,6 +208,7 @@ export const T = {
   // The library's folder trail. It used to borrow `shelfLocation`, which means
   // a physical shelf in the book catalogue — two different places, one word.
   folderPath: "Đường dẫn thư mục", // NEW
+  breadcrumbLabel: "Đường dẫn trang", // NEW
   taskType: "Loại việc", // NEW
   openItem: "Mở", // NEW
   triage: "Tiếp nhận", // NEW

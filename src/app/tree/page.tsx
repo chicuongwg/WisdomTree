@@ -5,6 +5,8 @@ import { T } from "@/lib/vi";
 import { VerificationBadge } from "../components/verification-badge";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.tree };
+
 // Screen: Tree Browse (`/tree`, user-screen-specs.md) — entry into the
 // knowledge tree: branch overview, recent nodes, and full-text search.
 export default async function TreeBrowsePage({

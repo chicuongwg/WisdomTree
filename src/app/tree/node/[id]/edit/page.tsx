@@ -6,6 +6,13 @@ import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeEditor } from "@/app/components/node-editor";
 import { PresenceRow } from "@/app/components/presence-row";
 
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.editNode };
+
 // Screen: Edit Node (`/tree/node/:id/edit`) — Markdown source + preview with
 // optimistic locking; access denied (404) when not owned or Admin/Op.
 export default async function EditNodePage({ params }: { params: Promise<{ id: string }> }) {

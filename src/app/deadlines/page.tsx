@@ -6,6 +6,8 @@ import { badgeToneClass, day, deadlineKindLabel, T, untilLabel } from "@/lib/vi"
 import { DeadlineForm } from "@/app/components/deadline-form";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.deadline };
+
 // Screen: Deadlines (`/deadlines`) — upcoming deadlines sorted by due date,
 // filterable by project (user-screen-specs.md § Deadlines). The calendar
 // subscribe link moved to /account § Lịch của tôi (one home per setting).

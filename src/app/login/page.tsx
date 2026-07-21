@@ -5,6 +5,8 @@ import { oidcEnabled } from "@/modules/auth/oidc";
 import { T } from "@/lib/vi";
 import { LoginPicker } from "../components/login-picker";
 
+export const metadata = { title: T.signIn };
+
 // Screen: cổng đăng nhập. Google OIDC is the real door when configured; the
 // dev picker survives beneath it as the demo's quick sign-in. The layout's
 // signed-out branch already provides the plain-shell topbar around this page.

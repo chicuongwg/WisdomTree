@@ -1,3 +1,4 @@
+import { Crumbs } from "@/app/components/crumbs";
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getDeadlineLinks } from "@/modules/pm/service";
@@ -6,6 +7,13 @@ import { DeadlineForm } from "@/app/components/deadline-form";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { Empty } from "@/app/components/empty";
+
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.deadline };
 
 // Screen: Deadline Detail (`/deadlines/:id`) — type, due date, linked
 // checklist and documents, plus the shared comments block anchored to the
@@ -20,6 +28,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
 
   return (
     <main className="page">
+      <Crumbs items={[{ label: T.deadline, href: "/deadlines" }]} />
       <h1>
         {deadline.title} <span className="badge muted">{deadlineKindLabel(deadline.type)}</span>
       </h1>

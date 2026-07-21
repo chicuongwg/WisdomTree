@@ -8,6 +8,8 @@ import { SpaceAdmin } from "@/app/components/space-admin";
 import { UserAdmin } from "@/app/components/user-admin";
 import { AuditLog, type AuditRow } from "@/app/components/audit-log";
 
+export const metadata = { title: T.adminConsole };
+
 // Screen: Admin Console (`/admin`, admin-op-screen-specs.md) — Content
 // (team spaces + memberships) then System (members, audit trail, health).
 // One page, headings only.

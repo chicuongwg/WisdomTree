@@ -14,6 +14,8 @@ import {
 } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.reviewQueue };
+
 // Screen: Review Queue (`/review`, admin-op-screen-specs.md) — the central
 // decision surface; publish tasks open the Publish Review workbench.
 export default async function ReviewQueuePage({

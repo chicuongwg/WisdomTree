@@ -33,7 +33,7 @@
 | Screen | Route concept | Primary role | Visible to | Module owner |
 | --- | --- | --- | --- | --- |
 | Home | `/` | User | User, Editor, Admin/Op | Tree |
-| Search | `/search` | User | User, Editor, Admin/Op | Search |
+| Search | inside `/tree`, plus the Ctrl+K palette | User | User, Editor, Admin/Op | Search |
 | Tree Browse | `/tree` | User | User, Editor, Admin/Op | Tree |
 | Branch List | `/tree/branches` | User | User, Editor, Admin/Op | Tree |
 | Node Detail | `/tree/node/:id` | User | User, Editor, Admin/Op | Tree |
@@ -56,6 +56,12 @@
 | Board | `/board` | Editor | Editor, Admin/Op | Board |
 | Deadlines | `/deadlines` | User | Project members, Admin/Op | Board |
 | Admin Console | `/admin` | Admin/Op | Admin/Op | Admin |
+| System Health | `/admin/health` | Admin/Op | Admin/Op | Admin |
+| Deadline Detail | `/deadlines/:id` | User | Project members, Admin/Op | Board |
+| Task Detail | `/board/task/:id` | Editor | Editor, Admin/Op | Board |
+| Notification Center | `/notifications` | User | User, Editor, Admin/Op | Notify |
+| Account | `/account` | User | User, Editor, Admin/Op | Auth |
+| Sign-in | `/login` | — | Everyone | Auth |
 
 Notes:
 - `My Submissions` is the unified intake history for both file-backed uploads and `branch-gap requests`.
@@ -69,7 +75,7 @@ Notes:
 - Verification is still encoded twice, by colour and by shape, with a legend. Colouring by branch swaps only the colour axis — shape keeps carrying verification, so the map never depends on colour alone, and a second legend names the branch colours.
 - Motion: `prefers-reduced-motion: reduce` renders the settled layout directly with no animation at all, and says so; an explicit `Dừng chuyển động` / `Cho chuyển động` button covers readers who want stillness without the OS setting. Above a stated cap of 300 simulated nodes the map keeps the static deterministic layout and says so in the UI rather than truncating silently.
 - The same component renders the local map on `Node Detail`, which also lists that node's outgoing links and its backlinks. There the panel adds depth (1–3 hops) and link direction (both / outgoing / incoming); the page fetches the deepest neighbourhood the control offers so moving the slider needs no round trip, and the centre node is pinned by definition.
-- `Admin Console` is the one screen in this table with no page behind it: there is no `/admin` route. Its data exists and is permission-gated — `GET /api/admin/health` returns the computable `HealthReport` subset (job and export counts by state, last export, overdue deadlines, undispatched outbox rows) under `admin.health.read` — but Admin/Op operates the system through the API and the per-area surfaces (`Review Queue`, `Librarian Desk`, `Board`) rather than a console page.
+- `Admin Console` is now a real page. This note used to say the opposite — "the one screen in this table with no page behind it: there is no `/admin` route" — which stopped being true when `/admin` and `/admin/health` shipped, and a stale note is worse than a missing one: it tells a reader the screen they are looking at does not exist. `/admin` holds user administration, spaces and the audit trail; `/admin/health` is the readings board, reachable from the rail, the side panel and the palette. `GET /api/admin/health` still serves the same `HealthReport` subset under `admin.health.read`.
 
 ## Screen Grouping
 

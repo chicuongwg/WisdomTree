@@ -1,3 +1,4 @@
+import { Crumbs } from "@/app/components/crumbs";
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getNode, listNodeOptions, wikiIndex } from "@/modules/knowledge/service";
@@ -10,6 +11,13 @@ import { NodeExportActions } from "@/app/components/node-export-actions";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { PresenceRow } from "@/app/components/presence-row";
+
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.node };
 
 // Screen: Node Detail (`/tree/node/:id`) — the primary reading surface with
 // verification badge and provenance summary (user-screen-specs.md).
@@ -25,6 +33,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <main className="page">
+      <Crumbs items={[{ label: T.tree, href: "/tree" }]} />
       {node.canonicalNodeId && (
         <p className="notice">
           {T.mergedNotice}{" "}

@@ -1,3 +1,4 @@
+import { Crumbs } from "@/app/components/crumbs";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
@@ -13,6 +14,13 @@ import {
 } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { PublishDecision } from "@/app/components/publish-decision";
+
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.publishReview };
 
 // Screen: Publish Review (`/review/publish/:id`, admin-op-screen-specs.md) —
 // corrected text vs draft comparison, excerpt mapping, accountability chain,
@@ -32,6 +40,7 @@ export default async function PublishReviewPage({
 
   return (
     <main className="page">
+      <Crumbs items={[{ label: T.reviewQueue, href: "/review" }]} />
       <h1>
         {T.publishReview}: {review.source.title}
       </h1>

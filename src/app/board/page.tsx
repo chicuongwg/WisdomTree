@@ -20,6 +20,8 @@ import {
 } from "@/app/components/board-actions";
 import { Empty } from "@/app/components/empty";
 
+export const metadata = { title: T.board };
+
 // Screen: Board (`/board`) — the same work in three shapes, chosen by `?view=`:
 // today's lanes (default), a month, a week. Open to every role: pm.board.read
 // carries no space scope, and a shared pool nobody can see is not a pool.

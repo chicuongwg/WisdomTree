@@ -1158,7 +1158,9 @@ html, body { height: 100%; }
   color: var(--shell-rail-active);
   text-decoration: none;
 }
-.rail a.rail-btn[aria-current="page"] {
+/* Both values: "page" when the rail item is the page, "true" when it is the
+   module the page belongs to. The mark means "you are in here" either way. */
+.rail a.rail-btn[aria-current] {
   color: var(--shell-rail-active);
   border-left-color: var(--color-seal);
 }
@@ -2575,3 +2577,10 @@ button.login-person:hover .login-person-role { color: inherit; }
 .audit-detail { line-height: 1.5; }
 .audit-detail + .audit-detail { margin-top: var(--space-1); }
 .audit-kind { font-size: 0.8rem; }
+
+/* The one line above a detail screen's title that says which list it came
+   from. Metadata weight, not heading weight: it is an exit, not a label. */
+.crumbs {
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}

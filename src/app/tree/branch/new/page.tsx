@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { T } from "@/lib/vi";
 import { BranchForm } from "@/app/components/branch-form";
 
+export const metadata = { title: T.createBranch };
+
 // Screen: Create Branch (`/tree/branch/new`) — Editor, Admin/Op.
 export default async function CreateBranchPage() {
   const user = await requireUser();

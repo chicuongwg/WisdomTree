@@ -1,3 +1,4 @@
+import { Crumbs } from "@/app/components/crumbs";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getSourceDetail, listFolders } from "@/modules/storage/service";
 import { badgeToneClass, fileSize, T, when } from "@/lib/vi";
@@ -8,6 +9,13 @@ import { ExtractionWatcher } from "@/app/components/extraction-watcher";
 import { SourceOwnerActions } from "@/app/components/source-owner-actions";
 import { SourceFileActions } from "@/app/components/source-file-actions";
 import { NominateSource } from "@/app/components/nominate-source";
+
+// Static, not generateMetadata: naming the record in the tab would cost a
+// second read of it on every detail view (the getters take a freshly built
+// principal, so the request cache cannot dedupe the two calls). The kind of
+// screen is what makes a browser history list usable again; the record's own
+// name is already the h1.
+export const metadata = { title: T.storedItem };
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
 // download only, never operational review internals (screen-inventory.md).
@@ -27,6 +35,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
 
   return (
     <main className="page">
+      <Crumbs items={[{ label: T.library, href: "/library" }]} />
       <h1>{source.title}</h1>
       <div className="panel">
         <div className="record-scroll">

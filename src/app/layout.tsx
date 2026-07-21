@@ -13,7 +13,13 @@ import { ShellSidebar } from "./components/shell-sidebar";
 import { CommandPalette } from "./components/command-palette";
 
 export const metadata: Metadata = {
-  title: "WisdomTree",
+  // A template, so every screen's own title reads "<screen> · WisdomTree" and
+  // the bare app name is left for the home page. Before this the layout held
+  // the ONLY metadata in the app: every tab, every bookmark and every entry in
+  // a reader's history said "WisdomTree" and nothing else, which makes the
+  // browser's own back list — the one navigation aid no app can replace —
+  // useless.
+  title: { default: "WisdomTree", template: "%s · WisdomTree" },
   description: "Nền tảng lưu trữ và tri thức của nhóm",
 };
 
