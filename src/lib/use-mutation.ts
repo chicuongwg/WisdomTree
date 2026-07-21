@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "./vi";
 
-// The one POST-and-refresh. Five components had carried a byte-identical copy
-// of it — same busy flag, same error parse, same trailing comment — which is
-// five places to forget an aria-live or a disabled prop. Anything with a
-// different shape (upload progress, polling, optimistic edits) keeps its own.
+// The one POST-and-refresh. Thirteen components had carried a copy of it —
+// same busy flag, same error parse — which is thirteen places to forget an
+// aria-live, a disabled prop, or the try/catch. Every one of those copies let
+// an offline fetch reject escape, and a rejected fetch never reaches the
+// setBusy(false) below its await: the button stayed disabled until the reader
+// reloaded the page. Anything with a genuinely different shape (upload
+// progress, polling) keeps its own.
 
 export interface Mutation {
   /** True across the whole round trip, including the refresh. */
@@ -17,9 +20,23 @@ export interface Mutation {
   /** Set on success when the caller passes one. */
   ok: string | null;
   /** Fire it. Resolves true on success so a caller can close a form after. */
-  run: (path: string, opts?: { body?: object; ok?: string; method?: "POST" | "PATCH" | "DELETE" }) => Promise<boolean>;
+  run: (path: string, opts?: MutationOpts) => Promise<boolean>;
+  /**
+   * The same act, for the callers that need what the server made: the id to
+   * navigate to, the item code to write on a spine. Resolves null on failure,
+   * so `if (!saved) return` is the whole error path.
+   */
+  runJson: <R>(path: string, opts?: MutationOpts) => Promise<R | null>;
   /** Clear both messages — for a form that reopens. */
   reset: () => void;
+}
+
+export interface MutationOpts {
+  body?: object;
+  ok?: string;
+  method?: "POST" | "PATCH" | "DELETE";
+  /** Called with the failed response so a caller can read `code` off it. */
+  onError?: (res: Response, payload: { message?: string; code?: string } | null) => void;
 }
 
 export function useMutation(): Mutation {
@@ -28,10 +45,9 @@ export function useMutation(): Mutation {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
-  async function run(
-    path: string,
-    opts?: { body?: object; ok?: string; method?: "POST" | "PATCH" | "DELETE" },
-  ): Promise<boolean> {
+  /** The whole round trip. Resolves the parsed success body, or null. */
+  async function send<R>(path: string, opts?: MutationOpts): Promise<{ ok: boolean; data: R | null }> {
+    const failed = { ok: false, data: null };
     setBusy(true);
     setError(null);
     setOk(null);
@@ -47,21 +63,32 @@ export function useMutation(): Mutation {
       // copies this replaces let that reject escape into an unhandled promise.
       setError(T.genericError);
       setBusy(false);
-      return false;
+      return failed;
     }
     if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
+      const payload = (await res.json().catch(() => null)) as { message?: string; code?: string } | null;
       setError(payload?.message ?? T.genericError);
+      opts?.onError?.(res, payload);
       setBusy(false);
-      return false;
+      return failed;
     }
+    // A 204 and an empty body are both normal here, so the parse may find
+    // nothing; that is a success with no data, not a failure.
+    const data = (await res.json().catch(() => null)) as R | null;
     if (opts?.ok) setOk(opts.ok);
     // Refresh first, clear busy after: the button stays disabled across the
     // round trip so the act cannot be fired twice.
     router.refresh();
     setBusy(false);
-    return true;
+    return { ok: true, data };
   }
 
-  return { busy, error, ok, run, reset: () => { setError(null); setOk(null); } };
+  return {
+    busy,
+    error,
+    ok,
+    run: async (path, opts) => (await send(path, opts)).ok,
+    runJson: async <R,>(path: string, opts?: MutationOpts) => (await send<R>(path, opts)).data,
+    reset: () => { setError(null); setOk(null); },
+  };
 }

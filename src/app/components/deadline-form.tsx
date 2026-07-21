@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { deadlineKindLabel, T } from "@/lib/vi";
-import { Say } from "./say";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 
 // Create/edit form for a deadline (user-screen-specs.md § Deadlines).
 //
@@ -47,15 +47,12 @@ export function DeadlineForm({
   spaces: SpaceOption[];
   existing?: Existing;
 }) {
-  const router = useRouter();
+  const m = useMutation();
   const [title, setTitle] = useState(existing?.title ?? "");
   const [spaceId, setSpaceId] = useState(existing?.spaceId ?? spaces[0]?.id ?? "");
   const [type, setType] = useState(existing?.type ?? "milestone");
   const [dueAt, setDueAt] = useState(existing ? toLocalInput(existing.dueAt) : "");
   const [offsets, setOffsets] = useState<string[]>(existing?.reminderOffsets ?? ["7 days", "1 day"]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
 
   // ponytail: toggling by value, not rebuilding the list from the three boxes —
   // an offset a colleague set outside these choices ("2 days") rides through an
@@ -65,34 +62,19 @@ export function DeadlineForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setError(null);
-    setOk(null);
-    const payload = {
-      spaceId,
-      title,
-      type,
-      dueAt: new Date(dueAt).toISOString(),
-      reminderOffsets: offsets,
-      ...(existing ? { expectedVersion: existing.version } : {}),
-    };
-    // ponytail: useMutation only POSTs and the edit path is a PATCH, so this
-    // one keeps its own request and borrows just <Say> for the answer.
-    const res = await fetch(existing ? `/api/deadlines/${existing.id}` : "/api/deadlines", {
+    const saved = await m.run(existing ? `/api/deadlines/${existing.id}` : "/api/deadlines", {
       method: existing ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      ok: existing ? T.changesSaved : T.deadlineCreated,
+      body: {
+        spaceId,
+        title,
+        type,
+        dueAt: new Date(dueAt).toISOString(),
+        reminderOffsets: offsets,
+        ...(existing ? { expectedVersion: existing.version } : {}),
+      },
     });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
-    setBusy(false);
-    setOk(existing ? T.changesSaved : T.deadlineCreated);
-    if (!existing) setTitle("");
-    router.refresh();
+    if (saved && !existing) setTitle("");
   }
 
   return (
@@ -142,9 +124,9 @@ export function DeadlineForm({
           );
         })}
       </fieldset>
-      <Say error={error} ok={ok} />
-      <button type="submit" disabled={busy}>
-        {busy ? T.loading : existing ? T.save : T.createDeadline}
+      <SayMutation m={m} />
+      <button type="submit" disabled={m.busy}>
+        {m.busy ? T.loading : existing ? T.save : T.createDeadline}
       </button>
     </form>
   );

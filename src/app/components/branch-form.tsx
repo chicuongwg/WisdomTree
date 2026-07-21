@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
-import { Say } from "./say";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 import { ConfirmButton } from "./confirm-button";
 
 /**
@@ -16,38 +16,29 @@ export function BranchForm({
   branch?: { id: string; name: string; description: string | null; version: number };
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-    setError(null);
     const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") ?? ""),
-      description: String(form.get("description") ?? ""),
-      ...(branch ? { expectedVersion: branch.version } : {}),
-    };
-    const res = await fetch(branch ? `/api/tree/branches/${branch.id}` : "/api/tree/branches", {
-      method: branch ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
-    const saved = (await res.json()) as { id: string };
+    const saved = await m.runJson<{ id: string }>(
+      branch ? `/api/tree/branches/${branch.id}` : "/api/tree/branches",
+      {
+        method: branch ? "PATCH" : "POST",
+        body: {
+          name: String(form.get("name") ?? ""),
+          description: String(form.get("description") ?? ""),
+          ...(branch ? { expectedVersion: branch.version } : {}),
+        },
+      },
+    );
+    if (!saved) return;
     router.push(`/tree/branch/${saved.id}`);
-    router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit}>
-      <Say error={error} />
+      <SayMutation m={m} />
       <div className="field">
         <label htmlFor="name">{T.branchName}</label>
         <input id="name" name="name" type="text" required defaultValue={branch?.name ?? ""} />
@@ -56,8 +47,8 @@ export function BranchForm({
         <label htmlFor="description">{T.description}</label>
         <textarea id="description" name="description" rows={3} defaultValue={branch?.description ?? ""} />
       </div>
-      <button type="submit" disabled={busy}>
-        {busy ? T.loading : T.save}
+      <button type="submit" disabled={m.busy}>
+        {m.busy ? T.loading : T.save}
       </button>
     </form>
   );
@@ -78,18 +69,10 @@ export function BranchForm({
  */
 export function BranchArchiveButton({ branchId }: { branchId: string }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
 
   async function archive() {
-    setError(null);
-    const res = await fetch(`/api/tree/branches/${branchId}/archive`, { method: "POST" });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? T.genericError);
-      return;
-    }
-    router.push("/tree/branches");
-    router.refresh();
+    if (await m.run(`/api/tree/branches/${branchId}/archive`)) router.push("/tree/branches");
   }
 
   return (
@@ -99,9 +82,10 @@ export function BranchArchiveButton({ branchId }: { branchId: string }) {
         title={T.confirmArchiveBranchTitle}
         body={T.confirmArchiveBranchBody}
         className="secondary"
+        disabled={m.busy}
         onConfirm={archive}
       />
-      <Say error={error} />
+      <SayMutation m={m} />
     </>
   );
 }

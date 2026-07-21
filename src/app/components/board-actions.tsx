@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T, taskLabel } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
-import { Say } from "./say";
+import { SayMutation } from "./say";
 
 // Board interactions (admin-op-screen-specs.md § Board): simple state moves
 // between todo/doing/done columns — no drag library — plus task creation,
@@ -21,36 +21,28 @@ export function TaskStateButtons({
   state: string;
   version: number;
 }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
   const moves = (["todo", "doing", "done"] as const).filter((s) => s !== state);
-
-  async function move(to: string) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/tasks/${taskId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: to, expectedVersion: version }),
-    });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-    } else {
-      router.refresh();
-    }
-    setBusy(false);
-  }
 
   return (
     <div className="board-actions">
       {moves.map((s) => (
-        <button key={s} className="secondary" disabled={busy} onClick={() => move(s)}>
+        <button
+          key={s}
+          className="secondary"
+          disabled={m.busy}
+          onClick={() =>
+            m.run(`/api/tasks/${taskId}`, {
+              method: "PATCH",
+              body: { state: s, expectedVersion: version },
+              ok: T.taskSaved,
+            })
+          }
+        >
           → {taskLabel(s)}
         </button>
       ))}
-      {error && <span className="error-text">{error}</span>}
+      <SayMutation m={m} />
     </div>
   );
 }
@@ -62,49 +54,21 @@ export function TaskStateButtons({
  * service's own message ("Việc này đã có người nhận").
  */
 export function TaskClaimButton({ taskId }: { taskId: string }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function claim() {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/tasks/${taskId}/claim`, { method: "POST" });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
-    setBusy(false);
-    router.refresh();
-  }
+  const m = useMutation();
 
   return (
     <>
-      <button type="button" disabled={busy} onClick={claim}>
+      <button type="button" disabled={m.busy} onClick={() => m.run(`/api/tasks/${taskId}/claim`)}>
         {T.claimTask}
       </button>
-      {error && <span className="error-text">{error}</span>}
+      <SayMutation m={m} />
     </>
   );
 }
 
 /** Off the board, still in the record — so the question says exactly that. */
 export function TaskArchiveButton({ taskId }: { taskId: string }) {
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-
-  async function archive() {
-    setError(null);
-    const res = await fetch(`/api/tasks/${taskId}/archive`, { method: "POST" });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-      return;
-    }
-    router.refresh();
-  }
+  const m = useMutation();
 
   return (
     <>
@@ -113,30 +77,25 @@ export function TaskArchiveButton({ taskId }: { taskId: string }) {
         title={T.confirmArchiveTaskTitle}
         body={T.confirmArchiveTaskBody}
         className="secondary"
-        onConfirm={archive}
+        disabled={m.busy}
+        onConfirm={() => m.run(`/api/tasks/${taskId}/archive`)}
       />
-      {error && <span className="error-text">{error}</span>}
+      <SayMutation m={m} />
     </>
   );
 }
 
 export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
-  const router = useRouter();
+  const m = useMutation();
   const [title, setTitle] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [startAt, setStartAt] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setError(null);
-    const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const created = await m.run("/api/tasks", {
+      body: {
         title,
         state: "todo",
         ...(assigneeId ? { assigneeId } : {}),
@@ -146,20 +105,13 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
         // A start turns a deadline into a span, which is what the board reads
         // as "how long there is to do this".
         ...(startAt ? { startAt: new Date(startAt).toISOString() } : {}),
-      }),
+      },
     });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
+    if (!created) return;
     setTitle("");
     setAssigneeId("");
     setDueAt("");
     setStartAt("");
-    setBusy(false);
-    router.refresh();
   }
 
   return (
@@ -197,9 +149,9 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
           onChange={(e) => setDueAt(e.target.value)}
         />
       </div>
-      {error && <p className="error-text">{error}</p>}
-      <button type="submit" disabled={busy || !title.trim()}>
-        {busy ? T.loading : T.createTask}
+      <SayMutation m={m} />
+      <button type="submit" disabled={m.busy || !title.trim()}>
+        {m.busy ? T.loading : T.createTask}
       </button>
     </form>
   );
@@ -237,23 +189,19 @@ export function TaskDetailForm({
     version: number;
   };
 }) {
-  const router = useRouter();
+  const m = useMutation();
   const [startAt, setStartAt] = useState(toLocalInput(task.startAt));
   const [dueAt, setDueAt] = useState(toLocalInput(task.dueAt));
   const [notes, setNotes] = useState(task.notes ?? "");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
 
+  // The refreshed page re-renders this form with the new version, so the next
+  // save carries a current expectedVersion rather than the stale one.
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setError(null);
-    setOk(null);
-    const res = await fetch(`/api/tasks/${task.id}`, {
+    await m.run(`/api/tasks/${task.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      ok: T.taskSaved,
+      body: {
         // Every key is sent, empty included: on this form an emptied date means
         // "unschedule it", which the service reads as null. Absent would mean
         // "leave it", and there would be no way to take a date back off.
@@ -261,19 +209,8 @@ export function TaskDetailForm({
         dueAt: dueAt ? new Date(dueAt).toISOString() : null,
         notes,
         expectedVersion: task.version,
-      }),
+      },
     });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
-    setOk(T.taskSaved);
-    setBusy(false);
-    // The refreshed page re-renders this form with the new version, so the next
-    // save carries a current expectedVersion rather than the stale one.
-    router.refresh();
   }
 
   return (
@@ -306,9 +243,9 @@ export function TaskDetailForm({
           placeholder={T.taskNotesHint}
         />
       </div>
-      <Say error={error} ok={ok} />
-      <button type="submit" disabled={busy}>
-        {busy ? T.loading : T.save}
+      <SayMutation m={m} />
+      <button type="submit" disabled={m.busy}>
+        {m.busy ? T.loading : T.save}
       </button>
     </form>
   );

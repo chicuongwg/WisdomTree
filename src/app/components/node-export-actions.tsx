@@ -20,25 +20,44 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<JobStatus | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Clearing the pending timer is not enough on its own: a request already in
+  // flight resolves after the component is gone and re-arms the timer from its
+  // own .then, so leaving the page mid-export left a 1.2s loop running for the
+  // life of the tab. Everything below checks this before it acts.
+  const alive = useRef(true);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, []);
 
   async function poll(jobId: string) {
-    const res = await fetch(`/api/jobs/${jobId}`);
+    let res: Response;
+    try {
+      res = await fetch(`/api/jobs/${jobId}`);
+    } catch {
+      if (!alive.current) return;
+      setError(T.exportStatusFailed);
+      setBusy(false);
+      return;
+    }
+    if (!alive.current) return;
     if (!res.ok) {
-      setError("Không kiểm tra được trạng thái xuất tệp.");
+      setError(T.exportStatusFailed);
       setBusy(false);
       return;
     }
     const status = (await res.json()) as JobStatus;
+    if (!alive.current) return;
     setJob(status);
     if (status.state === "queued" || status.state === "running") {
       timer.current = setTimeout(() => void poll(jobId), 1200);
     } else {
       setBusy(false);
-      if (status.state !== "succeeded") setError("Xuất tệp thất bại. Vui lòng thử lại.");
+      if (status.state !== "succeeded") setError(T.exportFailed);
     }
   }
 
@@ -46,11 +65,18 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
     setBusy(true);
     setError(null);
     setJob(null);
-    const res = await fetch(`/api/tree/nodes/${nodeId}/export`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`/api/tree/nodes/${nodeId}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format }),
+      });
+    } catch {
+      setError(T.genericError);
+      setBusy(false);
+      return;
+    }
     if (res.status !== 202) {
       const payload = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(payload?.message ?? T.genericError);

@@ -197,6 +197,10 @@ export const T = {
   addComment: "Gửi thảo luận", // NEW
   newComment: "Viết thảo luận mới", // NEW
   reply: "Trả lời", // NEW
+  commentsEmpty: "Chưa có thảo luận nào. Hãy là người mở đầu.", // NEW
+  // A thread that would not load says so, and offers the way out.
+  commentsLoadFailed: "Không tải được thảo luận.", // NEW
+  retry: "Thử lại", // NEW
   // Mentions are typed into the comment itself; the picker is gone.
   mentionHelp: "Gõ @ rồi tên thành viên (ví dụ @Phạm Thu Hương) để nhắc họ vào thảo luận này.", // NEW
   notificationCenter: "Thông báo", // NEW
@@ -384,6 +388,10 @@ export const T = {
   exporting: "Đang xuất tệp…", // NEW
   downloadExport: "Tải tệp đã xuất", // NEW
   exportWarnings: "Lưu ý:", // NEW
+  // The two failures of an export. They were the only error sentences written
+  // inline in a component rather than here.
+  exportStatusFailed: "Không kiểm tra được trạng thái xuất tệp.", // NEW
+  exportFailed: "Xuất tệp thất bại. Vui lòng thử lại.", // NEW
   // Deadline form: reminder offsets and save results (NEW — not yet in vocabulary-vi.md)
   reminderOneDay: "1 ngày trước", // NEW
   reminderThreeDays: "3 ngày trước", // NEW

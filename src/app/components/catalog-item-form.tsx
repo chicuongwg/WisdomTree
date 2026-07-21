@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { Say } from "./say";
 
 /** Librarian Desk: add a physical item. The only way the catalogue grows. */
 export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: string }> }) {
-  const router = useRouter();
+  const m = useMutation();
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [location, setLocation] = useState("");
@@ -15,27 +15,15 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
   // not read as 0. The service parses it and refuses anything below 1.
   const [copies, setCopies] = useState("1");
   const [spaceId, setSpaceId] = useState(spaces[0]?.id ?? "");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-    setError(null);
     setAdded(null);
-    const res = await fetch("/api/catalog", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, author, location, copies, spaceId }),
+    const item = await m.runJson<{ itemCode: string }>("/api/catalog", {
+      body: { title, author, location, copies, spaceId },
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
-    const item = (await res.json()) as { itemCode: string };
+    if (!item) return;
     setTitle("");
     setAuthor("");
     setLocation("");
@@ -43,15 +31,13 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
     // The item code is generated server-side, so showing it back is the only
     // way the librarian learns what to write on the spine.
     setAdded(item.itemCode);
-    router.refresh();
-    setBusy(false);
   }
 
   if (spaces.length === 0) return null;
 
   return (
     <form onSubmit={submit}>
-      <Say error={error} ok={added && `${T.catalogItemAdded} ${added}`} />
+      <Say error={m.error} ok={added && `${T.catalogItemAdded} ${added}`} />
       <div className="field">
         <label htmlFor="ci-title">{T.catalogItem}</label>
         <input
@@ -100,8 +86,8 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
           ))}
         </select>
       </div>
-      <button type="submit" disabled={busy || !title.trim()}>
-        {busy ? T.loading : T.addCatalogItem}
+      <button type="submit" disabled={m.busy || !title.trim()}>
+        {m.busy ? T.loading : T.addCatalogItem}
       </button>
     </form>
   );

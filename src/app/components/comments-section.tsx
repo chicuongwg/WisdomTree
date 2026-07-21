@@ -101,10 +101,21 @@ export function CommentsSection({
       : /^#comment-(.+)$/.exec(window.location.hash)?.[1] ?? null,
   );
 
+  // A thread that failed to load is not an empty thread. Setting [] on failure
+  // told the reader "chưa có thảo luận nào" about a discussion that may be full
+  // of it, so the two answers are kept apart and the failed one offers a retry.
+  const [loadFailed, setLoadFailed] = useState(false);
+
   const load = useCallback(async () => {
-    const res = await fetch(`/api/comments?anchorType=${anchorType}&anchorId=${anchorId}`);
-    if (res.ok) setComments((await res.json()) as CommentRow[]);
-    else setComments([]);
+    setLoadFailed(false);
+    try {
+      const res = await fetch(`/api/comments?anchorType=${anchorType}&anchorId=${anchorId}`);
+      if (!res.ok) throw new Error("load");
+      setComments((await res.json()) as CommentRow[]);
+    } catch {
+      setComments([]);
+      setLoadFailed(true);
+    }
   }, [anchorType, anchorId]);
 
   useEffect(() => {
@@ -129,16 +140,25 @@ export function CommentsSection({
     if (!body.trim()) return;
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        anchorType,
-        anchorId,
-        body: body.trim(),
-        ...(replyTo ? { parentCommentId: replyTo.id } : {}),
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          anchorType,
+          anchorId,
+          body: body.trim(),
+          ...(replyTo ? { parentCommentId: replyTo.id } : {}),
+        }),
+      });
+    } catch {
+      // Offline: without this the rejection escaped and the button below stayed
+      // disabled on a comment the reader had already typed.
+      setError(T.genericError);
+      setBusy(false);
+      return;
+    }
     if (!res.ok) {
       const err = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(err?.message ?? T.genericError);
@@ -251,8 +271,15 @@ export function CommentsSection({
       <div role="status" aria-live="polite">
         {comments === null ? (
           <p className="muted">{T.loading}</p>
+        ) : loadFailed ? (
+          <p className="error-text">
+            {T.commentsLoadFailed}{" "}
+            <button type="button" className="secondary" onClick={() => void load()}>
+              {T.retry}
+            </button>
+          </p>
         ) : topLevel.length === 0 ? (
-          <p className="muted">Chưa có thảo luận nào. Hãy là người mở đầu.</p>
+          <p className="muted">{T.commentsEmpty}</p>
         ) : null}
       </div>
       {topLevel.length > 0 && (

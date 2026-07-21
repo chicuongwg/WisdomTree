@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { notifyChannelLabel, eventLabel, T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { Say } from "@/app/components/say";
 
 // Per-event channel preferences (notifications.md): absent row = default
@@ -11,10 +12,9 @@ type Pref = { eventType: string; channels: string[] };
 const CHANNELS = ["in_app", "email", "zalo"] as const;
 
 export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
+  const m = useMutation();
   const [prefs, setPrefs] = useState(initial);
-  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function toggle(eventType: string, channel: string, on: boolean) {
     setPrefs((prev) =>
@@ -28,22 +28,17 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
   }
 
   async function save() {
-    setBusy(true);
-    setError(null);
     setMessage(null);
-    const res = await fetch("/api/notifications/preferences", {
+    // The answer is the merged matrix, so it replaces what is on screen. The
+    // boxes are disabled across the round trip below: without that, a toggle
+    // made mid-flight was overwritten here without a word.
+    const saved = await m.runJson<Pref[]>("/api/notifications/preferences", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(prefs),
+      body: prefs,
     });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-    } else {
-      setPrefs((await res.json()) as Pref[]);
-      setMessage("Đã lưu tùy chọn nhận thông báo.");
-    }
-    setBusy(false);
+    if (!saved) return;
+    setPrefs(saved);
+    setMessage("Đã lưu tùy chọn nhận thông báo.");
   }
 
   // Fragment for the same reason as the curation workbench: the panel spaces
@@ -71,6 +66,7 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
                     <input
                       type="checkbox"
                       aria-label={`${eventLabel(p.eventType)} — ${notifyChannelLabel(c)}`}
+                      disabled={m.busy}
                       checked={p.channels.includes(c)}
                       onChange={(e) => toggle(p.eventType, c, e.target.checked)}
                     />
@@ -83,10 +79,10 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
       </div>
       {/* "Đã lưu" was .muted — the same grey as a timestamp, so the one thing
           the reader was waiting for looked like metadata. */}
-      <Say error={error} ok={message} />
+      <Say error={m.error} ok={message} />
       <div className="button-row">
-        <button onClick={save} disabled={busy}>
-          {busy ? T.loading : T.save}
+        <button onClick={save} disabled={m.busy}>
+          {m.busy ? T.loading : T.save}
         </button>
       </div>
     </>

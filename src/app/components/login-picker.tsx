@@ -14,14 +14,24 @@ export function LoginPicker({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Not useMutation(): that hook carries one busy flag, and this list needs to
+  // say which row is signing in. The try/catch is the part it borrows —
+  // without it an offline press left every row disabled with nothing said.
   async function signIn(userId: string) {
     setPendingId(userId);
     setError(null);
-    const res = await fetch("/api/auth/dev-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/auth/dev-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    } catch {
+      setError(T.genericError);
+      setPendingId(null);
+      return;
+    }
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
       setError(body?.message ?? T.genericError);

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
-import { Say } from "./say";
+import { SayMutation } from "./say";
 
 /**
  * Publish Review decision controls (admin-op-screen-specs.md): approve
@@ -25,8 +26,13 @@ export function PublishDecision({
   chunks: Array<{ id: string; refLabel: string }>;
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
+  // Held from a decision that succeeded until the screen it navigates to has
+  // taken over: run() releases its own flag at the end of the round trip, and
+  // three buttons coming back to life on a page that is leaving is an invitation
+  // to publish twice.
+  const [leaving, setLeaving] = useState(false);
+  const busy = m.busy || leaving;
   const [branchId, setBranchId] = useState(suggestedBranchId ?? "");
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -36,41 +42,26 @@ export function PublishDecision({
     );
   }
 
-  // ponytail: not useMutation() — a decision reads the new node's id back off
-  // the response and navigates to it, and busy stays set on the way out so the
-  // buttons cannot come back to life while the screen is leaving.
   const base = `/api/source/${sourceId}/version/${versionId}`;
-  async function decide(path: string, body?: object): Promise<Response | null> {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(path, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (res.ok) return res;
-    const payload = (await res.json().catch(() => null)) as { message?: string } | null;
-    setError(payload?.message ?? T.genericError);
-    setBusy(false);
-    return null;
-  }
 
+  // A decision reads the new page's id back off the response and goes there.
   async function publish(verification: "verified" | "unverified") {
-    const res = await decide(`${base}/publish`, {
-      branchId,
-      verification,
-      ...(selected.length ? { excerptChunkIds: selected } : {}),
+    const node = await m.runJson<{ id: string }>(`${base}/publish`, {
+      body: {
+        branchId,
+        verification,
+        ...(selected.length ? { excerptChunkIds: selected } : {}),
+      },
     });
-    if (!res) return;
-    const node = (await res.json()) as { id: string };
+    if (!node) return;
+    setLeaving(true);
     router.push(`/tree/node/${node.id}`);
-    router.refresh();
   }
 
   async function reject() {
-    if (!(await decide(`${base}/reject`))) return;
+    if (!(await m.run(`${base}/reject`))) return;
+    setLeaving(true);
     router.push("/review");
-    router.refresh();
   }
 
   return (
@@ -78,7 +69,7 @@ export function PublishDecision({
       <h2>
         {T.publishDecision} {T.publish.toLowerCase()}
       </h2>
-      <Say error={error} />
+      <SayMutation m={m} />
       <div className="field">
         <label htmlFor="target-branch">{T.branch} đích</label>
         <select id="target-branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>

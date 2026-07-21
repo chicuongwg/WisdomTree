@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T, verificationStateLabel } from "@/lib/vi";
-import { Say } from "./say";
+import { useMutation } from "@/lib/use-mutation";
+import { SayMutation } from "./say";
 
 type NodeInput = {
   id: string;
@@ -23,8 +24,7 @@ type NodeInput = {
  */
 export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolean }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const m = useMutation();
   const [conflict, setConflict] = useState(false);
   const [title, setTitle] = useState(node.title);
   const [contentMd, setContentMd] = useState(node.contentMd);
@@ -41,34 +41,27 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-    setError(null);
     setConflict(false);
-    const res = await fetch(`/api/tree/nodes/${node.id}`, {
+    const saved = await m.run(`/api/tree/nodes/${node.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         title,
         contentMd,
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
         expectedVersion: node.version,
         ...(isAdmin ? { verification, publish } : {}),
-      }),
+      },
+      // A colleague saved first. The offer to reload is the only way out that
+      // does not throw away what is in the box, so it needs the code, not just
+      // the sentence.
+      onError: (res, body) => setConflict(res.status === 409 && body?.code === "version_conflict"),
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { message?: string; code?: string } | null;
-      setError(body?.message ?? T.genericError);
-      setConflict(res.status === 409 && body?.code === "version_conflict");
-      setBusy(false);
-      return;
-    }
-    router.push(`/tree/node/${node.id}`);
-    router.refresh();
+    if (saved) router.push(`/tree/node/${node.id}`);
   }
 
   return (
     <form onSubmit={onSubmit}>
-      <Say error={error} />
+      <SayMutation m={m} />
       {conflict && (
         <button type="button" className="secondary" onClick={() => router.refresh()}>
           {T.reloadNewVersion}
@@ -129,8 +122,8 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
         </>
       )}
       <p>
-        <button type="submit" disabled={busy}>
-          {busy ? T.loading : T.save}
+        <button type="submit" disabled={m.busy}>
+          {m.busy ? T.loading : T.save}
         </button>
       </p>
     </form>

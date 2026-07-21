@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
-import { Say } from "./say";
+import { SayMutation } from "./say";
 
 /**
  * What the submitter can do about their own upload: fix the label, or take it
@@ -25,41 +26,23 @@ export function SourceOwnerActions({
   description: string | null;
 }) {
   const router = useRouter();
+  const m = useMutation();
   const [open, setOpen] = useState(false);
   const [nextTitle, setNextTitle] = useState(title);
   const [nextDescription, setNextDescription] = useState(description ?? "");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function call(method: "PATCH" | "DELETE", body?: unknown) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/source/${sourceId}`, {
-      method,
-      ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
-    });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
-      setBusy(false);
-      return;
-    }
-    if (method === "DELETE") {
-      router.push("/library");
-      router.refresh();
-      return;
-    }
-    setOpen(false);
-    // Refresh before releasing the button, so it cannot be fired twice against
-    // the state the screen is still showing.
-    router.refresh();
-    setBusy(false);
+  // The refresh runs inside run(), before the button is released, so the act
+  // cannot be fired twice against the state the screen is still showing.
+  async function call(method: "PATCH" | "DELETE", body?: object) {
+    if (!(await m.run(`/api/source/${sourceId}`, { method, body }))) return;
+    if (method === "DELETE") router.push("/library");
+    else setOpen(false);
   }
 
   return (
     <div className="panel">
       <h2>{T.sourceOwnerActions}</h2>
-      <Say error={error} />
+      <SayMutation m={m} />
 
       {open ? (
         <form
@@ -88,22 +71,22 @@ export function SourceOwnerActions({
             />
           </div>
           <div className="button-row">
-            <button type="button" className="secondary" onClick={() => setOpen(false)} disabled={busy}>
+            <button type="button" className="secondary" onClick={() => setOpen(false)} disabled={m.busy}>
               {T.cancel}
             </button>
-            <button type="submit" disabled={busy || !nextTitle.trim()}>
-              {busy ? T.loading : T.save}
+            <button type="submit" disabled={m.busy || !nextTitle.trim()}>
+              {m.busy ? T.loading : T.save}
             </button>
           </div>
         </form>
       ) : (
         <div className="button-row">
-          <button type="button" className="secondary" onClick={() => setOpen(true)} disabled={busy}>
+          <button type="button" className="secondary" onClick={() => setOpen(true)} disabled={m.busy}>
             {T.renameSource}
           </button>
           <ConfirmButton
             className="danger"
-            disabled={busy}
+            disabled={m.busy}
             label={T.withdrawSource}
             title={T.withdrawSourceTitle}
             body={T.withdrawSourceBody}
