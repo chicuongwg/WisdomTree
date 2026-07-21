@@ -96,7 +96,19 @@ export default async function LibraryPage({
     <LibraryDropzone spaces={spaces} spaceId={spaceId || undefined}>
     <main className="page">
       <h1>{T.library}</h1>
+      {/* A GET form submits ONLY its own fields, so everything the screen is
+          holding that is not a field here — the sort column, its direction,
+          and whether the archive is being viewed — was silently dropped on
+          every search. An admin searching inside the archive was thrown back
+          out of it, sorted by something else, with no sign that either had
+          happened. The state the form does not own rides along as hidden
+          inputs. (folderId is deliberately NOT one of them: a search is across
+          the space, and staying inside one folder while searching would find
+          almost nothing and explain none of it.) */}
       <form className="inline" method="get" role="search">
+        {sp.sort && <input type="hidden" name="sort" value={sp.sort} />}
+        {sp.dir && <input type="hidden" name="dir" value={sp.dir} />}
+        {archived && <input type="hidden" name="archived" value="1" />}
         <input
           type="search"
           name="q"
@@ -142,7 +154,11 @@ export default async function LibraryPage({
       {items.length === 0 && childFolders.length === 0 ? (
         // An empty list is the most common first screen a new team sees, so it
         // carries the next action rather than only reporting emptiness.
-        folderId ? (
+        // Except past the last page, where "the library is empty — upload
+        // something" would be a lie about a library that is full.
+        page > 1 ? (
+          <Empty title={T.pageBeyondEnd} action={<Link href={href({})}>{T.backToFirstPage}</Link>} />
+        ) : folderId ? (
           <Empty title={T.folderEmptyTitle} hint={T.folderEmptyHint} />
         ) : q || spaceId || archived ? (
           <Empty title={T.noMatches} action={<Link href="/library">{T.clearFilters}</Link>} />

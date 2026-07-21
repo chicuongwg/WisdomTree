@@ -66,7 +66,16 @@ export default async function CatalogPage({
         <button type="submit">{T.search}</button>
       </form>
       {items.length === 0 ? (
-        q ? (
+        // Page 2 of a one-page list — reached by the pager's "next" on a list
+        // whose length is an exact multiple of the page size, or by a typed
+        // URL. It used to render the FIRST-RUN empty state, which told a
+        // librarian with a full catalogue that there was nothing in it.
+        page > 1 ? (
+          <Empty
+            title={T.pageBeyondEnd}
+            action={{ label: T.backToFirstPage, href: q ? `/catalog?q=${encodeURIComponent(q)}` : "/catalog" }}
+          />
+        ) : q ? (
           <Empty title={T.noMatches} action={<Link href="/catalog">{T.clearFilters}</Link>} />
         ) : (
           // Only a librarian can add an item, so only a librarian gets a button.

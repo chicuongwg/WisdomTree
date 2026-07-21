@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { listNotificationsWithLinks } from "@/modules/notify/service";
+import { listNotificationsWithLinks, NOTIFICATION_LIMIT } from "@/modules/notify/service";
 import { eventLabel, T, when } from "@/lib/vi";
 import { MarkReadButton, NotificationLink } from "@/app/components/notification-actions";
 import { Empty } from "@/app/components/empty";
@@ -30,6 +30,12 @@ export default async function NotificationsPage() {
           />
         ) : (
           <div className="record-scroll">
+            {/* A full page means there are older ones the list does not reach.
+                It used to simply stop at a hundred, which reads as "this is
+                all of them" — the one thing it does not mean. */}
+            {notes.length >= NOTIFICATION_LIMIT && (
+              <p className="meta">{T.notificationsTruncated(NOTIFICATION_LIMIT)}</p>
+            )}
             <table className="list">
               <thead>
                 <tr>

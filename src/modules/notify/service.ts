@@ -284,6 +284,15 @@ export async function createComment(
 // Notification center
 // ---------------------------------------------------------------------------
 
+/**
+ * The most recent hundred. That ceiling is deliberate — nobody scrolls a
+ * notification list into last month — but it used to be invisible: the screen
+ * simply ended, with no way to tell "you have a hundred" from "you have
+ * exactly this many". NOTIFICATION_LIMIT is exported so the screen can notice
+ * a full page and say so.
+ */
+export const NOTIFICATION_LIMIT = 100;
+
 export async function listNotifications(actor: Principal, unreadOnly = false) {
   return db
     .select()
@@ -294,7 +303,7 @@ export async function listNotifications(actor: Principal, unreadOnly = false) {
         : eq(notifications.userId, actor.userId),
     )
     .orderBy(desc(notifications.createdAt))
-    .limit(100);
+    .limit(NOTIFICATION_LIMIT);
 }
 
 /**

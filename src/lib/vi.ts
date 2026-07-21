@@ -81,6 +81,8 @@ export const T = {
   nextPage: "Trang sau",
   pageLabel: "Trang",
   // Empty states that carry a next action (NEW — not yet in vocabulary-vi.md)
+  pageBeyondEnd: "Đã hết trang — không còn mục nào ở đây.", // NEW
+  backToFirstPage: "Về trang đầu", // NEW
   noMatches: "Không tìm thấy mục nào khớp với bộ lọc.",
   clearFilters: "Xoá bộ lọc",
   libraryEmptyTitle: "Kho tư liệu này chưa có gì.",
@@ -90,6 +92,8 @@ export const T = {
   // Empty states, one per screen (NEW — not yet in vocabulary-vi.md)
   homeLoansEmptyTitle: "Bạn chưa mượn cuốn sách nào.",
   homeLoansEmptyHint: "Tìm sách trong thư viện rồi gửi yêu cầu mượn; thủ thư sẽ duyệt giúp bạn.",
+  notificationsTruncated: (n: number) =>
+    `Đang hiển thị ${n} thông báo gần nhất. Những thông báo cũ hơn không nằm trong danh sách này.`, // NEW
   notificationsEmptyTitle: "Chưa có thông báo nào.",
   homeNotificationsEmptyHint:
     "Khi có người nhắc bạn trong thảo luận, hoặc tư liệu bạn gửi có thay đổi, thông báo sẽ hiện ở đây.",
