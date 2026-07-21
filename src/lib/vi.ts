@@ -431,6 +431,7 @@ export const T = {
   uploadSendingPrefix: "Đang gửi", // NEW
   uploadFailedPrefix: "Không gửi được:", // NEW
   uploadRetryChooseHint: "Chọn lại các tệp đó để thử lần nữa.", // NEW
+  uploadNoFileChosen: "Hãy chọn ít nhất một tệp để tải lên.", // NEW
   uploadRetryDropHint: "Kéo thả lại các tệp đó để thử lần nữa.", // NEW
   optionalSuffix: "(không bắt buộc)", // NEW
   // Source detail: extraction, versions, restore, filing, nomination

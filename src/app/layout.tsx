@@ -98,7 +98,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {children}
           </div>
           <footer className="statusbar">
-            <Link href="/account" className="sb-item">
+            <Link href="/account" className="sb-item sb-me">
               {user.displayName} · {userRoleLabel(user.role)}
             </Link>
             <span className="sb-item">

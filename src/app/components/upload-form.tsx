@@ -140,6 +140,15 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
     const data = new FormData(event.currentTarget);
     const files = (data.getAll("file") as File[]).filter((f) => f.name);
     const spaceId = String(data.get("spaceId") ?? "");
+    // The file input cannot carry `required`: it is visually hidden behind its
+    // label, and the browser refuses to report a validity bubble on a control
+    // it cannot bring into view — the submit was simply swallowed, with nothing
+    // said and nothing to read. The rule is stated here instead, in the app's
+    // own words, in the place every other answer on this form appears.
+    if (files.length === 0) {
+      setError(T.uploadNoFileChosen);
+      return;
+    }
     const { ids, failed, aborted } = await start(files, spaceId, {
       title: String(data.get("title") ?? "").trim() || undefined,
       description: String(data.get("description") ?? "").trim() || undefined,
@@ -177,7 +186,7 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
           ponytail: no .field wrapper on this one — `.field label` would repaint
           the trigger muted-on-canopy, and .file-field already lays out the row. */}
       <div className="file-field">
-        <input id="file" name="file" type="file" multiple required disabled={disabled} className="sr-only"
+        <input id="file" name="file" type="file" multiple disabled={disabled} className="sr-only"
           onChange={(e) => setFileNames(Array.from(e.target.files ?? []).map((f) => f.name))} />
         <label htmlFor="file" className="button secondary">
           Chọn {T.file.toLowerCase()}

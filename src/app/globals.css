@@ -142,6 +142,10 @@
   --shell-side-bg: #eceee6;        /* sidebar wash, one step off paper */
   --shell-side-hover: #e0e4d8;
   --shell-side-active: #d8e4dc;
+  /* The status strip's own height, named because two other things measure
+     against it: the sticky task panel, and the drop-progress bar that must
+     clear it. */
+  --shell-status-h: 1.6rem;
   --shell-status-bg: #1e6b4a;      /* canopy status strip */
   --shell-status-ink: #e2eee6;
   --shell-veil: rgba(23, 29, 26, 0.45);
@@ -1022,7 +1026,14 @@ html, body { height: 100%; }
 
 .shell {
   display: grid;
+  /* dvh, not vh: on a phone `100vh` is the height the window has with the URL
+     bar RETRACTED, so the shell is taller than what is on screen. Nothing here
+     scrolls the document — .main-area is the only scroller — so the statusbar,
+     which holds the account link, the unread count and the way out, sat below
+     the bottom edge with no gesture that could reach it. The vh line stays as
+     the fallback for anything that does not know dvh. */
   height: 100vh;
+  height: 100dvh;
   grid-template-columns: 3.25rem 16.5rem minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
   grid-template-areas: "rail side main" "status status status";
@@ -1242,13 +1253,27 @@ a.tree-item.active {
   gap: 1rem;
   padding: 0.15rem 0.7rem;
   font-size: 0.74rem;
-  min-height: 1.6rem;
+  min-height: var(--shell-status-h);
   flex-wrap: wrap;
 }
 .statusbar .grow { flex: 1; }
 .statusbar a { color: inherit; }
 .statusbar a:hover { color: #fff; text-decoration: underline; }
-.statusbar .sb-item { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+.statusbar .sb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  min-width: 0;
+}
+/* nowrap is right for the app's own short phrases — "Thông báo: 3 chưa đọc"
+   should not break across two lines. It is wrong for the one item that holds
+   text nobody here wrote: a member's display name. With no line to break to,
+   a long name grew the strip (a grid item) instead of wrapping, and took a
+   horizontal scrollbar across the whole document with it. So the name is the
+   one item allowed to wrap. Not `text-overflow: ellipsis`: .sb-item is an
+   inline-flex, and ellipsis does not apply to a flex container's contents. */
+.statusbar .sb-me { white-space: normal; }
 .statusbar button, .statusbar button.secondary {
   background: none;
   border: none;
@@ -1911,7 +1936,10 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
    the bottom of the viewport so it survives the reader scrolling the list. */
 .dropzone-progress {
   position: fixed;
-  inset: auto var(--space-4) var(--space-4);
+  /* Clear of the status strip rather than on top of it: pinned at var(--space-4)
+     the bar covered the statusbar outright for the whole upload, and the strip
+     is where the reader's own name, the unread count and the way out live. */
+  inset: auto var(--space-4) calc(var(--space-4) + var(--shell-status-h));
   z-index: 55;
   flex-direction: row;
   align-items: center;
@@ -2250,7 +2278,14 @@ button.login-person:hover .login-person-role { color: inherit; }
 .task-panel {
   position: sticky;
   top: var(--space-4);
-  max-height: calc(100vh - var(--space-6));
+  /* The scroller it is sticky inside is .main-area, which is the window MINUS
+     the status strip — so a plain 100vh ran the last of the panel below the
+     fold with no way to reach it. The strip's height comes out of the same
+     token the strip itself is built from, so the two cannot drift.
+     (A percentage would be the tidier expression and does not work: the grid
+     that holds this panel is align-items: start, i.e. auto-height, and a
+     percentage max-height against an auto-height parent resolves to none.) */
+  max-height: calc(100dvh - var(--shell-status-h) - var(--space-6));
   overflow-y: auto;
 }
 
