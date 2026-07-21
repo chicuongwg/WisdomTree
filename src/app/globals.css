@@ -2020,14 +2020,21 @@ main.page.login-page {
 /* The portal is one door, not a document with sections, so it opts out of the
    section-identity rule: that rule gives an h2 a tick at its left edge and a
    seam above it, and on centred text the tick detaches to the far margin and
-   the seam draws a line under the thing it was meant to separate. */
-.login-page > h2 {
+   the seam draws a line under the thing it was meant to separate.
+
+   Written to OUT-SPECIFY the section rule rather than merely to follow it:
+   `main.page > h2:not(:first-child)` counts two classes, so a plain
+   `.login-page > h2` loses to it and the tick and the seam both survived the
+   first attempt at this. Match the selector's shape, then add the class. */
+main.page.login-page > h2,
+main.page.login-page > h2:not(:first-child) {
   display: block;
   border-top: none;
+  margin-top: 0;
   padding-top: 0;
   font-size: 0.95rem;
 }
-.login-page > h2::before { content: none; }
+main.page.login-page > h2::before { content: none; }
 .login-page .panel { text-align: left; }
 
 /* The demo picker: each person is one full-width row that signs you in.
