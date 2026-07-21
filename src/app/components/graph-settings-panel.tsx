@@ -113,10 +113,12 @@ export function GraphSettingsPanel({
     <details className="graph-panel" open={open} onToggle={(e) => onOpenChange(e.currentTarget.open)}>
       <summary>{T.graphSettings}</summary>
       <div className="graph-panel-body">
+        {/* No title here: the <summary> above is already the panel's name, and
+            printing it twice put "Tùy chỉnh bản đồ" on two consecutive lines.
+            The row is the two glyph buttons alone — Obsidian's pair, restore
+            defaults and shut — pushed to the right. Their Vietnamese wording
+            lives in the accessible name, which is what a glyph button owes. */}
         <div className="graph-panel-head">
-          <span className="gp-title">{T.graphSettings}</span>
-          {/* Glyph buttons, Obsidian's two: restore defaults, and shut the
-              panel. The Vietnamese wording survives as the accessible name. */}
           <button
             type="button"
             className="gp-icon"

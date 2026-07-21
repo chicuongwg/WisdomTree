@@ -612,9 +612,14 @@ form.inline { flex-direction: row; gap: var(--space-2); flex-wrap: wrap; align-i
 /* Every field the app actually renders belongs here. A type left out of this
    list does not fall back to something plausible — it renders raw browser
    chrome, in the browser's locale: `datetime-local` was showing mm/dd/yyyy and
-   AM/PM next to Việt-hoá siblings. */
+   AM/PM next to Việt-hoá siblings, and `email` was the odd box on the invite
+   form that the owner reported as "khung mời thành viên không đồng nhất" —
+   rebuilding that form's layout did not fix it, because the fault was here.
+   `password`, `tel` and `url` are listed although nothing renders them yet:
+   the next person to add one should get a styled field, not this bug again. */
 input[type="text"], input[type="search"], input[type="date"],
-input[type="datetime-local"], input[type="number"], select, textarea {
+input[type="datetime-local"], input[type="number"], input[type="email"],
+input[type="password"], input[type="tel"], input[type="url"], select, textarea {
   padding: 0.5rem 0.7rem;
   min-height: 2.75rem;
   /* A <select> sizes to its longest option, so one long space name pushed the
@@ -1543,22 +1548,14 @@ a.tree-item.nav-item { font-weight: 500; }
   display: block;
   border-top: 1px solid var(--color-line);
 }
-/* Header row: the panel's name, then Obsidian's two glyph buttons. */
+/* Header row: Obsidian's two glyph buttons, right-aligned under the summary
+   that already names the panel. */
 .graph-panel-head {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
-}
-.graph-panel-head .gp-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
 }
 .gp-icon {
   flex: none;
