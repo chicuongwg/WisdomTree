@@ -67,7 +67,13 @@ export function PresenceRow({ pageKey }: { pageKey: string }) {
         void beat();
         timer = setInterval(beat, BEAT_MS);
       } else {
-        setPeople([]);
+        // The row is left standing. Clearing it here removed a whole line from
+        // the page every time the reader switched tabs and put it back one
+        // request after they returned, so the content under it jumped twice
+        // for a warning whose whole job is to be quiet. Our own row is still
+        // withdrawn from the database — what other people see is honest; what
+        // this reader sees is at most a few seconds stale, and only while they
+        // are not looking at it.
         leave();
       }
     }

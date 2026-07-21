@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useDeferredValue,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
 import { createSimulation, SIM_NODE_CAP, type Simulation } from "@/lib/graph-force";
@@ -124,19 +134,34 @@ type XY = { x: number; y: number };
 type ViewTransform = { k: number; tx: number; ty: number };
 
 /**
- * A media query as state. `false` on the server AND on the first client render
- * — the truth arrives one tick later — so hydration can never disagree.
+ * A media query, answered correctly on the FIRST client render.
+ *
+ * The old shape — useState(false) plus an effect that corrected it — meant a
+ * reader who asks for reduced motion still got one tick of `false`: the
+ * simulation was built, ticked, painted, and then thrown away and re-seeded
+ * when the effect ran. That is precisely the jump reduced-motion exists to
+ * prevent, delivered by the code meant to honour it. The touch help paragraph
+ * and the reduced-motion notice flipped a tick after mount for the same
+ * reason, shoving the canvas down.
+ *
+ * useSyncExternalStore has a server snapshot (false, because the server has no
+ * viewport) and a client snapshot read synchronously — so hydration matches the
+ * HTML and the very first client render already knows the answer.
  */
 function useMedia(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const sync = () => setMatches(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, [query]);
-  return matches;
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
 }
 
 /** sqrt keeps a hub from swamping the map: 16 links is twice the radius of 4. */
@@ -173,6 +198,18 @@ export function KnowledgeMap({
   // render are identical; the stored values arrive in an effect below.
   const [settings, setSettings] = useState<GraphSettings>(DEFAULT_SETTINGS);
   const [term, setTerm] = useState("");
+  /**
+   * What the map is actually filtered by. The box keeps `term` so typing stays
+   * instant; the map follows one step behind.
+   *
+   * Every keystroke used to rebuild the whole view — re-run the layout over
+   * every node, tear the physics down and construct it again — between the key
+   * going down and the letter appearing. On a large map the input stuttered
+   * under the hand. useDeferredValue lets React paint the letter first and do
+   * the expensive part when it has room, and it interrupts itself if another
+   * key arrives meanwhile.
+   */
+  const appliedTerm = useDeferredValue(term);
   // Closed by default everywhere: open, the panel pushed the map it controls
   // ~350px down the page, which is the wrong thing to show first.
   const [panelOpen, setPanelOpen] = useState(false);
@@ -182,6 +219,17 @@ export function KnowledgeMap({
   /** Nothing to persist until the reader actually changes something. */
   const dirty = useRef(false);
 
+  // Deliberately still an effect, and deliberately NOT a lazy initializer.
+  //
+  // The saved settings live in localStorage, which the server cannot read, so
+  // seeding state from them would make the first client render disagree with
+  // the server HTML — a hydration error, which is a worse fault than the flash
+  // it would cure. The flash itself is one frame of the unfiltered map before
+  // the reader's saved branch filter applies.
+  //
+  // ponytail: the honest fix is a filter the server can see — in the URL — so
+  // the first HTML is already filtered. Worth doing when someone reports the
+  // flash; not worth a navigation on every change of a checkbox before then.
   useEffect(() => {
     setSettings(readSettings());
   }, []);
@@ -238,7 +286,7 @@ export function KnowledgeMap({
   }, [nodes]);
 
   const view = useMemo(() => {
-    const q = term.trim().toLowerCase();
+    const q = appliedTerm.trim().toLowerCase();
     // The centre of a local map is the thing the map is about: no filter may
     // remove it. Orphans stay visible — a page with no links is information.
     const visible = nodes.filter(
@@ -255,7 +303,7 @@ export function KnowledgeMap({
     const degree = degreeOf(links);
     const seed = centerId ? egoLayout(visible, centerId) : branchLayout(visible, degree);
     return { visible, links, seed, degree };
-  }, [nodes, edges, centerId, term, settings.branchId, settings.linkTypes]);
+  }, [nodes, edges, centerId, appliedTerm, settings.branchId, settings.linkTypes]);
 
   // Past this size the loop costs more than it explains: keep the
   // deterministic layout, silently.

@@ -127,6 +127,29 @@ export function useNodePreview(nodeId: string) {
   );
   const close = useCallback(() => setOpenAt(null), []);
 
+  /**
+   * The card is `position: fixed` and placed once, from the trigger's box at
+   * the moment it opened. Scroll the page — a trackpad nudge, or a keyboard
+   * reader moving down the sidebar — and the card stayed pinned to the viewport
+   * while the row it describes slid away, until it was floating over unrelated
+   * text with no relationship to anything.
+   *
+   * Closing is the right answer rather than repositioning: the card is a peek
+   * at something under the pointer, and once the pointer has left, there is
+   * nothing to peek at. Capture phase, because the scroller is .main-area
+   * rather than the window.
+   */
+  useEffect(() => {
+    if (!openAt) return;
+    const onScroll = () => setOpenAt(null);
+    window.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll, { capture: true });
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [openAt]);
+
   const handlers = {
     onMouseEnter: (e: React.MouseEvent<HTMLElement>) => open(e.currentTarget),
     onMouseLeave: close,

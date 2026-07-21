@@ -147,6 +147,18 @@ export function AuditLog({ initial }: { initial: AuditRow[] }) {
   const [error, setError] = useState<string | null>(null);
   // A short first page means there is no second page.
   const [done, setDone] = useState(initial.length < 50);
+  // The server sent a new first page — a refresh, or back/forward onto this
+  // screen. Without this the table kept showing whatever was fetched when the
+  // component first mounted, plus any pages loaded by hand since, and a reload
+  // changed nothing on screen. (Adjusting state during render, rather than in
+  // an effect, is React's own documented answer for "derive from props": it
+  // re-renders immediately instead of painting the stale rows first.)
+  const [seed, setSeed] = useState(initial);
+  if (seed !== initial) {
+    setSeed(initial);
+    setRows(initial);
+    setDone(initial.length < 50);
+  }
 
   async function loadMore() {
     const last = rows[rows.length - 1];
@@ -206,8 +218,11 @@ export function AuditLog({ initial }: { initial: AuditRow[] }) {
                       {lines.length === 0 ? (
                         <span className="muted">{T.auditNoDetails}</span>
                       ) : (
-                        lines.map((line) => (
-                          <div key={line} className="audit-detail">
+                        // Index in the key: two detail lines can render the same
+                        // words (two fields folding to one Vietnamese label),
+                        // and duplicate keys make React drop one of them.
+                        lines.map((line, i) => (
+                          <div key={`${i}-${line}`} className="audit-detail">
                             {line}
                           </div>
                         ))

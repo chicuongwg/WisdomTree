@@ -42,9 +42,18 @@ export function ShellSidebar({
       pathname === `/tree/branch/${b.id}` ||
       b.nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`)),
   );
-  const [open, setOpen] = useState<Record<string, boolean>>(
-    currentBranch ? { [currentBranch.id]: true } : {},
-  );
+  /**
+   * What the reader has opened or shut by hand. Everything they have not
+   * touched follows the page they are on — see `expanded` below.
+   *
+   * Seeding this from currentBranch instead was a one-shot: the sidebar lives
+   * in the layout and never remounts, so the initializer ran once, on whatever
+   * page was first loaded. Every client navigation after that left the new
+   * page's branch collapsed, and the outline stopped showing the reader where
+   * they were.
+   */
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const expanded = (branchId: string) => open[branchId] ?? branchId === currentBranch?.id;
 
   const knowledgeNav = [
     { href: "/graph", label: T.graph },
@@ -144,21 +153,21 @@ export function ShellSidebar({
             )}
           </div>
           {branches.map((b) => {
-            const expanded = !!open[b.id];
+            const isOpen = expanded(b.id);
             return (
               <div key={b.id}>
                 <button
                   type="button"
                   className="tree-item"
-                  onClick={() => setOpen((s) => ({ ...s, [b.id]: !expanded }))}
-                  aria-expanded={expanded}
+                  onClick={() => setOpen((s) => ({ ...s, [b.id]: !isOpen }))}
+                  aria-expanded={isOpen}
                 >
                   <span className="twisty" aria-hidden="true">
-                    {expanded ? "▾" : "▸"}
+                    {isOpen ? "▾" : "▸"}
                   </span>
                   <span className="item-label">{b.name}</span>
                 </button>
-                {expanded && (
+                {isOpen && (
                   <>
                     <Link
                       href={`/tree/branch/${b.id}`}

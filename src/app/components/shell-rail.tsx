@@ -135,11 +135,23 @@ export function ShellRail({
   reviewOpen: number;
 }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  /**
+   * Seeded from the attribute the pre-paint script in layout.tsx has already
+   * stamped, so the button agrees with the panel from the first render.
+   *
+   * It used to start `false` unconditionally and correct itself in an effect:
+   * the grid was right (the script had run), but the button underneath it said
+   * "Thu gọn" with aria-pressed={false} about a panel that was already
+   * collapsed. The lazy initializer runs on the client only; the server has no
+   * document, and it must return the server's answer there or hydration would
+   * disagree with the HTML.
+   */
+  const [collapsed, setCollapsed] = useState(
+    () => typeof document !== "undefined" && document.documentElement.dataset.sidebar === "collapsed",
+  );
 
-  // Read once, after mount. The attribute is stamped here as well as in the
-  // state so the very first paint after hydration already agrees with what the
-  // reader last chose.
+  // localStorage is still the source of truth, and the attribute is re-stamped
+  // from it: the script cannot run in a browser that blocked it.
   useEffect(() => {
     let saved = false;
     try {

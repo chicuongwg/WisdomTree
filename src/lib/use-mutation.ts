@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "./vi";
 
@@ -42,6 +42,8 @@ export interface MutationOpts {
 export function useMutation(): Mutation {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  // True while the refreshed server tree is still rendering — see send().
+  const [refreshing, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
@@ -76,15 +78,25 @@ export function useMutation(): Mutation {
     // nothing; that is a success with no data, not a failure.
     const data = (await res.json().catch(() => null)) as R | null;
     if (opts?.ok) setOk(opts.ok);
-    // Refresh first, clear busy after: the button stays disabled across the
-    // round trip so the act cannot be fired twice.
-    router.refresh();
+    // The comment that used to sit here — "refresh first, clear busy after, so
+    // the button stays disabled across the round trip" — was not true of the
+    // code under it. router.refresh() is not awaitable: it starts a transition
+    // and returns, so setBusy(false) ran immediately and the button came back
+    // to life over data the server had not sent yet. A second click there
+    // fires a second POST against the state still on screen.
+    //
+    // startTransition gives us the flag the refresh does not: isPending stays
+    // true until the new tree has actually rendered, and the caller reads it as
+    // part of `busy`.
+    startTransition(() => {
+      router.refresh();
+    });
     setBusy(false);
     return { ok: true, data };
   }
 
   return {
-    busy,
+    busy: busy || refreshing,
     error,
     ok,
     run: async (path, opts) => (await send(path, opts)).ok,
