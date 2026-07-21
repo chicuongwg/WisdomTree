@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
@@ -23,13 +23,21 @@ export async function requestLoan(actor: Principal, itemId: string) {
   if (!item) throw notFound();
   authorize(actor, "circulation.loan.request", { spaceId: item.spaceId, kind: "write" });
 
-  if (item.status !== "available") {
+  // Lost and in-repair are facts about the whole title and stop every copy.
+  if (item.status === "lost" || item.status === "repair") {
     throw new ApiError(409, "item_unavailable", "Đầu sách này hiện không sẵn sàng để mượn.");
+  }
+  if ((await activeLoanCount(db, itemId)) >= item.copies) {
+    throw new ApiError(409, "item_unavailable", "Tất cả bản sao của đầu sách này đang có người mượn.");
   }
 
   const ticket = await db.transaction(async (tx) => {
-    // The one-active-loan partial unique index is the real guard: a
-    // concurrent second request violates it and the route maps it to 409.
+    // The unique index is the real guard against ONE person requesting the
+    // same title twice; the copy count above is checked again here, inside
+    // the transaction, so two people racing for the last copy cannot both win.
+    if ((await activeLoanCount(tx, itemId)) >= item.copies) {
+      throw new ApiError(409, "item_unavailable", "Tất cả bản sao của đầu sách này đang có người mượn.");
+    }
     const [created] = await tx
       .insert(loanTickets)
       .values({ itemId, borrowerId: actor.userId, requestedAt: new Date() })
@@ -42,6 +50,8 @@ export async function requestLoan(actor: Principal, itemId: string) {
       details: { itemId },
     });
     await emitOutbox(tx, "loan.requested", { ticketId: created.id, itemId, borrowerId: actor.userId });
+    // Requesting the last copy takes the title off the shelf immediately.
+    await syncItemStatus(tx, itemId);
     return created;
   });
 
@@ -78,13 +88,37 @@ async function updateTicket(
   return updated;
 }
 
-async function updateItemStatus(
-  tx: Tx,
-  itemId: string,
-  status: (typeof catalogItems.$inferSelect)["status"],
-): Promise<void> {
+/** Tickets that are holding a copy right now — the ones that count against
+ *  `copies`. A declined or returned ticket has put its book back. */
+export const ACTIVE_LOAN_STATES = ["requested", "approved", "borrowed", "overdue"] as const;
+
+async function activeLoanCount(runner: Tx | typeof db, itemId: string): Promise<number> {
+  const [row] = await runner
+    .select({ n: sql<number>`count(*)::int` })
+    .from(loanTickets)
+    .where(and(eq(loanTickets.itemId, itemId), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])));
+  return row?.n ?? 0;
+}
+
+/**
+ * Recompute a title's shelf status from how many of its copies are out.
+ *
+ * "Borrowed" used to be set directly, which was true only while a title WAS a
+ * single book: lending one of three copies marked the whole title borrowed and
+ * turned the other two away. Now the status is derived — borrowed once every
+ * copy is spoken for, available while one is left — and it is recomputed
+ * inside the same transaction as the ticket that changed.
+ *
+ * Lost and in-repair are deliberately untouched: those are a librarian's
+ * statement about the books themselves, and no loan returning may quietly
+ * declare a lost book available again.
+ */
+async function syncItemStatus(tx: Tx, itemId: string): Promise<void> {
   const [item] = await tx.select().from(catalogItems).where(eq(catalogItems.id, itemId));
   if (!item) throw notFound();
+  if (item.status === "lost" || item.status === "repair") return;
+  const status = (await activeLoanCount(tx, itemId)) >= item.copies ? "borrowed" : "available";
+  if (status === item.status) return; // nothing moved; do not burn a version
   const [updated] = await tx
     .update(catalogItems)
     .set({ status, updatedAt: new Date(), version: item.version + 1 })
@@ -116,6 +150,8 @@ async function librarianTransition(
       case "decline":
         assertState(ticket, ["requested"]);
         updated = await updateTicket(tx, ticket, { state: "declined", handledBy: actor.userId });
+        // A declined request hands its copy back to the shelf.
+        await syncItemStatus(tx, ticket.itemId);
         break;
       case "borrow": {
         assertState(ticket, ["approved"]);
@@ -128,7 +164,7 @@ async function librarianTransition(
           dueAt,
           handledBy: actor.userId,
         });
-        await updateItemStatus(tx, ticket.itemId, "borrowed");
+        await syncItemStatus(tx, ticket.itemId);
         break;
       }
       case "return":
@@ -138,7 +174,7 @@ async function librarianTransition(
           returnedAt: new Date(),
           handledBy: actor.userId,
         });
-        await updateItemStatus(tx, ticket.itemId, "available");
+        await syncItemStatus(tx, ticket.itemId);
         break;
     }
     await recordAudit(tx, actor, {

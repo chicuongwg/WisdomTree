@@ -12,6 +12,7 @@ import {
   when,
 } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
+import { CatalogCopiesForm } from "@/app/components/catalog-copies-form";
 
 // Screen: Catalog Item Detail (`/catalog/:id`) — member view with loan request
 // and the loan record.
@@ -50,8 +51,11 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
   const item = await orNotFound(() => getCatalogItem(actor, id));
   // Same read authorization as the item itself; the page never queries the db.
   const tickets = await listTicketsForItem(actor, item.id);
-  const active = tickets.find((t) => ACTIVE_STATES.has(t.ticket.state)) ?? null;
-  const past = tickets.filter((t) => t !== active);
+  // Several copies means several loans running at once, so the register shows
+  // every one of them. Picking the first and filing the rest under "các lượt
+  // mượn trước" would print a book that is still out as already returned.
+  const active = tickets.filter((t) => ACTIVE_STATES.has(t.ticket.state));
+  const past = tickets.filter((t) => !ACTIVE_STATES.has(t.ticket.state));
 
   return (
     <main className="page">
@@ -80,21 +84,40 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
                   </span>
                 </td>
               </tr>
+              <tr>
+                <th scope="row">{T.copiesTotal}</th>
+                <td>{item.copies}</td>
+              </tr>
+              <tr>
+                <th scope="row">{T.copiesAvailable}</th>
+                {/* In words and in numbers both: a reader must not have to
+                    infer "hết sách" from a badge colour. */}
+                <td>
+                  {item.availableCopies === 0
+                    ? T.copiesAllOut
+                    : T.copiesOf(item.availableCopies, item.copies)}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
+        {/* A borrowable title is one with a copy left — not one with no ticket
+            against it. The old test (`activeLoan` is null) turned the second
+            borrower away from a shelf holding two more books. */}
         <LoanRequestButton
           itemId={item.id}
-          disabled={item.status !== "available" || Boolean(item.activeLoan)}
+          disabled={item.status === "lost" || item.status === "repair" || item.availableCopies === 0}
         />
+        {user.role === "admin_op" && <CatalogCopiesForm itemId={item.id} copies={item.copies} />}
       </div>
 
       <section className="panel" aria-labelledby="loan-record-heading">
         <h2 id="loan-record-heading">{T.loanRecord}</h2>
 
         <h3>{T.currentLoan}</h3>
-        {active ? (
-          <dl className="record">
+        {active.length > 0 ? (
+          active.map((active) => (
+          <dl key={active.ticket.id} className="record">
             <dt>{T.state}</dt>
             <dd>
               <StateBadge ticket={active.ticket} />
@@ -132,6 +155,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
               </>
             )}
           </dl>
+          ))
         ) : (
           <p className="muted">{tickets.length === 0 ? T.noLoanRecord : T.noCurrentLoan}</p>
         )}

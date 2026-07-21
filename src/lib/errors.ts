@@ -36,8 +36,11 @@ type PgError = { code?: string; constraint?: string };
 
 /**
  * Route-handler wrapper: converts ApiError to the contract Error shape and
- * maps the one-active-loan partial-unique-index violation to the 409 the
- * OpenAPI contract promises on POST /catalog/{itemId}/loan/request.
+ * maps the one-active-loan-per-borrower partial-unique-index violation to the
+ * 409 the OpenAPI contract promises on POST /catalog/{itemId}/loan/request.
+ * Since a title may hold several copies, that index is what keeps one person
+ * from taking two of the same book; running out of copies is a different
+ * refusal, raised in circulation/service.ts before the insert.
  */
 export async function handleApi(fn: () => Promise<Response>): Promise<Response> {
   try {
@@ -49,10 +52,10 @@ export async function handleApi(fn: () => Promise<Response>): Promise<Response> 
     // Drizzle wraps the driver error; the pg fields live on `cause`.
     const raw = err as PgError & { cause?: PgError };
     const pg = raw?.code === "23505" ? raw : raw?.cause;
-    if (pg?.code === "23505" && pg.constraint === "loan_tickets_one_active_per_item") {
+    if (pg?.code === "23505" && pg.constraint === "loan_tickets_one_active_per_borrower") {
       const body: ErrorBody = {
         code: "loan_already_active",
-        message: "Đầu sách này đang có phiếu mượn hiệu lực. Không thể tạo yêu cầu mới.",
+        message: "Bạn đang có phiếu mượn hiệu lực cho đầu sách này. Mỗi người chỉ giữ một cuốn của cùng một đầu sách.",
       };
       return NextResponse.json(body, { status: 409 });
     }

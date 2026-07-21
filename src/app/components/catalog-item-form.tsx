@@ -11,6 +11,9 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [location, setLocation] = useState("");
+  // A string, not a number: a half-typed box is empty, and an empty box must
+  // not read as 0. The service parses it and refuses anything below 1.
+  const [copies, setCopies] = useState("1");
   const [spaceId, setSpaceId] = useState(spaces[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +27,7 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
     const res = await fetch("/api/catalog", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, author, location, spaceId }),
+      body: JSON.stringify({ title, author, location, copies, spaceId }),
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
@@ -36,6 +39,7 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
     setTitle("");
     setAuthor("");
     setLocation("");
+    setCopies("1");
     // The item code is generated server-side, so showing it back is the only
     // way the librarian learns what to write on the spine.
     setAdded(item.itemCode);
@@ -70,6 +74,20 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Kệ A-3"
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="ci-copies">{T.copiesLabel}</label>
+        {/* One item code, several books on the shelf: the library owns three
+            copies of Truyện Kiều, not three catalogue entries. */}
+        <input
+          id="ci-copies"
+          type="number"
+          min={1}
+          step={1}
+          className="copies-input"
+          value={copies}
+          onChange={(e) => setCopies(e.target.value)}
         />
       </div>
       <div className="field">

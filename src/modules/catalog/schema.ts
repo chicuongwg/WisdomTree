@@ -12,6 +12,8 @@ export const catalogItems = pgTable("catalog_items", {
   author: text("author"),
   coverPhotoKey: text("cover_photo_key"),
   location: text("location"),
+  /** How many physical books sit under this item code. Never below 1. */
+  copies: integer("copies").notNull().default(1),
   status: text("status", { enum: ["available", "borrowed", "lost", "repair"] })
     .notNull()
     .default("available"),

@@ -38,6 +38,17 @@ export const T = {
   returnedAtLabel: "Đã trả lúc", // NEW
   overdueLabel: "Quá hạn", // NEW
   notYet: "Chưa có", // NEW
+  // A title can be more than one book (owner request 2026-07-21): the shelf
+  // line has to say how many are free, not merely whether the title is out.
+  // NEW pending humanities review.
+  copiesLabel: "Số lượng", // NEW
+  copiesTotal: "Tổng số cuốn", // NEW
+  copiesAvailable: "Còn cho mượn", // NEW
+  copiesAllOut: "Đã mượn hết", // NEW
+  copiesOf: (free: number, total: number) => `${free}/${total} cuốn`, // NEW
+  copiesLeft: (free: number, total: number) => `Còn ${free}/${total} cuốn`, // NEW
+  copiesSaved: "Đã cập nhật số lượng.", // NEW
+  updateCopies: "Cập nhật số lượng", // NEW
   approve: "Duyệt",
   decline: "Từ chối",
   lend: "Giao sách",

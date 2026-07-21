@@ -2385,3 +2385,25 @@ button.login-person:hover .login-person-role { color: inherit; }
   font-weight: 700;
   letter-spacing: 0.01em;
 }
+
+/* ------------------------------------------------------------------
+   Copy counts — a title can be more than one book (owner, 2026-07-21).
+
+   "Còn 2/3 cuốn" is the whole answer to "mượn được hôm nay không?", so it
+   is set in the interface face at full ink, not muted like a timestamp: it
+   is the reason a librarian reads the row. Tabular figures keep the
+   fractions in a column aligned down the table, which is what lets the eye
+   scan the shelf rather than read every line. No colour at all — the
+   meaning is in the number, and the only chip in this cell ("Đã mượn hết")
+   prints its state in words as every badge here does.
+   ------------------------------------------------------------------ */
+.copy-count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+.badge + .copy-count { margin-left: var(--space-1); }
+
+/* The quantity box holds two digits and a spinner, nothing more; left at
+   full width it reads as though a paragraph belongs in it. */
+.copies-input { max-width: 7rem; }
