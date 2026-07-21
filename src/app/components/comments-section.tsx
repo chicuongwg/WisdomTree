@@ -96,12 +96,22 @@ export function CommentsSection({
     },
     [body, mention],
   );
-  // The comment a notification link asked for, read once on mount.
-  const [targetId] = useState<string | null>(() =>
-    typeof window === "undefined"
-      ? null
-      : /^#comment-(.+)$/.exec(window.location.hash)?.[1] ?? null,
-  );
+  // The comment a notification link asked for.
+  //
+  // Read in an effect, not in a lazy useState initializer. An initializer runs
+  // during hydration too, and hydration must produce exactly the server's
+  // HTML — the server has no location.hash, so seeding from it means the
+  // client renders something the server did not. It happens to be harmless
+  // today only because the thread is fetched after mount, so the row this id
+  // marks does not exist in the server HTML at all. That is a coincidence of
+  // the loading strategy, not a property of the code, and it would become a
+  // real mismatch the day these comments are server-rendered — which is on
+  // the list. (The rail's collapse button made exactly this mistake and did
+  // report a mismatch, because its value WAS in the server HTML.)
+  const [targetId, setTargetId] = useState<string | null>(null);
+  useEffect(() => {
+    setTargetId(/^#comment-(.+)$/.exec(window.location.hash)?.[1] ?? null);
+  }, []);
 
   // A thread that failed to load is not an empty thread. Setting [] on failure
   // told the reader "chưa có thảo luận nào" about a discussion that may be full

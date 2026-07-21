@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { T, userRoleLabel } from "@/lib/vi";
@@ -120,6 +120,31 @@ const icons = {
  */
 const SIDEBAR_KEY = "wisdomtree.sidebar";
 
+/**
+ * The folded state as an external store, because that is what it already is:
+ * one attribute on <html>, written by the pre-paint script, read by the CSS
+ * grid, and shared by two components that never meet in the tree.
+ */
+const sidebarWatchers = new Set<() => void>();
+const subscribeSidebar = (onChange: () => void) => {
+  sidebarWatchers.add(onChange);
+  return () => {
+    sidebarWatchers.delete(onChange);
+  };
+};
+const readSidebar = () => document.documentElement.dataset.sidebar === "collapsed";
+function writeSidebar(collapsed: boolean): void {
+  // The grid column lives in CSS, keyed off this one attribute — no layout
+  // state has to be threaded from the rail down to a sibling component.
+  document.documentElement.dataset.sidebar = collapsed ? "collapsed" : "open";
+  try {
+    window.localStorage.setItem(SIDEBAR_KEY, collapsed ? "collapsed" : "open");
+  } catch {
+    // Quota or private mode: it still collapses, it just won't remember.
+  }
+  for (const notify of sidebarWatchers) notify();
+}
+
 export function ShellRail({
   role,
   displayName,
@@ -136,22 +161,29 @@ export function ShellRail({
 }) {
   const pathname = usePathname();
   /**
-   * Seeded from the attribute the pre-paint script in layout.tsx has already
-   * stamped, so the button agrees with the panel from the first render.
+   * Whether the panel is folded, read from the one place that already knows:
+   * the attribute on <html>. Not React state — the attribute IS the state, the
+   * CSS grid keys off it, and the pre-paint script writes it before React
+   * exists.
    *
-   * It used to start `false` unconditionally and correct itself in an effect:
-   * the grid was right (the script had run), but the button underneath it said
-   * "Thu gọn" with aria-pressed={false} about a panel that was already
-   * collapsed. The lazy initializer runs on the client only; the server has no
-   * document, and it must return the server's answer there or hydration would
-   * disagree with the HTML.
+   * The version this replaces seeded useState from that attribute in a lazy
+   * initializer, with a comment claiming the initializer "runs on the client
+   * only" and so could not disagree with the server. It does run on the client
+   * — including during HYDRATION, which is a client render that must produce
+   * exactly the server's HTML. With the panel collapsed, the server said
+   * title="Thu gọn thanh bên" and hydration said "Mở rộng thanh bên", which is
+   * the mismatch React reports. The comment described the trap and then walked
+   * into it.
+   *
+   * useSyncExternalStore is the shape that has no such gap: React renders
+   * getServerSnapshot() during hydration — matching the HTML by construction —
+   * and re-renders with the live value immediately after. Same pattern as
+   * useMedia in knowledge-map.tsx and useShortcutKey in lib/platform.ts.
    */
-  const [collapsed, setCollapsed] = useState(
-    () => typeof document !== "undefined" && document.documentElement.dataset.sidebar === "collapsed",
-  );
+  const collapsed = useSyncExternalStore(subscribeSidebar, readSidebar, () => false);
 
-  // localStorage is still the source of truth, and the attribute is re-stamped
-  // from it: the script cannot run in a browser that blocked it.
+  // localStorage is the durable answer, and the attribute is re-stamped from
+  // it at mount: the pre-paint script cannot run in a browser that blocked it.
   useEffect(() => {
     let saved = false;
     try {
@@ -159,22 +191,10 @@ export function ShellRail({
     } catch {
       // Private browsing throws on localStorage; an expanded panel is fine.
     }
-    setCollapsed(saved);
-    document.documentElement.dataset.sidebar = saved ? "collapsed" : "open";
+    writeSidebar(saved);
   }, []);
 
-  function togglePanel() {
-    const next = !collapsed;
-    setCollapsed(next);
-    // The grid column lives in CSS, keyed off this one attribute — no layout
-    // state has to be threaded from the rail down to a sibling component.
-    document.documentElement.dataset.sidebar = next ? "collapsed" : "open";
-    try {
-      window.localStorage.setItem(SIDEBAR_KEY, next ? "collapsed" : "open");
-    } catch {
-      // Quota or private mode: it still collapses, it just won't remember.
-    }
-  }
+  const togglePanel = () => writeSidebar(!collapsed);
 
   const items: RailItem[] = [
     { href: "/graph", label: T.graph, icon: icons.graph },
