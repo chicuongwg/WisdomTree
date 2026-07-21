@@ -35,10 +35,10 @@ export default async function MySubmissionsPage() {
             <thead>
               <tr>
                 <th scope="col">{T.title}</th>
-                <th scope="col">Loại</th>
-                <th scope="col">Trạng thái</th>
+                <th scope="col">{T.kindColumn}</th>
+                <th scope="col">{T.state}</th>
                 <th scope="col">{T.nextStepColumn}</th>
-                <th scope="col">Cập nhật</th>
+                <th scope="col">{T.lastUpdated}</th>
               </tr>
             </thead>
             <tbody>

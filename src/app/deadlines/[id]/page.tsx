@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getDeadlineLinks } from "@/modules/pm/service";
-import { day, deadlineKindLabel, T, taskLabel } from "@/lib/vi";
+import { day, deadlineKindLabel, reminderLabel, T, taskLabel } from "@/lib/vi";
 import { DeadlineForm } from "@/app/components/deadline-form";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
@@ -25,7 +25,7 @@ export default async function DeadlineDetailPage({ params }: { params: Promise<{
       </h1>
       <p className="muted">
         {T.dueAtLabel}: {day(deadline.dueAt)} · {T.reminderOffsets}:{" "}
-        {deadline.reminderOffsets.join(", ")}
+        {deadline.reminderOffsets.map(reminderLabel).join(", ")}
       </p>
 
       <div className="with-side">

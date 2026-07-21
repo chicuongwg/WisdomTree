@@ -33,8 +33,8 @@ export default async function NotificationsPage() {
             <table className="list">
               <thead>
                 <tr>
-                  <th scope="col">Nội dung</th>
-                  <th scope="col">Thời gian</th>
+                  <th scope="col">{T.contentColumn}</th>
+                  <th scope="col">{T.timeColumn}</th>
                   <th scope="col">{T.state}</th>
                 </tr>
               </thead>

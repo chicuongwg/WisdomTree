@@ -49,7 +49,7 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
         <table className="list">
           <thead>
             <tr>
-              <th scope="col">Sự kiện</th>
+              <th scope="col">{T.eventColumn}</th>
               {CHANNELS.map((c) => (
                 <th scope="col" key={c}>
                   {notifyChannelLabel(c)}

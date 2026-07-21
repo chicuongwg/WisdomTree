@@ -124,7 +124,7 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                 <table className="list">
                   <thead>
                     <tr>
-                      <th scope="col">Thành viên</th>
+                      <th scope="col">{T.memberColumn}</th>
                       <th scope="col">{T.roleColumn}</th>
                       <th scope="col">
                         <span className="muted">{T.actionsColumn}</span>

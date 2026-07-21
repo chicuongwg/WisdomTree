@@ -52,8 +52,8 @@ export default async function LibrarianDeskPage() {
                   <thead>
                     <tr>
                       <th scope="col">{T.catalogItem}</th>
-                      <th scope="col">Người mượn</th>
-                      <th scope="col">Trạng thái</th>
+                      <th scope="col">{T.borrower}</th>
+                      <th scope="col">{T.state}</th>
                       <th scope="col">{T.dueDate}</th>
                       <th scope="col">
                         <span className="muted">Thao tác</span>

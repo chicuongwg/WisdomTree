@@ -82,7 +82,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
                   <li key={i}>
                     <Link href={`/library/${p.sourceId}`}>{p.sourceTitle}</Link>
                     <div className="meta">
-                      {T.approve}: {p.approvedByName} · {day(p.createdAt)}
+                      {T.approvedByLabel}: {p.approvedByName} · {day(p.createdAt)}
                       {p.excerptChunkIds?.length ? ` · ${p.excerptChunkIds.length} trích đoạn` : ""}
                     </div>
                   </li>

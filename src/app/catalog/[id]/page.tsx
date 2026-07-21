@@ -65,19 +65,19 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
           <table className="list">
             <tbody>
               <tr>
-                <th scope="row">Mã số</th>
+                <th scope="row">{T.itemCode}</th>
                 <td>{item.itemCode}</td>
               </tr>
               <tr>
-                <th scope="row">Tác giả</th>
+                <th scope="row">{T.author}</th>
                 <td>{item.author}</td>
               </tr>
               <tr>
-                <th scope="row">Vị trí</th>
+                <th scope="row">{T.shelfLocation}</th>
                 <td>{item.location}</td>
               </tr>
               <tr>
-                <th scope="row">Trạng thái</th>
+                <th scope="row">{T.state}</th>
                 <td>
                   <span className={badgeClass(itemStatusLabel, item.status)}>
                     {itemLabel(item.status)}

@@ -126,7 +126,7 @@ export default async function LibraryPage({
         )
       )}
       {browsing && spaceId && (
-        <nav className="muted" aria-label={T.shelfLocation}>
+        <nav className="muted" aria-label={T.folderPath}>
           <Link href={href({ folderId: undefined })}>
             {T.space} {spaces.find((s) => s.id === spaceId)?.name ?? ""}
           </Link>
@@ -162,7 +162,7 @@ export default async function LibraryPage({
                 <th scope="col">{T.space}</th>
                 <th scope="col">{T.uploader}</th>
                 {sortHeader("storedAt", T.storedAtLabel)}
-                <th scope="col">Trạng thái xử lý</th>
+                <th scope="col">{T.extractionState}</th>
               </tr>
             </thead>
             <tbody>

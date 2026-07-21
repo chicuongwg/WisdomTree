@@ -54,7 +54,8 @@ export const T = {
   updateCopies: "Cập nhật số lượng", // NEW
   // Quantity and state are two questions, so two columns (owner, 2026-07-21).
   copiesColumn: "Số lượng", // NEW
-  statusColumn: "Trạng thái", // NEW
+  // (`statusColumn` was a second key holding the same word as `state`, and the
+  //  catalogue used one while every other table used the other.)
   approve: "Duyệt",
   decline: "Từ chối",
   lend: "Giao sách",
@@ -183,6 +184,20 @@ export const T = {
   nodeCount: "Số trang tri thức", // NEW
   lastUpdated: "Cập nhật lần cuối", // NEW
   state: "Trạng thái", // NEW
+  // Column headings that used to be typed straight into the tables. They are
+  // here for one reason: written inline, the same column ended up with two
+  // names on two screens — "Người gửi" and "Người tải lên" for the person who
+  // sent a file, "Cập nhật lần cuối" and "Cập nhật" for the same timestamp.
+  contentColumn: "Nội dung", // NEW
+  kindColumn: "Loại", // NEW
+  curationColumn: "Hiệu đính", // NEW
+  extractionState: "Trạng thái xử lý", // NEW
+  itemCode: "Mã số", // NEW
+  memberColumn: "Thành viên", // NEW
+  eventColumn: "Sự kiện", // NEW
+  // The library's folder trail. It used to borrow `shelfLocation`, which means
+  // a physical shelf in the book catalogue — two different places, one word.
+  folderPath: "Đường dẫn thư mục", // NEW
   taskType: "Loại việc", // NEW
   openItem: "Mở", // NEW
   triage: "Tiếp nhận", // NEW
@@ -392,10 +407,9 @@ export const T = {
   // inline in a component rather than here.
   exportStatusFailed: "Không kiểm tra được trạng thái xuất tệp.", // NEW
   exportFailed: "Xuất tệp thất bại. Vui lòng thử lại.", // NEW
-  // Deadline form: reminder offsets and save results (NEW — not yet in vocabulary-vi.md)
-  reminderOneDay: "1 ngày trước", // NEW
-  reminderThreeDays: "3 ngày trước", // NEW
-  reminderOneWeek: "1 tuần trước", // NEW
+  // Deadline form: save results (NEW — not yet in vocabulary-vi.md).
+  // The three reminder offsets moved to reminderLabel() below — they are a
+  // translation of a wire value, not a phrase a screen composes.
   changesSaved: "Đã lưu thay đổi.", // NEW
   deadlineCreated: "Đã tạo hạn chót.", // NEW
   // Sign-in picker (NEW — not yet in vocabulary-vi.md)
@@ -412,7 +426,10 @@ export const T = {
   // Workspace shell: the two rail/palette entries that were still inline
   // (NEW — not yet in vocabulary-vi.md)
   account: "Tài khoản", // NEW
-  adminConsole: "Quản trị", // NEW
+  // The term vocabulary-vi.md approves, and now the only one the app uses: the
+  // screen had been "Quản trị" in the rail, the palette and its own h1, and
+  // "Bảng quản trị" in the link back to it from System Health.
+  adminConsole: "Quản trị hệ thống", // NEW
   // Library: archive view, folders, drag-drop filing (NEW — not yet in vocabulary-vi.md)
   viewingArchivedNotice: "Đang xem tư liệu đã thu hồi.", // NEW
   backToLibrary: "Quay lại thư viện", // NEW
@@ -501,7 +518,7 @@ export const T = {
   healthPageIntro:
     "Những gì chính ứng dụng tự biết về mình. Số liệu vận hành chi tiết nằm ở hệ thống theo dõi riêng.", // NEW
   healthOpen: "Xem sức khoẻ hệ thống", // NEW
-  healthBackToAdmin: "Về Bảng quản trị", // NEW
+  healthBackToAdmin: "Về Quản trị hệ thống", // NEW
   healthCheckedAt: "Số liệu đọc lúc", // NEW
   healthUptime: "Thời gian chạy liên tục", // NEW
   healthUptimeHint: "Tính từ lần khởi động máy chủ gần nhất.", // NEW
@@ -1008,6 +1025,26 @@ export const detailFieldLabel = (v: string | null | undefined): string =>
   guarded(auditFieldLabel, "auditFieldLabel", v, AUDIT_FALLBACK.field);
 export const exportJobStateLabel = (v: string | null | undefined): string =>
   guarded(exportStateLabel, "exportStateLabel", v, FALLBACK.state);
+
+/**
+ * A reminder offset, in words.
+ *
+ * The wire format is a Postgres interval literal — the dispatcher subtracts it
+ * from due_at in SQL — so these values are English and stay English: "7 days".
+ * The form that writes them has always had this mapping; the deadline detail
+ * screen did not, and printed the literals. A researcher opening their own
+ * deadline read "Nhắc trước: 7 days, 1 day".
+ *
+ * An offset a colleague set outside the three the form offers ("2 days") is
+ * shown as written rather than dropped — the same rule the form follows when
+ * it edits one.
+ */
+const REMINDER_WORDS: Record<string, string> = {
+  "1 day": "1 ngày trước",
+  "3 days": "3 ngày trước",
+  "7 days": "1 tuần trước",
+};
+export const reminderLabel = (v: string): string => REMINDER_WORDS[v] ?? v;
 
 // ---------------------------------------------------------------------------
 // Dates. `toLocaleString("vi-VN")` with no options prints seconds — every row

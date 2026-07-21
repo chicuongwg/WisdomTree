@@ -13,7 +13,7 @@ export default async function BranchListPage() {
 
   return (
     <main className="page">
-      <h1>{T.branch}</h1>
+      <h1>{T.navBranches}</h1>
       {/* When the list is empty the empty state carries the create button, so
           this one would be the same button twice. */}
       {canEdit && branches.length > 0 && (

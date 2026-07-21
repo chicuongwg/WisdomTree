@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deadlineKindLabel, T } from "@/lib/vi";
+import { deadlineKindLabel, reminderLabel, T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 
@@ -27,12 +27,11 @@ const TYPES = ["conference", "funding", "report", "milestone"] as const;
 
 // The column is interval[] and the API takes an array, so more than one
 // reminder is genuinely allowed — checkboxes, not a select.
-// The `value`s are the Postgres interval wire format, not copy.
-const REMINDERS = [
-  { value: "1 day", label: T.reminderOneDay },
-  { value: "3 days", label: T.reminderThreeDays },
-  { value: "7 days", label: T.reminderOneWeek },
-] as const;
+// The `value`s are the Postgres interval wire format, not copy; reminderLabel()
+// in vi.ts turns them into words. This form used to own that mapping privately,
+// which is why the deadline DETAIL screen — the screen a researcher actually
+// opens — had no way to reach it and printed "Nhắc trước: 7 days, 1 day".
+const REMINDERS = ["1 day", "3 days", "7 days"] as const;
 
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
@@ -109,17 +108,17 @@ export function DeadlineForm({
       </div>
       <fieldset className="plain">
         <legend>{T.reminderOffsets}</legend>
-        {REMINDERS.map((r) => {
-          const id = `dl-rem-${r.value.replace(/\s/g, "-")}`;
+        {REMINDERS.map((value) => {
+          const id = `dl-rem-${value.replace(/\s/g, "-")}`;
           return (
-            <div className="checkbox-row" key={r.value}>
+            <div className="checkbox-row" key={value}>
               <input
                 id={id}
                 type="checkbox"
-                checked={offsets.includes(r.value)}
-                onChange={(e) => toggle(r.value, e.target.checked)}
+                checked={offsets.includes(value)}
+                onChange={(e) => toggle(value, e.target.checked)}
               />
-              <label htmlFor={id}>{r.label}</label>
+              <label htmlFor={id}>{reminderLabel(value)}</label>
             </div>
           );
         })}

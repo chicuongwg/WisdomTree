@@ -56,7 +56,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                     <td>{when(v.storedAt)}</td>
                   </tr>
                   <tr>
-                    <th scope="row">Trạng thái xử lý</th>
+                    <th scope="row">{T.extractionState}</th>
                     <td>
                       {(() => {
                         const ed = extractionDisplay(v.extractionStatus, v.hasText, v.mimeType);
@@ -120,7 +120,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                 <tr>
                   <th scope="col">{T.versionColumn}</th>
                   <th scope="col">{T.file}</th>
-                  <th scope="col">Người tải lên</th>
+                  <th scope="col">{T.uploader}</th>
                   <th scope="col">{T.storedAtLabel}</th>
                 </tr>
               </thead>

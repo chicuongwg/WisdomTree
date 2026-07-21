@@ -84,12 +84,12 @@ export default async function CatalogPage({
           <table className="list">
             <thead>
               <tr>
-                <th scope="col">Mã số</th>
+                <th scope="col">{T.itemCode}</th>
                 <th scope="col">{T.catalogItem}</th>
-                <th scope="col">Tác giả</th>
-                <th scope="col">Vị trí</th>
+                <th scope="col">{T.author}</th>
+                <th scope="col">{T.shelfLocation}</th>
                 <th scope="col">{T.copiesColumn}</th>
-                <th scope="col">{T.statusColumn}</th>
+                <th scope="col">{T.state}</th>
               </tr>
             </thead>
             <tbody>

@@ -60,7 +60,7 @@ export default async function SourceInboxPage() {
               <tr>
                 {/* Trust column removed: it showed a state nothing writes. */}
                 <th scope="col">{T.title}</th>
-                <th scope="col">Hiệu đính</th>
+                <th scope="col">{T.curationColumn}</th>
                 <th scope="col">{T.assignee}</th>
                 <th scope="col">{T.lastUpdated}</th>
               </tr>
@@ -83,7 +83,7 @@ export default async function SourceInboxPage() {
                       <span className="muted">—</span>
                     )}
                   </td>
-                  <td>{assigneeName ?? <span className="muted">Chưa giao</span>}</td>
+                  <td>{assigneeName ?? <span className="muted">{T.noAssignee}</span>}</td>
                   <td>{when(source.updatedAt)}</td>
                 </tr>
               ))}

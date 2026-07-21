@@ -9,6 +9,7 @@ import {
   reviewTaskTypeLabel,
   reviewTypeLabel,
   T,
+  targetKindLabel,
   when,
 } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
@@ -66,7 +67,7 @@ export default async function ReviewQueuePage({
             </option>
           ))}
         </select>
-        <button type="submit">Lọc</button>
+        <button type="submit">{T.search}</button>
       </form>
 
       {tasks.length === 0 ? (
@@ -85,7 +86,7 @@ export default async function ReviewQueuePage({
             <thead>
               <tr>
                 <th scope="col">{T.taskType}</th>
-                <th scope="col">Đối tượng</th>
+                <th scope="col">{T.targetColumn}</th>
                 <th scope="col">{T.state}</th>
                 <th scope="col">{T.assignee}</th>
                 <th scope="col">{T.lastUpdated}</th>
@@ -102,7 +103,7 @@ export default async function ReviewQueuePage({
                     {t.target ? (
                       <Link href={`/source/${t.target.sourceId}`}>{t.target.title}</Link>
                     ) : (
-                      <span className="muted">{t.targetType}</span>
+                      <span className="muted">{targetKindLabel(t.targetType)}</span>
                     )}
                   </td>
                   <td>
