@@ -51,7 +51,6 @@ export const T = {
   // Quantity and state are two questions, so two columns (owner, 2026-07-21).
   copiesColumn: "Số lượng", // NEW
   statusColumn: "Trạng thái", // NEW
-  catalogOnShelf: "Còn trên kệ", // NEW
   approve: "Duyệt",
   decline: "Từ chối",
   lend: "Giao sách",
@@ -644,6 +643,20 @@ export const loanStateLabel: Record<string, string> = {
   returned: "Đã trả", // NEW
 };
 
+/**
+ * The same four states in two words each, for the catalogue table's Trạng thái
+ * column — a column read by scanning down it, where a three-word cell wraps at
+ * the widths a phone gives it and stops being scannable. The long forms below
+ * stay as they are: they are the vocabulary doc's wording and they are what a
+ * detail page, where there is room for a sentence, should say. NEW.
+ */
+export const itemStatusShort: Record<string, string> = {
+  available: "Trên kệ", // NEW
+  borrowed: "Đã mượn", // NEW
+  lost: "Thất lạc", // NEW
+  repair: "Đang sửa", // NEW
+};
+
 export const itemStatusLabel: Record<string, string> = {
   available: "Sẵn sàng", // NEW
   borrowed: "Đang được mượn", // NEW
@@ -787,6 +800,9 @@ export const loanLabel = (v: string | null | undefined): string =>
   guarded(loanStateLabel, "loanStateLabel", v, FALLBACK.state);
 export const itemLabel = (v: string | null | undefined): string =>
   guarded(itemStatusLabel, "itemStatusLabel", v, FALLBACK.state);
+/** The two-word form, for the catalogue table. NEW. */
+export const itemLabelShort = (v: string | null | undefined): string =>
+  guarded(itemStatusShort, "itemStatusShort", v, FALLBACK.state);
 export const verificationStateLabel = (v: string | null | undefined): string =>
   guarded(verificationLabel, "verificationLabel", v, FALLBACK.state);
 export const curationLabel = (v: string | null | undefined): string =>

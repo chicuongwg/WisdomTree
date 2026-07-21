@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { CATALOG_PAGE_SIZE, listCatalog } from "@/modules/catalog/service";
-import { badgeClass, itemLabel, itemStatusLabel, T } from "@/lib/vi";
+import { badgeClass, itemLabelShort, itemStatusLabel, T } from "@/lib/vi";
 import { Pager } from "@/app/components/pager";
 import { Empty } from "@/app/components/empty";
 
@@ -24,18 +24,21 @@ function copiesCell(item: { copies: number; availableCopies: number }) {
  * TRẠNG THÁI is the state of the title itself, in words, and the state is
  * never carried by the chip's colour alone.
  *
- * "Đang cho mượn" deliberately has no chip: it is roughly nineteen rows in
- * twenty, and a wall of green is what trains a reader to stop looking at a
- * column. The three states worth interrupting for wear one.
+ * "Trên kệ" deliberately has no chip: it is roughly nineteen rows in twenty,
+ * and a wall of green is what trains a reader to stop looking at a column. The
+ * three states worth interrupting for wear one.
  */
 function statusCell(item: { status: string; availableCopies: number }) {
-  if (item.status === "lost" || item.status === "repair") {
-    return <span className={badgeClass(itemStatusLabel, item.status)}>{itemLabel(item.status)}</span>;
-  }
-  if (item.availableCopies === 0) {
-    return <span className={badgeClass(itemStatusLabel, "borrowed")}>{T.copiesAllOut}</span>;
-  }
-  return <span className="muted">{T.catalogOnShelf}</span>;
+  // Two words, always — the column is read by scanning down it, and a cell
+  // that wraps to a second line breaks the scan.
+  const state =
+    item.status === "lost" || item.status === "repair"
+      ? item.status
+      : item.availableCopies === 0
+        ? "borrowed"
+        : "available";
+  if (state === "available") return <span className="muted">{itemLabelShort(state)}</span>;
+  return <span className={badgeClass(itemStatusLabel, state)}>{itemLabelShort(state)}</span>;
 }
 
 // Screen: Catalog (`/catalog`) — physical library, library-space members.
