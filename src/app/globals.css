@@ -1020,9 +1020,26 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
    this: on a phone the alternative is not a narrower table, it is columns
    crushed to one word per line with the last one clipped off-screen. */
 .record-scroll { overflow-x: auto; }
-/* a caption a screen reader hears and a sighted reader does not need twice */
+/* A caption a screen reader hears and a sighted reader does not need twice.
+   ---------------------------------------------------------------------------
+   `top: 0; left: 0` is not decoration — it is what stops this rule from adding
+   a second scrollbar to the whole app.
+   Without them the box sits at its STATIC position, and an absolutely
+   positioned element is laid out against the nearest positioned ancestor —
+   which `overflow: auto` does not make one. So every .sr-only inside the
+   scrolling content column escaped it, landed against the initial containing
+   block at whatever depth it would have had in flow, and stretched the ROOT's
+   scrollable overflow to reach it. On /account that was 1625px against a
+   1000px window: the document scrolled, .shell stayed exactly 100dvh pinned at
+   the top, and the status strip floated mid-window with 625px of blank canvas
+   under it. Every <Say> renders one of these — the empty live region that has
+   to be in the DOM before a message arrives — so it turned up on most screens
+   with a form on them, and the taller the screen the worse it was.
+   Pinned to the top of whatever box holds it, the element cannot extend
+   anything. It is 1px and clipped, so where it sits is invisible either way. */
 .sr-only {
   position: absolute;
+  top: 0; left: 0;
   width: 1px; height: 1px;
   padding: 0; margin: -1px;
   overflow: hidden;

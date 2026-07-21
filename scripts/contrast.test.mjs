@@ -55,4 +55,35 @@ for (const [name, fg, bg, need] of [["light", light], ["dark", dark]].flatMap(
   if (!ok) bad++;
   console.log(`${ok ? "ok  " : "FAIL"} ${name.padEnd(38)} ${r.toFixed(2)}:1 (need ${need}:1)`);
 }
+
+// ---------------------------------------------------------------------------
+// Every absolutely positioned box says where it goes.
+//
+// `.sr-only` did not, and an absolutely positioned element with no offsets
+// sits at its STATIC position — measured against the nearest POSITIONED
+// ancestor, which `overflow: auto` does not make one. So the empty live region
+// that every <Say> renders escaped the scrolling content column, landed
+// against the initial containing block at whatever depth it had in flow, and
+// stretched the ROOT's scrollable overflow to reach it: 1625px against a
+// 1000px window on /account. The document scrolled, .shell stayed exactly
+// 100dvh pinned to the top, and the status strip floated mid-window over a
+// band of blank canvas. It looked like a footer bug and was a positioning bug.
+//
+// This is the cheap half of catching that class. The expensive half — does the
+// document scroll when it should not — needs a real browser, which this repo
+// has no harness for; measured by hand at 1400x1000 across five screens.
+// Comments are stripped first, or the scan reads its own documentation: the
+// .panel rule DISCUSSES "position: absolute" (the note about the zero-height
+// live region that once changed a heading's gap), and the first run of this
+// check duly failed .panel for a declaration it does not have.
+const bare = css.replace(/\/\*[\s\S]*?\*\//g, "");
+const absoluteRules = [...bare.matchAll(/([^{}]+)\{([^}]*position:\s*absolute[^}]*)\}/g)];
+for (const [, selector, body] of absoluteRules) {
+  const anchored = /(^|[;\s])(top|right|bottom|left|inset)\s*:/.test(body);
+  if (!anchored) bad++;
+  console.log(
+    `${anchored ? "ok  " : "FAIL"} absolute rule is anchored${anchored ? "" : " — add top/left"}: ${selector.trim().replace(/\s+/g, " ").slice(0, 52)}`,
+  );
+}
+
 process.exit(bad ? 1 : 0);
