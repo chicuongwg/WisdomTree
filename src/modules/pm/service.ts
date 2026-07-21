@@ -380,7 +380,8 @@ export async function claimTask(actor: Principal, taskId: string) {
       action: "task.claim",
       targetType: "task",
       targetId: taskId,
-      details: {},
+      // The title, so the log names the work rather than an opaque id.
+      details: { title: row.title },
     });
     return row;
   });
@@ -415,7 +416,7 @@ export async function archiveTask(actor: Principal, taskId: string) {
       action: "task.archive",
       targetType: "task",
       targetId: taskId,
-      details: { from: target.state },
+      details: { title: target.title, from: target.state },
     });
   });
 }
@@ -489,7 +490,7 @@ export async function createTask(actor: Principal, input: TaskInput) {
       action: "task.create",
       targetType: "task",
       targetId: row.id,
-      details: { state: row.state, assignedTo: row.assignedTo },
+      details: { title: row.title, state: row.state, assignedTo: row.assignedTo },
     });
     return row;
   });
@@ -528,12 +529,28 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
       .where(and(eq(tasks.id, taskId), eq(tasks.version, expectedVersion)))
       .returning();
     if (!row) throw versionConflict();
+    // What actually changed, not what the columns happen to hold. This used to
+    // record {from: state, to: state} on every edit, so renaming a task or
+    // writing a note produced the line {"from":"todo","to":"todo"} — an entry
+    // that proves something happened and refuses to say what. An audit log
+    // that cannot answer "what changed" is a log nobody can investigate with.
+    const changed: Record<string, unknown> = { title: row.title };
+    if (row.state !== existing.state) changed.state = { from: existing.state, to: row.state };
+    if (row.assignedTo !== existing.assignedTo) {
+      changed.assignedTo = { from: existing.assignedTo, to: row.assignedTo };
+    }
+    if (row.dueAt?.getTime() !== existing.dueAt?.getTime()) changed.dueAt = row.dueAt;
+    if (row.startAt?.getTime() !== existing.startAt?.getTime()) changed.startAt = row.startAt;
+    // The note's TEXT never enters the log: an audit trail is a record of who
+    // did what, and copying the body into it would quietly build a second,
+    // unreadable, undeletable copy of every note in the system.
+    if (row.notes !== existing.notes) changed.notes = "edited";
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "task.update",
       targetType: "task",
       targetId: taskId,
-      details: { from: existing.state, to: row.state },
+      details: changed,
     });
     return row;
   });
