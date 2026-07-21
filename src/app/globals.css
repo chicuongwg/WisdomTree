@@ -2322,3 +2322,66 @@ button.login-person:hover .login-person-role { color: inherit; }
   line-height: 1.35;
   color: var(--color-ink-muted);
 }
+
+/* ============================================================
+   Side panel collapse, and who is on this page
+   ============================================================ */
+
+/* Folding the panel away is the same layout the narrow breakpoint already
+   uses, asked for on purpose instead of by window width. Keyed off one
+   attribute on <html> so the rail button can set it without any layout state
+   travelling between two sibling components. */
+:root[data-sidebar="collapsed"] .shell {
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  grid-template-areas: "rail main" "status status";
+}
+:root[data-sidebar="collapsed"] .shell .sidebar { display: none; }
+
+/* Two rail buttons swap at the breakpoint: above it, collapse the panel;
+   below it, where the panel is already gone and collapsing would do nothing,
+   the palette keeps its own door — six screens live only in the panel. */
+.rail .rail-btn.only-narrow { display: none; }
+@media (max-width: 56rem) {
+  .rail .rail-btn.only-narrow { display: flex; }
+  .rail .rail-btn.only-wide { display: none; }
+}
+
+/* The presence row: names, in the reading column, above the content they are
+   a warning about. Quiet by design — it is a warning light, not an alarm, and
+   it disappears completely when nobody else is here. */
+.presence-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.55rem;
+  margin: 0.35rem 0 0.9rem;
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+}
+.presence-row .presence-label { font-weight: 600; }
+.presence-row .presence-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.5rem 0.1rem 0.15rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+/* The initials disc is the Google Docs shape the owner pointed at, but the
+   name stays written out beside it: a disc alone is only legible to whoever
+   already knows whose initials those are. */
+.presence-row .presence-disc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--color-cham-wash);
+  color: var(--color-cham);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}

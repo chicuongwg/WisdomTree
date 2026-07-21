@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { T, userRoleLabel } from "@/lib/vi";
@@ -98,7 +98,25 @@ const icons = {
       <circle cx="18.5" cy="12" r="1.1" />
     </svg>
   ),
+  // A pane with one column shaded off: the button says what it does, which
+  // three dots never did. The owner pointed at the button by its position
+  // ("ngay dưới icon chuông"), not by its shape.
+  panel: (
+    <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <rect x="4" y="5" width="16" height="14" rx="2" />
+      <path d="M10 5v14" />
+    </svg>
+  ),
 };
+
+/**
+ * Is the side panel folded away? One namespaced key, same discipline as the
+ * graph settings: written here, read back in an effect and never during
+ * render, because the server has no localStorage and a collapsed panel that
+ * disagreed with the server HTML would be a hydration error on every load.
+ * The pre-paint script in layout.tsx reads the same key to avoid a flash.
+ */
+const SIDEBAR_KEY = "wisdomtree.sidebar";
 
 export function ShellRail({
   role,
@@ -115,6 +133,34 @@ export function ShellRail({
   reviewOpen: number;
 }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Read once, after mount. The attribute is stamped here as well as in the
+  // state so the very first paint after hydration already agrees with what the
+  // reader last chose.
+  useEffect(() => {
+    let saved = false;
+    try {
+      saved = window.localStorage.getItem(SIDEBAR_KEY) === "collapsed";
+    } catch {
+      // Private browsing throws on localStorage; an expanded panel is fine.
+    }
+    setCollapsed(saved);
+    document.documentElement.dataset.sidebar = saved ? "collapsed" : "open";
+  }, []);
+
+  function togglePanel() {
+    const next = !collapsed;
+    setCollapsed(next);
+    // The grid column lives in CSS, keyed off this one attribute — no layout
+    // state has to be threaded from the rail down to a sibling component.
+    document.documentElement.dataset.sidebar = next ? "collapsed" : "open";
+    try {
+      window.localStorage.setItem(SIDEBAR_KEY, next ? "collapsed" : "open");
+    } catch {
+      // Quota or private mode: it still collapses, it just won't remember.
+    }
+  }
 
   const items: RailItem[] = [
     { href: "/graph", label: T.graph, icon: icons.graph },
@@ -164,13 +210,30 @@ export function ShellRail({
         </Link>
         );
       })}
-      {/* ponytail: below 56rem the sidebar is display:none, and six screens
-          (nộp nguồn, bài nộp của tôi, hộp nguồn, bàn thủ thư, danh sách
-          chuyên đề, chuyên đề mới) live only there. Rather than a second
-          mobile nav, this opens the palette, which already indexes all six. */}
+      {/* Folds the side panel away to widen the work area, and does nothing
+          else (owner decision 2026-07-21). Every role gets it: there is no
+          permission attached to how much of your own screen the chrome takes.
+          Hidden below 56rem, where the panel is already display:none and
+          "collapse" would be a button that changes nothing. */}
       <button
         type="button"
-        className="rail-btn"
+        className="rail-btn only-wide"
+        title={collapsed ? T.expandPanel : T.collapsePanel}
+        aria-label={collapsed ? T.expandPanel : T.collapsePanel}
+        aria-pressed={collapsed}
+        onClick={togglePanel}
+      >
+        {icons.panel}
+      </button>
+      {/* ponytail: below 56rem the sidebar is display:none, and six screens
+          (nộp nguồn, bài nộp của tôi, hộp nguồn, bàn thủ thư, danh sách
+          chuyên đề, chuyên đề mới) live only there — including the palette's
+          own search box. The collapse button took this slot, so the palette
+          keeps a door of its own on narrow screens rather than being left to
+          Ctrl+K, which a phone does not have. */}
+      <button
+        type="button"
+        className="rail-btn only-narrow"
         title={T.quickSearch}
         aria-label={T.quickSearch}
         onClick={() => window.dispatchEvent(new CustomEvent("wt:open-palette"))}

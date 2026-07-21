@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import { foldName } from "@/lib/mention-fold";
@@ -10,7 +10,7 @@ import { curations, sources, sourceVersions, spaceMembers } from "../storage/sch
 import { treeNodes } from "../knowledge/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
-import { comments, notificationPreferences, notifications } from "./schema";
+import { comments, notificationPreferences, notifications, presence } from "./schema";
 import { DEFAULT_CHANNELS, kickDispatch, type Channel } from "./dispatcher";
 import { notificationLink, type NotificationLinkContext } from "./links";
 
@@ -455,4 +455,66 @@ export async function listMentionableUsers() {
     .from(users)
     .where(isNull(users.disabledAt))
     .orderBy(asc(users.displayName));
+}
+
+// ---------------------------------------------------------------------------
+// Presence: who has this page open right now.
+//
+// The version check already refuses a save built on stale content, but it does
+// so AFTER the fact — the loser is told to reload and retypes their paragraph.
+// This is the warning before the fact, and it is deliberately never anonymous
+// (owner decision 2026-07-21): "someone else is editing this" is a warning you
+// cannot act on, while "Lê Văn Minh is editing this" is one you can, by
+// walking over to them.
+// ---------------------------------------------------------------------------
+
+/** Older than this and a reader is treated as gone. Two missed heartbeats. */
+export const PRESENCE_TTL_MS = 90_000;
+
+/**
+ * Say "I am here". Self-scoped by construction — a caller can only ever write
+ * their own row, so this needs no permission key beyond being signed in, and
+ * the page key is opaque: this module never resolves it, so it can never leak
+ * the title of something the viewer could not otherwise see.
+ */
+export async function markPresence(actor: Principal, pageKey: string): Promise<void> {
+  const key = pageKey.trim();
+  if (!key || key.length > 200) {
+    throw new ApiError(400, "invalid_page", "Trang không hợp lệ.");
+  }
+  await db
+    .insert(presence)
+    .values({ userId: actor.userId, pageKey: key, seenAt: new Date() })
+    .onConflictDoUpdate({
+      target: [presence.userId, presence.pageKey],
+      set: { seenAt: new Date() },
+    });
+}
+
+/** Everyone else currently on this page. The caller is never in their own list. */
+export async function listPresence(actor: Principal, pageKey: string) {
+  const since = new Date(Date.now() - PRESENCE_TTL_MS);
+  return db
+    .select({ userId: presence.userId, displayName: users.displayName, seenAt: presence.seenAt })
+    .from(presence)
+    .innerJoin(users, eq(presence.userId, users.id))
+    .where(
+      and(
+        eq(presence.pageKey, pageKey),
+        ne(presence.userId, actor.userId),
+        gt(presence.seenAt, since),
+      ),
+    )
+    .orderBy(desc(presence.seenAt));
+}
+
+/**
+ * Drop a row when someone leaves. Best-effort: a closed laptop never sends
+ * this, which is exactly why listPresence filters on age as well rather than
+ * trusting the table to be tidy.
+ */
+export async function clearPresence(actor: Principal, pageKey: string): Promise<void> {
+  await db
+    .delete(presence)
+    .where(and(eq(presence.userId, actor.userId), eq(presence.pageKey, pageKey)));
 }

@@ -9,6 +9,7 @@ import { NodeAdminActions } from "@/app/components/node-admin-actions";
 import { NodeExportActions } from "@/app/components/node-export-actions";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
+import { PresenceRow } from "@/app/components/presence-row";
 
 // Screen: Node Detail (`/tree/node/:id`) — the primary reading surface with
 // verification badge and provenance summary (user-screen-specs.md).
@@ -44,6 +45,11 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           </>
         )}
       </p>
+      {/* The same page key as the editor, on purpose: the reader sitting on
+          this page is exactly who the editor needs to know about, and the
+          editor is exactly who this reader needs to know about before they
+          click "sửa". A separate key per screen would split one room in two. */}
+      <PresenceRow pageKey={`node:${node.id}`} />
 
       <div className="with-side">
         <div>

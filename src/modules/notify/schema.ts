@@ -56,3 +56,20 @@ export const notificationPreferences = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.eventType] })],
 );
+
+/**
+ * Who has a page open right now. One row per (person, page), overwritten on
+ * every heartbeat — this is a snapshot, never a log: nobody needs the history
+ * of who read what, and keeping it would build a record of a colleague's
+ * reading habits that no one asked for.
+ */
+export const presence = pgTable(
+  "presence",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id),
+    /** The surface being viewed, e.g. `node:<uuid>`. Opaque to this module. */
+    pageKey: text("page_key").notNull(),
+    seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.pageKey] })],
+);

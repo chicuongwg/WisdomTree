@@ -18,8 +18,10 @@ export const metadata: Metadata = {
 };
 
 // Stamps the persisted (or OS-preferred) theme on <html> before first paint
-// so the dark theme never flashes light.
-const themeScript = `try{var t=localStorage.getItem("wt-theme");if(!t&&matchMedia("(prefers-color-scheme: dark)").matches)t="dark";if(t)document.documentElement.dataset.theme=t;}catch(e){}`;
+// so the dark theme never flashes light. The side panel rides along for the
+// same reason: the rail reads the key in an effect, and without this the panel
+// would appear and then fold away on every full page load.
+const themeScript = `try{var t=localStorage.getItem("wt-theme");if(!t&&matchMedia("(prefers-color-scheme: dark)").matches)t="dark";if(t)document.documentElement.dataset.theme=t;var s=localStorage.getItem("wisdomtree.sidebar");if(s)document.documentElement.dataset.sidebar=s;}catch(e){}`;
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();

@@ -553,6 +553,12 @@ export const T = {
   navProjects: "Quản lý dự án", // NEW
   navProjectsHint: "Việc dài hơi của cả dự án", // NEW
   navWorkHint: "Việc nhận và làm trong ngày", // NEW
+  // Presence row and the side-panel toggle (NEW — not yet in vocabulary-vi.md).
+  // "Đang mở trang này" và không phải "đang sửa": người ta có thể chỉ đọc, và
+  // lời cảnh báo nói quá lên một chút sẽ bị bỏ qua sau vài lần.
+  presenceHere: "Đang mở trang này:", // NEW
+  collapsePanel: "Thu gọn thanh bên", // NEW
+  expandPanel: "Mở rộng thanh bên", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from
