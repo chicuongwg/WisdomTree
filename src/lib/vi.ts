@@ -46,9 +46,12 @@ export const T = {
   copiesAvailable: "Còn cho mượn", // NEW
   copiesAllOut: "Đã mượn hết", // NEW
   copiesOf: (free: number, total: number) => `${free}/${total} cuốn`, // NEW
-  copiesLeft: (free: number, total: number) => `Còn ${free}/${total} cuốn`, // NEW
   copiesSaved: "Đã cập nhật số lượng.", // NEW
   updateCopies: "Cập nhật số lượng", // NEW
+  // Quantity and state are two questions, so two columns (owner, 2026-07-21).
+  copiesColumn: "Số lượng", // NEW
+  statusColumn: "Trạng thái", // NEW
+  catalogOnShelf: "Còn trên kệ", // NEW
   approve: "Duyệt",
   decline: "Từ chối",
   lend: "Giao sách",

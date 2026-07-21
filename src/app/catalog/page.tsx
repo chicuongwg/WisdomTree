@@ -6,40 +6,36 @@ import { Pager } from "@/app/components/pager";
 import { Empty } from "@/app/components/empty";
 
 /**
- * The one cell that answers "mượn được hôm nay không?".
+ * How many books, and what is happening to them, are two different questions,
+ * so they are two columns (owner decision 2026-07-21). They were briefly one
+ * cell reading "Còn 1/3 cuốn", which answered both at once and neither
+ * cleanly: a librarian counting the shelf had to read past a state word, and a
+ * librarian looking for trouble had to read past a fraction.
  *
- * A single status badge was honest while a title WAS one book. With three
- * copies it is not: "Đang mượn" on a title with two left is a lie, and a
- * silent cell on a title with none left is a worse one. So the cell now reads
- * as a fraction — "Còn 2/3 cuốn" — and the number, not the colour, carries it.
- *
- * Three shapes, in the order a librarian asks the questions:
- *   lost / repair  → the badge alone. The whole title is off the shelf and the
- *                    count is beside the point.
- *   nothing free   → the badge, in words ("Đã mượn hết"), with the count after
- *                    it so the librarian sees how many are due back.
- *   something free → the count in plain text. No chip: `available` is ~95% of
- *                    the shelf, and a wall of green chips is the thing that
- *                    trains the eye to skip this column.
- *
- * A one-copy title with its copy on the shelf still shows nothing at all —
- * that reading is unchanged, and it is what keeps the column quiet enough to
- * be worth reading.
+ * SỐ LƯỢNG is arithmetic: how many are free out of how many exist. It is the
+ * same shape on every row — never blank — because a column that is empty most
+ * of the time is a column the eye learns to skip.
  */
-function availability(item: { status: string; copies: number; availableCopies: number }) {
+function copiesCell(item: { copies: number; availableCopies: number }) {
+  return <span className="copy-count">{T.copiesOf(item.availableCopies, item.copies)}</span>;
+}
+
+/**
+ * TRẠNG THÁI is the state of the title itself, in words, and the state is
+ * never carried by the chip's colour alone.
+ *
+ * "Đang cho mượn" deliberately has no chip: it is roughly nineteen rows in
+ * twenty, and a wall of green is what trains a reader to stop looking at a
+ * column. The three states worth interrupting for wear one.
+ */
+function statusCell(item: { status: string; availableCopies: number }) {
   if (item.status === "lost" || item.status === "repair") {
     return <span className={badgeClass(itemStatusLabel, item.status)}>{itemLabel(item.status)}</span>;
   }
   if (item.availableCopies === 0) {
-    return (
-      <>
-        <span className={badgeClass(itemStatusLabel, "borrowed")}>{T.copiesAllOut}</span>{" "}
-        <span className="copy-count">{T.copiesOf(0, item.copies)}</span>
-      </>
-    );
+    return <span className={badgeClass(itemStatusLabel, "borrowed")}>{T.copiesAllOut}</span>;
   }
-  if (item.copies === 1) return null;
-  return <span className="copy-count">{T.copiesLeft(item.availableCopies, item.copies)}</span>;
+  return <span className="muted">{T.catalogOnShelf}</span>;
 }
 
 // Screen: Catalog (`/catalog`) — physical library, library-space members.
@@ -89,7 +85,8 @@ export default async function CatalogPage({
                 <th scope="col">{T.catalogItem}</th>
                 <th scope="col">Tác giả</th>
                 <th scope="col">Vị trí</th>
-                <th scope="col">Tình trạng mượn</th>
+                <th scope="col">{T.copiesColumn}</th>
+                <th scope="col">{T.statusColumn}</th>
               </tr>
             </thead>
             <tbody>
@@ -101,7 +98,8 @@ export default async function CatalogPage({
                   </td>
                   <td>{item.author}</td>
                   <td>{item.location}</td>
-                  <td>{availability(item)}</td>
+                  <td>{copiesCell(item)}</td>
+                  <td>{statusCell(item)}</td>
                 </tr>
               ))}
             </tbody>
