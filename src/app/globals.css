@@ -2017,7 +2017,17 @@ main.page.login-page {
   border-top: 1px solid var(--color-line);
   margin: var(--space-3) 0 0;
 }
-.login-demo-head { font-size: 0.95rem; }
+/* The portal is one door, not a document with sections, so it opts out of the
+   section-identity rule: that rule gives an h2 a tick at its left edge and a
+   seam above it, and on centred text the tick detaches to the far margin and
+   the seam draws a line under the thing it was meant to separate. */
+.login-page > h2 {
+  display: block;
+  border-top: none;
+  padding-top: 0;
+  font-size: 0.95rem;
+}
+.login-page > h2::before { content: none; }
 .login-page .panel { text-align: left; }
 
 /* The demo picker: each person is one full-width row that signs you in.
