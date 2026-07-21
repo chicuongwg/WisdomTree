@@ -153,7 +153,10 @@ async function main() {
   );
 
   const { rows: free } = await pg.query(
-    "SELECT id FROM catalog_items WHERE status = 'available' ORDER BY item_code LIMIT 1",
+    // `archived_at IS NULL` matters: archiving leaves `status` alone, so a
+    // retired title still answers this query and the loan below would be
+    // refused for the right reason at the wrong moment.
+    "SELECT id FROM catalog_items WHERE status = 'available' AND archived_at IS NULL ORDER BY item_code LIMIT 1",
   );
   const itemId = free[0].id;
   const req = await fetch(`${BASE}/api/catalog/${itemId}/loan/request`, asUser(lan, { method: "POST" }));
@@ -188,6 +191,30 @@ async function main() {
   ok("item back to available, no active loan", endItem.status === "available" && endItem.activeLoan === null);
   const { rows: endTicket } = await pg.query("SELECT state, returned_at FROM loan_tickets WHERE id = $1", [ticket.id]);
   ok("ticket state is returned with returned_at", endTicket[0].state === "returned" && endTicket[0].returned_at);
+
+  // A retired title cannot be borrowed, and the enforcement is the SERVICE,
+  // not the screen. Archiving hides the title from every list and 404s its
+  // detail page, so the button is gone — but this endpoint went on issuing
+  // tickets to anyone with an old tab or a curl command, against a book the
+  // library has just declared it no longer holds, on a ticket no screen links
+  // to. The item is returned by now, so archiving is allowed; the request that
+  // follows must not be.
+  const arch = await fetch(`${BASE}/api/catalog/${itemId}/archive`, asUser(huong, { method: "POST" }));
+  ok("librarian archive on a returned title → 204", arch.status === 204);
+  const afterArchive = await fetch(`${BASE}/api/catalog/${itemId}/loan/request`, asUser(lan, { method: "POST" }));
+  const archErr = (await afterArchive.json()) as { code?: string };
+  ok(
+    "loan request on an archived title → 409 item_archived",
+    afterArchive.status === 409 && archErr.code === "item_archived",
+    `got ${afterArchive.status} ${archErr.code}`,
+  );
+  // Put it back, in SQL, because there is deliberately no un-archive endpoint:
+  // retiring a title is a decision, not a toggle. Without this the suite eats
+  // one title from the catalogue per run and the NEXT run picks the same row —
+  // archiving does not change `status`, so a retired title still reads as
+  // available to the query above. Found by running the suite twice, which is
+  // the only way this kind of fault ever shows up.
+  await pg.query("UPDATE catalog_items SET archived_at = NULL WHERE id = $1", [itemId]);
 
   for (const action of ["loan.request", "loan.approve", "loan.borrow", "loan.return"]) {
     ok(`audit ${action} written`, (await auditCount(action, ticket.id)) === 1);

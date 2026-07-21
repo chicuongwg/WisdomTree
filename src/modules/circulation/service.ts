@@ -23,9 +23,44 @@ export async function requestLoan(actor: Principal, itemId: string) {
   if (!item) throw notFound();
   authorize(actor, "circulation.loan.request", { spaceId: item.spaceId, kind: "write" });
 
+  // A retired title cannot be borrowed. archiveCatalogItem() guards the other
+  // direction — it refuses while a copy is out — but only the reads were
+  // guarding this one, and a read is not enforcement: the catalogue hides an
+  // archived title and getCatalogItem 404s it, while this endpoint went on
+  // issuing tickets to anyone holding an old tab or calling the API directly.
+  // The result was a loan against a book the library has declared it no longer
+  // holds, on a ticket no screen links to, since the title is filtered out of
+  // every list. Both ends closed, or "lưu trữ" is a claim the app cannot keep.
+  if (item.archivedAt) {
+    throw new ApiError(409, "item_archived", "Đầu sách này đã được lưu trữ, không thể mượn.");
+  }
   // Lost and in-repair are facts about the whole title and stop every copy.
   if (item.status === "lost" || item.status === "repair") {
     throw new ApiError(409, "item_unavailable", "Đầu sách này hiện không sẵn sàng để mượn.");
+  }
+  // "You already have one" is asked BEFORE "are there any left", because the
+  // answer is about the reader rather than the shelf and the two are easy to
+  // confuse from the outside.
+  //
+  // The unique index has always caught this, and its message is the honest one
+  // — but only when the request reaches the insert. Since copies shipped, a
+  // one-copy title fails the count check first, so the member holding the only
+  // copy was told "tất cả bản sao đang có người mượn": true, and useless, and
+  // it reads as though somebody else has it. (This is also what proof 3 has
+  // been failing on, unnoticed, since that release: it asserts the code is
+  // loan_already_active and had been getting item_unavailable.)
+  const [mine] = await db
+    .select({ id: loanTickets.id })
+    .from(loanTickets)
+    .where(
+      and(
+        eq(loanTickets.itemId, itemId),
+        eq(loanTickets.borrowerId, actor.userId),
+        inArray(loanTickets.state, [...ACTIVE_LOAN_STATES]),
+      ),
+    );
+  if (mine) {
+    throw new ApiError(409, "loan_already_active", "Bạn đang có phiếu mượn cho đầu sách này.");
   }
   if ((await activeLoanCount(db, itemId)) >= item.copies) {
     throw new ApiError(409, "item_unavailable", "Tất cả bản sao của đầu sách này đang có người mượn.");
