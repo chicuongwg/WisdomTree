@@ -231,6 +231,26 @@ export function ShellRail({
       <Link href="/" className="brand-mark" title={T.home} aria-label={T.home}>
         WT
       </Link>
+      {/* Directly under the home mark, above the modules (owner decision
+          2026-07-21). It sat at the foot of the rail before, beside the theme
+          toggle and the avatar — the corner where an app puts the settings
+          nobody presses twice a day. This one is pressed whenever the work
+          needs the width, so it belongs at the top with the chrome it
+          controls, not filed with the preferences.
+          Folds the side panel away and does nothing else. Every role gets it:
+          there is no permission attached to how much of your own screen the
+          chrome takes. Hidden below 56rem, where the panel is already
+          display:none and "collapse" would be a button that changes nothing. */}
+      <button
+        type="button"
+        className="rail-btn only-wide"
+        title={collapsed ? T.expandPanel : T.collapsePanel}
+        aria-label={collapsed ? T.expandPanel : T.collapsePanel}
+        aria-pressed={collapsed}
+        onClick={togglePanel}
+      >
+        {icons.panel}
+      </button>
       {items.map((item) => {
         const name = item.group ? `${item.group} · ${item.label}` : item.label;
         return (
@@ -251,27 +271,12 @@ export function ShellRail({
         </Link>
         );
       })}
-      {/* Folds the side panel away to widen the work area, and does nothing
-          else (owner decision 2026-07-21). Every role gets it: there is no
-          permission attached to how much of your own screen the chrome takes.
-          Hidden below 56rem, where the panel is already display:none and
-          "collapse" would be a button that changes nothing. */}
-      <button
-        type="button"
-        className="rail-btn only-wide"
-        title={collapsed ? T.expandPanel : T.collapsePanel}
-        aria-label={collapsed ? T.expandPanel : T.collapsePanel}
-        aria-pressed={collapsed}
-        onClick={togglePanel}
-      >
-        {icons.panel}
-      </button>
       {/* ponytail: below 56rem the sidebar is display:none, and six screens
           (nộp nguồn, bài nộp của tôi, hộp nguồn, bàn thủ thư, danh sách
           chuyên đề, chuyên đề mới) live only there — including the palette's
-          own search box. The collapse button took this slot, so the palette
-          keeps a door of its own on narrow screens rather than being left to
-          Ctrl+K, which a phone does not have. */}
+          own search box. The collapse button is hidden at that width, so the
+          palette keeps a door of its own on narrow screens rather than being
+          left to Ctrl+K, which a phone does not have. */}
       <button
         type="button"
         className="rail-btn only-narrow"
