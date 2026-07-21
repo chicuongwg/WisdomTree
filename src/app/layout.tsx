@@ -11,6 +11,7 @@ import { LogoutButton } from "./components/logout-button";
 import { ShellRail } from "./components/shell-rail";
 import { ShellSidebar } from "./components/shell-sidebar";
 import { CommandPalette } from "./components/command-palette";
+import { ValidationMessages } from "./components/validation-messages";
 
 export const metadata: Metadata = {
   // A template, so every screen's own title reads "<screen> · WisdomTree" and
@@ -38,6 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         {/* See the note on the signed-in <body> below. */}
         <body suppressHydrationWarning>
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+          <ValidationMessages />
           <div className="plain-shell">
             <header className="topbar">
               <Link href="/" className="brand">
@@ -118,6 +120,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </footer>
         </div>
         <CommandPalette role={user.role} />
+        {/* One listener, every form: the browser refuses in Vietnamese now. */}
+        <ValidationMessages />
       </body>
     </html>
   );

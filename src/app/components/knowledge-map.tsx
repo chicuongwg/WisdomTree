@@ -24,6 +24,7 @@ import {
   type LinkType,
 } from "@/lib/graph-settings";
 import { T, verificationStateLabel } from "@/lib/vi";
+import { useShortcutKey } from "@/lib/platform";
 import { GraphSettingsPanel } from "./graph-settings-panel";
 import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
 
@@ -216,6 +217,7 @@ export function KnowledgeMap({
   const reducedMotion = useMedia("(prefers-reduced-motion: reduce)");
   /** A mouse-and-keyboard help paragraph is noise to someone holding a phone. */
   const coarsePointer = useMedia("(pointer: coarse)");
+  const shortcut = useShortcutKey();
   /** Nothing to persist until the reader actually changes something. */
   const dirty = useRef(false);
 
@@ -1053,7 +1055,7 @@ export function KnowledgeMap({
       {/* Help for the input device actually in the reader's hand. A phone was
           being told to hold Ctrl and use the scroll wheel. */}
       <p className="map-help" id={`${uid}-help`}>
-        {coarsePointer ? T.graphTouchHelp : `${T.graphHelp} ${T.graphKeyboardHelp}`}
+        {coarsePointer ? T.graphTouchHelp : `${T.graphHelp(shortcut)} ${T.graphKeyboardHelp}`}
       </p>
 
       <ul className="map-legend" aria-label={T.legend}>

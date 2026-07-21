@@ -74,6 +74,7 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
       <div className="split">
         <div className="field wide">
           <label htmlFor="node-content">{T.contentMd}</label>
+          <p className="meta">{T.contentMdHint}</p>
           <textarea
             id="node-content"
             className="editor"

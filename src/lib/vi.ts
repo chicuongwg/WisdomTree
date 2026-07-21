@@ -132,6 +132,12 @@ export const T = {
   branchNodesEmptyHintEditor: "Bấm “Thêm trang tri thức” ngay bên dưới để viết trang đầu tiên.",
   branchNodesEmptyHintReader: "Khi có người thêm trang vào chuyên đề này, chúng sẽ hiện ở đây.",
   // Correcting your own upload (NEW — not yet in vocabulary-vi.md)
+  validationRequired: "Hãy điền mục này.", // NEW
+  validationBadFormat: "Giá trị chưa đúng định dạng.", // NEW
+  validationLength: "Độ dài chưa hợp lệ.", // NEW
+  validationGeneric: "Giá trị chưa hợp lệ.", // NEW
+  validationMin: (min: string) => `Giá trị nhỏ nhất là ${min}.`, // NEW
+  validationMax: (max: string) => `Giá trị lớn nhất là ${max}.`, // NEW
   genericError: "Có lỗi xảy ra. Vui lòng thử lại sau.",
   // Gap request: the no-file intake mode (NEW — not yet in vocabulary-vi.md)
   gapRequestHint: "Không có tệp để gửi? Nêu thứ còn thiếu, quản trị viên sẽ xem xét bổ sung.",
@@ -213,7 +219,12 @@ export const T = {
   openItem: "Mở", // NEW
   triage: "Tiếp nhận", // NEW
   convertToBranch: "Chuyển thành chuyên đề", // NEW
-  contentMd: "Nội dung (Markdown)", // NEW
+  // "Markdown" is a programmer's word and nothing on either editor screen
+  // explains it. What the reader needs to know is that the box takes plain
+  // writing and that a few marks do something — which the hint says.
+  contentMd: "Nội dung", // NEW
+  contentMdHint: "Viết như bình thường. Gõ ## đầu dòng để tạo tiêu đề, - để tạo gạch đầu dòng, và [[Tên trang]] để dẫn sang một trang tri thức khác.", // NEW
+  editNodeConflictNote: "Nếu người khác lưu trước bạn, hệ thống sẽ báo và giữ nguyên nội dung bạn đang soạn.", // NEW
   suggestedBranch: "Chuyên đề đề xuất", // NEW
   preview: "Xem trước", // NEW
   // Notify + PM terms; Deadline "Hạn chót" and Comment "Thảo luận" come from
@@ -346,7 +357,9 @@ export const T = {
   graphResetSettings: "Khôi phục mặc định", // NEW
   graphPinnedOne: "Đã ghim tại chỗ", // NEW
   graphUnpinned: "Đã bỏ ghim", // NEW
-  graphHelp: "Kéo một chấm để ghim nó vào chỗ mới. Giữ Ctrl và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
+  // The modifier is passed in: on a Mac it is ⌘, and the map listens for both.
+  graphHelp: (key: string) =>
+    `Kéo một chấm để ghim nó vào chỗ mới. Giữ ${key} và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.`, // NEW
   // The map is one tab stop; the arrows move between marks inside it. Saying
   // "Tab để đi giữa các trang" was both wrong and a promise of two hundred
   // presses of it.
@@ -515,6 +528,7 @@ export const T = {
   nextActionRejected: "Đề cử không được duyệt — tệp vẫn được lưu.", // NEW
   // Node export: the one converter warning said in consequences
   // (NEW — not yet in vocabulary-vi.md)
+  exportOtherWarning: "tệp đã xuất nhưng có phần chưa chuẩn", // NEW
   exportPandocMissing: "máy chủ chưa cài pandoc nên tệp xuất là bản HTML đơn giản, không phải docx/pdf.", // NEW
   // Admin Console: headings and the health table (NEW — not yet in vocabulary-vi.md)
   membersHeading: "Thành viên", // NEW
@@ -579,6 +593,7 @@ export const T = {
   auditChange: "Thay đổi", // NEW — a details payload that records only an old and a new value
   auditChangeFromTo: "từ", // NEW — "từ X sang Y", built in audit-log.tsx
   auditChangeTo: "sang", // NEW
+  auditIdPrefix: "mã", // NEW
   auditEmptyValue: "để trống", // NEW
   auditYes: "có", // NEW
   auditNo: "không", // NEW
@@ -1009,7 +1024,7 @@ export const auditFieldLabel: Record<string, string> = {
   contentChanged: "Nội dung có thay đổi", // NEW
   excerptChunkIds: "Đoạn trích dẫn", // NEW
   anchorType: "Gắn với", // NEW
-  anchorId: "Mã đối tượng được gắn", // NEW
+  anchorId: "Đối tượng được gắn", // NEW
   prefs: "Cài đặt nhận thông báo", // NEW
   branchId: "Nhánh tri thức", // NEW
   canonicalNodeId: "Trang được gộp vào", // NEW

@@ -111,8 +111,18 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
                   unavailable"); the reader gets the consequence in Vietnamese —
                   what file they actually got and why. */}
               {T.exportWarnings}{" "}
+              {/* Only the pandoc case had a Vietnamese sentence; every other
+                  warning the renderer can emit was printed in its own English
+                  ("stub: …"), which is worse than useless to the reader it is
+                  addressed to. An unrecognised one now says the consequence —
+                  the file came out, something about it is not standard — and
+                  keeps the raw text after it for whoever can act on it. */}
               {job.result.converterWarnings
-                .map((w) => (w.includes("pandoc unavailable") ? T.exportPandocMissing : w))
+                .map((w) =>
+                  w.includes("pandoc unavailable")
+                    ? T.exportPandocMissing
+                    : `${T.exportOtherWarning} (${w})`,
+                )
                 .join("; ")}
             </span>
           )}

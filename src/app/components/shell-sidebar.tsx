@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { T } from "@/lib/vi";
+import { useShortcutKey } from "@/lib/platform";
 import { NodeLink } from "./node-link";
 
 // Contextual sidebar. Three labelled destination groups come first —
@@ -35,6 +36,7 @@ export function ShellSidebar({
   spaceCount: number;
 }) {
   const pathname = usePathname();
+  const shortcut = useShortcutKey();
 
   // the branch holding the open page starts expanded
   const currentBranch = branches.find(
@@ -103,7 +105,7 @@ export function ShellSidebar({
         className="searchbox"
         onClick={() => window.dispatchEvent(new CustomEvent("wt:open-palette"))}
       >
-        {T.quickSearch}…<kbd>Ctrl K</kbd>
+        {T.quickSearch}…<kbd>{shortcut} K</kbd>
       </button>
       <div className="side-body">
         <nav className="side-sec" aria-label={T.navKnowledge}>

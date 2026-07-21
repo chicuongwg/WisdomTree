@@ -29,10 +29,11 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
       <h1>
         {T.editNode} <VerificationBadge verification={node.verification} />
       </h1>
-      <p className="muted">
-        Phiên bản hiện tại: {node.version}. Nếu người khác lưu trước bạn, hệ thống sẽ báo xung đột
-        và giữ nguyên nội dung bạn đang soạn.
-      </p>
+      {/* The optimistic-lock counter used to lead this sentence: "Phiên bản
+          hiện tại: 7". It is a number the reader can do nothing with, about a
+          mechanism they did not ask about, and it buried the part that
+          matters — that their paragraph is safe if someone else saves first. */}
+      <p className="muted">{T.editNodeConflictNote}</p>
       {/* This is the screen the owner's "tránh sửa đè" is about: long-form
           Markdown, typed over minutes, where losing the conflict means
           retyping a paragraph. Shares its page key with the reading view. */}

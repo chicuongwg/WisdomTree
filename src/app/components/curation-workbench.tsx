@@ -99,6 +99,7 @@ export function CurationWorkbench(props: Props) {
       <h2>{T.markdownDraft}</h2>
       <div className="field wide">
         <label htmlFor="draft">{T.contentMd}</label>
+        <p className="meta">{T.contentMdHint}</p>
         <textarea
           id="draft"
           className="editor"

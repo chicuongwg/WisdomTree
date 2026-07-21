@@ -42,6 +42,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
       </div>
       <div className="field wide">
         <label htmlFor="new-node-content">{T.contentMd}</label>
+        <p className="meta">{T.contentMdHint}</p>
         <textarea id="new-node-content" name="contentMd" className="editor" required />
       </div>
       <button type="submit" disabled={m.busy}>

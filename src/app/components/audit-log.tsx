@@ -62,6 +62,7 @@ const NAME_KEYS = ["title", "name", "filename", "email"] as const;
 
 /** An ISO timestamp as recorded by the services — printed as a moment, not a string. */
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * The name of one fact inside a payload. Most keys are the fields the modules
@@ -84,6 +85,12 @@ function say(value: unknown): string {
   if (typeof value === "number") return String(value);
   if (typeof value === "string") {
     if (ISO.test(value)) return when(value);
+    // A UUID is not a value a librarian can read, check or repeat. It was
+    // being printed in full — "Người phụ trách: 7c2e1a44-…" — which is
+    // neither the name they wanted nor a fact they can do anything with. The
+    // short form keeps the log checkable against the database (the first
+    // segment is enough to find a row) without pretending to be information.
+    if (UUID.test(value)) return `${T.auditIdPrefix} ${value.slice(0, 8)}`;
     return auditValueLabel[value] ?? value;
   }
   if (Array.isArray(value)) {
