@@ -285,6 +285,25 @@ main.page {
   gap: var(--space-4);
   min-width: 0;
 }
+/* Phone padding, asked for twice on purpose.
+   ---------------------------------------------------------------------------
+   The shell spends 19.75rem of the window on the rail and the side panel
+   before the page gets any, so a window-width media query is measuring the
+   wrong thing: at a 57rem window the reader has a 37rem column — narrower than
+   this breakpoint — and the phone rule did not fire. The container query is
+   the one that governs inside the shell.
+   The media query stays for the screens that are NOT in the shell — the login
+   portal renders in .plain-shell, which declares no container, so a container
+   query can never match there. Same declarations either way, so both matching
+   at once changes nothing. Every breakpoint below follows this rule: it asks
+   the column when the column is what breaks, and the window only when the
+   window is (the shell grid itself, and the rail's own buttons). */
+@container main (max-width: 40rem) {
+  main.page { padding: var(--space-5) var(--space-4) var(--space-6); }
+  /* Reading matter yields its generous frame too, rather than spending a
+     third of a 320px screen on padding. */
+  .md-content { padding: var(--space-4); }
+}
 @media (max-width: 40rem) {
   main.page { padding: var(--space-5) var(--space-4) var(--space-6); }
 }
@@ -685,7 +704,12 @@ button.danger:disabled:hover { background: var(--color-surface); }
 .muted { color: var(--color-ink-muted); }
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  /* min(17rem, 100%), not 17rem: a grid track cannot shrink below its minimum,
+     so on a 320px phone — 236px of content once the rail and the page padding
+     are paid for — a flat 17rem track pushed 36px off the side of the screen.
+     The min() lets the last card give up its ideal width rather than the
+     reader giving up the right-hand edge of the page. */
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
   gap: var(--space-4);
   align-items: start;
 }
@@ -704,10 +728,12 @@ button.danger:disabled:hover { background: var(--color-surface); }
   flex-direction: column;
   gap: var(--space-4);
 }
+/* The window-width copy of this rule is gone. It could never be the deciding
+   one: it fired at a 56rem window, by which point the column has been under
+   58rem since the window was 77.75rem and the container query had already
+   collapsed the grid. A rule that can only ever agree with the rule above it
+   is not a fallback, it is a second number to keep in sync. */
 @container main (max-width: 58rem) {
-  .split, .with-side { grid-template-columns: minmax(0, 1fr); }
-}
-@media (max-width: 56rem) {
   .split, .with-side { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -917,7 +943,7 @@ button.mention-option:hover, button.mention-option.sel {
 .record dt { font-size: 0.88rem; font-weight: 600; color: var(--color-ink-muted); }
 .record dd { margin: 0; }
 /* the ledger stacks rather than squeezing the value column on a phone */
-@media (max-width: 30rem) {
+@container main (max-width: 30rem) {
   .record { grid-template-columns: 1fr; gap: var(--space-1); }
   .record dd { margin-bottom: var(--space-2); }
 }
@@ -983,8 +1009,13 @@ li.notification-unread .notification-link { font-weight: 600; }
    Board — work in three columns
    ============================================================ */
 .board-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
-@container main (max-width: 46rem) { .board-columns { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 46rem) { .board-columns { grid-template-columns: minmax(0, 1fr); } }
+/* The lanes break on the surface that holds them, not on the whole column.
+   With a task open, .board-surface is the column minus a 24rem panel and the
+   gap — so on a 82rem window the lanes still had "room" by the column's
+   reckoning and split 34rem three ways: about 118px of Vietnamese per card,
+   the narrowest text in the app. The surface is its own container now, so it
+   answers for its own width. */
+@container surface (max-width: 46rem) { .board-columns { grid-template-columns: minmax(0, 1fr); } }
 /* a lane is a panel whose body is a stack of cards: tighter padding so
    the cards, not the chrome, get the column's width */
 .board-columns > .panel { padding: var(--space-4); }
@@ -1681,8 +1712,12 @@ a.tree-item.nav-item { font-weight: 500; }
 /* On a phone the panel stops floating and sits above the map in normal flow.
    A 16rem card pinned over a 20rem screen is not a control panel, it is a lid:
    it would cover the thing it is controlling with no way to see both. Shut, it
-   is one summary row, so it costs the map almost nothing there either. */
-@media (max-width: 40rem) {
+   is one summary row, so it costs the map almost nothing there either.
+   The width that decides this is the map's, not the window's: with the side
+   panel open a 57rem window leaves a 35rem map, where a 16rem card floating
+   over it covers nearly half — the lid this rule exists to prevent, arriving
+   17rem of window before the rule fired. */
+@container main (max-width: 40rem) {
   /* On a phone the map goes back to its own proportions: a 72vh box around a
      350px-wide drawing is mostly empty paper above and below the marks. */
   svg.knowledge-map { height: auto; }
@@ -2262,12 +2297,19 @@ button.login-person:hover .login-person-role { color: inherit; }
   align-items: start;
 }
 .board-with-panel > * { min-width: 0; }
-.board-surface { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
-@container main (max-width: 62rem) {
-  .board-with-panel { grid-template-columns: minmax(0, 1fr); }
-  .board-with-panel > .task-panel { order: -1; }
+.board-surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  /* What the lanes measure themselves against — see .board-columns. */
+  container: surface / inline-size;
 }
-@media (max-width: 60rem) {
+/* The window copy of this rule is gone for the same reason as .split's: it
+   named 60rem where the container names 62rem, and the container had already
+   fired 19.75rem of shell chrome earlier, so the two numbers could never
+   disagree in practice — only on paper, where they did. */
+@container main (max-width: 62rem) {
   .board-with-panel { grid-template-columns: minmax(0, 1fr); }
   .board-with-panel > .task-panel { order: -1; }
 }
@@ -2458,7 +2500,9 @@ button.login-person:hover .login-person-role { color: inherit; }
    ------------------------------------------------------------------ */
 .health-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  /* min(), for the reason .cards carries it: a fixed track minimum is wider
+     than a 320px screen has left once the rail and the padding are paid. */
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
   gap: var(--space-4);
 }
 .health-card { gap: var(--space-2); }
