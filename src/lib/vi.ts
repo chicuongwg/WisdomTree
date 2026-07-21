@@ -2,6 +2,8 @@
 // shows a raw internal term. Terms marked NEW are not yet in the vocabulary
 // doc and are flagged for humanities review in the step-2 report.
 
+import { APP_TZ, appDayNumber } from "./time";
+
 export const T = {
   appName: "WisdomTree",
   home: "Trang chủ",
@@ -1067,11 +1069,37 @@ export const reminderLabel = (v: string): string => REMINDER_WORDS[v] ?? v;
 
 /** A moment: `20:26 20/7/2026`. For "last updated", "stored at", timestamps. */
 export const when = (d: Date | string | null | undefined): string =>
-  d ? new Date(d).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "—";
+  d
+    ? new Date(d).toLocaleString("vi-VN", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: APP_TZ,
+      })
+    : "—";
 
 /** A day: `20/7/2026`. For due dates and anything a person says out loud. */
 export const day = (d: Date | string | null | undefined): string =>
-  d ? new Date(d).toLocaleDateString("vi-VN") : "—";
+  d ? new Date(d).toLocaleDateString("vi-VN", { timeZone: APP_TZ }) : "—";
+
+/**
+ * A number, grouped the way Vietnamese writes them: 12.480, not 12480.
+ * Tabular figures in the stylesheet line the columns up; this puts the marks
+ * in that make a six-digit count readable at all.
+ */
+export const num = (n: number): string => n.toLocaleString("vi-VN");
+
+/**
+ * A file size a person can judge. Everything was printed in KB, so a 40 MB
+ * scan read "40960 KB" — a number nobody can weigh against their own inbox.
+ */
+export function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${num(bytes)} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${num(Math.round(kb))} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toLocaleString("vi-VN", { maximumFractionDigits: 1 })} MB`;
+  return `${(mb / 1024).toLocaleString("vi-VN", { maximumFractionDigits: 2 })} GB`;
+}
 
 /**
  * How far off a deadline is, in words. A date chip that only changes colour
@@ -1079,7 +1107,10 @@ export const day = (d: Date | string | null | undefined): string =>
  * that a state is never carried by hue alone.
  */
 export function untilLabel(due: Date, now: Date): string | null {
-  const days = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
+  // Whole days apart on the app's calendar, not elapsed milliseconds divided
+  // by a day: a deadline at 09:00 tomorrow is "Ngày mai" whether it is read at
+  // breakfast or at midnight, and dividing gets that wrong in both directions.
+  const days = appDayNumber(due) - appDayNumber(now);
   if (days < 0) return `Quá hạn ${-days} ngày`;
   if (days === 0) return "Hôm nay";
   if (days === 1) return "Ngày mai";

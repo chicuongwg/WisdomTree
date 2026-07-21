@@ -1,6 +1,6 @@
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getSourceDetail, listFolders } from "@/modules/storage/service";
-import { badgeToneClass, T, when } from "@/lib/vi";
+import { badgeToneClass, fileSize, T, when } from "@/lib/vi";
 import { extractionDisplay, nextActionFor, nextActionLabel } from "@/lib/source-status";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
@@ -48,7 +48,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                   <tr>
                     <th scope="row">{T.file}</th>
                     <td>
-                      {v.originalFilename} <span className="muted">({Math.max(1, Math.round(v.sizeBytes / 1024))} KB)</span>
+                      {v.originalFilename} <span className="muted">({fileSize(v.sizeBytes)})</span>
                     </td>
                   </tr>
                   <tr>

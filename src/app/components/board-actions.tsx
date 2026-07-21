@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { T, taskLabel } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
+import { fromAppInput, toAppInput } from "@/lib/time";
 import { ConfirmButton } from "./confirm-button";
 import { SayMutation } from "./say";
 
@@ -99,12 +100,13 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
         title,
         state: "todo",
         ...(assigneeId ? { assigneeId } : {}),
-        // Empty = unscheduled; the field is a local wall-clock time, so it is
-        // sent as-is and read back in the same zone the team works in.
-        ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}),
+        // Empty = unscheduled. The box holds the app's wall clock, not the
+        // browser's, so it is converted with the app's own offset rather than
+        // whatever zone the reader's laptop is set to — see src/lib/time.ts.
+        ...(dueAt ? { dueAt: fromAppInput(dueAt).toISOString() } : {}),
         // A start turns a deadline into a span, which is what the board reads
         // as "how long there is to do this".
-        ...(startAt ? { startAt: new Date(startAt).toISOString() } : {}),
+        ...(startAt ? { startAt: fromAppInput(startAt).toISOString() } : {}),
       },
     });
     if (!created) return;
@@ -157,14 +159,6 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
   );
 }
 
-/** An ISO moment as the local wall-clock string `<input type="datetime-local">` wants. */
-function toLocalInput(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 /**
  * The editable half of the task detail: the span the work has, and the notes.
  *
@@ -190,8 +184,8 @@ export function TaskDetailForm({
   };
 }) {
   const m = useMutation();
-  const [startAt, setStartAt] = useState(toLocalInput(task.startAt));
-  const [dueAt, setDueAt] = useState(toLocalInput(task.dueAt));
+  const [startAt, setStartAt] = useState(toAppInput(task.startAt));
+  const [dueAt, setDueAt] = useState(toAppInput(task.dueAt));
   const [notes, setNotes] = useState(task.notes ?? "");
 
   // The refreshed page re-renders this form with the new version, so the next
@@ -205,8 +199,8 @@ export function TaskDetailForm({
         // Every key is sent, empty included: on this form an emptied date means
         // "unschedule it", which the service reads as null. Absent would mean
         // "leave it", and there would be no way to take a date back off.
-        startAt: startAt ? new Date(startAt).toISOString() : null,
-        dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+        startAt: startAt ? fromAppInput(startAt).toISOString() : null,
+        dueAt: dueAt ? fromAppInput(dueAt).toISOString() : null,
         notes,
         expectedVersion: task.version,
       },

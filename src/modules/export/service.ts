@@ -381,6 +381,11 @@ export async function healthReport(actor: Principal) {
   else if (!availability.pdfEngine) degradedComponents.push("pdf-engine (pdf render runs the HTML stub)");
 
   return {
+    // When these numbers were read. The screen used to stamp them with its own
+    // render time, which is the same thing only when nothing is cached and
+    // nothing is slow — and a health board that misdates its readings is worse
+    // than one that shows none.
+    checkedAt: new Date(),
     // HealthReport fields that are cheap to compute in the demo; the rate
     // metrics (ocrFailureRate, publishSuccessRate, queueLatencySeconds,
     // backlogOver7Days, exportValidationFailures) have no demo data source

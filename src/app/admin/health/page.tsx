@@ -102,8 +102,13 @@ export default async function HealthPage() {
         <span className={attention ? "badge tone-attention" : "badge tone-done"}>
           {attention ? T.healthNeedsAttention : T.healthAllWell}
         </span>{" "}
+        {/* The moment the readings were TAKEN, handed over by the service.
+            This printed `new Date()` — the moment the page happened to render
+            — so a cached or slow render dated the numbers to now regardless of
+            how old they were, which is the one thing a health board must not
+            get wrong. */}
         <span className="muted">
-          {T.healthCheckedAt} {when(new Date())}
+          {T.healthCheckedAt} {when(health.checkedAt)}
         </span>
       </p>
 

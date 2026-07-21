@@ -1,15 +1,22 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { badgeClass, T, taskLabel, taskStateLabel, weekdayShort } from "@/lib/vi";
+import { fromAppClock, toAppClock } from "@/lib/time";
 import { Empty } from "@/app/components/empty";
 
 // The board's two calendar shapes — a month grid and a week grid — over the
 // same listSchedule() payload. Server-rendered: navigation is links, not state,
 // so a month is a URL a reader can keep.
 //
-// ponytail: everything here is server-local time. The app has one team in one
-// timezone; a per-user zone would mean carrying an offset through every range
-// query and every cell comparison for no reader we currently have.
+// Every date here is the APP's wall clock — see src/lib/time.ts for why the
+// app pins one display zone rather than using the reader's.
+//
+// This used to say "server-local time", which is the same thing only when the
+// server happens to be set to Vietnam. In a UTC container it is seven hours
+// out, and seven hours is enough to file a task due at 03:00 under the
+// previous day and to ring "hôm nay" around the wrong square. So everything
+// entering the grid is shifted once with toAppClock() and read with the UTC
+// getters: the same arithmetic as before, with the zone pinned.
 
 export type Schedule = {
   tasks: { id: string; title: string; state: string; assigneeName: string | null; dueAt: Date | null }[];
@@ -18,42 +25,55 @@ export type Schedule = {
 
 // --- date arithmetic (local midnight, so a cell is a day, not 24 hours) ---
 
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+// A "grid date" below is an app-clock date: the instant shifted so the UTC
+// getters spell out the app's wall clock. Raw instants are converted at the
+// edges and never mixed in here.
+const startOfDay = (d: Date) =>
+  new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 const addDays = (d: Date, n: number) =>
-  new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + n));
 /** Monday of the week holding `d`. */
-const startOfWeek = (d: Date) => addDays(startOfDay(d), -((d.getDay() + 6) % 7));
+const startOfWeek = (d: Date) => addDays(startOfDay(d), -((d.getUTCDay() + 6) % 7));
 const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  a.getUTCFullYear() === b.getUTCFullYear() &&
+  a.getUTCMonth() === b.getUTCMonth() &&
+  a.getUTCDate() === b.getUTCDate();
 
 export const ymOf = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-export const ymdOf = (d: Date) => `${ymOf(d)}-${String(d.getDate()).padStart(2, "0")}`;
+  `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+export const ymdOf = (d: Date) => `${ymOf(d)}-${String(d.getUTCDate()).padStart(2, "0")}`;
 
 /** `?m=YYYY-MM` → the first of that month; anything else → this month. */
 export function monthAnchor(m: string | undefined, now: Date): Date {
   const match = /^(\d{4})-(\d{2})$/.exec(m ?? "");
   const month = match ? Number(match[2]) : 0;
-  if (!match || month < 1 || month > 12) return new Date(now.getFullYear(), now.getMonth(), 1);
-  return new Date(Number(match[1]), month - 1, 1);
+  const here = toAppClock(now);
+  if (!match || month < 1 || month > 12)
+    return new Date(Date.UTC(here.getUTCFullYear(), here.getUTCMonth(), 1));
+  return new Date(Date.UTC(Number(match[1]), month - 1, 1));
 }
 
 /** `?w=YYYY-MM-DD` → the Monday of that week; anything else → this week. */
 export function weekAnchor(w: string | undefined, now: Date): Date {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(w ?? "");
-  if (!match) return startOfWeek(now);
-  const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return Number.isNaN(d.getTime()) ? startOfWeek(now) : startOfWeek(d);
+  if (!match) return startOfWeek(toAppClock(now));
+  const d = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return Number.isNaN(d.getTime()) ? startOfWeek(toAppClock(now)) : startOfWeek(d);
 }
+
+/* The two ranges below leave app-clock space: they are handed to the database,
+   which stores real instants, so the grid's midnights are converted back to
+   the moments they actually are. Without this the window would be seven hours
+   off and the first and last cells of every grid would quietly lose work. */
 
 /** Six whole Mon–Sun weeks around a month: a grid that never changes height. */
 export function monthGridRange(anchor: Date) {
   const from = startOfWeek(anchor);
-  return { from, to: addDays(from, 42) };
+  return { from: fromAppClock(from), to: fromAppClock(addDays(from, 42)) };
 }
 
 export function weekGridRange(anchor: Date) {
-  return { from: anchor, to: addDays(anchor, 7) };
+  return { from: fromAppClock(anchor), to: fromAppClock(addDays(anchor, 7)) };
 }
 
 // --- chips ---
@@ -71,8 +91,8 @@ function DayChips({
   day: Date;
   taskHref: TaskHref;
 }) {
-  const tasks = schedule.tasks.filter((t) => t.dueAt && sameDay(new Date(t.dueAt), day));
-  const deadlines = schedule.deadlines.filter((d) => sameDay(new Date(d.dueAt), day));
+  const tasks = schedule.tasks.filter((t) => t.dueAt && sameDay(toAppClock(new Date(t.dueAt)), day));
+  const deadlines = schedule.deadlines.filter((d) => sameDay(toAppClock(new Date(d.dueAt)), day));
   return (
     <>
       {tasks.map((t) => (
@@ -143,16 +163,18 @@ export function MonthView({
   now: Date;
   taskHref: TaskHref;
 }) {
-  const { from } = monthGridRange(anchor);
+  // startOfWeek, not monthGridRange: that one converts out of app-clock space
+  // for the database, and these 42 cells are still being counted in it.
+  const from = startOfWeek(anchor);
   const days = Array.from({ length: 42 }, (_, i) => addDays(from, i));
-  const prev = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
-  const next = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1);
+  const prev = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() - 1, 1));
+  const next = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() + 1, 1));
 
   return (
     <section className="panel">
       <div className="cal-head">
         <h2>
-          {T.boardViewMonth} {anchor.getMonth() + 1}/{anchor.getFullYear()}
+          {T.boardViewMonth} {anchor.getUTCMonth() + 1}/{anchor.getUTCFullYear()}
         </h2>
         <div className="cal-nav">
           <Link href={`/board?view=month&m=${ymOf(prev)}`}>← {T.prevMonth}</Link>
@@ -173,11 +195,11 @@ export function MonthView({
           {days.map((d) => (
             <div
               key={d.toISOString()}
-              className={`cal-day${sameDay(d, now) ? " is-today" : ""}${
-                d.getMonth() === anchor.getMonth() ? "" : " is-outside"
+              className={`cal-day${sameDay(d, toAppClock(now)) ? " is-today" : ""}${
+                d.getUTCMonth() === anchor.getUTCMonth() ? "" : " is-outside"
               }`}
             >
-              <div className="cal-daynum">{d.getDate()}</div>
+              <div className="cal-daynum">{d.getUTCDate()}</div>
               <DayChips schedule={schedule} day={d} taskHref={taskHref} />
             </div>
           ))}
@@ -209,14 +231,14 @@ export function WeekView({
 }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(anchor, i));
   const hours = Array.from({ length: HOUR_TO - HOUR_FROM }, (_, i) => HOUR_FROM + i);
-  const inBand = (d: Date) => d.getHours() >= HOUR_FROM && d.getHours() < HOUR_TO;
+  const inBand = (d: Date) => d.getUTCHours() >= HOUR_FROM && d.getUTCHours() < HOUR_TO;
 
   /** The chips for one column, either inside an hour row or in the strip. */
   function cell(day: Date, hour: number | null) {
     const hit = (raw: Date) => {
-      const d = new Date(raw);
+      const d = toAppClock(new Date(raw));
       if (!sameDay(d, day)) return false;
-      return hour === null ? !inBand(d) : d.getHours() === hour;
+      return hour === null ? !inBand(d) : d.getUTCHours() === hour;
     };
     const tasks = schedule.tasks.filter((t) => t.dueAt && hit(t.dueAt));
     const deadlines = schedule.deadlines.filter((d) => hit(d.dueAt));
@@ -253,16 +275,16 @@ export function WeekView({
           {days.map((d, i) => (
             <div
               key={d.toISOString()}
-              className={`cal-dow${sameDay(d, now) ? " is-today" : ""}`}
+              className={`cal-dow${sameDay(d, toAppClock(now)) ? " is-today" : ""}`}
             >
-              {weekdayShort[i]} {d.getDate()}/{d.getMonth() + 1}
+              {weekdayShort[i]} {d.getUTCDate()}/{d.getUTCMonth() + 1}
             </div>
           ))}
           <div className="cal-hour cal-hour-allday">{T.outsideHoursStrip}</div>
           {days.map((d) => (
             <div
               key={`all-${d.toISOString()}`}
-              className={`cal-slot cal-slot-allday${sameDay(d, now) ? " is-today" : ""}`}
+              className={`cal-slot cal-slot-allday${sameDay(d, toAppClock(now)) ? " is-today" : ""}`}
             >
               {cell(d, null)}
             </div>
@@ -275,7 +297,7 @@ export function WeekView({
               {days.map((d) => (
                 <div
                   key={`${h}-${d.toISOString()}`}
-                  className={`cal-slot${sameDay(d, now) ? " is-today" : ""}`}
+                  className={`cal-slot${sameDay(d, toAppClock(now)) ? " is-today" : ""}`}
                 >
                   {cell(d, h)}
                 </div>

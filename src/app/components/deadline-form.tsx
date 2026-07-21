@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deadlineKindLabel, reminderLabel, T } from "@/lib/vi";
+import { fromAppInput, toAppInput } from "@/lib/time";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 
@@ -33,11 +34,10 @@ const TYPES = ["conference", "funding", "report", "milestone"] as const;
 // opens — had no way to reach it and printed "Nhắc trước: 7 days, 1 day".
 const REMINDERS = ["1 day", "3 days", "7 days"] as const;
 
-function toLocalInput(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+/* The box shows, and reads back, the app's wall clock — see src/lib/time.ts.
+   It used to use the browser's, while the table beside it was rendered on the
+   server in the server's: the same deadline could print two different days on
+   one screen. */
 
 export function DeadlineForm({
   spaces,
@@ -50,7 +50,7 @@ export function DeadlineForm({
   const [title, setTitle] = useState(existing?.title ?? "");
   const [spaceId, setSpaceId] = useState(existing?.spaceId ?? spaces[0]?.id ?? "");
   const [type, setType] = useState(existing?.type ?? "milestone");
-  const [dueAt, setDueAt] = useState(existing ? toLocalInput(existing.dueAt) : "");
+  const [dueAt, setDueAt] = useState(existing ? toAppInput(existing.dueAt) : "");
   const [offsets, setOffsets] = useState<string[]>(existing?.reminderOffsets ?? ["7 days", "1 day"]);
 
   // ponytail: toggling by value, not rebuilding the list from the three boxes —
@@ -68,7 +68,7 @@ export function DeadlineForm({
         spaceId,
         title,
         type,
-        dueAt: new Date(dueAt).toISOString(),
+        dueAt: fromAppInput(dueAt).toISOString(),
         reminderOffsets: offsets,
         ...(existing ? { expectedVersion: existing.version } : {}),
       },
