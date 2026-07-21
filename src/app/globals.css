@@ -153,6 +153,17 @@
   --radius-lg: 10px;
   --speed: 160ms;
   --shadow-card: 0 1px 2px rgba(35, 43, 38, 0.06);
+  /* Two more depths, named because they were written out four times between
+     them and had already drifted into two different values for "floating over
+     the page". A card lifts off the paper; a modal sits above everything. */
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.18);
+  --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.25);
+  /* White that stays white. --color-on-strong flips to near-black in the dark
+     theme (it is "text on a canopy or seal fill", and those fills lighten),
+     but the rail and the status strip are dark ink in BOTH themes, so their
+     hover text needs a value that does not flip. It was a literal #fff in
+     three places, which is the same thing said less clearly. */
+  --color-on-dark: #ffffff;
 
   /* --- Workspace shell (rail / sidebar / statusbar) ------------------ */
   --shell-rail-bg: #1b241f;        /* dark ink rail, VS Code activity bar */
@@ -446,12 +457,14 @@ main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: va
      absolute, zero-height) live region gave its heading a 16px gap while the
      identical panel without one gave 8px. Flex layout excludes out-of-flow
      children outright, so the gap lands where it is seen.
-     It was not the last holdout, whatever this comment claimed: `+` margins
-     still set the rhythm inside lists (.panel li + li, .link-list, .md-content
-     li, .mention-list) and in .audit-detail. Those parents are not flex
-     containers, so the two models do not meet there — but the list is worth
-     knowing, because the day one of them becomes a flex container the gaps
-     compound silently. */
+     The blanket `.panel li + li` that used to reach every list in the app —
+     including flex ones, where it stacked itself on top of their gap — is now
+     scoped to unclassed <ul>/<ol>, and .link-list and .stack-item own their
+     spacing through gap like everything else. What is left of the `+` model is
+     .md-content li, .mention-list li and .audit-detail: three lists whose
+     parents are not flex containers, so the two models never meet. Worth
+     knowing anyway — the day one of those parents becomes a flex container,
+     the gaps compound silently and nothing fails. */
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -495,7 +508,16 @@ main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: va
 
 /* Lists read as lists, not as indented blocks */
 main.page ul, main.page ol, .panel ul, .panel ol { padding-left: 1.15rem; }
-.panel li + li, main.page > ul > li + li { margin-top: var(--space-2); }
+/* Scoped to lists that are actually lists — a <ul> with no class of its own.
+   Unscoped, this rule reached into every flex list in the app and stacked its
+   margin ON TOP of the container's gap: ul.login-people (gap: 8px) rendered
+   its rows 16px apart, ul.map-legend the same, and ul.link-list needed a rule
+   of its own further down purely to undo this one. A margin and a gap
+   describing the same space is how spacing drifts. */
+.panel > ul:not([class]) > li + li,
+.panel > ol:not([class]) > li + li,
+main.page > ul:not([class]) > li + li,
+main.page > ol:not([class]) > li + li { margin-top: var(--space-2); }
 
 /* Small print under a title. The metadata role for 0.85rem muted text —
    .comment-meta, .field-help and .breadcrumb were three more names for it and
@@ -513,7 +535,12 @@ main.page ul, main.page ol, .panel ul, .panel ol { padding-left: 1.15rem; }
 }
 /* in a list, metadata is the second line of the entry, not a run-on */
 li > .meta { display: block; margin-top: var(--space-1); }
-.stack-item + .stack-item { margin-top: var(--space-3); }
+/* One extracted chunk: its reference chip and the text under it. The space
+   BETWEEN chunks belongs to the panel that holds them, not to the chunks —
+   `.stack-item + .stack-item { margin-top }` out-specified `.panel > * {
+   margin: 0 }` and added itself to the panel's gap, so chunks stood 28px
+   apart while everything else in the same panel stood 16px. */
+.stack-item { display: flex; flex-direction: column; gap: var(--space-2); }
 
 /* ============================================================
    Tables — the card drawer. Column labels set like the small
@@ -868,7 +895,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
    the whole rail plus the whole outline before the first word of content. */
 .skip-link {
   position: absolute;
-  left: var(--space-2);
+  /* Clear of the rail. Positioned from the initial containing block, the link
+     appeared ON TOP of the brand seal — over the navigation it exists to skip,
+     which is a confusing place to put the promise of leaving it. It now sits
+     at the left edge of the column it jumps into. */
+  left: calc(3.25rem + var(--space-2));
   top: var(--space-2);
   z-index: 100;
   padding: var(--space-2) var(--space-4);
@@ -1182,7 +1213,7 @@ html, body { height: 100%; }
   padding: 0 0.25rem;
   border-radius: 999px;
   background: var(--color-seal);
-  color: #fff;
+  color: var(--color-on-dark);
   font-size: 0.63rem;
   font-weight: 700;
   line-height: 0.95rem;
@@ -1334,7 +1365,7 @@ a.tree-item.active {
 }
 .statusbar .grow { flex: 1; }
 .statusbar a { color: inherit; }
-.statusbar a:hover { color: #fff; text-decoration: underline; }
+.statusbar a:hover { color: var(--color-on-dark); text-decoration: underline; }
 .statusbar .sb-item {
   display: inline-flex;
   align-items: center;
@@ -1362,7 +1393,7 @@ a.tree-item.active {
 .statusbar button:hover, .statusbar button.secondary:hover {
   background: none;
   border-color: transparent;
-  color: #fff;
+  color: var(--color-on-dark);
   text-decoration: underline;
 }
 :root[data-theme="dark"] .statusbar a:hover { color: var(--shell-rail-active); }
@@ -1382,7 +1413,7 @@ a.tree-item.active {
   color: var(--color-ink);
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 dialog.palette::backdrop { background: var(--shell-veil); }
@@ -1447,7 +1478,7 @@ dialog.confirm {
   border: 1px solid var(--color-line-strong);
   border-left: 3px solid var(--color-seal);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
   font-family: var(--font-ui);
 }
 dialog.confirm::backdrop { background: var(--shell-veil); }
@@ -1507,19 +1538,25 @@ a.wiki-link .node-state, .link-list .node-state { font-size: 0.6em; margin-right
 }
 
 /* --- Preview card (hover AND keyboard focus) ------------------- */
-:root { --node-card-w: 18rem; }
+:root { --node-card-w: 18rem; --node-card-h: 10rem; }
 .node-card {
   position: fixed;
   z-index: 60;
   display: block;
   width: var(--node-card-w);
   max-width: calc(100vw - 1rem);
+  /* Capped, and the cap is a token the placement code reads: the card is
+     pointer-events: none, so anything past the bottom of the viewport is not
+     merely cut off, it is unreachable. A peek that needs scrolling is not a
+     peek — the page itself is one click away. */
+  max-height: var(--node-card-h);
+  overflow: hidden;
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-line-strong);
   border-left: 3px solid var(--color-canopy);
   border-radius: var(--radius);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-pop);
   font-family: var(--font-ui);
   font-size: 0.82rem;
   line-height: 1.5;
@@ -1556,8 +1593,17 @@ a.tree-item.node-item .node-state { margin-left: 0; margin-right: 0.1rem; }
 a.tree-item.nav-item { font-weight: 500; }
 
 /* --- Backlink / outgoing link lists ---------------------------- */
-.panel ul.link-list { list-style: none; padding-left: 0; }
-.panel ul.link-list > li + li { margin-top: var(--space-3); }
+/* A backlink is two lines — the page's title and the sentence it was
+   mentioned in — so the entries stand further apart than an ordinary list's.
+   This is the whole rule now: it used to be an override of the blanket
+   `.panel li + li` above, which no longer reaches classed lists. */
+.panel ul.link-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
 .backlink-context {
   display: block;
   margin-top: 0.1rem;
@@ -2020,7 +2066,7 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
 }
 .dropzone-progress .upload-progress { flex: 1 1 16rem; margin-top: 0; }
 

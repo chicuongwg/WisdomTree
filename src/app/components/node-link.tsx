@@ -80,22 +80,30 @@ export function NodePreviewCard({
  * mirroring `--node-card-w` by hand mispositions every card the day it moves.
  * ponytail: rem is the only unit that token has ever held; anything else falls
  * through as a raw number, and an unreadable value falls back to 18rem @ 16px. */
-function cardWidth(): number {
+/** A length token in pixels, so the geometry here and the CSS cannot disagree. */
+function cssPx(token: string, fallback: number): number {
   const root = document.documentElement;
-  const token = getComputedStyle(root).getPropertyValue("--node-card-w").trim();
-  const n = parseFloat(token);
-  const px = token.endsWith("rem") ? n * parseFloat(getComputedStyle(root).fontSize) : n;
-  return px > 0 ? px : 288;
+  const raw = getComputedStyle(root).getPropertyValue(token).trim();
+  const n = parseFloat(raw);
+  const px = raw.endsWith("rem") ? n * parseFloat(getComputedStyle(root).fontSize) : n;
+  return px > 0 ? px : fallback;
 }
 
 /** Where the card goes for a given trigger: below it, flipped up near the
  * bottom edge, always inside the viewport. Shared by the hook and the map. */
 export function cardPosition(target: Element): { top: number; left: number } {
   const rect = target.getBoundingClientRect();
-  const width = cardWidth();
+  const width = cssPx("--node-card-w", 288);
+  // The card's height is CAPPED in CSS at this token, so reading it here is a
+  // measurement rather than the guess it used to be. A hardcoded 160 was right
+  // until a long Vietnamese title wrapped: the card grew past it, the flip
+  // decision was made on the wrong number, and the overflow hung below the
+  // viewport where nothing could reach it — the card is pointer-events: none,
+  // so it cannot even be scrolled.
+  const height = cssPx("--node-card-h", 160);
   const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
   const below = rect.bottom + 8;
-  const top = below + 160 > window.innerHeight ? Math.max(8, rect.top - 168) : below;
+  const top = below + height > window.innerHeight ? Math.max(8, rect.top - height - 8) : below;
   return { top, left };
 }
 
