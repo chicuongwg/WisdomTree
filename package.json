@@ -21,7 +21,8 @@
     "test:authz": "tsx scripts/authz-matrix.test.ts",
     "test:sign": "tsx scripts/sign.test.ts",
     "test:boundaries": "tsx scripts/boundaries.test.ts",
-    "test": "npm run typecheck && npm run test:boundaries && npm run test:authz && npm run test:sign"
+    "test:contrast": "node scripts/contrast.test.mjs",
+    "test": "npm run typecheck && npm run test:boundaries && npm run test:authz && npm run test:sign && npm run test:contrast"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.2",

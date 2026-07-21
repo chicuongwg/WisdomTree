@@ -47,6 +47,18 @@
   --color-cham-wash: #e4ebf4;
   --color-on-strong: #ffffff;      /* text on canopy/seal solids */
   --color-focus: var(--color-cham);
+  /* The focus ring, for the two surfaces that are dark ink in BOTH themes: the
+     rail and the status strip. Chàm on canopy measures 1.07:1 — a ring nobody
+     can see is not a focus indicator, and those two surfaces hold the account
+     link, the unread count and the way out. Deliberately not redefined in the
+     dark block: the strip is dark there too, so the light ring is right twice. */
+  --color-focus-on-dark: #f2f4ee;
+  /* A control's boundary is the only thing saying where a field begins, so
+     WCAG 1.4.11 asks 3:1 of it, not the 1.5:1 a decorative hairline can get
+     away with. --color-line-strong was carrying both jobs and failing this
+     one in both themes (1.92:1 light, 1.68:1 dark). Fields get their own
+     edge; hairlines between rows keep the quieter token. */
+  --color-control-edge: #848c80;   /* 3.4:1 on surface */
 
   /* --- State tones ----------------------------------------------------
      Five tones by MEANING, not one hue per enum value: thirty-odd states
@@ -190,6 +202,7 @@
   --color-cham-deep: #8ab4dd;
   --color-cham-wash: #1b2a3a;
   --color-on-strong: #121714;
+  --color-control-edge: #69756d;   /* 3.3:1 on the dark surface */
 
   --shell-rail-bg: #101512;
   --shell-rail-ink: #7d9184;
@@ -648,7 +661,7 @@ input[type="password"], input[type="tel"], input[type="url"], select, textarea {
   /* A <select> sizes to its longest option, so one long space name pushed the
      filter bar past the edge of a phone. The field yields to its column. */
   max-width: 100%;
-  border: 1px solid var(--color-line-strong);
+  border: 1px solid var(--color-control-edge);
   border-radius: var(--radius);
   font: inherit;
   color: var(--color-ink);
@@ -826,6 +839,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--radius);
+}
+/* On the two ink surfaces the indigo ring disappears into the ground it is
+   drawn on (1.07:1 on the status strip). Same ring, a colour that survives. */
+.rail :is(a, button):focus-visible,
+.statusbar :is(a, button):focus-visible {
+  outline-color: var(--color-focus-on-dark);
 }
 
 /* The first thing a keyboard reader meets. Before this, every page cost them
@@ -1189,7 +1208,9 @@ button.searchbox {
   gap: 0.45rem;
   min-height: 2.25rem;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  /* It looks and behaves like the search field it opens, so it owes the same
+     3:1 boundary a field does — it was on the faintest token in the file. */
+  border: 1px solid var(--color-control-edge);
   border-radius: var(--radius);
   padding: 0.3rem 0.6rem;
   color: var(--color-ink-muted);
@@ -1342,13 +1363,21 @@ dialog.palette::backdrop { background: var(--shell-veil); }
 .palette input[type="text"] {
   width: 100%;
   border: none;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-control-edge);
   border-radius: 0;
   background: transparent;
   padding: 0.85rem 1rem;
   font-size: 0.98rem;
 }
-.palette input[type="text"]:focus-visible { outline: none; }
+/* The outline is dropped because a ring drawn 2px outside a full-bleed input
+   is clipped by the dialog's own overflow: hidden — but something has to say
+   where the keyboard is, and this box is where every palette session starts.
+   The rule under it thickens into the focus colour instead. */
+.palette input[type="text"]:focus-visible {
+  outline: none;
+  border-bottom: 2px solid var(--color-focus);
+  padding-bottom: calc(0.85rem - 1px);
+}
 .palette .pal-list { max-height: 45vh; overflow-y: auto; padding: 0.25rem 0; }
 .palette .pal-empty { padding: 0.7rem 1rem; color: var(--color-ink-muted); font-size: 0.88rem; }
 button.pal-item {
