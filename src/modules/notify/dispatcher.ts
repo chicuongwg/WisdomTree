@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { outboxEvents } from "@/db/outbox";
@@ -168,7 +169,14 @@ async function checkDeadlineReminders(): Promise<void> {
  * the next tick picks them up.
  */
 export function kickDispatch(): void {
-  void dispatchOutbox().catch((err) => console.error("[notify] dispatch tick failed:", err));
+  const run = () =>
+    dispatchOutbox().catch((err) => console.error("[notify] dispatch tick failed:", err));
+  try {
+    after(run);
+  } catch {
+    // Called outside a Next.js request context (scripts/tests) -> fallback to immediate promise
+    void run();
+  }
 }
 
 export async function dispatchOutbox(): Promise<void> {

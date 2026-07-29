@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => null)) as {
       name?: string;
       description?: string;
+      scope?: string;
     } | null;
     if (!body?.name?.trim()) {
       throw new ApiError(400, "invalid_branch", "Vui lòng nhập tên chuyên đề.");
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
     const branch = await createBranch(actor, {
       name: body.name.trim(),
       description: body.description?.trim() || undefined,
+      scope: body.scope,
     });
     return NextResponse.json(branch, { status: 201 });
   });

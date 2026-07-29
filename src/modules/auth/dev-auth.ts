@@ -4,7 +4,7 @@
 // principal matches docs/design/authorization-design.md § Principals:
 // resolved once per request, spaceIds cached per request.
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { users, type Role } from "./schema";
 
@@ -48,7 +48,7 @@ export async function listSignInCandidates(): Promise<SignInCandidate[]> {
     .select({ id: users.id, displayName: users.displayName, role: users.role })
     .from(users)
     .where(isNull(users.disabledAt))
-    .orderBy(users.role);
+    .orderBy(asc(users.role));
 }
 
 /**
