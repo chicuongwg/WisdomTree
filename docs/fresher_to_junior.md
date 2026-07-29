@@ -1,48 +1,48 @@
-# 🔥 Fresher → Junior: The Upgrade Guide 🔥
+# 🔥 Từ Fresher lên Junior: Hướng dẫn Nâng cấp bản thân 🔥
 
-> *"You built a system that most freshers wouldn't even attempt. Now let's make it one that a junior wouldn't be embarrassed to show in a code review."*
+> *"Bạn đã xây dựng một hệ thống mà hầu hết các fresher thậm chí không dám thử. Bây giờ, hãy biến nó thành một hệ thống mà một lập trình viên junior không cảm thấy ngượng ngùng khi đưa ra trong một buổi code review."*
 
 ---
 
-## The Fresher Roast (With Love)
+## Nhận xét về Fresher (Với sự yêu thương)
 
-Here's what screams "I'm learning by building something too ambitious and I love it":
+Dưới đây là những điều cho thấy "Tôi đang vừa học vừa làm một thứ gì đó quá tham vọng và tôi thích nó":
 
-| Fresher Tell | Evidence |
+| Dấu hiệu Fresher | Bằng chứng |
 |-------------|----------|
-| **No linter, no formatter** | You're trusting your eyes to catch bugs that a machine catches in 0.01 seconds |
-| **Zero error boundaries** | When something breaks, the user sees... nothing |
-| **3 testing frameworks, none used** | You set up Vitest, a custom runner, AND standalone scripts. Then wrote 226 lines of tests total |
-| **God files** | `vi.ts` (1,354 lines), `knowledge-map.tsx` (1,081), `globals.css` (2,746). These scream "I kept adding to the file because I didn't know when to stop" |
-| **`console.log` as logging** | 14 console statements is your entire observability strategy |
-| **No middleware** | Every route is unprotected at the framework level |
-| **Custom test runner** | You wrote a 43-line file walker to run tests instead of using the tool you already installed |
+| **Không linter, không formatter** | Bạn đang tin tưởng vào đôi mắt của mình để bắt các lỗi mà máy móc có thể phát hiện chỉ trong 0.01 giây |
+| **Không có cơ chế bắt lỗi (Error boundaries)** | Khi một cái gì đó bị hỏng, người dùng nhìn thấy... không gì cả |
+| **3 khung kiểm thử (testing frameworks), nhưng không dùng** | Bạn thiết lập Vitest, trình chạy tùy chỉnh, VÀ các script độc lập. Nhưng tổng cộng chỉ viết 226 dòng kiểm thử |
+| **Các tệp tin kiểu Chúa (God files)** | `vi.ts` (1.354 dòng), `knowledge-map.tsx` (1.081 dòng), `globals.css` (2.746 dòng). Những tệp này như muốn nói: "Tôi cứ thêm code vào tệp đó vì tôi không biết khi nào nên dừng lại" |
+| **Sử dụng `console.log` làm chiến lược ghi nhật ký** | 14 câu lệnh console là toàn bộ chiến lược quan sát (observability) của bạn |
+| **Không có middleware** | Mọi tuyến đường (route) đều không được bảo vệ ở cấp độ framework |
+| **Trình chạy kiểm thử tự viết** | Bạn đã viết một tệp đi bộ tìm thư mục dài 43 dòng để chạy các bài kiểm thử thay vì sử dụng công cụ đã cài đặt sẵn |
 
-**But here's what's NOT fresher:**
-- Your module boundaries are clean and deliberate
-- Your SQL migrations are hand-written with *reasons*
-- You use transactions consistently
-- Your authorization is centralized, not copy-pasted
-- You have typed domain errors, not string throws
-- You write comments that explain *why*, not *what*
+**Nhưng đây là những điểm KHÔNG phải của một fresher thông thường:**
+- Ranh giới mô-đun của bạn rất sạch sẽ và có chủ đích
+- Các tệp di chuyển SQL (migrations) của bạn được viết bằng tay đi kèm lý do rõ ràng
+- Bạn sử dụng các giao dịch (transactions) một cách nhất quán
+- Cơ chế phân quyền của bạn được tập trung hóa chứ không phải sao chép-dán
+- Bạn có các lỗi miền (domain errors) được định kiểu rõ ràng, không phải ném ra các chuỗi ký tự thô
+- Bạn viết các bình luận để giải thích *tại sao*, không phải giải thích *cái gì*
 
-**You're a fresher who thinks like a designer but ships like someone who hasn't been burned yet.** The upgrade path is about getting burned *safely*.
-
----
-
-## Priority 1: Safety Nets (Do This First)
-
-These are the things that catch your mistakes before users do. A junior developer's #1 skill is **not trusting themselves**.
+**Bạn là một fresher suy nghĩ như một kiến trúc sư nhưng lại triển khai như một người chưa từng bị nếm mùi thất bại thực tế.** Lộ trình nâng cấp là học cách đối mặt với thất bại một cách *an toàn*.
 
 ---
 
-### 1A. Add ESLint + Prettier
+## Ưu tiên 1: Lưới an toàn (Làm việc này đầu tiên)
 
-**Why this matters:** You have 82 source files with zero automated style enforcement. Every file you touch drifts. A linter catches real bugs (unused variables, missing awaits, unreachable code).
+Đây là những thứ giúp phát hiện lỗi của bạn trước khi người dùng phát hiện ra chúng. Kỹ năng số 1 của một lập trình viên junior là **không tự tin quá mức vào bản thân**.
 
-Create these files:
+---
 
-**`eslint.config.mjs`** (flat config, ESLint 9+):
+### 1A. Thêm ESLint + Prettier
+
+**Tại sao việc này quan trọng:** Bạn có 82 tệp nguồn mà hoàn toàn không có cơ chế tự động thực thi phong cách viết mã. Mỗi tệp bạn chỉnh sửa sẽ dần lệch chuẩn. Một công cụ linter sẽ phát hiện các lỗi thực tế (biến không sử dụng, thiếu await, mã không bao giờ đạt tới).
+
+Tạo các tệp sau:
+
+**`eslint.config.mjs`** (cấu hình phẳng - flat config, cho ESLint 9+):
 
 ```javascript
 import js from "@eslint/js";
@@ -63,12 +63,12 @@ export default [
       "@next/next": nextPlugin,
     },
     rules: {
-      // The rules that catch REAL bugs:
+      // Các quy tắc giúp phát hiện lỗi THỰC TẾ:
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "@typescript-eslint/no-floating-promises": "error",  // ← catches missing awaits
-      "no-console": ["warn", { allow: ["warn", "error"] }], // ← no stray console.logs
-      "eqeqeq": "error",                                     // ← no == surprises
+      "@typescript-eslint/no-floating-promises": "error",  // ← phát hiện việc thiếu await
+      "no-console": ["warn", { allow: ["warn", "error"] }], // ← không để sót console.log bừa bãi
+      "eqeqeq": "error",                                     // ← không để xảy ra bất ngờ với so sánh ==
     },
   },
 ];
@@ -86,7 +86,7 @@ export default [
 }
 ```
 
-**Add to `package.json` scripts:**
+**Thêm vào mục scripts trong `package.json`:**
 
 ```json
 "lint": "eslint src/",
@@ -94,23 +94,23 @@ export default [
 "format:check": "prettier --check src/"
 ```
 
-**Add to your `test` script chain:**
+**Thêm vào chuỗi lệnh chạy `test` của bạn:**
 
 ```json
 "test": "npm run lint && npm run typecheck && npm run test:boundaries && ..."
 ```
 
-> **Junior principle: If the machine can check it, the machine should check it.**
+> **Nguyên tắc của Junior: Nếu máy móc có thể kiểm tra được, hãy để máy móc kiểm tra.**
 
 ---
 
-### 1B. Add Error Boundaries
+### 1B. Thêm các cơ chế bắt lỗi (Error Boundaries)
 
-**Your current state:** Zero `error.tsx` files, zero `loading.tsx` files. One `global-error.tsx` at the root. When any page component throws, the entire app crashes to the global error page.
+**Tình trạng hiện tại của bạn:** Không có tệp `error.tsx` nào, không có tệp `loading.tsx` nào. Chỉ có duy nhất một tệp `global-error.tsx` ở gốc ứng dụng. Khi bất kỳ thành phần trang nào gặp lỗi, toàn bộ ứng dụng sẽ đổ vỡ về trang lỗi chung.
 
-**What a junior does:** Add a route-level error boundary for every major section.
+**Những gì một junior thực hiện:** Thêm một cơ chế bắt lỗi ở cấp độ tuyến đường (route-level error boundary) cho mỗi khu vực chính.
 
-Create **`src/app/library/error.tsx`** (and repeat for each route group):
+Tạo tệp **`src/app/library/error.tsx`** (và lặp lại cho mỗi nhóm tuyến đường tương tự):
 
 ```tsx
 "use client";
@@ -136,7 +136,7 @@ export default function LibraryError({
 }
 ```
 
-Create **`src/app/library/loading.tsx`**:
+Tạo tệp **`src/app/library/loading.tsx`**:
 
 ```tsx
 export default function LibraryLoading() {
@@ -149,24 +149,24 @@ export default function LibraryLoading() {
 }
 ```
 
-**Minimum targets:** `library/`, `catalog/`, `source/`, `board/`, `admin/`. Five files × 2 = 10 files, ~15 minutes of work, massive UX improvement.
+**Các mục tiêu tối thiểu:** `library/`, `catalog/`, `source/`, `board/`, `admin/`. 5 thư mục × 2 tệp = 10 tệp, khoảng 15 phút làm việc, nhưng cải thiện trải nghiệm người dùng rất lớn.
 
-> **Junior principle: The user should never see a white page.**
+> **Nguyên tắc của Junior: Người dùng không bao giờ được nhìn thấy màn hình trắng trơn.**
 
 ---
 
-### 1C. Add Next.js Middleware
+### 1C. Thêm Next.js Middleware
 
-**Your current state:** No `middleware.ts`. Every API route manually calls `requirePrincipal()`. Miss one and it's an unauthenticated endpoint.
+**Tình trạng hiện tại của bạn:** Không có `middleware.ts`. Mỗi API route phải tự gọi hàm `requirePrincipal()`. Chỉ cần quên ở một nơi, đó sẽ trở thành một điểm cuối (endpoint) không được bảo vệ.
 
-Create **`src/middleware.ts`**:
+Tạo tệp **`src/middleware.ts`**:
 
 ```typescript
 import { NextResponse, type NextRequest } from "next/server";
 
-// Protect everything except public routes. This is a GATE, not authorization —
-// it only checks "is there a session cookie at all?" The real authorize() call
-// still happens in the route handler.
+// Bảo vệ tất cả ngoại trừ các đường dẫn công khai. Đây là CỔNG CẢN, không phải phân quyền thực tế —
+// nó chỉ kiểm tra "cookie phiên làm việc có tồn tại hay không?" Việc gọi hàm authorize() thực sự
+// vẫn diễn ra bên trong trình xử lý tuyến đường (route handler).
 const PUBLIC_PATHS = [
   "/login",
   "/api/auth/",
@@ -178,12 +178,12 @@ const PUBLIC_PATHS = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Let public routes through
+  // Cho phép các đường dẫn công khai đi qua
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Check for session cookie existence (not validity — that's session.ts's job)
+  // Kiểm tra sự tồn tại của cookie phiên làm việc (không kiểm tra tính hợp lệ — việc đó của session.ts)
   const session = request.cookies.get("session");
   if (!session && pathname.startsWith("/api/")) {
     return NextResponse.json({ code: "unauthorized", message: "Bạn cần đăng nhập." }, { status: 401 });
@@ -196,29 +196,29 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip static files and images
+  // Bỏ qua các tệp tĩnh và hình ảnh
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 ```
 
-> **Junior principle: Defense in depth. Don't rely on every developer remembering to add an auth check.**
+> **Nguyên tắc của Junior: Phòng thủ theo chiều sâu. Đừng tin vào việc nhà phát triển nào cũng nhớ thêm bước kiểm tra xác thực ở mỗi tuyến đường.**
 
 ---
 
-## Priority 2: Fix the Session Double-Query
+## Ưu tiên 2: Khắc phục lỗi Truy vấn kép của Phiên làm việc
 
-**Your current state** in `session.ts`:
+**Tình trạng hiện tại của bạn** trong `session.ts`:
 
 ```typescript
-// Query 1: get user
+// Truy vấn 1: Lấy user
 const [user] = await db.select().from(users).where(...);
-// Query 2: get memberships
+// Truy vấn 2: Lấy thông tin không gian thành viên
 const memberships = await db.select({ spaceId: ... }).from(spaceMembers).where(...);
 ```
 
-Then `currentUser()` runs a **third** query for the full user. That's 3 DB round-trips before the page can start.
+Sau đó hàm `currentUser()` lại thực hiện truy vấn thứ **ba** để lấy thông tin đầy đủ của user. Điều này làm tốn 3 lượt truy vấn khứ hồi đến DB trước khi trang web có thể bắt đầu tải.
 
-**Fix:** One query with a JOIN:
+**Khắc phục:** Thực hiện một truy vấn duy nhất có phép JOIN:
 
 ```typescript
 export async function resolvePrincipal(): Promise<Principal | null> {
@@ -227,7 +227,7 @@ export async function resolvePrincipal(): Promise<Principal | null> {
   const userId = verifySession(token);
   if (!userId) return null;
 
-  // ONE query, not two
+  // MỘT truy vấn duy nhất, không phải hai
   const rows = await db
     .select({
       id: users.id,
@@ -248,21 +248,21 @@ export async function resolvePrincipal(): Promise<Principal | null> {
 }
 ```
 
-Combine with `currentUser()` similarly — don't SELECT the user twice.
+Kết hợp với hàm `currentUser()` tương tự — tránh việc SELECT bảng users hai lần liên tiếp.
 
-> **Junior principle: N+1 queries are the #1 performance mistake. COUNT YOUR QUERIES.**
+> **Nguyên tắc của Junior: Truy vấn N+1 là sai lầm phổ biến nhất về mặt hiệu năng. HÃY ĐẾM SỐ TRUY VẤN CỦA BẠN.**
 
 ---
 
-## Priority 3: Write Real Tests
+## Ưu tiên 3: Viết các bài kiểm thử thực sự
 
-**Your current state:** You have Vitest installed. You configured it. Then you wrote 226 lines of test-adjacent code and a 43-line custom runner that does `await import(file)`.
+**Tình trạng hiện tại của bạn:** Bạn đã cài đặt Vitest. Bạn đã cấu hình nó. Sau đó bạn viết 226 dòng mã gần giống như kiểm thử cùng một trình chạy tùy chỉnh dài 43 dòng thực hiện `await import(file)`.
 
-**The junior approach:** Delete the custom runner. Use Vitest. Write tests that test ONE thing.
+**Cách tiếp cận của junior:** Xóa trình chạy tùy chỉnh đó đi. Sử dụng Vitest. Viết các bài kiểm thử để kiểm tra DUY NHẤT một thứ tại một thời điểm.
 
-### 3A. Unit Test: authorize()
+### 3A. Kiểm thử Đơn vị: authorize()
 
-Create **`tests/vitest/authorize.test.ts`**:
+Tạo tệp **`tests/vitest/authorize.test.ts`**:
 
 ```typescript
 import { describe, it, expect } from "vitest";
@@ -338,9 +338,9 @@ describe("authorize", () => {
 });
 ```
 
-### 3B. Unit Test: sign.ts
+### 3B. Kiểm thử Đơn vị: sign.ts
 
-Create **`tests/vitest/sign.test.ts`**:
+Tạo tệp **`tests/vitest/sign.test.ts`**:
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -361,7 +361,7 @@ describe("session tokens", () => {
   it("rejects an expired token", () => {
     vi.useFakeTimers();
     const token = signSession("user-123");
-    vi.advanceTimersByTime(8 * 24 * 60 * 60 * 1000); // 8 days > 7 day TTL
+    vi.advanceTimersByTime(8 * 24 * 60 * 60 * 1000); // 8 ngày > thời gian sống 7 ngày
     expect(verifySession(token)).toBeNull();
     vi.useRealTimers();
   });
@@ -381,9 +381,9 @@ describe("download tokens", () => {
 });
 ```
 
-### 3C. The Rule
+### 3C. Cấu hình kiểm thử
 
-Update **`vitest.config.ts`** to include these:
+Cập nhật **`vitest.config.ts`** để bao gồm các tệp này:
 
 ```typescript
 test: {
@@ -392,36 +392,36 @@ test: {
 },
 ```
 
-Then **replace** `"test:vitest"` with the real test command in `package.json` and add it to the main `test` script.
+Sau đó **thay thế** kịch bản `"test:vitest"` bằng lệnh chạy kiểm thử thực tế trong `package.json` và thêm nó vào kịch bản chạy `test` chính.
 
-**What to test first (priority order):**
-1. `authorize()` — pure function, no DB, high-value
-2. `sign.ts` — pure crypto, easy to test, security-critical
-3. `errors.ts` `handleApi()` — error mapping logic
-4. `time.ts` — date formatting functions
-5. `vi.ts` label functions — pure string mapping
+**Thứ tự ưu tiên viết kiểm thử (từ cao xuống thấp):**
+1. `authorize()` — hàm thuần túy (pure function), không kết nối DB, giá trị bảo đảm cao
+2. `sign.ts` — mã hóa mật mã thuần túy, dễ viết kiểm thử, quan trọng về bảo mật
+3. logic ánh xạ lỗi trong `errors.ts` `handleApi()`
+4. `time.ts` — các hàm định dạng ngày tháng
+5. Các hàm ánh xạ nhãn trong `vi.ts` — ánh xạ chuỗi ký tự thuần túy
 
-> **Junior principle: Test pure functions first. They're the easiest and the most valuable.**
+> **Nguyên tắc của Junior: Kiểm thử các hàm thuần túy trước. Chúng vừa dễ nhất vừa đem lại nhiều giá trị nhất.**
 
 ---
 
-## Priority 4: Break Up the God Files
+## Ưu tiên 4: Chia nhỏ các Tệp tin kiểu Chúa (God Files)
 
-### 4A. Split `vi.ts` (1,354 lines)
+### 4A. Chia tách `vi.ts` (1.354 dòng)
 
-Your translation file does 5 different jobs. Split it:
+Tệp dịch thuật của bạn đang làm 5 nhiệm vụ khác nhau. Hãy chia nó ra:
 
 ```
 src/lib/vi/
-├── index.ts          ← re-exports everything (zero breaking changes)
-├── labels.ts         ← T object: static UI strings
-├── state-labels.ts   ← loanLabel(), curationLabel(), etc.
-├── badges.ts         ← badgeClass(), state-to-CSS mappings
-├── dates.ts          ← when(), dayLabel(), calendar formatting
-└── roles.ts          ← userRoleLabel(), role descriptions
+├── index.ts          ← xuất khẩu (re-export) lại mọi thứ (hoàn toàn không làm gãy code cũ)
+├── labels.ts         ← đối tượng T: chứa các chuỗi giao diện tĩnh
+├── state-labels.ts   ← các hàm loanLabel(), curationLabel(), v.v.
+├── badges.ts         ← các hàm badgeClass(), ánh xạ trạng thái sang CSS
+├── dates.ts          ← các hàm when(), dayLabel(), định dạng lịch
+└── roles.ts          ← các hàm userRoleLabel(), mô tả vai trò
 ```
 
-**The `index.ts` trick:**
+**Mẹo viết tệp `index.ts`:**
 
 ```typescript
 // src/lib/vi/index.ts
@@ -432,24 +432,24 @@ export * from "./dates";
 export * from "./roles";
 ```
 
-Every existing import `from "@/lib/vi"` keeps working. Zero breaking changes.
+Mọi dòng nhập mã nguồn `from "@/lib/vi"` hiện có vẫn hoạt động bình thường mà không cần sửa đổi gì. Hoàn toàn không gây lỗi tương thích ngược.
 
-### 4B. Split `globals.css` (2,746 lines)
+### 4B. Chia tách `globals.css` (2.746 dòng)
 
-Use CSS `@import` (supported by Next.js):
+Sử dụng tính năng `@import` của CSS (được Next.js hỗ trợ):
 
 ```
 src/app/styles/
-├── globals.css       ← just @import lines
-├── tokens.css        ← :root variables, the palette
-├── reset.css         ← *, box-sizing, base typography
-├── layout.css        ← .shell, .main-area, .topbar, .statusbar
-├── components.css    ← .btn, .panel, .badge, .field, form elements
-├── pages.css         ← page-specific overrides
-└── dark.css          ← [data-theme="dark"] block
+├── globals.css       ← chỉ chứa các dòng khai báo @import
+├── tokens.css        ← chứa các biến :root, bảng màu
+├── reset.css         ← thiết lập mặc định *, box-sizing, typography cơ bản
+├── layout.css        ← các lớp .shell, .main-area, .topbar, .statusbar
+├── components.css    ← các lớp .btn, .panel, .badge, .field, các phần tử form
+├── pages.css         ← các lớp ghi đè riêng cho từng trang
+└── dark.css          ← khối khai báo [data-theme="dark"]
 ```
 
-**`globals.css` becomes:**
+**Tệp `globals.css` mới sẽ trở thành:**
 
 ```css
 @import "./styles/tokens.css";
@@ -460,29 +460,29 @@ src/app/styles/
 @import "./styles/dark.css";
 ```
 
-### 4C. Split `knowledge-map.tsx` (1,081 lines)
+### 4C. Chia tách `knowledge-map.tsx` (1.081 dòng)
 
-This is a canvas-based force-directed graph renderer. It should be:
+Đây là một thành phần kết xuất biểu đồ định hướng lực lượng dựa trên canvas. Nó nên được tổ chức thành:
 
 ```
 src/app/components/knowledge-map/
-├── index.tsx            ← the main component, <200 lines
-├── use-graph-sim.ts     ← the force simulation hook
-├── canvas-renderer.ts   ← the canvas drawing logic
-├── types.ts             ← GraphNode, GraphEdge, SimulationConfig
-├── interaction.ts       ← zoom, pan, click, drag handlers
-└── minimap.tsx           ← the minimap component
+├── index.tsx            ← thành phần chính, dài ít hơn 200 dòng
+├── use-graph-sim.ts     ← custom hook xử lý mô phỏng lực lượng
+├── canvas-renderer.ts   ← logic vẽ trên canvas
+├── types.ts             ← định nghĩa các kiểu GraphNode, GraphEdge, SimulationConfig
+├── interaction.ts       ← trình xử lý phóng to, thu nhỏ, kéo thả, nhấp chuột
+└── minimap.tsx           ← thành phần bản đồ nhỏ (minimap)
 ```
 
-> **Junior principle: If you can't describe what a file does in ONE sentence, it does too many things.**
+> **Nguyên tắc của Junior: Nếu bạn không thể mô tả công việc của một tệp trong MỘT câu, nó đang làm quá nhiều thứ.**
 
 ---
 
-## Priority 5: Type Your JSON Columns
+## Ưu tiên 5: Định kiểu cho các Cột dữ liệu JSON
 
-**Your current state:** 7 `jsonb` columns where the database accepts anything and the app crosses its fingers.
+**Tình trạng hiện tại của bạn:** 7 cột kiểu `jsonb` nơi cơ sở dữ liệu chấp nhận bất kỳ cấu trúc nào và tầng ứng dụng chỉ hy vọng dữ liệu gửi lên đúng định dạng.
 
-**Fix with [Zod](https://zod.dev):**
+**Khắc phục bằng thư viện [Zod](https://zod.dev):**
 
 ```typescript
 // src/modules/storage/extraction-meta.ts
@@ -497,11 +497,11 @@ export const ExtractionMetaSchema = z.object({
 
 export type ExtractionMeta = z.infer<typeof ExtractionMetaSchema>;
 
-// When writing:
+// Khi ghi dữ liệu:
 const meta: ExtractionMeta = { extractorVersion: "1.0", completedAt: new Date().toISOString() };
 await tx.update(sourceVersions).set({ extractionMeta: meta }).where(...);
 
-// When reading:
+// Khi đọc dữ liệu:
 const parsed = ExtractionMetaSchema.safeParse(row.extractionMeta);
 if (!parsed.success) {
   console.error("Corrupt extraction_meta:", parsed.error);
@@ -509,21 +509,21 @@ if (!parsed.success) {
 }
 ```
 
-Do this for:
+Hãy thực hiện điều này cho các cột:
 - `extraction_meta` → `ExtractionMetaSchema`
-- `audit_events.details` → per-action detail schemas
-- `notifications.payload` → per-event-type payload schemas
-- `jobs.payload` → per-job-type payload schemas
+- `audit_events.details` → lược đồ chi tiết riêng cho mỗi hành động
+- `notifications.payload` → lược đồ tải trọng riêng cho mỗi loại sự kiện
+- `jobs.payload` → lược đồ tải trọng riêng cho mỗi loại công việc
 
-> **Junior principle: If the type is `any` or `unknown` or `jsonb`, someone will put the wrong thing in it. Validate at the boundary.**
+> **Nguyên tắc của Junior: Nếu kiểu dữ liệu là `any`, `unknown` hoặc `jsonb`, một ai đó sẽ đẩy sai định dạng dữ liệu vào đó. Hãy xác thực ngay tại ranh giới dữ liệu.**
 
 ---
 
-## Priority 6: Replace `console.log` With a Logger
+## Ưu tiên 6: Thay thế `console.log` bằng một Bộ ghi nhật ký thực thụ (Logger)
 
-**Your current state:** 14 `console.*` statements. No timestamps, no levels, no request IDs, no structured output.
+**Tình trạng hiện tại của bạn:** 14 câu lệnh `console.*`. Không có mốc thời gian, không phân chia cấp độ lỗi, không có ID yêu cầu, không có định dạng đầu ra có cấu trúc.
 
-**Simple structured logger (no dependency):**
+**Bộ ghi nhật ký có cấu trúc đơn giản (không cần cài thêm thư viện ngoài):**
 
 ```typescript
 // src/lib/logger.ts
@@ -537,7 +537,7 @@ function log(level: Level, module: string, message: string, data?: Record<string
     message,
     ...data,
   };
-  // JSON to stdout — every log aggregator (Docker, Cloud Run, etc.) parses this
+  // Xuất JSON ra stdout — mọi bộ thu thập nhật ký (Docker, Cloud Run, v.v.) đều có thể phân tích được
   if (level === "error") {
     console.error(JSON.stringify(entry));
   } else {
@@ -552,26 +552,26 @@ export const logger = {
 };
 ```
 
-**Before:**
+**Trước đây:**
 ```typescript
 console.error(`[render] ${jobId}:`, err);
 ```
 
-**After:**
+**Sau khi sửa:**
 ```typescript
 logger.error("render", "Job failed", { jobId, error: String(err) });
-// Output: {"ts":"2026-07-30T00:20:00Z","level":"error","module":"render","message":"Job failed","jobId":"abc","error":"..."}
+// Đầu ra dạng: {"ts":"2026-07-30T00:20:00Z","level":"error","module":"render","message":"Job failed","jobId":"abc","error":"..."}
 ```
 
-> **Junior principle: If you can't search your logs, you can't debug production.**
+> **Nguyên tắc của Junior: Nếu bạn không thể tìm kiếm nhật ký của mình một cách dễ dàng, bạn không thể gỡ lỗi trên môi trường sản xuất thực tế.**
 
 ---
 
-## Priority 7: The Stretch Goals (When You're Ready)
+## Ưu tiên 7: Các mục tiêu mở rộng (Khi bạn đã sẵn sàng)
 
-These are the items that separate "solid junior" from "hey, this person thinks ahead":
+Đây là những điều tạo nên sự khác biệt giữa một "junior vững tay nghề" và một người "biết suy nghĩ dài hạn":
 
-### 7A. Add Missing FK Indexes
+### 7A. Thêm các Chỉ mục Khóa ngoại (FK Indexes) còn thiếu
 
 ```sql
 -- 0011_missing_indexes.sql
@@ -582,19 +582,19 @@ CREATE INDEX loan_tickets_borrower_idx ON loan_tickets (borrower_id);
 CREATE INDEX tasks_assigned_to_idx ON tasks (assigned_to) WHERE assigned_to IS NOT NULL;
 ```
 
-These are the columns powering "show me my work" queries. Without indexes, every one is a sequential scan.
+Đây là các cột làm nền tảng cho các truy vấn kiểu "hiển thị công việc được giao cho tôi". Nếu không có chỉ mục, mỗi lần chạy truy vấn sẽ là một lần quét toàn bộ bảng tuần tự.
 
-### 7B. Use the OCC Columns You Paid For
+### 7B. Thực sự áp dụng khóa lạc quan (OCC)
 
-You have 16 tables with `version int NOT NULL DEFAULT 1` but only ~4 actually check it. For every `UPDATE` in a service function, the pattern should be:
+Bạn khai báo cột `version int NOT NULL DEFAULT 1` trên 16 bảng nhưng mới chỉ có khoảng 4 nơi thực sự kiểm tra nó. Đối với mỗi thao tác `UPDATE` trong các hàm nghiệp vụ, mô hình chuẩn nên là:
 
 ```typescript
-// BEFORE (your current code in many places):
+// TRƯỚC ĐÂY (mã hiện tại của bạn ở nhiều nơi):
 await tx.update(sources)
   .set({ title: newTitle, updatedAt: new Date() })
   .where(eq(sources.id, sourceId));
 
-// AFTER (what the version column is FOR):
+// SAU KHI SỬA (đúng mục đích sử dụng cột version):
 const [updated] = await tx.update(sources)
   .set({ title: newTitle, updatedAt: new Date(), version: sql`version + 1` })
   .where(and(eq(sources.id, sourceId), eq(sources.version, expectedVersion)))
@@ -603,7 +603,7 @@ const [updated] = await tx.update(sources)
 if (!updated) throw versionConflict();
 ```
 
-### 7C. Rate Limiting (Simple)
+### 7C. Giới hạn tốc độ yêu cầu (Rate Limiting - Đơn giản)
 
 ```typescript
 // src/lib/rate-limit.ts
@@ -622,39 +622,39 @@ export function rateLimit(key: string, maxPerMinute: number): boolean {
 }
 ```
 
-Use in your `handleApi` or middleware. Not production-grade (in-memory, single-process), but infinitely better than nothing.
+Sử dụng hàm này trong `handleApi` hoặc middleware. Mặc dù chưa đạt chuẩn production (vẫn lưu trong bộ nhớ đơn luồng), nhưng nó tốt hơn rất nhiều so với việc không có gì bảo vệ.
 
 ---
 
-## The Scoreboard
+## Bảng so sánh tiến độ nâng cấp
 
-| Area | Fresher State | Junior Target | Effort |
+| Lĩnh vực | Trạng thái Fresher | Mục tiêu Junior | Thời gian ước tính |
 |------|--------------|---------------|--------|
-| Linter/Formatter | None | ESLint + Prettier in CI | 30 min |
-| Error Boundaries | 1 global-error.tsx | 5 route-level error + loading | 1 hour |
-| Middleware | None | Auth gate on all routes | 30 min |
-| Session Queries | 3 queries/request | 1 JOIN query | 30 min |
-| Test Coverage | 226 lines, 3 frameworks | 50+ Vitest tests on pure functions | 1 day |
-| God Files | 3 files > 1,000 lines | Split into modules, re-export | 2 hours |
-| JSON Typing | 7 untyped jsonb columns | Zod schemas on read/write | 2 hours |
-| Logging | `console.log` | Structured JSON logger | 30 min |
-| Missing Indexes | FK columns un-indexed | 5-line migration | 10 min |
-| OCC Enforcement | 4 of 16 tables | All mutable tables | 2 hours |
+| Linter/Formatter | Chưa có | ESLint + Prettier chạy trong CI | 30 phút |
+| Bắt lỗi giao diện | 1 tệp global-error.tsx | 5 tệp error + loading cho các tuyến chính | 1 giờ |
+| Middleware | Chưa có | Cổng kiểm tra xác thực ở mọi tuyến đường | 30 phút |
+| Truy vấn phiên làm việc | 3 truy vấn/yêu cầu | 1 truy vấn JOIN duy nhất | 30 phút |
+| Độ phủ kiểm thử | 226 dòng, 3 frameworks | Viết 50+ bài kiểm thử Vitest cho hàm thuần túy | 1 ngày |
+| Các tệp mã nguồn khổng lồ | 3 tệp tin > 1.000 dòng | Chia nhỏ thành các mô-đun và re-export | 2 giờ |
+| Định kiểu cột JSON | 7 cột jsonb không định kiểu | Sử dụng các schema Zod khi đọc/ghi dữ liệu | 2 giờ |
+| Ghi nhật ký hệ thống | Sử dụng `console.log` | Bộ ghi nhật ký JSON có cấu trúc | 30 phút |
+| Chỉ mục còn thiếu | Các cột FK chưa lập chỉ mục | Bản di chuyển lược đồ chỉ chứa 5 dòng SQL | 10 phút |
+| Áp dụng khóa OCC | Mới áp dụng 4 trên 16 bảng | Áp dụng trên toàn bộ các bảng có chỉnh sửa | 2 giờ |
 
-**Total estimated effort: ~2 working days** to go from "impressive fresher" to "solid junior."
+**Tổng thời gian thực hiện ước tính: ~2 ngày làm việc** để nâng cấp bản thân từ một "fresher ấn tượng" thành một "junior thực thụ."
 
 ---
 
-## The Mindset Shift
+## Sự chuyển dịch trong tư duy
 
-| Fresher Thinks | Junior Thinks |
+| Cách nghĩ của Fresher | Cách nghĩ của Junior |
 |---------------|--------------|
-| "It works" | "It works, and I can **prove** it works" |
-| "I'll add tests later" | "If I didn't test it, it doesn't work" |
-| "I'll remember" | "The machine will remember for me" |
-| "One big file is easier to find things" | "One big file is easier to break things" |
-| "I'll handle errors later" | "The user is seeing errors **now**" |
-| "I know what the JSON looks like" | "I know because the schema SAYS so" |
-| "console.log is fine" | "console.log is invisible at 3 AM" |
+| "Nó chạy được rồi" | "Nó chạy được, và tôi có thể **chứng minh** điều đó" |
+| "Tôi sẽ viết kiểm thử sau" | "Nếu tôi không viết kiểm thử, nghĩa là code chưa hoạt động" |
+| "Tôi sẽ tự nhớ" | "Hãy để máy móc ghi nhớ thay tôi" |
+| "Một tệp lớn giúp dễ tìm mọi thứ hơn" | "Một tệp lớn giúp dễ làm hỏng mọi thứ hơn" |
+| "Tôi sẽ xử lý lỗi sau" | "Người dùng đang phải nhìn thấy lỗi **ngay bây giờ**" |
+| "Tôi tự biết đối tượng JSON trông như thế nào" | "Tôi biết chắc chắn vì lược đồ cơ sở dữ liệu quy định như vậy" |
+| "Dùng console.log là đủ rồi" | "console.log là vô hình lúc 3 giờ sáng" |
 
-> **You built something genuinely ambitious with a genuinely thoughtful architecture. That's rare for any level. Now make it **trustworthy** — that's the whole difference.**
+> **Bạn đã xây dựng một sản phẩm thực sự tham vọng với một kiến trúc được tính toán rất kỹ lưuỡng. Điều đó hiếm thấy ở bất kỳ cấp độ nào. Bây giờ, hãy làm cho nó trở nên **đáng tin cậy** — đó chính là sự khác biệt.**
