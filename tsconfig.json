@@ -19,5 +19,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts/gen-diagrams.mjs", "FE-claude-skill"]
+  "exclude": ["node_modules", "scripts/gen-diagrams.mjs", "FE-claude-skill", "tests/e2e"]
 }

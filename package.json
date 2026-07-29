@@ -23,7 +23,13 @@
     "test:boundaries": "tsx scripts/boundaries.test.ts",
     "test:contrast": "node scripts/contrast.test.mjs",
     "test:time": "tsx scripts/time.test.ts",
-    "test": "npm run typecheck && npm run test:boundaries && npm run test:authz && npm run test:sign && npm run test:time && npm run test:contrast"
+    "test:drawio": "node scripts/badge-overlap-audit.mjs",
+    "test:unit": "tsx tests/run-all.ts tests/unit",
+    "test:integration": "tsx tests/run-all.ts tests/integration",
+    "test:e2e": "tsx tests/run-all.ts tests/e2e",
+    "test:vitest": "vitest run --config=vitest.config.ts",
+    "test:tests": "tsx tests/run-all.ts tests",
+    "test": "npm run typecheck && npm run test:boundaries && npm run test:authz && npm run test:sign && npm run test:time && npm run test:contrast && npm run test:drawio"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.2",
@@ -40,6 +46,7 @@
     "drizzle-kit": "^0.31.1",
     "openapi-typescript": "^7.8.0",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.10"
   }
 }
