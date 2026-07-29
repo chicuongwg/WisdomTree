@@ -1,118 +1,119 @@
-# 🔥 WisdomTree Roles & DB Design — Deep Dive Roast 🔥
+# 🔥 Nhận xét Chi tiết về Phân quyền & Thiết kế Cơ sở dữ liệu WisdomTree 🔥
 
 ---
 
-## Part 1: The Role System
+## Phần 1: Hệ thống Phân quyền (Role System)
 
-### Three Roles to Rule Them All
+### Ba Vai trò để Quản lý Tất cả
 
 ```
-user → editor → admin_op
+user (người dùng) → editor (biên tập viên) → admin_op (vận hành viên quản trị)
 ```
 
-That's it. The entire authorization model for a "knowledge platform" is **three strings in a CHECK constraint**:
+Chỉ có vậy. Toàn bộ mô hình phân quyền cho một "nền tảng tri thức" chỉ là **ba chuỗi ký tự trong một ràng buộc CHECK (CHECK constraint)**:
 
 ```sql
 CHECK (role IN ('user', 'editor', 'admin_op'))
 ```
 
-No role table. No role-permission join table. No dynamic assignment. Just a `text` column.
+Không có bảng vai trò (role table). Không có bảng liên kết vai trò - quyền hạn (role-permission join table). Không có việc gán quyền động. Chỉ là một cột kiểu dữ liệu `text`.
 
 ---
 
-### The Permission Catalog: 35 Hardcoded Entries
+### Danh mục Quyền hạn: 35 Quyền được khai báo cứng (Hardcoded Entries)
 
-The authorization system lives in [authorize.ts](file:///home/will/dev/WisdomTree/src/modules/auth/authorize.ts) — a single function with a 35-entry `CATALOG` object literal:
+Hệ thống phân quyền nằm trong tệp [authorize.ts](file:///home/will/dev/WisdomTree/src/modules/auth/authorize.ts) — một hàm duy nhất với một đối tượng hằng số `CATALOG` gồm 35 mục:
 
 ```typescript
 const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   "storage.intake.open": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "storage.library.browse": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  // ... 33 more
+  // ... thêm 33 mục nữa
 };
 ```
 
-**What this gets right:**
-- Every permission is a single `authorize(actor, key, resource)` call — no hand-rolled checks scattered through route handlers
-- **96 authorize() calls** across the codebase, used consistently
-- 4 scope types (`global`, `space`, `self`, `owned-or-assigned`) cover the domain cleanly
-- Reads throw 404, writes throw 403 — no existence leaking across spaces
+**Những điểm thiết kế đúng:**
+- Mỗi kiểm tra quyền là một cuộc gọi hàm `authorize(actor, key, resource)` duy nhất — không có các đoạn kiểm tra tự viết rải rác trong các trình xử lý tuyến đường (route handlers)
+- **96 cuộc gọi authorize()** trên toàn bộ mã nguồn, được sử dụng một cách nhất quán
+- 4 loại phạm vi (`global`, `space`, `self`, `owned-or-assigned`) bao quát nghiệp vụ một cách sạch sẽ
+- Đọc không có quyền sẽ trả về lỗi 404, ghi không có quyền sẽ trả về lỗi 403 — tránh rò rỉ thông tin về sự tồn tại của dữ liệu giữa các không gian (spaces)
 
-**What this gets wrong:**
+**Những điểm thiết kế chưa đúng:**
 
-| Issue | Details |
+| Vấn đề | Chi tiết |
 |-------|---------|
-| **admin_op is God** | Line 107: `if (actor.role === "admin_op") return actor;` — admin_op bypasses ALL scope checks. Every one. Global, space, self, owned-or-assigned — doesn't matter. admin_op can do anything to anyone anywhere. There's no separation between "operates the platform" and "manages the library" and "reviews submissions" |
-| **No per-space roles** | A user is a `user` everywhere or an `editor` everywhere. You can't be an editor in Space A and a reader in Space B. The `spaceIds` check is membership (are you *in* the space), not role (what can you *do* in the space) |
-| **No permission composition** | 22 of the 35 entries grant to `["user", "editor", "admin_op"]` — i.e. "everyone." Another 8 are `["editor", "admin_op"]`. The role column is really just a 3-tier power level, not a permission system |
-| **No dynamic permissions** | Adding a permission means editing TypeScript. No admin console, no database table, no API. The "catalog" is a code literal |
-| **`owned-or-assigned` is fragile** | The scope check for `owned-or-assigned` is `ownerIds?.includes(actor.userId)`. The caller has to manually assemble `ownerIds` from `created_by`, `submitted_by`, `assigned_to`, etc. Miss one and access silently fails |
+| **admin_op là tối cao (God)** | Dòng 107: `if (actor.role === "admin_op") return actor;` — admin_op bỏ qua TẤT CẢ các kiểm tra phạm vi. Bất kể là phạm vi nào: Global, space, self, owned-or-assigned — đều không quan trọng. admin_op có thể làm bất cứ điều gì với bất kỳ ai ở bất kỳ đâu. Không có sự phân chia rõ ràng giữa "vận hành nền tảng", "quản lý thư viện" và "duyệt bài đăng" |
+| **Không có vai trò theo không gian** | Một người dùng là `user` ở mọi nơi hoặc là `editor` ở mọi nơi. Bạn không thể vừa là biên tập viên (editor) ở Không gian A vừa là người đọc (user) ở Không gian B. Việc kiểm tra `spaceIds` chỉ là kiểm tra tư cách thành viên (bạn có *ở trong* không gian đó không), chứ không phải là kiểm tra vai trò (bạn có thể *làm gì* trong không gian đó) |
+| **Không có sự phân mảnh quyền** | 22 trong số 35 mục cấp quyền cho `["user", "editor", "admin_op"]` — tức là "tất cả mọi người". 8 mục khác cấp cho `["editor", "admin_op"]`. Cột vai trò thực chất chỉ là một cấp độ quyền lực 3 bậc, chứ không phải là một hệ thống phân quyền thực thụ |
+| **Không có quyền động** | Thêm một quyền mới đồng nghĩa với việc sửa đổi mã nguồn TypeScript. Không có giao diện quản trị, không có bảng trong cơ sở dữ liệu, không có API. "Danh mục" quyền là một hằng số được viết cứng trong mã nguồn |
+| **`owned-or-assigned` dễ lỗi** | Việc kiểm tra phạm vi cho `owned-or-assigned` là `ownerIds?.includes(actor.userId)`. Trình gọi phải tự tay lắp ráp mảng `ownerIds` từ các trường như `created_by`, `submitted_by`, `assigned_to`, v.v. Chỉ cần bỏ sót một trường, quyền truy cập sẽ âm thầm thất bại |
 
-### The Scope Model, Visualized
+### Mô hình Phạm vi (Scope Model) Trực quan hóa
 
 ```
                   ┌─────────────────────────────────────┐
-  admin_op ──────▶│ BYPASSES EVERYTHING (line 107)       │
+  admin_op ──────▶│ BỎ QUA MỌI KIỂM TRA (dòng 107)      │
                   └─────────────────────────────────────┘
                   
                   ┌─────────────────────────────────────┐
-  editor ────────▶│ Can do what user can +              │
+  editor ────────▶│ Có thể làm những gì user làm +     │
                   │   knowledge.branch/node.create/edit │
                   │   storage.corrected/draft.edit      │
-                  │ ...but only owned-or-assigned items  │
+                  │ ...nhưng chỉ cho các mục sở hữu     │
+                  │    hoặc được giao nhiệm vụ          │
                   └─────────────────────────────────────┘
                   
                   ┌─────────────────────────────────────┐
-  user ──────────▶│ Upload, browse, download, search    │
-                  │   within member spaces              │
-                  │ Request loans, create comments       │
-                  │ Own-submissions management           │
+  user ──────────▶│ Tải lên, duyệt, tải về, tìm kiếm    │
+                  │   trong các không gian thành viên   │
+                  │ Yêu cầu mượn, tạo bình luận         │
+                  │ Quản lý các bài nộp của chính mình  │
                   └─────────────────────────────────────┘
 ```
 
-It's not RBAC. It's not ABAC. It's *power-level based access control*. user = civilian, editor = officer, admin_op = God.
+Đây không phải là RBAC (Kiểm soát truy cập dựa trên vai trò). Đây cũng không phải là ABAC (Kiểm soát truy cập dựa trên thuộc tính). Đây là *Kiểm soát truy cập dựa trên cấp độ quyền lực (Power-level based access control)*. user = dân thường, editor = sĩ quan, admin_op = tối cao.
 
 ---
 
-### The Matrix-as-Test-Fixture: Actually Brilliant (Annoyingly)
+### Ma trận như một Thiết bị Kiểm thử: Thực sự xuất sắc (Một cách đáng ghét)
 
-The [authz-matrix.test.ts](file:///home/will/dev/WisdomTree/scripts/authz-matrix.test.ts) is one of the most interesting auth verification patterns I've seen:
+Tệp [authz-matrix.test.ts](file:///home/will/dev/WisdomTree/scripts/authz-matrix.test.ts) là một trong những mô hình xác thực quyền truy cập thú vị nhất mà tôi từng thấy:
 
-1. It **parses the markdown docs** (`permissions-matrix.md` + `authorization-design.md`) at runtime
-2. It **maps every matrix row** to the real `authorize()` implementation
-3. Unknown cells, unmapped rows, or undocumented implementation keys **fail the test**
-4. An allowlist with mandatory reasons explains every skip
+1. Nó **phân tích tài liệu markdown** (`permissions-matrix.md` + `authorization-design.md`) tại thời điểm chạy
+2. Nó **ánh xạ từng hàng của ma trận** vào logic triển khai thực tế của hàm `authorize()`
+3. Bất kỳ ô nào chưa xác định, hàng nào chưa được ánh xạ, hoặc khóa triển khai thực tế nào chưa được ghi chép trong tài liệu **sẽ làm kiểm thử thất bại**
+4. Một danh sách cho phép (allowlist) đi kèm lý do bắt buộc sẽ giải thích cho mọi trường hợp bỏ qua
 
-This means **the docs and the code cannot drift silently**. If someone adds a permission to the code without documenting it, the test fails. If someone adds a matrix row without implementing it, the test fails.
+Điều này có nghĩa là **tài liệu và mã nguồn không thể lệch pha nhau một cách âm thầm**. Nếu ai đó thêm một quyền vào mã nguồn mà không cập nhật tài liệu, kiểm thử sẽ thất bại. Nếu ai đó thêm một hàng vào ma trận trong tài liệu mà không triển khai trong mã nguồn, kiểm thử sẽ thất bại.
 
-> The irony: this test suite that synchronizes docs with code is itself a standalone script with no test framework. Just `throw new Error("DRIFT")`.
+> Trớ trêu thay: chính bộ kiểm thử dùng để đồng bộ hóa tài liệu và mã nguồn này lại là một đoạn kịch bản độc lập chạy không cần framework kiểm thử. Chỉ đơn giản là `throw new Error("DRIFT")`.
 
 ---
 
-### The Session System
+### Hệ thống Phiên làm việc (Session System)
 
-[session.ts](file:///home/will/dev/WisdomTree/src/modules/auth/session.ts) resolves the principal on **every request** by:
+Tệp [session.ts](file:///home/will/dev/WisdomTree/src/modules/auth/session.ts) xác định danh tính thực thể trên **mỗi yêu cầu (request)** bằng cách:
 
-1. Reading the cookie → HMAC-verify → extract userId
+1. Đọc cookie → Xác thực HMAC → trích xuất userId
 2. `SELECT * FROM users WHERE id = $1 AND disabled_at IS NULL` 
 3. `SELECT space_id FROM space_members WHERE user_id = $1`
 
-**Two database queries per request**, no caching, no session table.
+**Thực hiện hai truy vấn cơ sở dữ liệu cho mỗi yêu cầu**, không có bộ đệm (cache), không có bảng lưu trữ phiên làm việc (session table).
 
-[sign.ts](file:///home/will/dev/WisdomTree/src/lib/sign.ts) is the session token implementation:
-- HMAC-SHA256 signed payload: `session.<expiry>.<userId>`
-- 7-day TTL
-- Purpose-tagged to prevent cross-use (session vs download vs OAuth state)
-- `timingSafeEqual` for comparison ✅
-- Lazy secret resolution so builds don't need secrets ✅
+Tệp [sign.ts](file:///home/will/dev/WisdomTree/src/lib/sign.ts) là phần triển khai mã thông báo phiên (session token):
+- Dữ liệu tải trọng (payload) được ký HMAC-SHA256: `session.<expiry>.<userId>`
+- Thời gian sống (TTL) 7 ngày
+- Được gắn thẻ mục đích rõ ràng để tránh sử dụng chéo (giữa phiên làm việc so với tải xuống so với trạng thái OAuth)
+- Sử dụng `timingSafeEqual` để so sánh an toàn ✅
+- Cơ chế phân giải khóa bí mật lười (lazy secret resolution) để khi build ứng dụng không cần các biến bí mật ✅
 
-**But:** there is **no session revocation**. You can disable a user, and they'll be blocked on the next DB hit, but you can't invalidate a specific session. The token itself has no id, no jti, no server-side record. If a session is compromised, you wait 7 days or change the `SESSION_SECRET` for everyone.
+**Nhưng:** hoàn toàn **không có cơ chế thu hồi phiên làm việc (session revocation)**. Bạn có thể vô hiệu hóa một người dùng, và họ sẽ bị chặn ở lượt truy vấn DB tiếp theo, nhưng bạn không thể thu hồi một phiên làm việc cụ thể. Bản thân mã thông báo không có định danh id, không có jti, không có bản ghi nào lưu ở phía máy chủ. Nếu một phiên làm việc bị rò rỉ, bạn chỉ có thể đợi 7 ngày hoặc thay đổi `SESSION_SECRET` cho tất cả mọi người.
 
 ---
 
-## Part 2: The Database Design
+## Phần 2: Thiết kế Cơ sở dữ liệu (Database Design)
 
-### The Big Picture: 25 Tables, 11 Migrations
+### Bức tranh Toàn cảnh: 25 Bảng, 11 Bản di chuyển dữ liệu (Migrations)
 
 ```
 auth         ─── users
@@ -133,113 +134,113 @@ export       ─── export_jobs
 cross-cutting ── outbox_events, jobs
 ```
 
-For a v0.1.0, this is **30+ tables**. That's not a demo, that's a dissertation defense.
+Đối với một phiên bản v0.1.0, việc có **hơn 30 bảng** là điều đáng nể. Đó không phải là một dự án thử nghiệm (demo), đó là một buổi bảo vệ luận án tiến sĩ.
 
 ---
 
-### 🔥 What's Hot (And Not)
+### 🔥 Điểm tốt (Và Chưa tốt)
 
-#### The Good
+#### Điểm tốt
 
-| Pattern | Where | Verdict |
+| Mô hình | Ở đâu | Đánh giá |
 |---------|-------|---------|
-| **Append-only triggers** | `text_chunks`, `audit_events`, `comments`, `tree_node_versions`, `promotions` | `forbid_mutation()` trigger on UPDATE/DELETE. Can't tamper with the evidence. Properly paranoid |
-| **Partial unique indexes** | `loan_tickets_one_active_per_item` (WHERE state IN active states), `spaces_one_personal_per_owner`, `folder_name_at_root` | Database-enforced business rules, not application-level hopes. The loan constraint is elegant |
-| **Generated tsvector columns** | `text_chunks.tsv`, `tree_nodes.tsv` | Full-text search baked into the schema with `immutable_unaccent()` wrapper for Vietnamese diacritics. The unaccent → IMMUTABLE wrapper is the correct workaround |
-| **Version columns for OCC** | 16 tables carry `version int NOT NULL DEFAULT 1` | Optimistic concurrency control — the curation service checks `WHERE version = expected` before writes. This is how you avoid lost updates without pessimistic locking |
-| **Foreign key discipline** | Every reference column has an FK | No orphans. Every `created_by`, `submitted_by`, `approved_by`, `assigned_to` points back to `users(id)`. `ON DELETE` is *not* cascade (correct — you don't delete a user and vaporize the audit trail) |
-| **Transactional audit** | 67 `recordAudit()` calls, always inside `db.transaction()` | The audit row and the mutation are atomic. If the mutation fails, no phantom audit. If the audit fails, the mutation rolls back. This is textbook |
-| **The outbox pattern** | `outbox_events` written in the same tx as mutations | Exactly the right pattern for eventually-consistent side effects. The outbox guarantees at-least-once delivery without distributed transactions |
-| **Idempotency key on jobs** | `jobs.idempotency_key UNIQUE` | `extract:{source_version_id}` — resubmitting a job is a no-op, not a duplicate. Correct |
+| **Triggers chỉ cho phép chèn (Append-only)** | `text_chunks`, `audit_events`, `comments`, `tree_node_versions`, `promotions` | Trigger `forbid_mutation()` ngăn chặn hoàn toàn thao tác UPDATE/DELETE. Không thể sửa đổi bằng chứng lịch sử. Cực kỳ an toàn |
+| **Chỉ mục duy nhất một phần (Partial unique indexes)** | `loan_tickets_one_active_per_item` (khi trạng thái nằm trong danh sách đang hoạt động), `spaces_one_personal_per_owner`, `folder_name_at_root` | Ràng buộc nghiệp vụ được thực thi từ tầng cơ sở dữ liệu chứ không chỉ dựa trên hy vọng ở tầng ứng dụng. Ràng buộc về mượn sách rất thanh lịch |
+| **Cột tsvector được tạo tự động** | `text_chunks.tsv`, `tree_nodes.tsv` | Tính năng tìm kiếm toàn văn (full-text search) được tích hợp sẵn trong lược đồ với hàm bao bọc `immutable_unaccent()` cho các dấu tiếng Việt. Việc bọc unaccent thành IMMUTABLE là giải pháp khắc phục chính xác |
+| **Cột phiên bản cho OCC** | 16 bảng chứa cột `version int NOT NULL DEFAULT 1` | Kiểm soát đồng thời lạc quan (Optimistic Concurrency Control) — dịch vụ kiểm duyệt kiểm tra `WHERE version = expected` trước khi ghi dữ liệu. Đây là cách bạn tránh mất mát dữ liệu do cập nhật đè mà không cần khóa bi quan |
+| **Kỷ luật Khóa ngoại (Foreign Key)** | Mọi cột tham chiếu đều có ràng buộc FK | Không có dữ liệu mồ côi. Mỗi `created_by`, `submitted_by`, `approved_by`, `assigned_to` đều trỏ ngược về `users(id)`. Hành vi `ON DELETE` *không* phải là cascade (chính xác — bạn không muốn xóa người dùng rồi làm biến mất toàn bộ lịch sử kiểm toán) |
+| **Kiểm toán dạng Giao dịch (Transactional audit)** | 67 lệnh gọi `recordAudit()`, luôn nằm trong `db.transaction()` | Bản ghi kiểm toán và thao tác thay đổi dữ liệu là nguyên tử (atomic). Nếu thao tác thay đổi thất bại, không có bản ghi kiểm toán ma nào được tạo. Nếu việc kiểm toán thất bại, thao tác thay đổi sẽ bị khôi phục lại. Đây là chuẩn sách giáo khoa |
+| **Mô hình Outbox** | `outbox_events` được ghi trong cùng một giao dịch (transaction) with thao tác thay đổi dữ liệu | Hoàn toàn là mô hình chính xác cho các tác dụng phụ nhất quán sau cùng (eventually-consistent side effects). Mô hình outbox đảm bảo việc phân phát sự kiện ít nhất một lần (at-least-once) mà không cần giao dịch phân tán |
+| **Khóa Idempotency cho các công việc (Jobs)** | `jobs.idempotency_key UNIQUE` | `extract:{source_version_id}` — gửi lại một công việc trùng lặp sẽ là thao tác không có tác dụng (no-op), không sinh ra công việc mới. Chính xác |
 
-#### The Bad
+#### Điểm chưa tốt
 
-| Issue | Details |
+| Vấn đề | Chi tiết |
 |-------|---------|
-| **No row-level security** | All authorization is application-level. A direct DB connection (e.g. Drizzle Studio, a rogue migration) sees everything. For a "storage-first knowledge platform" handling uploaded documents, this is a meaningful gap |
-| **`text` for every enum** | Every status/state/type column is `text NOT NULL CHECK (...)`. No `CREATE TYPE` anywhere. Postgres enums give you compile-time (well, schema-time) safety AND smaller storage. `text` CHECKs are brittle — every migration that adds a state has to `DROP CONSTRAINT` and `ADD CONSTRAINT` (see migration 0002, exactly this) |
-| **`jsonb` everywhere, typed nowhere** | `extraction_meta jsonb`, `payload jsonb`, `config jsonb`, `details jsonb`, `manifest jsonb`, `resolution jsonb`, `attempted_payload jsonb` — **7 untyped JSON columns** across the schema. No CHECK constraints on their contents. The Drizzle schema says `jsonb()` and washes its hands. The application layer can put whatever it wants in there |
-| **No indexes on foreign keys** | `sources.assigned_to`, `curations.assigned_to`, `loan_tickets.borrower_id`, `review_tasks.assigned_to` — none indexed. "Show me my assigned work" is a sequential scan on every table |
-| **The intake_items VIEW is abandoned** | Created in 0000, never mapped in the Drizzle schema, the comment says "no longer mapped: mySubmissions derives its rows in TS from the base tables." So there's a view in the database doing nothing, and the app does the UNION in TypeScript instead. Wonderful |
-| **No soft-delete consistency** | `users.disabled_at`, `spaces.archived_at`, `catalog_items.archived_at`, `branches.archived_at` — four different tables use four different column names for the same concept. Some say `disabled`, some say `archived`. None have a consistent pattern for excluding soft-deleted rows from queries |
-| **`uuid` primary keys everywhere** | Every table uses `uuid PRIMARY KEY DEFAULT gen_random_uuid()`. For a table like `audit_events` that's append-only and queried by time range, a sequential `bigint` key (which it correctly uses!) is better — but then `notifications`, `comments`, and `jobs` should probably follow suit. The UUID vs identity split feels accidental, not designed |
-| **deadline_reminders offset tracking** | `PRIMARY KEY (deadline_id, "offset")` where `"offset"` is an `interval`. Comparing intervals for equality in a primary key is asking for trouble — is `'7 days'` equal to `'168 hours'`? (Spoiler: in Postgres, yes, but only because it normalizes. `'1 month'` vs `'30 days'`? No.) |
+| **Không có bảo mật cấp hàng (Row-level security)** | Mọi việc phân quyền đều diễn ra ở tầng ứng dụng. Một kết nối trực tiếp đến DB (như Drizzle Studio hoặc một tệp di chuyển dữ liệu độc hại) có thể nhìn thấy tất cả mọi thứ. Đối với một "nền tảng tri thức ưu tiên lưu trữ" xử lý các tài liệu tải lên, đây là một lỗ hổng đáng kể |
+| **Sử dụng `text` cho mọi enum** | Mọi cột trạng thái/kiểu dữ liệu đều là `text NOT NULL CHECK (...)`. Không hề có `CREATE TYPE` ở bất kỳ đâu. Enum của Postgres giúp bạn đảm bảo an toàn ở tầng lược đồ VÀ tối ưu hóa dung lượng lưu trữ. Sử dụng ràng buộc CHECK trên cột `text` rất dễ gãy — mỗi lần di chuyển dữ liệu có thêm trạng thái mới đều phải `DROP CONSTRAINT` rồi `ADD CONSTRAINT` (xem tệp di chuyển 0002 để thấy chính xác điều này) |
+| **`jsonb` ở khắp nơi, không được định kiểu** | `extraction_meta jsonb`, `payload jsonb`, `config jsonb`, `details jsonb`, `manifest jsonb`, `resolution jsonb`, `attempted_payload jsonb` — **7 cột JSON không được định kiểu** trong toàn lược đồ. Không có ràng buộc CHECK nào về nội dung của chúng. Lược đồ Drizzle khai báo `jsonb()` rồi phó mặc cho số phận. Tầng ứng dụng có thể đẩy bất kỳ nội dung nào vào đó |
+| **Không có chỉ mục (indexes) trên các khóa ngoại** | `sources.assigned_to`, `curations.assigned_to`, `loan_tickets.borrower_id`, `review_tasks.assigned_to` — không có cột nào được lập chỉ mục. Truy vấn "Hiển thị công việc được giao cho tôi" sẽ phải quét tuần tự (sequential scan) trên mọi bảng |
+| **VIEW `intake_items` bị bỏ hoang** | Được tạo trong bản di chuyển 0000, chưa bao giờ được ánh xạ trong lược đồ Drizzle, phần bình luận ghi rõ "không còn ánh xạ: mySubmissions lấy các hàng trong TS từ các bảng cơ sở." Như vậy có một view trong cơ sở dữ liệu không làm gì cả, và ứng dụng tự thực hiện phép UNION trong TypeScript. Thật tuyệt vời |
+| **Không nhất quán trong xóa mềm (soft-delete)** | `users.disabled_at`, `spaces.archived_at`, `catalog_items.archived_at`, `branches.archived_at` — bốn bảng khác nhau sử dụng bốn tên cột khác nhau cho cùng một khái niệm. Một số bảng dùng `disabled`, một số dùng `archived`. Không có bảng nào có mô hình nhất quán để loại trừ các hàng đã xóa mềm khỏi các truy vấn |
+| **Khóa chính `uuid` ở mọi nơi** | Mọi bảng đều sử dụng `uuid PRIMARY KEY DEFAULT gen_random_uuid()`. Đối với một bảng như `audit_events` vốn chỉ ghi chèn thêm và được truy vấn theo khoảng thời gian, một khóa tự tăng `bigint` (được sử dụng chính xác!) sẽ tốt hơn — nhưng sau đó `notifications`, `comments` và `jobs` cũng nên tuân theo mô hình này. Sự chia rẽ giữa UUID và khóa tự tăng mang lại cảm giác ngẫu nhiên, không được thiết kế có tính toán |
+| **Theo dõi khoảng lệch cho `deadline_reminders`** | Khóa chính `PRIMARY KEY (deadline_id, "offset")` trong đó `"offset"` là kiểu dữ liệu `interval`. So sánh các kiểu `interval` để tìm sự bằng nhau trong một khóa chính là tự tìm rắc rối — liệu `'7 days'` có bằng với `'168 hours'`? (Trong Postgres thì có, nhưng chỉ vì nó có chuẩn hóa. Còn `'1 month'` so với `'30 days'`? Câu trả lời là không.) |
 
-#### The Ugly
+#### Điểm xấu
 
-**The `session.ts` double-query per request:**
+**Truy vấn kép của `session.ts` trên mỗi yêu cầu:**
 
 ```typescript
-// Query 1: get the user
+// Truy vấn 1: Lấy thông tin người dùng
 const [user] = await db.select().from(users)
   .where(and(eq(users.id, userId), isNull(users.disabledAt)));
 
-// Query 2: get their space memberships  
+// Truy vấn 2: Lấy thông tin thành viên không gian của họ
 const memberships = await db.select({ spaceId: spaceMembers.spaceId })
   .from(spaceMembers).where(eq(spaceMembers.userId, user.id));
 ```
 
-Then `currentUser()` does a **third** query — `SELECT * FROM users WHERE id = principal.userId` — to get the full user record. So every authenticated page load is **3 SQL queries** before anything functional happens. A single JOIN would do.
+Sau đó hàm `currentUser()` thực hiện truy vấn thứ **ba** — `SELECT * FROM users WHERE id = principal.userId` — để lấy toàn bộ bản ghi người dùng. Như vậy, mỗi lượt tải trang có xác thực sẽ tốn **3 truy vấn SQL** trước khi bất kỳ logic nghiệp vụ nào được thực hiện. Một phép JOIN duy nhất là đủ giải quyết vấn đề.
 
-**16 version columns, OCC used in ~4 places:**
+**16 cột phiên bản, nhưng OCC chỉ được sử dụng ở khoảng 4 nơi:**
 
-The schema puts `version int NOT NULL DEFAULT 1` on 16 tables. But actual optimistic locking (`WHERE version = expected`) only appears in:
-- `curations` (assign, mark-ready, reject)
-- `markdown_drafts` (save)
-- And that's about it
+Lược đồ cơ sở dữ liệu đặt cột `version int NOT NULL DEFAULT 1` trên 16 bảng. Nhưng việc khóa lạc quan thực tế (`WHERE version = expected`) chỉ xuất hiện ở:
+- `curations` (giao việc, đánh dấu sẵn sàng, từ chối)
+- `markdown_drafts` (lưu)
+- Và hầu như chỉ có vậy.
 
-The other 12 tables have the column but nobody checks it. That's a design promise the implementation doesn't keep.
+12 bảng còn lại có cột này nhưng không có logic nào kiểm tra nó. Đó là một lời hứa thiết kế mà phần triển khai không thực hiện.
 
 ---
 
-### The Accountability Model
+### Mô hình Trách nhiệm giải trình (Accountability Model)
 
-The `audit_events.accountability` column is one of the most interesting design choices:
+Cột `audit_events.accountability` là một trong những lựa chọn thiết kế thú vị nhất:
 
 ```sql
 CHECK (accountability IN ('uploader', 'editor_updater', 'approver_publisher', 'operator', 'member'))
 ```
 
-This is **not** the actor's role — it's *which hat they're wearing*. An `admin_op` acting as a librarian gets `operator`. A `user` uploading a document gets `uploader`. A `user` commenting gets `member`. The same person can appear with different accountabilities in different rows.
+Đây **không phải** là vai trò của người thực hiện — mà là *họ đang đóng vai trò nào khi thực hiện hành động*. Một `admin_op` hành động như một thủ thư sẽ mang danh nghĩa `operator`. Một `user` tải lên tài liệu sẽ mang danh nghĩa `uploader`. Một `user` bình luận sẽ mang danh nghĩa `member`. Cùng một người có thể xuất hiện với các vai trò giải trình khác nhau trong các hàng khác nhau.
 
-This is genuinely smart. It separates "who did it" from "in what capacity did they do it." Most audit systems just log the role and call it done.
-
----
-
-### The Schema Migration Strategy
-
-```
-0000_init.sql             — 261 lines, the demo subset
-0001_v1_schema_parity.sql — 363 lines, the full V1 schema
-0002_comments_drop_loan_anchor.sql — business rule change
-0003_folders_versions.sql — new table + ALTER
-0004_user_profile.sql     — avatar_key column
-0005_task_schedule.sql    — due_at/start_at on tasks
-0006_task_detail.sql      — notes column on tasks
-0007_catalog_copies.sql   — copies column + archive
-0008_presence.sql         — who's online
-0009_catalog_archive.sql  — archived_at on catalog
-0010_knowledge_scope.sql  — personal vs team branches
-```
-
-**What's good:** Sequential, hand-written SQL, forward-only. Comments explain *why* the change is being made, not just what. Migration 0002 even explains why it temporarily disables the append-only trigger and re-enables it.
-
-**What's… notable:** We're at migration 0010 for a v0.1.0. That's 11 migrations before the first release. The schema is still under active design — 0004 through 0010 are all "oh we need this column" addendums. This is pre-v1 schema churn being tracked as if it were production migration history.
+Điều này thực sự rất thông minh. Nó tách biệt "ai đã làm việc đó" khỏi "họ đã làm việc đó với tư cách gì." Hầu hết các hệ thống kiểm toán chỉ ghi lại vai trò chung rồi bỏ qua.
 
 ---
 
-## The Final Verdict on Roles + DB
+### Chiến lược Di chuyển Lược đồ (Schema Migration Strategy)
 
-### The Role System
+```
+0000_init.sql             — 261 dòng, tập hợp con của demo
+0001_v1_schema_parity.sql — 363 dòng, lược đồ V1 đầy đủ
+0002_comments_drop_loan_anchor.sql — thay đổi quy tắc nghiệp vụ
+0003_folders_versions.sql — bảng mới + ALTER
+0004_user_profile.sql     — thêm cột avatar_key
+0005_task_schedule.sql    — thêm due_at/start_at trên bảng tasks
+0006_task_detail.sql      — thêm cột notes trên bảng tasks
+0007_catalog_copies.sql   — thêm cột copies + lưu trữ
+0008_presence.sql         — ai đang trực tuyến
+0009_catalog_archive.sql  — thêm archived_at trên bảng catalog
+0010_knowledge_scope.sql  — các nhánh cá nhân so với nhánh nhóm
+```
 
-A flat 3-tier power level system that works *perfectly* for a team of ≤10 people running a Vietnamese knowledge-management platform — which is exactly what this is. The permission catalog, the scope model, and the matrix-as-test approach are all genuinely well-thought-out.
+**Điểm tốt:** Di chuyển tuần tự, viết tay bằng SQL, chỉ tiến về phía trước. Các bình luận giải thích rõ *tại sao* thay đổi được thực hiện chứ không chỉ ghi lại thay đổi đó là gì. Bản di chuyển 0002 thậm chí còn giải thích lý do tại sao nó tạm thời vô hiệu hóa trigger append-only rồi kích hoạt lại.
 
-But calling it "authorization" is generous. There's no permission you can grant or revoke without a code deploy. There's no concept of delegation. admin_op is a superuser with no constraint separation. The moment the team grows past "everyone knows everyone," this collapses.
+**Điểm... đáng lưu ý:** Chúng ta đã ở bản di chuyển thứ 11 (0010) cho một phiên bản demo v0.1.0. Tức là có tới 11 lượt di chuyển dữ liệu trước cả khi phát hành phiên bản đầu tiên. Lược đồ vẫn đang trong quá trình thiết kế tích cực — từ bản di chuyển 0004 đến 0010 đều là các bổ sung kiểu "ồ chúng ta cần thêm cột này". Đây là việc theo dõi lịch sử thay đổi của lược đồ tiền v1 như thể nó đã là lịch sử di chuyển trên môi trường sản xuất thực tế.
 
-### The Database
+---
 
-The schema reads like someone who genuinely understands relational modeling and has opinions about data integrity. Append-only triggers, partial unique indexes, generated tsvector columns, transactional audit writes, OCC version columns, idempotency keys — these are patterns that come from building systems that failed without them.
+## Phán quyết Cuối cùng về Vai trò + Cơ sở dữ liệu
 
-But it's also 30+ tables for a 0.1.0 demo, 7 untyped JSON columns, 16 OCC version columns that are mostly decorative, text-based enums that require migration surgery to extend, and a session system that hits the database 3 times before the page can think about loading.
+### Hệ thống Vai trò
 
-> **TL;DR: This database was designed by someone who's read the books. The role system was designed by someone who knows their team. Neither was designed by someone who expects more than 10 users.**
+Một hệ thống cấp độ quyền lực 3 bậc phẳng hoạt động *hoàn hảo* cho một nhóm phát triển gồm ≤10 người vận hành một nền tảng quản lý tri thức tiếng Việt — và đây chính xác là những gì dự án này hướng tới. Danh mục quyền hạn, mô hình phạm vi và cách tiếp cận ma trận dưới dạng thiết bị kiểm thử đều được suy nghĩ rất kỹ lưỡng.
+
+Nhưng gọi nó là "phân quyền" (authorization) thì hơi quá lời. Không có quyền hạn nào bạn có thể cấp hoặc thu hồi mà không cần triển khai lại mã nguồn (deploy). Không có khái niệm về ủy quyền. `admin_op` là một siêu người dùng không chịu bất kỳ ràng buộc phân tách nào. Ngay khi nhóm phát triển lớn hơn quy mô "mọi người đều biết nhau," mô hình này sẽ đổ vỡ.
+
+### Cơ sở dữ liệu
+
+Lược đồ cơ sở dữ liệu đọc lên mang lại cảm giác của một người thực sự hiểu về mô hình hóa quan hệ và có những quan điểm nghiêm túc về tính toàn vẹn dữ liệu. Các trigger append-only, chỉ mục duy nhất một phần, các cột tsvector được tạo tự động, các giao dịch kiểm toán ghi đồng thời, các cột phiên bản OCC, các khóa idempotency — đây đều là những mô hình rút ra từ việc xây dựng các hệ thống từng thất bại khi thiếu chúng.
+
+Nhưng nó cũng là hơn 30 bảng cho một bản demo 0.1.0, 7 cột JSON không định kiểu, 16 cột phiên bản OCC chủ yếu để trang trí, các enum dựa trên văn bản đòi hỏi phải phẫu thuật lược đồ để mở rộng, và một hệ thống phiên làm việc truy vấn cơ sở dữ liệu tới 3 lần trước khi trang web có thể hiển thị.
+
+> **Tóm tắt: Cơ sở dữ liệu này được thiết kế bởi một người đã đọc rất nhiều sách. Hệ thống vai trò được thiết kế bởi một người hiểu rõ đội ngũ của họ. Không có hệ thống nào được thiết kế bởi một người mong đợi ứng dụng có nhiều hơn 10 người dùng.**
