@@ -50,10 +50,12 @@ export function NotificationLink({
         // ponytail: the screen is already leaving, so a failed mark-read has
         // nowhere to render a message. Refreshing puts the unread row and its
         // badge back instead of leaving a silent, stale "đã đọc" behind.
-        fetch(`/api/notifications/${notificationId}/read`, { method: "POST", keepalive: true })
-          .finally(() => {
-            router.refresh();
-          });
+        void fetch(`/api/notifications/${notificationId}/read`, {
+          method: "POST",
+          keepalive: true,
+        }).finally(() => {
+          router.refresh();
+        });
       }}
     >
       {children}

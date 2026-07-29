@@ -42,14 +42,16 @@ export function SourceFileActions({
     setUploadError(null);
     const form = new FormData();
     form.append("file", file);
-    let res: Response | null = null;
+    let res: Response | null;
     try {
       res = await fetch(`/api/source/${sourceId}/version`, { method: "POST", body: form });
     } catch {
       res = null;
     }
     if (!res?.ok) {
-      const payload = res ? ((await res.json().catch(() => null)) as { message?: string } | null) : null;
+      const payload = res
+        ? ((await res.json().catch(() => null)) as { message?: string } | null)
+        : null;
       setUploadError(payload?.message ?? T.genericError);
       setUploading(false);
       return;
@@ -86,7 +88,12 @@ export function SourceFileActions({
       <div className="field">
         <label htmlFor="move-folder">{T.moveFolder}</label>
         <div className="inline">
-          <select id="move-folder" value={target} onChange={(e) => setTarget(e.target.value)} disabled={busy}>
+          <select
+            id="move-folder"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            disabled={busy}
+          >
             <option value="">{T.folderRootOption}</option>
             {folders.map((f) => (
               <option key={f.id} value={f.id}>
@@ -97,7 +104,9 @@ export function SourceFileActions({
           <button
             type="button"
             disabled={busy || target === (folderId ?? "")}
-            onClick={() => void m.run(`/api/source/${sourceId}/move`, { body: { folderId: target || null } })}
+            onClick={() =>
+              void m.run(`/api/source/${sourceId}/move`, { body: { folderId: target || null } })
+            }
           >
             {m.busy ? T.loading : T.moveAction}
           </button>
@@ -123,7 +132,9 @@ export function SourceFileActions({
         <label htmlFor="new-version-file" className="button secondary">
           {uploading ? T.loading : T.uploadNewVersion}
         </label>
-        <span className="muted">{fileName || "Bản mới thay thế bản hiện tại; các bản cũ vẫn được giữ."}</span>
+        <span className="muted">
+          {fileName || "Bản mới thay thế bản hiện tại; các bản cũ vẫn được giữ."}
+        </span>
       </div>
     </div>
   );
