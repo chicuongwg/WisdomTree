@@ -108,6 +108,7 @@
 
 ### Technical Design
 - [`design/database-schema.md`](./design/database-schema.md): concrete PostgreSQL schema, ERD, and the NFR-to-schema mapping; supersedes the drawio ERD.
+- [`design/database-erds.md`](./design/database-erds.md): module-by-module Mermaid ERDs providing a high-level visual overview of objects and entities.
 - [`design/openapi.yaml`](./design/openapi.yaml): OpenAPI 3.1 contract covering every endpoint in `system/integration-contracts.md`.
 - [`design/sequence-diagrams.md`](./design/sequence-diagrams.md): runtime sequences for the five core flows, including transaction and outbox boundaries.
 - [`design/authorization-design.md`](./design/authorization-design.md): enforcement pipeline, permission catalog, and the permissions-matrix-as-test-fixture approach.

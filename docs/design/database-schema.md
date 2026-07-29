@@ -3,7 +3,7 @@
 ## Purpose
 
 - Translate the entity and lifecycle model into a concrete PostgreSQL schema an implementer can turn into migrations without reopening business decisions.
-- Replace the outdated `docs/diagrams/entity-relationship-diagram.drawio` as the canonical ERD for implementation.
+- Serve as the canonical ERD and schema reference for implementation, complemented by the generated presentation diagrams in `docs/diagrams/entity-relationship-diagram.drawio`, `docs/diagrams/database-schema-architecture.drawio`, and `docs/diagrams/transactional-outbox-pattern.drawio`.
 
 ## In Scope
 
@@ -47,6 +47,11 @@
 
 ## Entity-Relationship Overview
 
+> [!NOTE]
+> For detailed module-by-module Mermaid ERDs (Storage, Knowledge Tree, Catalog, Outbox/Notify, and PM), see [`database-erds.md`](./database-erds.md) and the presentation draw.io diagrams in [`../diagrams/`](../diagrams/).
+
+Below is the **Global Provenance Spine ERD** connecting the Source Repository (`sources`) with the Knowledge Tree (`tree_nodes`) across the team's workspaces (`spaces`):
+
 ```mermaid
 erDiagram
     users ||--o{ space_members : "belongs to"
@@ -79,7 +84,7 @@ erDiagram
     users ||--o{ audit_events : "acted"
 ```
 
-Comments, review tasks, conflicts, and audit events reference their target polymorphically (`target_type` + `target_id`), so they attach to any module's objects without foreign-key fan-out.
+Comments, review tasks, conflicts, and audit events reference their target polymorphically (`target_type` + `target_id`), so they attach to any module's objects without foreign-key fan-out. See [`database-erds.md`](./database-erds.md) for individual module ERD breakdowns.
 
 ## Conventions
 

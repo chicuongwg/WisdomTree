@@ -37,7 +37,8 @@
 
 ## Current Repository Stage
 - The repository is in `V1-local complete`: every module buildable on one machine is implemented and coordinator-verified — storage (store-first), catalog + circulation, knowledge (curation → review → publish with provenance, tree browse/search, merge/archive), notifications (comments, preferences, per-channel deliveries), PM (deadlines, board, ICS feed), export (document render + one-way tree export to a local content repo), full schema parity with the design docs, the "Chàm & Son" UI identity, and the matrix-driven authorization suite (155 assertions parsed from the permissions docs at run time).
-- Acceptance ran on the production build (`next build` + `next start`): 125 behavioral proofs green twice consecutively, authz suite green, typecheck clean. Delivery was agent-built in seven phases, each passing a coordinator gate with an atomic commit.
+- Acceptance ran on the production build (`next build` + `next start`): 213 behavioral proofs green, authz suite green, typecheck clean. Delivery was agent-built across phases, each passing a coordinator gate.
+- **Implemented Enhancements (Beyond Initial Design)**: Serverless-reliable outbox dispatcher (`after()` + `/api/cron/dispatch`), live Markdown/Wiki-links preview in editors, diacritic-insensitive Vietnamese `@mention` normalizer (`foldName`), unified timestamp sorting (`updatedAt DESC`), source nomination revert for normal users, and strict Team vs. Personal space segregation on the sidebar.
 - Still external, behind the approved substitutions until real services exist: Google OIDC, S3, the separate worker host with OCR/Ollama, Zalo OA and email delivery, the Google bridges, real backups — plus the humanities review of the `// NEW` Vietnamese strings in `src/lib/vi.ts`.
 
 ## What WisdomTree Is

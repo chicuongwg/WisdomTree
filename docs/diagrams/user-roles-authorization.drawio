@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="User Roles Authorization">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1500" pageHeight="750" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — USER ROLES &amp; AUTHORIZATION SCOPE — Role separation, capability boundaries, and resource access qualifiers (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1420" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; top-down within columns; Editor inherits User capabilities; Admin/Op has global privilege; role colors match the repo theme.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="44" width="1420" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="ROLE: USER (Baseline Authenticated User)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="440" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="ROLE: EDITOR (Content Curators &amp; Editors)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="530" y="100" width="440" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="ROLE: ADMIN/OP (Librarians &amp; System Operators)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="100" width="440" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" value="&lt;b&gt;Read tree nodes &amp;amp; Search tree&lt;/b&gt;&lt;br&gt;Qualifier: global (visible to all logged-in users)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="140" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" value="&lt;b&gt;Browse Library &amp;amp; Search source repo&lt;/b&gt;&lt;br&gt;Qualifier: space (restricted to member spaces)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c9" value="&lt;b&gt;Upload source file &amp;amp; Download original&lt;/b&gt;&lt;br&gt;Qualifier: space (membership in target space)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="280" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" value="&lt;b&gt;Create branch-gap request &amp;amp; Request loan&lt;/b&gt;&lt;br&gt;Qualifier: self / space (own records &amp;amp; member catalog)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="350" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c11" value="&lt;b&gt;View own submissions &amp;amp; Comment on objects&lt;/b&gt;&lt;br&gt;Qualifier: self / space (membership of commented object)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="420" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c12" value="&lt;b&gt;Create manual node &amp;amp; Create branch&lt;/b&gt;&lt;br&gt;Qualifier: global (inherits all baseline User permissions)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="550" y="140" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c13" value="&lt;b&gt;Edit branch metadata&lt;/b&gt;&lt;br&gt;Qualifier: owned-or-assigned (creator or active assignment)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="550" y="210" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c14" value="&lt;b&gt;Edit corrected text &amp;amp; Edit Markdown draft&lt;/b&gt;&lt;br&gt;Qualifier: owned-or-assigned (creator or active assignment)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="550" y="280" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c15" value="&lt;b&gt;Edit manual node &amp;amp; View node audit&lt;/b&gt;&lt;br&gt;Qualifier: owned-or-assigned (creator or active assignment)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="550" y="350" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c16" value="&lt;b&gt;Suggest tags &amp;amp; Board task updates&lt;/b&gt;&lt;br&gt;Qualifier: owned-or-assigned suggestion and task updates" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="550" y="420" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c17" value="&lt;b&gt;Approve corrected text &amp;amp; Approve MD draft&lt;/b&gt;&lt;br&gt;Qualifier: global (unrestricted global access)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="140" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c18" value="&lt;b&gt;Publish to tree &amp;amp; Merge duplicate nodes&lt;/b&gt;&lt;br&gt;Qualifier: global (unrestricted global access)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="210" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c19" value="&lt;b&gt;Archive node or source &amp;amp; Change trust status&lt;/b&gt;&lt;br&gt;Qualifier: global (unrestricted global access)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="280" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c20" value="&lt;b&gt;Manage spaces &amp;amp; membership &amp;amp; Catalog items&lt;/b&gt;&lt;br&gt;Qualifier: global (unrestricted global access)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="350" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c21" value="&lt;b&gt;Approve/decline loans &amp;amp; System health &amp;amp; Export&lt;/b&gt;&lt;br&gt;Qualifier: global (unrestricted global access)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="420" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c22" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;inherits&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c4" target="c5">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c23" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;extends&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.5;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c6">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c24" value="&lt;b&gt;Message:&lt;/b&gt; Editor inherits all User baseline permissions; Admin/Op acts as a superuser with global scope qualifier across all modules." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="590" width="1420" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="c25" value="&lt;b&gt;Colour roles&lt;/b&gt;: &lt;font color=&quot;#3B82F6&quot;&gt;&amp;#9632; User role (blue)&lt;/font&gt; · &lt;font color=&quot;#10B981&quot;&gt;&amp;#9632; Editor role (green)&lt;/font&gt; · &lt;font color=&quot;#A855F7&quot;&gt;&amp;#9632; Admin/Op role (purple)&lt;/font&gt;. Authoritative matrix: docs/requirements/permissions-matrix.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="640" width="1420" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

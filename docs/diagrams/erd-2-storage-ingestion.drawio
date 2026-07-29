@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="ERD 2: Storage &amp; Ingestion">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — ERD 2: STORAGE &amp; INGESTION MODULE (storage, auth) (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1520" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; Manages spaces, folders, uploaded source evidence, OCR text extraction, corrections, and gap requests.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="44" width="1520" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="1 · Space &amp;amp; Members" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="&lt;b&gt;spaces&lt;/b&gt;&lt;hr&gt;id, name, type (team|personal)&lt;br&gt;owner_user_id" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="50" y="130" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="&lt;b&gt;space_members&lt;/b&gt;&lt;hr&gt;space_id, user_id, added_by&lt;br&gt;created_at (PK: space_id+user_id)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="50" y="270" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" value="&lt;b&gt;branch_gap_requests&lt;/b&gt;&lt;hr&gt;id, space_id, requester_id&lt;br&gt;title, status, description" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
+          <mxGeometry x="50" y="410" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" value="2 · Source &amp;amp; Versions" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="380" y="80" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c9" value="&lt;b&gt;sources&lt;/b&gt;&lt;hr&gt;id, space_id, title, trust_status&lt;br&gt;submitted_by, assigned_to" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
+          <mxGeometry x="380" y="130" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" value="&lt;b&gt;source_versions&lt;/b&gt;&lt;hr&gt;id, source_id, sha256&lt;br&gt;storage_path, extraction_status" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
+          <mxGeometry x="380" y="270" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c11" value="3 · Extraction &amp;amp; Curation" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="730" y="80" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c12" value="&lt;b&gt;text_chunks&lt;/b&gt;&lt;hr&gt;id, source_version_id, page_idx&lt;br&gt;content, ocr_engine" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="730" y="130" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c13" value="&lt;b&gt;corrected_texts&lt;/b&gt;&lt;hr&gt;id, source_version_id&lt;br&gt;corrected_text, editor_id" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="730" y="270" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c14" value="&lt;b&gt;markdown_drafts&lt;/b&gt;&lt;hr&gt;id, source_version_id&lt;br&gt;markdown_content, author_id" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="730" y="410" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c15" value="&lt;b&gt;curations&lt;/b&gt;&lt;hr&gt;id, source_version_id, state&lt;br&gt;reviewer_id, ready_at" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="270" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c16" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;authorizes members&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c5" target="c6">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c17" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;gap req&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c7">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="15" y="175" /><mxPoint x="15" y="455" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c18" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;space-scoped&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c9">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c19" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;immutable uploads&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c9" target="c10">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c20" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;parsed chunks / OCR&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c10" target="c12">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c21" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;human corrections&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" edge="1" parent="1" source="c10" target="c13">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c22" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;drafting area&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=1;exitY=0.7;entryX=0;entryY=0.5;" edge="1" parent="1" source="c10" target="c14">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c23" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;curation status&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=1;exitY=0.25;entryX=0.5;entryY=0;" edge="1" parent="1" source="c10" target="c15">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="695" y="292.5" /><mxPoint x="695" y="68" /><mxPoint x="1220" y="68" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c24" value="&lt;b&gt;Message:&lt;/b&gt; Every upload creates an immutable SHA-256 source_version; extraction chunks, human corrections, and drafts are layered on top without overwriting." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="540" width="1520" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="c25" value="&lt;b&gt;Colour roles&lt;/b&gt;: &lt;font color=&quot;#3B82F6&quot;&gt;&amp;#9632; Spaces / Hierarchy&lt;/font&gt; · &lt;font color=&quot;#D97706&quot;&gt;&amp;#9632; Sources &amp;amp; Curation&lt;/font&gt; · &lt;font color=&quot;#10B981&quot;&gt;&amp;#9632; Extracted &amp;amp; Corrected Text&lt;/font&gt;. Authoritative docs: docs/design/database-erds.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="590" width="1520" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

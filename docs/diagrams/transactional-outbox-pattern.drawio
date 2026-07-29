@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="Transactional Outbox Pattern">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — TRANSACTIONAL OUTBOX PATTERN — reliable notification dispatching on serverless / edge runtime (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1520" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; flow diagram of how ACID database transactions and after() / cron workers prevent notification loss.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="44" width="1520" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="1 · Atomic Mutation Transaction (PostgreSQL)" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="&lt;b&gt;ACID Transaction&lt;/b&gt;&lt;hr&gt;1. Domain Mutation (e.g. comment / node)&lt;br&gt;2. audit_events INSERT&lt;br&gt;3. outbox_events INSERT (dispatched_at IS NULL)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#D97706;" vertex="1" parent="1">
+          <mxGeometry x="50" y="140" width="380" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="2 · Dispatch Triggers (Serverless Safe)" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="510" y="100" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" value="&lt;b&gt;Next.js 15 after() / kickDispatch()&lt;/b&gt;&lt;hr&gt;Executes background task without blocking&lt;br&gt;HTTP 201 response to caller" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
+          <mxGeometry x="510" y="140" width="320" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" value="&lt;b&gt;Safety Cron: GET /api/cron/dispatch&lt;/b&gt;&lt;hr&gt;Periodic worker sweeping outbox_events&lt;br&gt;where dispatched_at IS NULL" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+          <mxGeometry x="510" y="270" width="320" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="c9" value="3 · Dispatcher Processing" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="900" y="100" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" value="&lt;b&gt;dispatchOutbox()&lt;/b&gt;&lt;hr&gt;1. resolveRecipients (matrix / @mention)&lt;br&gt;2. channelsFor(user, eventType)&lt;br&gt;3. INSERT notifications + notification_deliveries&lt;br&gt;4. UPDATE outbox_events SET dispatched_at = NOW()" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="900" y="140" width="360" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="c11" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;immediate kick&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c7">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c12" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;fallback drain&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#D97706;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c8">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="320" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c13" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;run&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c7" target="c10">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c14" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;run&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.3;" edge="1" parent="1" source="c8" target="c10">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c15" value="&lt;b&gt;Message:&lt;/b&gt; The zero-latency after() hook ensures lambda runtimes do not terminate early, while /api/cron/dispatch acts as a permanent fallback safety net." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="430" width="1520" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="c16" value="&lt;b&gt;Colour roles&lt;/b&gt;: &lt;font color=&quot;#D97706&quot;&gt;&amp;#9632; database transaction&lt;/font&gt; · &lt;font color=&quot;#A855F7&quot;&gt;&amp;#9632; serverless trigger&lt;/font&gt; · &lt;font color=&quot;#10B981&quot;&gt;&amp;#9632; safety cron&lt;/font&gt; · &lt;font color=&quot;#3B82F6&quot;&gt;&amp;#9632; dispatcher&lt;/font&gt; · &lt;b&gt;Pattern rules&lt;/b&gt;: All mutations commit atomically. Source of truth: docs/design/sequence-diagrams.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="480" width="1520" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

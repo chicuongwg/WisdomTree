@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="diagram_id" name="ERD 5: Notify &amp; Audit">
+    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — ERD 5: NOTIFICATION, OUTBOX &amp; AUDIT MODULE (notify, audit) (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1520" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; Implements the Transactional Outbox Pattern and immutable audit trail for serverless-safe event dispatching.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="44" width="1520" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="1 · Actor &amp;amp; ACID Outbox / Audit" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="&lt;b&gt;users&lt;/b&gt;&lt;hr&gt;id, display_name, role&lt;br&gt;email, zalo_user_id" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="50" y="130" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="&lt;b&gt;outbox_events&lt;/b&gt;&lt;hr&gt;id, event_type, payload&lt;br&gt;dispatched_at IS NULL, created_at" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="380" y="130" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" value="&lt;b&gt;audit_events&lt;/b&gt;&lt;hr&gt;id, actor_id, action, target_type&lt;br&gt;target_id, ip_address, created_at" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="380" y="270" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" value="2 · Comments (Threaded)" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="390" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c9" value="&lt;b&gt;comments (append-only)&lt;/b&gt;&lt;hr&gt;id, author_id, anchor_type, anchor_id&lt;br&gt;parent_comment_id, body, mentions[]" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="50" y="440" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" value="&lt;b&gt;comments anchor scope&lt;/b&gt;&lt;hr&gt;anchor_type (source|tree_node|deadline)&lt;br&gt;index: (type, id, created_at)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#3B82F6;" vertex="1" parent="1">
+          <mxGeometry x="380" y="440" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c11" value="3 · Notifications &amp;amp; Delivery Channels" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="730" y="80" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="c12" value="&lt;b&gt;notifications&lt;/b&gt;&lt;hr&gt;id, user_id, event_type, title&lt;br&gt;read_at, created_at" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="730" y="130" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c13" value="&lt;b&gt;notification_deliveries&lt;/b&gt;&lt;hr&gt;id, notification_id, channel (in_app|zalo|email)&lt;br&gt;status, delivered_at" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="730" y="270" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c14" value="&lt;b&gt;notification_preferences&lt;/b&gt;&lt;hr&gt;user_id, event_type (PK)&lt;br&gt;channels (in_app|email|zalo)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="730" y="440" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="c15" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;triggers event&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c6">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c16" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;performs action&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c7">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c17" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;writes comment&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c5" target="c9">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c18" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;anchored to&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c9" target="c10">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c19" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;dispatches via outbox runner&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#64748B;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c6" target="c12">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c20" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;per channel delivery&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#64748B;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c12" target="c13">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="c21" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;sets preferences&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=0;exitY=0.5;entryX=0.5;entryY=1;" edge="1" parent="1" source="c5" target="c14">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="20" y="175" /><mxPoint x="20" y="560" /><mxPoint x="870" y="560" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c22" value="&lt;b&gt;Message:&lt;/b&gt; outbox_events is inserted in the same PostgreSQL transaction as domain mutations; after() and /api/cron/dispatch drain pending deliveries." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="600" width="1520" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="c23" value="&lt;b&gt;Colour roles&lt;/b&gt;: &lt;font color=&quot;#64748B&quot;&gt;&amp;#9632; Outbox, Notify &amp;amp; Audit&lt;/font&gt; · &lt;font color=&quot;#3B82F6&quot;&gt;&amp;#9632; Users &amp;amp; Comments&lt;/font&gt;. Authoritative docs: docs/design/database-erds.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="650" width="1520" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
