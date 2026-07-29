@@ -22,7 +22,8 @@ export const T = {
   accessDenied: "Không có quyền truy cập",
   // A refusal without a next step leaves the reader on a page with nothing on
   // it but the word no.
-  accessDeniedHint: "Trang này dành cho người phụ trách thư viện. Bạn vẫn có thể xem danh mục sách.", // NEW
+  accessDeniedHint:
+    "Trang này dành cho người phụ trách thư viện. Bạn vẫn có thể xem danh mục sách.", // NEW
   search: "Tìm kiếm",
   download: "Tải xuống",
   signIn: "Đăng nhập",
@@ -223,8 +224,10 @@ export const T = {
   // explains it. What the reader needs to know is that the box takes plain
   // writing and that a few marks do something — which the hint says.
   contentMd: "Nội dung", // NEW
-  contentMdHint: "Viết như bình thường. Gõ ## đầu dòng để tạo tiêu đề, - để tạo gạch đầu dòng, và [[Tên trang]] để dẫn sang một trang tri thức khác.", // NEW
-  editNodeConflictNote: "Nếu người khác lưu trước bạn, hệ thống sẽ báo và giữ nguyên nội dung bạn đang soạn.", // NEW
+  contentMdHint:
+    "Viết như bình thường. Gõ ## đầu dòng để tạo tiêu đề, - để tạo gạch đầu dòng, và [[Tên trang]] để dẫn sang một trang tri thức khác.", // NEW
+  editNodeConflictNote:
+    "Nếu người khác lưu trước bạn, hệ thống sẽ báo và giữ nguyên nội dung bạn đang soạn.", // NEW
   suggestedBranch: "Chuyên đề đề xuất", // NEW
   preview: "Xem trước", // NEW
   // Notify + PM terms; Deadline "Hạn chót" and Comment "Thảo luận" come from
@@ -238,6 +241,9 @@ export const T = {
   commentPosted: "Đã gửi thảo luận.", // NEW
   // A thread that would not load says so, and offers the way out.
   commentsLoadFailed: "Không tải được thảo luận.", // NEW
+  errorTitle: "Không tải được phần này.", // NEW
+  errorDescription:
+    "Có lỗi xảy ra trong quá trình xử lý. Dữ liệu của bạn vẫn an toàn — hãy thử lại.", // NEW
   retry: "Thử lại", // NEW
   checkAgain: "Kiểm tra lại", // NEW
   // Mentions are typed into the comment itself; the picker is gone.
@@ -245,8 +251,7 @@ export const T = {
   // Announced when the name list opens — a textbox cannot carry aria-expanded,
   // so this sentence is how a reader who cannot see the list learns it is
   // there and how to move through it.
-  mentionMatches: (n: number) =>
-    `${n} tên khớp. Dùng phím mũi tên để chọn, Enter để chèn.`, // NEW
+  mentionMatches: (n: number) => `${n} tên khớp. Dùng phím mũi tên để chọn, Enter để chèn.`, // NEW
   notificationCenter: "Thông báo", // NEW
   markRead: "Đánh dấu đã đọc", // NEW
   unread: "Chưa đọc", // NEW
@@ -262,7 +267,8 @@ export const T = {
   reminderOffsets: "Nhắc trước", // NEW
   checklistAndDocs: "Việc và tài liệu liên quan", // NEW
   myCalendar: "Lịch của tôi", // NEW
-  calendarSubscribeHint: "Dán đường dẫn này vào ứng dụng lịch (Google Calendar, Outlook…) để tự động nhận các hạn chót.", // NEW
+  calendarSubscribeHint:
+    "Dán đường dẫn này vào ứng dụng lịch (Google Calendar, Outlook…) để tự động nhận các hạn chót.", // NEW
   project: "Kho dự án", // NEW
   allProjects: "Tất cả kho dự án", // NEW
   noAssignee: "Chưa giao", // NEW
@@ -303,7 +309,8 @@ export const T = {
   backToBoard: "Quay lại bảng công việc", // NEW
   createdAtLabel: "Tạo lúc", // NEW
   updatedAtLabel: "Cập nhật lúc", // NEW
-  taskNotManageable: "Bạn chỉ có thể xem công việc này. Người tạo hoặc người nhận việc mới sửa được.", // NEW
+  taskNotManageable:
+    "Bạn chỉ có thể xem công việc này. Người tạo hoặc người nhận việc mới sửa được.", // NEW
   // Workspace shell terms — NEW pending humanities review
   quickSearch: "Tìm nhanh", // NEW
   openBranch: "Mở chuyên đề", // NEW
@@ -363,7 +370,8 @@ export const T = {
   // The map is one tab stop; the arrows move between marks inside it. Saying
   // "Tab để đi giữa các trang" was both wrong and a promise of two hundred
   // presses of it.
-  graphKeyboardHelp: "Bàn phím: Tab để vào bản đồ, các phím mũi tên để đi giữa các trang, Enter để mở, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
+  graphKeyboardHelp:
+    "Bàn phím: Tab để vào bản đồ, các phím mũi tên để đi giữa các trang, Enter để mở, P để ghim hoặc bỏ ghim, Esc để đóng thẻ xem trước.", // NEW
   graphMotionOff: "Bản đồ đang đứng yên theo thiết lập giảm chuyển động của máy bạn.", // NEW
   graphZoomGroup: "Thu phóng bản đồ", // NEW
   graphTouchHelp:
@@ -479,7 +487,8 @@ export const T = {
   backToLibrary: "Quay lại thư viện", // NEW
   viewArchivedLink: "Xem tư liệu đã thu hồi", // NEW
   folderEmptyTitle: "Thư mục trống.", // NEW
-  folderEmptyHint: "Chuyển tư liệu vào đây từ trang chi tiết, hoặc tải tệp lên rồi chọn thư mục này.", // NEW
+  folderEmptyHint:
+    "Chuyển tư liệu vào đây từ trang chi tiết, hoặc tải tệp lên rồi chọn thư mục này.", // NEW
   libraryEmptyDropHint: "Hoặc kéo tệp thả vào đây.", // NEW
   newFolder: "Thư mục mới", // NEW
   folderName: "Tên thư mục", // NEW
@@ -533,7 +542,8 @@ export const T = {
   // Node export: the one converter warning said in consequences
   // (NEW — not yet in vocabulary-vi.md)
   exportOtherWarning: "tệp đã xuất nhưng có phần chưa chuẩn", // NEW
-  exportPandocMissing: "máy chủ chưa cài pandoc nên tệp xuất là bản HTML đơn giản, không phải docx/pdf.", // NEW
+  exportPandocMissing:
+    "máy chủ chưa cài pandoc nên tệp xuất là bản HTML đơn giản, không phải docx/pdf.", // NEW
   // Admin Console: headings and the health table (NEW — not yet in vocabulary-vi.md)
   membersHeading: "Thành viên", // NEW
   auditHeading: "Nhật ký hệ thống", // NEW
@@ -1182,9 +1192,7 @@ export function untilLabel(due: Date, now: Date): string | null {
  * seven-day rounding a fancier version needs is where off-by-one bugs live.
  */
 export function spanLabel(start: Date | string, due: Date | string): string | null {
-  const days = Math.round(
-    (new Date(due).getTime() - new Date(start).getTime()) / 86_400_000,
-  );
+  const days = Math.round((new Date(due).getTime() - new Date(start).getTime()) / 86_400_000);
   if (days < 0) return null;
   if (days === 0) return "Trong ngày";
   if (days % 7 === 0) return `${days / 7} tuần`;
@@ -1217,13 +1225,7 @@ export function spanLabel(start: Date | string, due: Date | string): string | nu
 // ---------------------------------------------------------------------------
 
 export type BadgeTone =
-  | "waiting"
-  | "active"
-  | "attention"
-  | "done"
-  | "stopped"
-  | "archived"
-  | "no_source";
+  "waiting" | "active" | "attention" | "done" | "stopped" | "archived" | "no_source";
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   waiting: "badge tone-waiting",
@@ -1326,10 +1328,7 @@ withTones(taskStateLabel, "taskStateLabel", {
  * Mirrors `guarded()` above — a state the tone table has not caught up with
  * is loud in development and neutral in production, never a broken chip.
  */
-export function badgeClass(
-  map: Record<string, string>,
-  value: string | null | undefined,
-): string {
+export function badgeClass(map: Record<string, string>, value: string | null | undefined): string {
   const table = toneTables.get(map);
   if (table && value != null) {
     const tone = table.tones[value];

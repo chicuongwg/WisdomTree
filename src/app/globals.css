@@ -17,7 +17,9 @@
    loads this file — it repeats a handful of hexes on purpose, and says so.
    ============================================================ */
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 :root {
   /* --- Named palette ------------------------------------------------ */
@@ -35,19 +37,19 @@
   --color-amber: #7a4f00;
 
   /* --- Semantic roles ----------------------------------------------- */
-  --color-surface: #fdfdfb;        /* panels, cards, table bodies */
+  --color-surface: #fdfdfb; /* panels, cards, table bodies */
   --color-surface-sunken: #e9ede5; /* wells, code, board track */
-  --color-ink-muted: #5a655d;      /* metadata (5.4:1 on paper) */
-  --color-line: #d9decf;           /* hairline borders */
-  --color-line-strong: #b4bcae;    /* card head hairline, table rules */
-  --color-canopy-deep: #175539;    /* hover, badge text on wash */
+  --color-ink-muted: #5a655d; /* metadata (5.4:1 on paper) */
+  --color-line: #d9decf; /* hairline borders */
+  --color-line-strong: #b4bcae; /* card head hairline, table rules */
+  --color-canopy-deep: #175539; /* hover, badge text on wash */
   --color-canopy-wash: #e2eee6;
   --color-seal-deep: #8c2b1a;
   --color-seal-wash: #f6e7e2;
   --color-amber-wash: #f5ecd6;
-  --color-cham-deep: #1f4468;      /* badge text on chàm wash (8.4:1) */
+  --color-cham-deep: #1f4468; /* badge text on chàm wash (8.4:1) */
   --color-cham-wash: #e4ebf4;
-  --color-on-strong: #ffffff;      /* text on canopy/seal solids */
+  --color-on-strong: #ffffff; /* text on canopy/seal solids */
   --color-focus: var(--color-cham);
   /* The focus ring, for the two surfaces that are dark ink in BOTH themes: the
      rail and the status strip. Chàm on canopy measures 1.07:1 — a ring nobody
@@ -60,7 +62,7 @@
      away with. --color-line-strong was carrying both jobs and failing this
      one in both themes (1.92:1 light, 1.68:1 dark). Fields get their own
      edge; hairlines between rows keep the quieter token. */
-  --color-control-edge: #848c80;   /* 3.4:1 on surface */
+  --color-control-edge: #848c80; /* 3.4:1 on surface */
 
   /* --- State tones ----------------------------------------------------
      Five tones by MEANING, not one hue per enum value: thirty-odd states
@@ -111,11 +113,10 @@
        fc-list ':charset=1ec7' family | grep -i '<name>'
      Self-hosting a real Charter subset would be the nicer answer, and would
      replace this list rather than extend it. */
-  --font-display: "Noto Serif", "Source Serif 4", "Liberation Serif",
-    "DejaVu Serif", "Times New Roman", serif;
+  --font-display:
+    "Noto Serif", "Source Serif 4", "Liberation Serif", "DejaVu Serif", "Times New Roman", serif;
   /* Interface: quiet sans for nav, controls, tables, badges */
-  --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
+  --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Utility: machine text only — code blocks, a subscription URL, a key hint.
      NOT prose: Vietnamese stacks two marks on one vowel (ề ổ ẫ ậ), and a
      monospace em box is too tight to hold both, so the tone mark is squashed
@@ -127,8 +128,7 @@
      better monospace — see textarea.editor.
      Coverage rule still applies to what is left: check before adding a family.
        fc-list ':charset=1ec7' family | grep -i '<name>' */
-  --font-mono: "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono",
-    ui-monospace, monospace;
+  --font-mono: "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
 
   /* --- Rhythm -------------------------------------------------------- */
   /* One 4px-based spacing scale. Every gap, pad and margin on the CANVAS is a
@@ -166,17 +166,17 @@
   --color-on-dark: #ffffff;
 
   /* --- Workspace shell (rail / sidebar / statusbar) ------------------ */
-  --shell-rail-bg: #1b241f;        /* dark ink rail, VS Code activity bar */
+  --shell-rail-bg: #1b241f; /* dark ink rail, VS Code activity bar */
   --shell-rail-ink: #9db3a6;
   --shell-rail-active: #f2f4ee;
-  --shell-side-bg: #eceee6;        /* sidebar wash, one step off paper */
+  --shell-side-bg: #eceee6; /* sidebar wash, one step off paper */
   --shell-side-hover: #e0e4d8;
   --shell-side-active: #d8e4dc;
   /* The status strip's own height, named because two other things measure
      against it: the sticky task panel, and the drop-progress bar that must
      clear it. */
   --shell-status-h: 1.6rem;
-  --shell-status-bg: #1e6b4a;      /* canopy status strip */
+  --shell-status-bg: #1e6b4a; /* canopy status strip */
   --shell-status-ink: #e2eee6;
   --shell-veil: rgba(23, 29, 26, 0.45);
 
@@ -212,7 +212,7 @@
   --color-cham-deep: #8ab4dd;
   --color-cham-wash: #1b2a3a;
   --color-on-strong: #121714;
-  --color-control-edge: #69756d;   /* 3.3:1 on the dark surface */
+  --color-control-edge: #69756d; /* 3.3:1 on the dark surface */
 
   --shell-rail-bg: #101512;
   --shell-rail-ink: #7d9184;
@@ -229,7 +229,9 @@
      not a colour, so it needs no dark-mode value of its own. */
 }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
@@ -240,8 +242,16 @@ body {
   line-height: 1.5;
 }
 
-a { color: var(--color-canopy); text-decoration: none; transition: color var(--speed) ease; }
-a:hover { color: var(--color-canopy-deep); text-decoration: underline; text-underline-offset: 0.15em; }
+a {
+  color: var(--color-canopy);
+  text-decoration: none;
+  transition: color var(--speed) ease;
+}
+a:hover {
+  color: var(--color-canopy-deep);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
 
 /* ============================================================
    Topbar — Zone 1. The vermilion band on its top edge is the
@@ -268,7 +278,10 @@ header.topbar .brand {
   color: var(--color-ink);
   min-height: 2.75rem;
 }
-header.topbar .brand:hover { text-decoration: none; color: var(--color-seal-deep); }
+header.topbar .brand:hover {
+  text-decoration: none;
+  color: var(--color-seal-deep);
+}
 /* The seal (triện) — square vermilion stamp with the initials cut in white */
 .brand-mark {
   display: inline-flex;
@@ -280,7 +293,9 @@ header.topbar .brand:hover { text-decoration: none; color: var(--color-seal-deep
   background: var(--color-seal);
   color: var(--color-on-strong);
   border-radius: 4px;
-  box-shadow: inset 0 0 0 1.5px var(--color-on-strong), inset 0 0 0 3px var(--color-seal);
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-on-strong),
+    inset 0 0 0 3px var(--color-seal);
   font-family: var(--font-ui);
   font-size: 0.72rem;
   font-weight: 700;
@@ -322,13 +337,19 @@ main.page {
    the column when the column is what breaks, and the window only when the
    window is (the shell grid itself, and the rail's own buttons). */
 @container main (max-width: 40rem) {
-  main.page { padding: var(--space-5) var(--space-4) var(--space-6); }
+  main.page {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
   /* Reading matter yields its generous frame too, rather than spending a
      third of a 320px screen on padding. */
-  .md-content { padding: var(--space-4); }
+  .md-content {
+    padding: var(--space-4);
+  }
 }
 @media (max-width: 40rem) {
-  main.page { padding: var(--space-5) var(--space-4) var(--space-6); }
+  main.page {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
 }
 /* A work surface, not a text. The board's lanes and the knowledge map are read
    ACROSS — three columns of cards, a field of marks — and --page-max starves
@@ -343,8 +364,17 @@ main.page.wide {
   padding-left: var(--space-4);
   padding-right: var(--space-4);
 }
-main.page > p, main.page > ul, main.page > ol { margin: 0; }
-main.page > section { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+main.page > p,
+main.page > ul,
+main.page > ol {
+  margin: 0;
+}
+main.page > section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
 
 /* the card head rule belongs to the screen title only — never to an
    h1 that happens to appear inside rendered knowledge content */
@@ -374,14 +404,20 @@ main.page > h1::after {
   background: var(--color-seal);
 }
 
-main.page h2, .panel h2 {
+main.page h2,
+.panel h2 {
   font-family: var(--font-display);
   font-size: 1.16rem;
   font-weight: 700;
   line-height: 1.3;
   margin: 0;
 }
-main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; margin: 0; }
+main.page h3,
+.panel h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0;
+}
 
 /* ============================================================
    Section identity — ONE rule every surface inherits.
@@ -404,16 +440,20 @@ main.page h3, .panel h3 { font-family: var(--font-display); font-size: 1rem; mar
    is part of the author's prose, not a section of the interface,
    and must not be stamped as one.
    ============================================================ */
-main.page > h2, main.page > h3,
-.panel > h2, .panel > h3 {
+main.page > h2,
+main.page > h3,
+.panel > h2,
+.panel > h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
   margin: 0;
 }
-main.page > h2::before, main.page > h3::before,
-.panel > h2::before, .panel > h3::before,
+main.page > h2::before,
+main.page > h3::before,
+.panel > h2::before,
+.panel > h3::before,
 .side-sec > .side-label::before {
   content: "";
   flex: none;
@@ -425,7 +465,10 @@ main.page > h2::before, main.page > h3::before,
 }
 /* A subheading is a part of its section, not a new one, so it takes the tick
    at half weight and never the seam. */
-main.page > h3::before, .panel > h3::before { background: var(--color-line-strong); }
+main.page > h3::before,
+.panel > h3::before {
+  background: var(--color-line-strong);
+}
 /* The seam belongs to h2 only, and only when there is a section above to end.
    A panel's first heading needs none — the panel's own border already draws
    that boundary — and neither does the one that follows the h1's rule. */
@@ -435,7 +478,10 @@ main.page > h2:not(:first-child),
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-line);
 }
-main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: var(--space-3); }
+main.page > h3:not(:first-child),
+.panel > h3:not(:first-child) {
+  margin-top: var(--space-3);
+}
 
 /* ============================================================
    Panels — content and inspector surfaces.
@@ -470,11 +516,17 @@ main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: va
   align-items: stretch;
   gap: var(--space-4);
 }
-.panel > * { margin: 0; }
+.panel > * {
+  margin: 0;
+}
 /* A control sizes to its words. The panel's stretch is for tables, fields and
    text blocks; a lone button as a direct child was being pulled to the full
    panel width — a banner nobody designed ("Đề cử lên cây tri thức"). */
-.panel > button, .panel > .button, .panel > form > button { align-self: flex-start; }
+.panel > button,
+.panel > .button,
+.panel > form > button {
+  align-self: flex-start;
+}
 /* Headings open a section exactly as they do on the canvas, and by exactly the
    same rule — see "Section identity" above, which also gives a panel heading
    the flex row it needs to carry a badge or a link inline. */
@@ -491,23 +543,51 @@ main.page > h3:not(:first-child), .panel > h3:not(:first-child) { margin-top: va
   box-shadow: none;
   border-radius: 0;
 }
-.panel > .record-scroll th:first-child, .panel > .record-scroll td:first-child { padding-left: var(--space-5); }
-.panel > .record-scroll th:last-child, .panel > .record-scroll td:last-child { padding-right: var(--space-5); }
-.panel > .record-scroll:last-child tr:last-child td { border-bottom: none; }
+.panel > .record-scroll th:first-child,
+.panel > .record-scroll td:first-child {
+  padding-left: var(--space-5);
+}
+.panel > .record-scroll th:last-child,
+.panel > .record-scroll td:last-child {
+  padding-right: var(--space-5);
+}
+.panel > .record-scroll:last-child tr:last-child td {
+  border-bottom: none;
+}
 /* a panel that is nothing but a table is a frame around it */
-.panel:has(> .record-scroll:only-child) { padding: 0; overflow: hidden; }
-.panel:has(> .record-scroll:only-child) > .record-scroll { width: 100%; margin-left: 0; }
+.panel:has(> .record-scroll:only-child) {
+  padding: 0;
+  overflow: hidden;
+}
+.panel:has(> .record-scroll:only-child) > .record-scroll {
+  width: 100%;
+  margin-left: 0;
+}
 .panel:has(> .record-scroll:only-child) th:first-child,
-.panel:has(> .record-scroll:only-child) td:first-child { padding-left: var(--space-4); }
+.panel:has(> .record-scroll:only-child) td:first-child {
+  padding-left: var(--space-4);
+}
 .panel:has(> .record-scroll:only-child) th:last-child,
-.panel:has(> .record-scroll:only-child) td:last-child { padding-right: var(--space-4); }
+.panel:has(> .record-scroll:only-child) td:last-child {
+  padding-right: var(--space-4);
+}
 /* list rows keep their badges in the text flow — a badge trails the
    title on the same line and only wraps when the title does */
-.panel li { line-height: 1.55; }
-.panel li .badge, main.page li .badge { margin-left: var(--space-1); }
+.panel li {
+  line-height: 1.55;
+}
+.panel li .badge,
+main.page li .badge {
+  margin-left: var(--space-1);
+}
 
 /* Lists read as lists, not as indented blocks */
-main.page ul, main.page ol, .panel ul, .panel ol { padding-left: 1.15rem; }
+main.page ul,
+main.page ol,
+.panel ul,
+.panel ol {
+  padding-left: 1.15rem;
+}
 /* Scoped to lists that are actually lists — a <ul> with no class of its own.
    Unscoped, this rule reached into every flex list in the app and stacked its
    margin ON TOP of the container's gap: ul.login-people (gap: 8px) rendered
@@ -517,7 +597,9 @@ main.page ul, main.page ol, .panel ul, .panel ol { padding-left: 1.15rem; }
 .panel > ul:not([class]) > li + li,
 .panel > ol:not([class]) > li + li,
 main.page > ul:not([class]) > li + li,
-main.page > ol:not([class]) > li + li { margin-top: var(--space-2); }
+main.page > ol:not([class]) > li + li {
+  margin-top: var(--space-2);
+}
 
 /* Small print under a title. The metadata role for 0.85rem muted text —
    .comment-meta, .field-help and .breadcrumb were three more names for it and
@@ -534,13 +616,20 @@ main.page > ol:not([class]) > li + li { margin-top: var(--space-2); }
   margin: 0;
 }
 /* in a list, metadata is the second line of the entry, not a run-on */
-li > .meta { display: block; margin-top: var(--space-1); }
+li > .meta {
+  display: block;
+  margin-top: var(--space-1);
+}
 /* One extracted chunk: its reference chip and the text under it. The space
    BETWEEN chunks belongs to the panel that holds them, not to the chunks —
    `.stack-item + .stack-item { margin-top }` out-specified `.panel > * {
    margin: 0 }` and added itself to the panel's gap, so chunks stood 28px
    apart while everything else in the same panel stood 16px. */
-.stack-item { display: flex; flex-direction: column; gap: var(--space-2); }
+.stack-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
 
 /* ============================================================
    Tables — the card drawer. Column labels set like the small
@@ -555,7 +644,8 @@ table.list {
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-table.list th, table.list td {
+table.list th,
+table.list td {
   text-align: left;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-line);
@@ -570,9 +660,15 @@ table.list th {
   border-bottom: 2px solid var(--color-line-strong);
   background: var(--color-surface);
 }
-table.list tbody tr { transition: background-color var(--speed) ease; }
-table.list tbody tr:hover { background: var(--color-paper); }
-table.list tbody tr:last-child td { border-bottom: none; }
+table.list tbody tr {
+  transition: background-color var(--speed) ease;
+}
+table.list tbody tr:hover {
+  background: var(--color-paper);
+}
+table.list tbody tr:last-child td {
+  border-bottom: none;
+}
 
 /* ============================================================
    Badges — stamped state marks. Always colour + text label, never
@@ -681,9 +777,25 @@ table.list tbody tr:last-child td { border-bottom: none; }
    ============================================================ */
 /* Forms are vertical flows too; .inline is the toolbar variant.
    Controls size to their content — only fields stretch. */
-form { display: flex; flex-direction: column; gap: var(--space-4); align-items: flex-start; margin: 0; min-width: 0; }
-form > .field, form > fieldset, form > table { align-self: stretch; }
-form.inline { flex-direction: row; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+  margin: 0;
+  min-width: 0;
+}
+form > .field,
+form > fieldset,
+form > table {
+  align-self: stretch;
+}
+form.inline {
+  flex-direction: row;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
 
 /* Every field the app actually renders belongs here. A type left out of this
    list does not fall back to something plausible — it renders raw browser
@@ -693,9 +805,17 @@ form.inline { flex-direction: row; gap: var(--space-2); flex-wrap: wrap; align-i
    rebuilding that form's layout did not fix it, because the fault was here.
    `password`, `tel` and `url` are listed although nothing renders them yet:
    the next person to add one should get a styled field, not this bug again. */
-input[type="text"], input[type="search"], input[type="date"],
-input[type="datetime-local"], input[type="number"], input[type="email"],
-input[type="password"], input[type="tel"], input[type="url"], select, textarea {
+input[type="text"],
+input[type="search"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
   padding: 0.5rem 0.7rem;
   min-height: 2.75rem;
   /* A <select> sizes to its longest option, so one long space name pushed the
@@ -708,10 +828,36 @@ input[type="password"], input[type="tel"], input[type="url"], select, textarea {
   background: var(--color-surface);
   transition: border-color var(--speed) ease;
 }
-input:hover, select:hover, textarea:hover { border-color: var(--color-ink-muted); }
-input::placeholder, textarea::placeholder { color: var(--color-ink-muted); opacity: 1; }
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--color-ink-muted);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-ink-muted);
+  opacity: 1;
+}
 
-button, .button {
+.skeleton {
+  background: var(--color-surface, rgba(0, 0, 0, 0.05));
+  border-radius: var(--radius, 4px);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+button,
+.button,
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -724,41 +870,99 @@ button, .button {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--speed) ease, border-color var(--speed) ease,
+  transition:
+    background-color var(--speed) ease,
+    border-color var(--speed) ease,
     color var(--speed) ease;
 }
-button:hover, .button:hover { background: var(--color-canopy-deep); border-color: var(--color-canopy-deep); }
+button:hover,
+.button:hover {
+  background: var(--color-canopy-deep);
+  border-color: var(--color-canopy-deep);
+}
 /* The variants match .button too, not just <button>: a Link and a <label> both
    wear .button in this app, and an element-scoped selector silently rendered
    them as filled primaries — the file-picker trigger was one. */
-:is(button, .button).secondary { background: var(--color-surface); color: var(--color-canopy); }
-:is(button, .button).secondary:hover { background: var(--color-canopy-wash); color: var(--color-canopy-deep); }
-:is(button, .button).danger { background: var(--color-surface); color: var(--color-seal-deep); border-color: var(--color-seal); }
-:is(button, .button).danger:hover { background: var(--color-seal-wash); }
-button:disabled { opacity: 0.5; cursor: default; }
-button:disabled:hover { background: var(--color-canopy); border-color: var(--color-canopy); }
-button.secondary:disabled:hover { background: var(--color-surface); color: var(--color-canopy); }
-button.danger:disabled:hover { background: var(--color-surface); }
+:is(button, .button).secondary {
+  background: var(--color-surface);
+  color: var(--color-canopy);
+}
+:is(button, .button).secondary:hover {
+  background: var(--color-canopy-wash);
+  color: var(--color-canopy-deep);
+}
+:is(button, .button).danger {
+  background: var(--color-surface);
+  color: var(--color-seal-deep);
+  border-color: var(--color-seal);
+}
+:is(button, .button).danger:hover {
+  background: var(--color-seal-wash);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button:disabled:hover {
+  background: var(--color-canopy);
+  border-color: var(--color-canopy);
+}
+button.secondary:disabled:hover {
+  background: var(--color-surface);
+  color: var(--color-canopy);
+}
+button.danger:disabled:hover {
+  background: var(--color-surface);
+}
 
-.field { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; max-width: 34rem; width: 100%; }
-.field.wide { max-width: none; }
-.field label { font-size: 0.88rem; font-weight: 600; color: var(--color-ink-muted); }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  max-width: 34rem;
+  width: 100%;
+}
+.field.wide {
+  max-width: none;
+}
+.field label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
 
 /* The file control is the one field the browser fills with its own words, in
    its own language — "Browse… / No file selected." in an app that is Vietnamese
    everywhere else. So the input is hidden behind a label styled as a button and
    the form prints the chosen name itself. Focus still lands on the real input,
    so the label wears the ring on its behalf. */
-.file-field { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
-.file-field:focus-within > .button { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.file-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.file-field:focus-within > .button {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
 
-.error-text { color: var(--color-seal-deep); margin: 0; }
+.error-text {
+  color: var(--color-seal-deep);
+  margin: 0;
+}
 /* Its counterpart: a mutation that worked must not be reported in the colour
    reserved for failure. (.ok-text was a third name for this same rule, used by
    nothing, and .success-text was declared twice — once here, once beside the
    upload progress bar.) */
-.success-text { color: var(--color-canopy-deep); margin: 0; }
-.muted { color: var(--color-ink-muted); }
+.success-text {
+  color: var(--color-canopy-deep);
+  margin: 0;
+}
+.muted {
+  color: var(--color-ink-muted);
+}
 .cards {
   display: grid;
   /* min(17rem, 100%), not 17rem: a grid track cannot shrink below its minimum,
@@ -776,11 +980,25 @@ button.danger:disabled:hover { background: var(--color-surface); }
    they must break on the column's width, not the window's —
    hence container queries on .main-area.
    ============================================================ */
-.split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
-.with-side { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: var(--space-5); align-items: start; }
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+.with-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  gap: var(--space-5);
+  align-items: start;
+}
 /* every zone child stacks its own blocks on the same scale */
-.split > *, .with-side > * { min-width: 0; }
-.split > :not(.board-columns), .with-side > :not(.board-columns) {
+.split > *,
+.with-side > * {
+  min-width: 0;
+}
+.split > :not(.board-columns),
+.with-side > :not(.board-columns) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -791,7 +1009,10 @@ button.danger:disabled:hover { background: var(--color-surface); }
    collapsed the grid. A rule that can only ever agree with the rule above it
    is not a fallback, it is a second number to keep in sync. */
 @container main (max-width: 58rem) {
-  .split, .with-side { grid-template-columns: minmax(0, 1fr); }
+  .split,
+  .with-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ============================================================
@@ -810,21 +1031,71 @@ button.danger:disabled:hover { background: var(--color-surface); }
 }
 /* keep the reading column at a comfortable measure even when the
    workspace column is wide */
-.md-content > * { max-width: var(--reading-measure); }
-.md-content > :first-child { margin-top: 0; }
-.md-content > :last-child { margin-bottom: 0; }
-.md-content h1 { font-size: 1.35rem; line-height: 1.3; margin: var(--space-5) 0 var(--space-2); }
-.md-content h2 { font-size: 1.15rem; line-height: 1.3; margin: var(--space-5) 0 var(--space-2); }
-.md-content h3 { font-size: 1rem; margin: var(--space-4) 0 var(--space-2); }
-.md-content p { margin: 0 0 var(--space-4); }
-.md-content ul, .md-content ol { margin: 0 0 var(--space-4); padding-left: 1.4rem; }
-.md-content li + li { margin-top: var(--space-1); }
-.md-content code { font-family: var(--font-mono); font-size: 0.88em; background: var(--color-surface-sunken); padding: 0.05em 0.3em; border-radius: 3px; }
-.md-content pre { background: var(--color-surface-sunken); border-radius: var(--radius); padding: 0.8rem 1rem; overflow-x: auto; }
-.md-content pre code { background: none; padding: 0; }
-.md-content blockquote { margin: 0.8rem 0; padding: 0.1rem 0 0.1rem 0.9rem; border-left: 3px solid var(--color-line-strong); color: var(--color-ink-muted); }
-.md-content table { border-collapse: collapse; }
-.md-content th, .md-content td { border: 1px solid var(--color-line); padding: 0.35rem 0.6rem; }
+.md-content > * {
+  max-width: var(--reading-measure);
+}
+.md-content > :first-child {
+  margin-top: 0;
+}
+.md-content > :last-child {
+  margin-bottom: 0;
+}
+.md-content h1 {
+  font-size: 1.35rem;
+  line-height: 1.3;
+  margin: var(--space-5) 0 var(--space-2);
+}
+.md-content h2 {
+  font-size: 1.15rem;
+  line-height: 1.3;
+  margin: var(--space-5) 0 var(--space-2);
+}
+.md-content h3 {
+  font-size: 1rem;
+  margin: var(--space-4) 0 var(--space-2);
+}
+.md-content p {
+  margin: 0 0 var(--space-4);
+}
+.md-content ul,
+.md-content ol {
+  margin: 0 0 var(--space-4);
+  padding-left: 1.4rem;
+}
+.md-content li + li {
+  margin-top: var(--space-1);
+}
+.md-content code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-surface-sunken);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+.md-content pre {
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  overflow-x: auto;
+}
+.md-content pre code {
+  background: none;
+  padding: 0;
+}
+.md-content blockquote {
+  margin: 0.8rem 0;
+  padding: 0.1rem 0 0.1rem 0.9rem;
+  border-left: 3px solid var(--color-line-strong);
+  color: var(--color-ink-muted);
+}
+.md-content table {
+  border-collapse: collapse;
+}
+.md-content th,
+.md-content td {
+  border: 1px solid var(--color-line);
+  padding: 0.35rem 0.6rem;
+}
 
 /* Extracted/corrected source text: also reading matter */
 pre.raw-text,
@@ -860,7 +1131,12 @@ textarea.editor {
 /* ============================================================
    Stats — small counting cards
    ============================================================ */
-.stat-row { display: flex; gap: var(--space-3); flex-wrap: wrap; margin: 0; }
+.stat-row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0;
+}
 .stat-row .stat {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
@@ -883,8 +1159,12 @@ textarea.editor {
    Accessibility floor: keyboard focus is always visible,
    in chàm indigo so it is never confused with state color.
    ============================================================ */
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
-textarea:focus-visible, [tabindex]:focus-visible {
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--radius);
@@ -914,7 +1194,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
   font-weight: 600;
   transform: translateY(-200%);
 }
-.skip-link:focus-visible { transform: none; text-decoration: none; }
+.skip-link:focus-visible {
+  transform: none;
+  text-decoration: none;
+}
 
 /* --- The 44px floor, where the pointer is coarse -------------------------
    The app's primary controls carry the floor at every size. This block is for
@@ -922,19 +1205,43 @@ textarea:focus-visible, [tabindex]:focus-visible {
    on a finger are 22-36px targets. One list, so a new compact control is one
    line away from the floor instead of a new media query. */
 @media (pointer: coarse) {
-  .statusbar { min-height: 2.75rem; }
-  .statusbar button, .statusbar button.secondary, .statusbar .sb-item { min-height: 2.75rem; }
-  a.tree-item, button.tree-item,
-  a.pal-item, button.pal-item,
+  .statusbar {
+    min-height: 2.75rem;
+  }
+  .statusbar button,
+  .statusbar button.secondary,
+  .statusbar .sb-item {
+    min-height: 2.75rem;
+  }
+  a.tree-item,
+  button.tree-item,
+  a.pal-item,
+  button.pal-item,
   button.searchbox,
   .comment-reply-btn,
   .board-card .board-actions button,
-  .graph-check { min-height: 2.75rem; }
-  .side-sec > .side-label a { min-width: 2.75rem; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; }
+  .graph-check {
+    min-height: 2.75rem;
+  }
+  .side-sec > .side-label a {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .graph-panel > summary,
-  .disclosure > summary { min-height: 3rem; }
-  .checkbox-row, .graph-check { align-items: center; }
-  input[type="checkbox"] { width: 1.35rem; height: 1.35rem; }
+  .disclosure > summary {
+    min-height: 3rem;
+  }
+  .checkbox-row,
+  .graph-check {
+    align-items: center;
+  }
+  input[type="checkbox"] {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
 }
 
 .notice {
@@ -946,21 +1253,68 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding: var(--space-3) var(--space-4);
   margin: 0;
 }
-.checkbox-row { display: flex; gap: var(--space-2); align-items: baseline; margin: 0; }
-fieldset.plain { border: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color: var(--color-ink-muted); }
-.button-row { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; margin: 0; }
+.checkbox-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  margin: 0;
+}
+fieldset.plain {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+fieldset.plain legend {
+  padding: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
+.button-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+}
 
 /* ============================================================
    Comments — margin notes on the object's record
    ============================================================ */
-.comment-list { list-style: none; margin: 0; padding: 0; }
-.comment { border-top: 1px solid var(--color-line); padding: var(--space-3) 0 0; }
-.comment:first-child { border-top: none; padding-top: 0; }
-.comment-list .comment-list { margin: var(--space-3) 0 0 var(--space-2); padding-left: var(--space-3); border-left: 2px solid var(--color-line-strong); }
-.comment-list .comment-list .comment { border-top: none; padding-top: var(--space-2); }
-.comment-body { margin: var(--space-1) 0 var(--space-2); white-space: pre-wrap; }
-.comment-reply-btn { min-height: 2.25rem; padding: 0.1rem 0.7rem; font-size: 0.82rem; }
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.comment {
+  border-top: 1px solid var(--color-line);
+  padding: var(--space-3) 0 0;
+}
+.comment:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.comment-list .comment-list {
+  margin: var(--space-3) 0 0 var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-line-strong);
+}
+.comment-list .comment-list .comment {
+  border-top: none;
+  padding-top: var(--space-2);
+}
+.comment-body {
+  margin: var(--space-1) 0 var(--space-2);
+  white-space: pre-wrap;
+}
+.comment-reply-btn {
+  min-height: 2.25rem;
+  padding: 0.1rem 0.7rem;
+  font-size: 0.82rem;
+}
 /* An @Tên written in the body reads as a resolved name, not a link: it marks
    who was pulled in, and there is nowhere to go from a person's name. */
 .mention-token {
@@ -985,7 +1339,9 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
   box-shadow: var(--shadow-card);
   max-width: 34rem;
 }
-.mention-list li + li { margin-top: 1px; }
+.mention-list li + li {
+  margin-top: 1px;
+}
 /* The row is the option (an <li>), not a button inside one — an option may not
    contain a focusable element, and the keyboard drives this list from the
    textarea. So it keeps the button's shape and gains the pointer that says it
@@ -1002,7 +1358,8 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
   font-weight: 400;
   cursor: pointer;
 }
-.mention-option:hover, .mention-option.sel {
+.mention-option:hover,
+.mention-option.sel {
   background: var(--color-canopy-wash);
   border-color: transparent;
   color: var(--color-canopy-deep);
@@ -1013,18 +1370,36 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
    A ledger, not a conversation: label left, fact right, one row
    per event in the ticket's life.
    ============================================================ */
-.record { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-5); }
-.record dt { font-size: 0.88rem; font-weight: 600; color: var(--color-ink-muted); }
-.record dd { margin: 0; }
+.record {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-5);
+}
+.record dt {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
+.record dd {
+  margin: 0;
+}
 /* the ledger stacks rather than squeezing the value column on a phone */
 @container main (max-width: 30rem) {
-  .record { grid-template-columns: 1fr; gap: var(--space-1); }
-  .record dd { margin-bottom: var(--space-2); }
+  .record {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+  .record dd {
+    margin-bottom: var(--space-2);
+  }
 }
 /* The card drawer slides sideways. Every table.list in the app is wrapped in
    this: on a phone the alternative is not a narrower table, it is columns
    crushed to one word per line with the last one clipped off-screen. */
-.record-scroll { overflow-x: auto; }
+.record-scroll {
+  overflow-x: auto;
+}
 /* A caption a screen reader hears and a sighted reader does not need twice.
    ---------------------------------------------------------------------------
    `top: 0; left: 0` is not decoration — it is what stops this rule from adding
@@ -1044,23 +1419,35 @@ fieldset.plain legend { padding: 0; font-size: 0.88rem; font-weight: 600; color:
    anything. It is 1px and clipped, so where it sits is invisible either way. */
 .sr-only {
   position: absolute;
-  top: 0; left: 0;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.record-scroll > table.list { min-width: 40rem; }
+.record-scroll > table.list {
+  min-width: 40rem;
+}
 /* Overdue is stated in words (badge label + this note), never by colour. */
-.record .overdue-note { color: var(--color-seal-deep); font-weight: 600; }
+.record .overdue-note {
+  color: var(--color-seal-deep);
+  font-weight: 600;
+}
 
 /* ============================================================
    Notifications
    ============================================================ */
 /* The unread count lives on the rail now (.pip); the old topbar bell is gone. */
-tr.notification-unread td { background: var(--color-canopy-wash); }
-tr.notification-unread:hover td { background: var(--color-canopy-wash); }
+tr.notification-unread td {
+  background: var(--color-canopy-wash);
+}
+tr.notification-unread:hover td {
+  background: var(--color-canopy-wash);
+}
 
 /* The jump-to link fills its row so the whole sentence is the target and
    the tap area clears the 44px floor without a fake full-row click handler. */
@@ -1071,7 +1458,9 @@ tr.notification-unread:hover td { background: var(--color-canopy-wash); }
   text-decoration-thickness: 1px;
   text-underline-offset: 0.18em;
 }
-.notification-link .muted { color: var(--color-ink-muted); }
+.notification-link .muted {
+  color: var(--color-ink-muted);
+}
 /* Unread reads as unread on the home panel too, where rows are <li>, not
    table cells: the vermilion tick is the same mark the card head rule uses. */
 li.notification-unread {
@@ -1080,7 +1469,9 @@ li.notification-unread {
   padding-left: calc(1.15rem - 3px);
   border-left: 3px solid var(--color-seal);
 }
-li.notification-unread .notification-link { font-weight: 600; }
+li.notification-unread .notification-link {
+  font-weight: 600;
+}
 
 /* A comment opened from a notification (#comment-<id>) announces itself
    briefly, then settles — the highlight is the answer to "which one?". */
@@ -1090,27 +1481,45 @@ li.notification-unread .notification-link { font-weight: 600; }
   box-shadow: 0 0 0 var(--space-2) var(--color-canopy-wash);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .comment-targeted { animation: comment-arrive 1.2s ease-out 1; }
+  .comment-targeted {
+    animation: comment-arrive 1.2s ease-out 1;
+  }
 }
 @keyframes comment-arrive {
-  from { background: var(--color-amber-wash); box-shadow: 0 0 0 var(--space-2) var(--color-amber-wash); }
+  from {
+    background: var(--color-amber-wash);
+    box-shadow: 0 0 0 var(--space-2) var(--color-amber-wash);
+  }
 }
 
 /* ============================================================
    Board — work in three columns
    ============================================================ */
-.board-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
+.board-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
 /* The lanes break on the surface that holds them, not on the whole column.
    With a task open, .board-surface is the column minus a 24rem panel and the
    gap — so on a 82rem window the lanes still had "room" by the column's
    reckoning and split 34rem three ways: about 118px of Vietnamese per card,
    the narrowest text in the app. The surface is its own container now, so it
    answers for its own width. */
-@container surface (max-width: 46rem) { .board-columns { grid-template-columns: minmax(0, 1fr); } }
+@container surface (max-width: 46rem) {
+  .board-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 /* a lane is a panel whose body is a stack of cards: tighter padding so
    the cards, not the chrome, get the column's width */
-.board-columns > .panel { padding: var(--space-4); }
-.board-columns > .panel { gap: var(--space-3); }
+.board-columns > .panel {
+  padding: var(--space-4);
+}
+.board-columns > .panel {
+  gap: var(--space-3);
+}
 .board-card {
   border: 1px solid var(--color-line);
   border-left: 3px solid var(--color-line-strong);
@@ -1123,8 +1532,17 @@ li.notification-unread .notification-link { font-weight: 600; }
   flex-direction: column;
   gap: var(--space-2);
 }
-.board-card .board-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin: 0; }
-.board-card .board-actions button { min-height: 2.25rem; padding: 0.1rem 0.7rem; font-size: 0.82rem; }
+.board-card .board-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0;
+}
+.board-card .board-actions button {
+  min-height: 2.25rem;
+  padding: 0.1rem 0.7rem;
+  font-size: 0.82rem;
+}
 
 code.ics-url {
   display: block;
@@ -1144,7 +1562,10 @@ code.ics-url {
    The vermilion band moves from the topbar to the rail's top edge;
    the brand seal becomes the rail's first mark.
    ============================================================ */
-html, body { height: 100%; }
+html,
+body {
+  height: 100%;
+}
 
 .shell {
   display: grid;
@@ -1161,8 +1582,13 @@ html, body { height: 100%; }
   grid-template-areas: "rail side main" "status status status";
 }
 @media (max-width: 56rem) {
-  .shell { grid-template-columns: 3.25rem minmax(0, 1fr); grid-template-areas: "rail main" "status status"; }
-  .shell .sidebar { display: none; }
+  .shell {
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    grid-template-areas: "rail main" "status status";
+  }
+  .shell .sidebar {
+    display: none;
+  }
 }
 
 /* The content column is the query container: screens break on the space
@@ -1187,8 +1613,11 @@ html, body { height: 100%; }
   gap: 0.1rem;
   overflow-y: auto;
 }
-.rail .brand-mark { margin-bottom: 0.6rem; }
-.rail a.rail-btn, .rail button.rail-btn {
+.rail .brand-mark {
+  margin-bottom: 0.6rem;
+}
+.rail a.rail-btn,
+.rail button.rail-btn {
   position: relative;
   display: grid;
   place-items: center;
@@ -1205,7 +1634,8 @@ html, body { height: 100%; }
   cursor: pointer;
   transition: color var(--speed) ease;
 }
-.rail a.rail-btn:hover, .rail button.rail-btn:hover {
+.rail a.rail-btn:hover,
+.rail button.rail-btn:hover {
   background: none;
   border-color: transparent;
   color: var(--shell-rail-active);
@@ -1242,12 +1672,15 @@ html, body { height: 100%; }
   text-align: center;
   font-family: var(--font-ui);
 }
-.rail .rail-spacer { flex: 1; }
+.rail .rail-spacer {
+  flex: 1;
+}
 /* One person, one disc, two sizes — see .rail .rail-avatar / .account-avatar
    below, which are this rule at --avatar-size. It was written out twice, and
    the two copies had already drifted: only one of them declared the interface
    face for the initials. */
-.rail .rail-avatar, .account-avatar {
+.rail .rail-avatar,
+.account-avatar {
   width: var(--avatar-size);
   height: var(--avatar-size);
   border-radius: 50%;
@@ -1263,7 +1696,11 @@ html, body { height: 100%; }
 /* The initials are sized per instance rather than as a fraction of the disc:
    the two ratios were never the same (0.39 in the rail, 0.35 on the account
    page), and a smaller disc needs the relatively larger letters. */
-.rail .rail-avatar { --avatar-size: 1.85rem; font-size: 0.72rem; margin: 0.35rem 0; }
+.rail .rail-avatar {
+  --avatar-size: 1.85rem;
+  font-size: 0.72rem;
+  margin: 0.35rem 0;
+}
 
 /* --- Sidebar -------------------------------------------------- */
 .sidebar {
@@ -1274,14 +1711,21 @@ html, body { height: 100%; }
   flex-direction: column;
   min-height: 0;
 }
-.side-head { padding: 0.8rem 0.9rem 0.65rem; border-bottom: 1px solid var(--color-line); }
+.side-head {
+  padding: 0.8rem 0.9rem 0.65rem;
+  border-bottom: 1px solid var(--color-line);
+}
 .side-head .space-name {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.98rem;
   color: var(--color-ink);
 }
-.side-head .space-sub { color: var(--color-ink-muted); font-size: 0.78rem; margin-top: 0.1rem; }
+.side-head .space-sub {
+  color: var(--color-ink-muted);
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
 button.searchbox {
   margin: 0.6rem 0.75rem 0.2rem;
   display: flex;
@@ -1299,7 +1743,11 @@ button.searchbox {
   font-size: 0.85rem;
   font-weight: 400;
 }
-button.searchbox:hover { background: var(--color-surface); border-color: var(--color-ink-muted); color: var(--color-ink); }
+button.searchbox:hover {
+  background: var(--color-surface);
+  border-color: var(--color-ink-muted);
+  color: var(--color-ink);
+}
 button.searchbox kbd {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -1309,7 +1757,11 @@ button.searchbox kbd {
   padding: 0.05rem 0.3rem;
   background: var(--color-surface-sunken);
 }
-.side-body { overflow-y: auto; flex: 1; padding: 0.2rem 0.5rem 1rem; }
+.side-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.2rem 0.5rem 1rem;
+}
 .side-switcher {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1350,7 +1802,9 @@ button.searchbox kbd {
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
 }
-.side-sec { margin-top: 0.7rem; }
+.side-sec {
+  margin-top: 0.7rem;
+}
 /* The sidebar's groups follow the same section rule as the canvas: a seam
    above the group and a tick beside its name. They used to differ from each
    other instead — two of the five carried an identity colour and the other
@@ -1358,7 +1812,10 @@ button.searchbox kbd {
    another row in the list above it. One appearance for all five: the reader
    should be able to tell a new group has started without knowing which group
    it is. */
-.side-sec + .side-sec { border-top: 1px solid var(--color-line); padding-top: 0.5rem; }
+.side-sec + .side-sec {
+  border-top: 1px solid var(--color-line);
+  padding-top: 0.5rem;
+}
 .side-sec > .side-label {
   display: flex;
   align-items: center;
@@ -1373,9 +1830,17 @@ button.searchbox kbd {
 /* The sidebar's group heading opens a section exactly as a canvas heading
    does, so it wears the same vermilion tick — the same rule, up in "Section
    identity", at the smaller size this smaller heading wants. */
-.side-sec > .side-label { --tick-w: 0.18rem; --tick-h: 0.85em; }
-.side-sec > .side-label a { margin-left: auto; font-size: 0.85rem; line-height: 1; }
-a.tree-item, button.tree-item {
+.side-sec > .side-label {
+  --tick-w: 0.18rem;
+  --tick-h: 0.85em;
+}
+.side-sec > .side-label a {
+  margin-left: auto;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+a.tree-item,
+button.tree-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -1392,7 +1857,8 @@ a.tree-item, button.tree-item {
   color: var(--color-ink);
   transition: background-color var(--speed) ease;
 }
-a.tree-item:hover, button.tree-item:hover {
+a.tree-item:hover,
+button.tree-item:hover {
   background: var(--shell-side-hover);
   border-color: transparent;
   color: var(--color-ink);
@@ -1403,15 +1869,39 @@ a.tree-item.active {
   color: var(--color-canopy-deep);
   font-weight: 600;
 }
-.tree-item .twisty { color: var(--color-ink-muted); font-size: 0.6rem; width: 0.7rem; flex: none; text-align: center; }
-.tree-item .node-state { margin-left: auto; flex: none; font-size: 0.62rem; }
-.tree-item.depth-1 { padding-left: 1.5rem; }
-.tree-item .item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-item .twisty {
+  color: var(--color-ink-muted);
+  font-size: 0.6rem;
+  width: 0.7rem;
+  flex: none;
+  text-align: center;
+}
+.tree-item .node-state {
+  margin-left: auto;
+  flex: none;
+  font-size: 0.62rem;
+}
+.tree-item.depth-1 {
+  padding-left: 1.5rem;
+}
+.tree-item .item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* dot legend for node verification in the explorer (color + title text) */
-.node-state.verified { color: var(--color-canopy); }
-.node-state.unverified { color: var(--color-amber); }
-.node-state.no_source { color: var(--color-ink-muted); }
-.node-state.source { color: var(--color-seal); }
+.node-state.verified {
+  color: var(--color-canopy);
+}
+.node-state.unverified {
+  color: var(--color-amber);
+}
+.node-state.no_source {
+  color: var(--color-ink-muted);
+}
+.node-state.source {
+  color: var(--color-seal);
+}
 
 /* --- Status bar ----------------------------------------------- */
 .statusbar {
@@ -1426,9 +1916,16 @@ a.tree-item.active {
   min-height: var(--shell-status-h);
   flex-wrap: wrap;
 }
-.statusbar .grow { flex: 1; }
-.statusbar a { color: inherit; }
-.statusbar a:hover { color: var(--color-on-dark); text-decoration: underline; }
+.statusbar .grow {
+  flex: 1;
+}
+.statusbar a {
+  color: inherit;
+}
+.statusbar a:hover {
+  color: var(--color-on-dark);
+  text-decoration: underline;
+}
 .statusbar .sb-item {
   display: inline-flex;
   align-items: center;
@@ -1443,8 +1940,11 @@ a.tree-item.active {
    horizontal scrollbar across the whole document with it. So the name is the
    one item allowed to wrap. Not `text-overflow: ellipsis`: .sb-item is an
    inline-flex, and ellipsis does not apply to a flex container's contents. */
-.statusbar .sb-me { white-space: normal; }
-.statusbar button, .statusbar button.secondary {
+.statusbar .sb-me {
+  white-space: normal;
+}
+.statusbar button,
+.statusbar button.secondary {
   background: none;
   border: none;
   color: inherit;
@@ -1453,13 +1953,16 @@ a.tree-item.active {
   font-size: 0.74rem;
   font-weight: 400;
 }
-.statusbar button:hover, .statusbar button.secondary:hover {
+.statusbar button:hover,
+.statusbar button.secondary:hover {
   background: none;
   border-color: transparent;
   color: var(--color-on-dark);
   text-decoration: underline;
 }
-:root[data-theme="dark"] .statusbar a:hover { color: var(--shell-rail-active); }
+:root[data-theme="dark"] .statusbar a:hover {
+  color: var(--shell-rail-active);
+}
 
 /* --- Command palette ------------------------------------------
    A native <dialog> opened with showModal(), like the confirm box: the focus
@@ -1479,7 +1982,9 @@ a.tree-item.active {
   box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
-dialog.palette::backdrop { background: var(--shell-veil); }
+dialog.palette::backdrop {
+  background: var(--shell-veil);
+}
 .palette input[type="text"] {
   width: 100%;
   border: none;
@@ -1498,8 +2003,16 @@ dialog.palette::backdrop { background: var(--shell-veil); }
   border-bottom: 2px solid var(--color-focus);
   padding-bottom: calc(0.85rem - 1px);
 }
-.palette .pal-list { max-height: 45vh; overflow-y: auto; padding: 0.25rem 0; }
-.palette .pal-empty { padding: 0.7rem 1rem; color: var(--color-ink-muted); font-size: 0.88rem; }
+.palette .pal-list {
+  max-height: 45vh;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+}
+.palette .pal-empty {
+  padding: 0.7rem 1rem;
+  color: var(--color-ink-muted);
+  font-size: 0.88rem;
+}
 button.pal-item {
   display: flex;
   align-items: center;
@@ -1516,14 +2029,24 @@ button.pal-item {
   font-weight: 400;
   color: var(--color-ink);
 }
-button.pal-item:hover, .pal-item.sel {
+button.pal-item:hover,
+.pal-item.sel {
   background: var(--color-canopy-wash);
   border-color: transparent;
   color: var(--color-canopy-deep);
   text-decoration: none;
 }
-.pal-item .pal-cat { margin-left: auto; flex: none; color: var(--color-ink-muted); font-size: 0.72rem; }
-.pal-item .item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-item .pal-cat {
+  margin-left: auto;
+  flex: none;
+  color: var(--color-ink-muted);
+  font-size: 0.72rem;
+}
+.pal-item .item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* --- Confirm dialog ------------------------------------------
    A destructive act asks first, on the same dó paper as a panel and
@@ -1544,7 +2067,9 @@ dialog.confirm {
   box-shadow: var(--shadow-modal);
   font-family: var(--font-ui);
 }
-dialog.confirm::backdrop { background: var(--shell-veil); }
+dialog.confirm::backdrop {
+  background: var(--shell-veil);
+}
 dialog.confirm h2 {
   margin: 0;
   font-family: var(--font-display);
@@ -1553,18 +2078,28 @@ dialog.confirm h2 {
 }
 /* The consequence is the point of the box, so it is read in full ink, not
    muted like ordinary metadata. */
-dialog.confirm p { margin: var(--space-3) 0 0; line-height: 1.55; }
-dialog.confirm .confirm-actions { margin-top: var(--space-5); justify-content: flex-end; }
+dialog.confirm p {
+  margin: var(--space-3) 0 0;
+  line-height: 1.55;
+}
+dialog.confirm .confirm-actions {
+  margin-top: var(--space-5);
+  justify-content: flex-end;
+}
 
 /* Signed-out chrome (login page): the old topbar, brand only */
-.plain-shell { min-height: 100vh; }
+.plain-shell {
+  min-height: 100vh;
+}
 
 /* ============================================================
    Motion discipline: 160ms color/background transitions only;
    fully quieted when the reader asks for reduced motion.
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -1591,7 +2126,11 @@ dialog.confirm .confirm-actions { margin-top: var(--space-5); justify-content: f
    link says both "this is a page" and "this is how verified it is".
    Scoped to the dot, not to .md-content: the same link appears in the backlink
    panels, where the dot was landing hard against the preceding word. */
-a.wiki-link .node-state, .link-list .node-state { font-size: 0.6em; margin-right: 0.35em; }
+a.wiki-link .node-state,
+.link-list .node-state {
+  font-size: 0.6em;
+  margin-right: 0.35em;
+}
 /* A target with no page yet: readable, obviously not a link, and it says
    what is missing on hover and to assistive tech. */
 .wiki-missing {
@@ -1601,7 +2140,10 @@ a.wiki-link .node-state, .link-list .node-state { font-size: 0.6em; margin-right
 }
 
 /* --- Preview card (hover AND keyboard focus) ------------------- */
-:root { --node-card-w: 18rem; --node-card-h: 10rem; }
+:root {
+  --node-card-w: 18rem;
+  --node-card-h: 10rem;
+}
 .node-card {
   position: fixed;
   z-index: 60;
@@ -1638,22 +2180,40 @@ a.wiki-link .node-state, .link-list .node-state { font-size: 0.6em; margin-right
   font-size: 0.92rem;
   color: var(--color-ink);
 }
-.node-card .node-card-state { color: var(--color-ink-muted); font-size: 0.7rem; margin-left: auto; }
-.node-card .node-card-body { display: block; color: var(--color-ink-muted); }
+.node-card .node-card-state {
+  color: var(--color-ink-muted);
+  font-size: 0.7rem;
+  margin-left: auto;
+}
+.node-card .node-card-body {
+  display: block;
+  color: var(--color-ink-muted);
+}
 @media (prefers-reduced-motion: no-preference) {
-  .node-card { animation: node-card-in var(--speed) ease-out; }
+  .node-card {
+    animation: node-card-in var(--speed) ease-out;
+  }
   @keyframes node-card-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }
 
 /* --- Sidebar: node rows read as pages, not files ---------------- */
-a.tree-item.node-item .node-state { margin-left: 0; margin-right: 0.1rem; }
+a.tree-item.node-item .node-state {
+  margin-left: 0;
+  margin-right: 0.1rem;
+}
 /* The two identity colours that used to live here are gone: they made two of
    the five group headings louder than the other three, which is the fault the
    owner reported. Every group heading now looks the same (see .side-label). */
-a.tree-item.nav-item { font-weight: 500; }
+a.tree-item.nav-item {
+  font-weight: 500;
+}
 
 /* --- Backlink / outgoing link lists ---------------------------- */
 /* A backlink is two lines — the page's title and the sentence it was
@@ -1683,10 +2243,14 @@ a.tree-item.nav-item { font-weight: 500; }
    simulation loop, so nothing below animates node positions in CSS — the only
    CSS motion here is colour, which the global reduced-motion rule already
    quiets. */
-.map-wrap { display: block; }
+.map-wrap {
+  display: block;
+}
 /* The panel's positioning context. Nothing else about the stage: the map keeps
    its own width and the panel is absolutely placed inside it. */
-.map-stage { position: relative; }
+.map-stage {
+  position: relative;
+}
 
 /* Tùy chỉnh bản đồ — the control panel, floated over the top-right of the
    canvas (owner decision, 2026-07-21: match Obsidian). Still the app's own
@@ -1740,7 +2304,9 @@ a.tree-item.nav-item { font-weight: 500; }
   list-style: none;
 }
 .graph-panel > summary::-webkit-details-marker,
-.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
 /* Chevron drawn from borders: no glyph, no icon font, inherits the text colour.
    One rule for every disclosure in the app — the map's panel, the board's
    create form, and the panel's own sections, which had a byte-identical copy
@@ -1759,7 +2325,9 @@ a.tree-item.nav-item { font-weight: 500; }
 }
 .graph-panel[open] > summary::before,
 .disclosure[open] > summary::before,
-.gp-section[open] > summary::before { transform: rotate(45deg); }
+.gp-section[open] > summary::before {
+  transform: rotate(45deg);
+}
 /* <summary> is not in the app-wide focus rule's selector list — it is not a
    link, a button or a field — so every disclosure in the file states its ring
    here, once, rather than three times in three places. The offset is inward:
@@ -1800,12 +2368,19 @@ a.tree-item.nav-item { font-weight: 500; }
   line-height: 1;
   cursor: pointer;
 }
-.gp-icon:hover { background: var(--color-surface-sunken); color: var(--color-ink); }
-.gp-icon:focus-visible { outline-offset: 1px; } /* the ring itself comes from the app-wide rule */
+.gp-icon:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink);
+}
+.gp-icon:focus-visible {
+  outline-offset: 1px;
+} /* the ring itself comes from the app-wide rule */
 
 /* A section of the panel. Collapsible, because a reader tuning the forces does
    not also need the four link-type checkboxes on screen. */
-.gp-section { border-top: 1px solid var(--color-line); }
+.gp-section {
+  border-top: 1px solid var(--color-line);
+}
 .gp-section > summary {
   display: flex;
   align-items: center;
@@ -1818,10 +2393,14 @@ a.tree-item.nav-item { font-weight: 500; }
   cursor: pointer;
   list-style: none;
 }
-.gp-section > summary::-webkit-details-marker { display: none; }
+.gp-section > summary::-webkit-details-marker {
+  display: none;
+}
 /* A section inside the panel is a smaller heading, so it gets a smaller
    chevron — the size is all that differs, and it is now all that is said. */
-.gp-section { --chevron: 0.35rem; }
+.gp-section {
+  --chevron: 0.35rem;
+}
 .gp-section-body {
   display: flex;
   flex-direction: column;
@@ -1830,7 +2409,11 @@ a.tree-item.nav-item { font-weight: 500; }
 }
 /* One slider row: name above, track below, full width. A label beside a range
    input inside a 16rem card leaves the track too short to aim with. */
-.gp-slider { display: flex; flex-direction: column; gap: 0.15rem; }
+.gp-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
 .gp-slider > label {
   font-family: var(--font-ui);
   font-size: 0.78rem;
@@ -1847,7 +2430,9 @@ a.tree-item.nav-item { font-weight: 500; }
   font-size: 0.72rem;
   line-height: 1.5;
 }
-.gp-wide { width: 100%; }
+.gp-wide {
+  width: 100%;
+}
 
 .graph-group {
   display: flex;
@@ -1879,7 +2464,9 @@ a.tree-item.nav-item { font-weight: 500; }
 @container main (max-width: 40rem) {
   /* On a phone the map goes back to its own proportions: a 72vh box around a
      350px-wide drawing is mostly empty paper above and below the marks. */
-  svg.knowledge-map { height: auto; }
+  svg.knowledge-map {
+    height: auto;
+  }
   .graph-panel {
     position: static;
     width: auto;
@@ -1907,7 +2494,10 @@ a.tree-item.nav-item { font-weight: 500; }
   height: 1.1rem;
   accent-color: var(--color-canopy);
 }
-.graph-check label { font-size: 0.9rem; cursor: pointer; }
+.graph-check label {
+  font-size: 0.9rem;
+  cursor: pointer;
+}
 
 /* Toolbar: zoom and the live count. */
 .map-toolbar {
@@ -1917,7 +2507,11 @@ a.tree-item.nav-item { font-weight: 500; }
   gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
-.map-zoom { display: inline-flex; flex-wrap: wrap; gap: var(--space-1); }
+.map-zoom {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
 .map-toolbar .map-count {
   margin: 0 0 0 auto;
   color: var(--color-ink-muted);
@@ -1971,33 +2565,61 @@ svg.knowledge-map {
      over the map is never intercepted either. */
   touch-action: pan-y;
 }
-.g-surface { fill: var(--color-surface); cursor: grab; }
-.g-surface:active { cursor: grabbing; }
+.g-surface {
+  fill: var(--color-surface);
+  cursor: grab;
+}
+.g-surface:active {
+  cursor: grabbing;
+}
 svg.knowledge-map .g-edge {
   stroke: var(--color-line-strong);
   /* --g-edge-w is written on the <svg> from the "độ dày đường" slider; 1.4 is
      what the map shipped with and what the slider's midpoint produces. */
   stroke-width: var(--g-edge-w, 1.4);
 }
-svg.knowledge-map .g-edge.t-related { stroke: var(--color-line-strong); }
-svg.knowledge-map .g-edge.t-supports { stroke: var(--color-canopy); }
-svg.knowledge-map .g-edge.t-contrasts { stroke: var(--color-seal); stroke-dasharray: 5 4; }
-svg.knowledge-map .g-edge.t-part_of { stroke: var(--color-cham); }
+svg.knowledge-map .g-edge.t-related {
+  stroke: var(--color-line-strong);
+}
+svg.knowledge-map .g-edge.t-supports {
+  stroke: var(--color-canopy);
+}
+svg.knowledge-map .g-edge.t-contrasts {
+  stroke: var(--color-seal);
+  stroke-dasharray: 5 4;
+}
+svg.knowledge-map .g-edge.t-part_of {
+  stroke: var(--color-cham);
+}
 /* Direction markers. A <marker> does not inherit from the line that uses it,
    so the four fills repeat the four stroke colours above — same tokens, so the
    two lists cannot drift apart in appearance without drifting in the source. */
-svg.knowledge-map .g-arrow > path { fill: var(--color-line-strong); }
-svg.knowledge-map .g-arrow.t-supports > path { fill: var(--color-canopy); }
-svg.knowledge-map .g-arrow.t-contrasts > path { fill: var(--color-seal); }
-svg.knowledge-map .g-arrow.t-part_of > path { fill: var(--color-cham); }
+svg.knowledge-map .g-arrow > path {
+  fill: var(--color-line-strong);
+}
+svg.knowledge-map .g-arrow.t-supports > path {
+  fill: var(--color-canopy);
+}
+svg.knowledge-map .g-arrow.t-contrasts > path {
+  fill: var(--color-seal);
+}
+svg.knowledge-map .g-arrow.t-part_of > path {
+  fill: var(--color-cham);
+}
 /* Hover or focus a mark: it and its neighbours stay lit, the rest recede.
    The dim level stays well above the point where faded content becomes
    unreadable, and dimmed marks remain focusable and clickable. */
 svg.knowledge-map[data-dim="on"] .g-node.is-far,
-svg.knowledge-map[data-dim="on"] .g-edge.is-far { opacity: var(--graph-dim); }
-svg.knowledge-map[data-dim="on"] .g-edge.is-near { stroke-width: calc(var(--g-edge-w, 1.4) * 1.6); }
+svg.knowledge-map[data-dim="on"] .g-edge.is-far {
+  opacity: var(--graph-dim);
+}
+svg.knowledge-map[data-dim="on"] .g-edge.is-near {
+  stroke-width: calc(var(--g-edge-w, 1.4) * 1.6);
+}
 
-.g-node { cursor: pointer; }
+.g-node {
+  cursor: pointer;
+}
 .g-node .g-mark {
   fill: var(--color-surface);
   stroke-width: 2;
@@ -2012,11 +2634,26 @@ svg.knowledge-map[data-dim="on"] .g-edge.is-near { stroke-width: calc(var(--g-ed
   stroke-width: 1.5;
   stroke-dasharray: 3 3.5;
 }
-.g-node.v-verified .g-mark { fill: var(--color-canopy); stroke: var(--color-canopy-deep); }
-.g-node.v-unverified .g-mark { fill: var(--color-amber-wash); stroke: var(--color-amber); }
-.g-node.v-no_source .g-mark { fill: var(--color-surface-sunken); stroke: var(--color-ink-muted); }
-.g-node.v-archived .g-mark { fill: var(--color-surface-sunken); stroke: var(--color-line-strong); }
-.g-node.is-focus .g-mark { stroke: var(--color-seal); stroke-width: 3; }
+.g-node.v-verified .g-mark {
+  fill: var(--color-canopy);
+  stroke: var(--color-canopy-deep);
+}
+.g-node.v-unverified .g-mark {
+  fill: var(--color-amber-wash);
+  stroke: var(--color-amber);
+}
+.g-node.v-no_source .g-mark {
+  fill: var(--color-surface-sunken);
+  stroke: var(--color-ink-muted);
+}
+.g-node.v-archived .g-mark {
+  fill: var(--color-surface-sunken);
+  stroke: var(--color-line-strong);
+}
+.g-node.is-focus .g-mark {
+  stroke: var(--color-seal);
+  stroke-width: 3;
+}
 .g-node .g-label {
   fill: var(--color-ink);
   /* A node label is the title of a knowledge page, so it is set in the
@@ -2032,13 +2669,24 @@ svg.knowledge-map[data-dim="on"] .g-edge.is-near { stroke-width: calc(var(--g-ed
    what a zoomed-out map is for. The mark under the pointer or the keyboard
    always keeps its title, at any zoom. */
 svg.knowledge-map[data-labels="hubs"] .g-node:not(.is-hub) .g-label,
-svg.knowledge-map[data-labels="none"] .g-label { opacity: 0; }
+svg.knowledge-map[data-labels="none"] .g-label {
+  opacity: 0;
+}
 svg.knowledge-map .g-node:hover .g-label,
-svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
+svg.knowledge-map .g-node:focus-visible .g-label {
+  opacity: 1;
+}
 
-.g-node:hover .g-mark { fill: var(--color-canopy-wash); }
-.g-node:focus-visible { outline: none; }
-.g-node:focus-visible .g-mark { stroke: var(--color-focus); stroke-width: 3.5; }
+.g-node:hover .g-mark {
+  fill: var(--color-canopy-wash);
+}
+.g-node:focus-visible {
+  outline: none;
+}
+.g-node:focus-visible .g-mark {
+  stroke: var(--color-focus);
+  stroke-width: 3.5;
+}
 
 .map-legend {
   display: flex;
@@ -2050,8 +2698,16 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   color: var(--color-ink-muted);
   font-size: 0.8rem;
 }
-.map-legend li { display: inline-flex; align-items: center; gap: 0.35rem; }
-.map-legend .legend-mark { width: 1rem; height: 1rem; flex: none; }
+.map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.map-legend .legend-mark {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
 
 /* Pagination + empty states
    ------------------------------------------------------------------ */
@@ -2078,7 +2734,9 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   text-align: center;
   padding-block: var(--space-6);
 }
-.empty-state > p { max-width: 44ch; }
+.empty-state > p {
+  max-width: 44ch;
+}
 
 /* Upload progress + success feedback
    ------------------------------------------------------------------ */
@@ -2100,7 +2758,9 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
 
 /* The wrapper adds behaviour, not a box: main.page's `>` child rules must
    keep matching the server markup, so it generates no box of its own. */
-.dropzone-wrap { display: contents; }
+.dropzone-wrap {
+  display: contents;
+}
 
 /* Shown only while a file hangs over the page — the same veil the palette
    and the confirm dialog dim the app with. */
@@ -2114,7 +2774,10 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   justify-content: center;
   padding: var(--space-4);
 }
-.dropzone-veil > .panel { align-items: center; text-align: center; }
+.dropzone-veil > .panel {
+  align-items: center;
+  text-align: center;
+}
 
 /* The per-file progress strip while a drop is being sent: a panel pinned to
    the bottom of the viewport so it survives the reader scrolling the list. */
@@ -2131,7 +2794,10 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   gap: var(--space-3);
   box-shadow: var(--shadow-modal);
 }
-.dropzone-progress .upload-progress { flex: 1 1 16rem; margin-top: 0; }
+.dropzone-progress .upload-progress {
+  flex: 1 1 16rem;
+  margin-top: 0;
+}
 
 /* Library folders: the row icon and the breadcrumb above the table. */
 .folder-icon {
@@ -2159,10 +2825,23 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
 /* --- Account (`/account`) ------------------------------------- */
 /* The rail's initials circle, enlarged to portrait size; the same canopy
    ground carries the same person identity at both scales. */
-.account-head { display: flex; align-items: center; gap: var(--space-4); }
-.account-head p { margin: 0; }
-.account-name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
-.account-avatar { --avatar-size: 4.25rem; font-size: 1.5rem; }
+.account-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.account-head p {
+  margin: 0;
+}
+.account-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.account-avatar {
+  --avatar-size: 4.25rem;
+  font-size: 1.5rem;
+}
 /* An uploaded picture fills the same circle, in the rail and on /account. */
 .account-avatar img,
 .rail .rail-avatar img {
@@ -2172,7 +2851,10 @@ svg.knowledge-map .g-node:focus-visible .g-label { opacity: 1; }
   border-radius: 50%;
 }
 /* The rail avatar became a link; it stays a circle, not underlined text. */
-a.rail-avatar { text-decoration: none; overflow: hidden; }
+a.rail-avatar {
+  text-decoration: none;
+  overflow: hidden;
+}
 
 /* --- Login portal (`/login`) ---------------------------------- */
 /* A narrow centered column: the seal, the name, one door. Tokens only, so
@@ -2191,14 +2873,18 @@ main.page.login-page {
   align-items: center;
   gap: var(--space-2);
 }
-.login-hero p { margin: 0; }
+.login-hero p {
+  margin: 0;
+}
 /* The topbar's triện, enlarged to portal size. */
 .login-seal {
   width: 3.4rem;
   height: 3.4rem;
   font-size: 1.3rem;
   border-radius: 6px;
-  box-shadow: inset 0 0 0 2px var(--color-on-strong), inset 0 0 0 4.5px var(--color-seal);
+  box-shadow:
+    inset 0 0 0 2px var(--color-on-strong),
+    inset 0 0 0 4.5px var(--color-seal);
 }
 .login-title {
   font-family: var(--font-display);
@@ -2229,8 +2915,12 @@ main.page.login-page > h2:not(:first-child) {
   padding-top: 0;
   font-size: 0.95rem;
 }
-main.page.login-page > h2::before { content: none; }
-.login-page .panel { text-align: left; }
+main.page.login-page > h2::before {
+  content: none;
+}
+.login-page .panel {
+  text-align: left;
+}
 
 /* The demo picker: each person is one full-width row that signs you in.
    Sized like the front door it stands in for — not a data table. */
@@ -2263,9 +2953,18 @@ button.login-person:hover {
   border-color: var(--color-canopy);
   color: var(--color-canopy-deep);
 }
-.login-person-name { font-weight: 600; font-size: 1rem; }
-.login-person-role { color: var(--color-ink-muted); font-size: 0.85rem; flex: none; }
-button.login-person:hover .login-person-role { color: inherit; }
+.login-person-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+.login-person-role {
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+  flex: none;
+}
+button.login-person:hover .login-person-role {
+  color: inherit;
+}
 
 /* ============================================================
    Board — the view switcher, and the month / week calendars
@@ -2292,8 +2991,13 @@ button.login-person:hover .login-person-role { color: inherit; }
   text-decoration: none;
   border-left: 1px solid var(--color-line);
 }
-.segmented a:first-child { border-left: none; }
-.segmented a:hover { background: var(--color-canopy-wash); color: var(--color-canopy-deep); }
+.segmented a:first-child {
+  border-left: none;
+}
+.segmented a:hover {
+  background: var(--color-canopy-wash);
+  color: var(--color-canopy-deep);
+}
 /* The current view is stated by weight and fill, not colour alone. */
 .segmented a[aria-current="page"] {
   background: var(--color-canopy);
@@ -2301,9 +3005,21 @@ button.login-person:hover .login-person-role { color: inherit; }
   font-weight: 600;
 }
 
-.cal-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
-.cal-head h2 { margin: 0; }
-.cal-nav { display: flex; gap: var(--space-3); font-size: 0.88rem; }
+.cal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.cal-head h2 {
+  margin: 0;
+}
+.cal-nav {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 0.88rem;
+}
 
 /* Both grids scroll inside .record-scroll rather than stacking: a month that
    collapses to one column stops being a month — the shape IS the information.
@@ -2328,7 +3044,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   text-align: center;
   padding: 0.3rem 0.2rem;
 }
-.cal-dow.is-today { color: var(--color-canopy-deep); }
+.cal-dow.is-today {
+  color: var(--color-canopy-deep);
+}
 .cal-day {
   background: var(--color-surface);
   min-height: 5.5rem;
@@ -2338,13 +3056,23 @@ button.login-person:hover .login-person-role { color: inherit; }
   gap: 0.15rem;
   align-items: stretch;
 }
-.cal-daynum { font-family: var(--font-ui); font-size: 0.78rem; color: var(--color-ink-muted); }
+.cal-daynum {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--color-ink-muted);
+}
 /* Leading and trailing days belong to the neighbouring months: present, but
    not competing with the month being read. */
-.cal-day.is-outside { background: var(--color-surface-sunken); }
-.cal-day.is-outside .cal-daynum { opacity: 0.6; }
+.cal-day.is-outside {
+  background: var(--color-surface-sunken);
+}
+.cal-day.is-outside .cal-daynum {
+  opacity: 0.6;
+}
 /* Today is marked by a ring and a filled day number, never by hue alone. */
-.cal-day.is-today { box-shadow: inset 0 0 0 2px var(--color-canopy); }
+.cal-day.is-today {
+  box-shadow: inset 0 0 0 2px var(--color-canopy);
+}
 .cal-day.is-today .cal-daynum {
   color: var(--color-on-strong);
   background: var(--color-canopy);
@@ -2365,7 +3093,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   background: var(--color-line);
   gap: 1px;
 }
-.cal-corner { background: var(--color-surface-sunken); }
+.cal-corner {
+  background: var(--color-surface-sunken);
+}
 .cal-hour {
   background: var(--color-surface-sunken);
   color: var(--color-ink-muted);
@@ -2374,7 +3104,10 @@ button.login-person:hover .login-person-role { color: inherit; }
   padding: 0.25rem 0.35rem;
   text-align: right;
 }
-.cal-hour-allday { text-align: left; font-weight: 600; }
+.cal-hour-allday {
+  text-align: left;
+  font-weight: 600;
+}
 .cal-slot {
   background: var(--color-surface);
   min-height: 2.1rem;
@@ -2383,11 +3116,18 @@ button.login-person:hover .login-person-role { color: inherit; }
   flex-direction: column;
   gap: 0.15rem;
 }
-.cal-slot.is-today { background: var(--color-canopy-wash); }
+.cal-slot.is-today {
+  background: var(--color-canopy-wash);
+}
 /* The strip carries whatever falls outside 6:00–22:00, so nothing is dropped
    for being early, late, or dated without a time. */
-.cal-slot-allday { min-height: 2.6rem; background: var(--color-surface-sunken); }
-.cal-slot-allday.is-today { background: var(--color-canopy-wash); }
+.cal-slot-allday {
+  min-height: 2.6rem;
+  background: var(--color-surface-sunken);
+}
+.cal-slot-allday.is-today {
+  background: var(--color-canopy-wash);
+}
 
 /* A chip in a 4.6rem cell: the title truncates, the full text is in the title
    attribute, and the badge tone still carries the task's state. */
@@ -2400,8 +3140,17 @@ button.login-person:hover .login-person-role { color: inherit; }
   font-weight: 500;
   min-width: 0;
 }
-.cal-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
-.cal-chip-who { flex: none; font-weight: 700; opacity: 0.75; }
+.cal-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+.cal-chip-who {
+  flex: none;
+  font-weight: 700;
+  opacity: 0.75;
+}
 /* A deadline is not a task: seal edge and the flag mark say so without hue. */
 .cal-chip-deadline {
   background: var(--color-seal-wash);
@@ -2431,7 +3180,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   gap: var(--space-5);
   align-items: start;
 }
-.board-with-panel > * { min-width: 0; }
+.board-with-panel > * {
+  min-width: 0;
+}
 .board-surface {
   display: flex;
   flex-direction: column;
@@ -2445,8 +3196,12 @@ button.login-person:hover .login-person-role { color: inherit; }
    fired 19.75rem of shell chrome earlier, so the two numbers could never
    disagree in practice — only on paper, where they did. */
 @container main (max-width: 62rem) {
-  .board-with-panel { grid-template-columns: minmax(0, 1fr); }
-  .board-with-panel > .task-panel { order: -1; }
+  .board-with-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .board-with-panel > .task-panel {
+    order: -1;
+  }
 }
 
 /* The panel follows the reader down a long board rather than scrolling off the
@@ -2466,8 +3221,15 @@ button.login-person:hover .login-person-role { color: inherit; }
   overflow-y: auto;
 }
 
-.task-detail { display: flex; flex-direction: column; gap: var(--space-4); }
-.task-detail > h1, .task-detail > h2 { margin: 0; }
+.task-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.task-detail > h1,
+.task-detail > h2 {
+  margin: 0;
+}
 .task-detail-head {
   display: flex;
   flex-wrap: wrap;
@@ -2475,7 +3237,11 @@ button.login-person:hover .login-person-role { color: inherit; }
   justify-content: space-between;
   gap: var(--space-3);
 }
-.task-detail-nav { display: flex; gap: var(--space-4); font-size: 0.9rem; }
+.task-detail-nav {
+  display: flex;
+  gap: var(--space-4);
+  font-size: 0.9rem;
+}
 
 /* Label above value, not a two-column table: "Thời gian cho phép" is long
    enough that a label column would either wrap or steal the value's width. */
@@ -2491,7 +3257,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   letter-spacing: 0.04em;
   color: var(--color-ink-muted);
 }
-.task-facts dd { margin: 0; }
+.task-facts dd {
+  margin: 0;
+}
 
 /* Notes are plain text on purpose — no editor, no markup to learn. pre-wrap is
    what makes the paragraphs someone typed survive the round trip. */
@@ -2512,7 +3280,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   color: var(--color-ink);
   line-height: 1.35;
 }
-.board-card-title:hover { color: var(--color-canopy-deep); }
+.board-card-title:hover {
+  color: var(--color-canopy-deep);
+}
 
 /* The card whose panel is open. The left bar thickens and the ring appears —
    never hue alone, per the design system. */
@@ -2524,8 +3294,15 @@ button.login-person:hover .login-person-role { color: inherit; }
 
 /* A calendar chip is a link now: it must keep the badge's own colours rather
    than turning into link green in the middle of a grid of states. */
-.cal-chip { color: inherit; text-decoration: none; }
-.cal-chip:hover { color: inherit; text-decoration: underline; text-underline-offset: 0.12em; }
+.cal-chip {
+  color: inherit;
+  text-decoration: none;
+}
+.cal-chip:hover {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
 
 /* The one line under a sidebar group heading that says what the group holds.
    "Công việc hằng ngày" and "Quản lý dự án" are two spaces with two rhythms,
@@ -2544,7 +3321,9 @@ button.login-person:hover .login-person-role { color: inherit; }
    rule. The personal section overrides it with canopy green so the two
    contexts are scannable without reading the label text.
    Shape and space are unchanged — colour is a second cue, not the only one. */
-.side-label--personal::before { background: var(--color-canopy); }
+.side-label--personal::before {
+  background: var(--color-canopy);
+}
 
 /* --- Graph page: scope tab toggle --------------------------------- */
 /* Two tabs that let the reader switch between the shared project knowledge
@@ -2567,8 +3346,10 @@ button.login-person:hover .login-person-role { color: inherit; }
   background: var(--color-surface-sunken);
   border: 1px solid var(--color-line);
   text-decoration: none;
-  transition: color var(--speed) ease, background var(--speed) ease,
-              border-color var(--speed) ease;
+  transition:
+    color var(--speed) ease,
+    background var(--speed) ease,
+    border-color var(--speed) ease;
 }
 .graph-scope-tab:hover {
   color: var(--color-ink);
@@ -2602,15 +3383,23 @@ button.login-person:hover .login-person-role { color: inherit; }
   grid-template-columns: 3.25rem minmax(0, 1fr);
   grid-template-areas: "rail main" "status status";
 }
-:root[data-sidebar="collapsed"] .shell .sidebar { display: none; }
+:root[data-sidebar="collapsed"] .shell .sidebar {
+  display: none;
+}
 
 /* Two rail buttons swap at the breakpoint: above it, collapse the panel;
    below it, where the panel is already gone and collapsing would do nothing,
    the palette keeps its own door — six screens live only in the panel. */
-.rail .rail-btn.only-narrow { display: none; }
+.rail .rail-btn.only-narrow {
+  display: none;
+}
 @media (max-width: 56rem) {
-  .rail .rail-btn.only-narrow { display: flex; }
-  .rail .rail-btn.only-wide { display: none; }
+  .rail .rail-btn.only-narrow {
+    display: flex;
+  }
+  .rail .rail-btn.only-wide {
+    display: none;
+  }
 }
 
 /* The presence row: names, in the reading column, above the content they are
@@ -2625,7 +3414,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   font-size: 0.82rem;
   color: var(--color-ink-muted);
 }
-.presence-row .presence-label { font-weight: 600; }
+.presence-row .presence-label {
+  font-weight: 600;
+}
 .presence-row .presence-who {
   display: inline-flex;
   align-items: center;
@@ -2669,11 +3460,15 @@ button.login-person:hover .login-person-role { color: inherit; }
   white-space: nowrap;
   color: var(--color-ink);
 }
-.badge + .copy-count { margin-left: var(--space-1); }
+.badge + .copy-count {
+  margin-left: var(--space-1);
+}
 
 /* The quantity box holds two digits and a spinner, nothing more; left at
    full width it reads as though a paragraph belongs in it. */
-.copies-input { max-width: 7rem; }
+.copies-input {
+  max-width: 7rem;
+}
 
 /* ------------------------------------------------------------------
    System Health (`/admin/health`) — a board of readings.
@@ -2691,7 +3486,9 @@ button.login-person:hover .login-person-role { color: inherit; }
   grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
   gap: var(--space-4);
 }
-.health-card { gap: var(--space-2); }
+.health-card {
+  gap: var(--space-2);
+}
 /* Written as `.panel > h2.health-label`, and it has to be: `.panel > h2` (one
    class, one element) out-specifies a lone `.health-label`, so BOTH of this
    rule's declarations were being discarded and nobody noticed.
@@ -2720,9 +3517,15 @@ button.login-person:hover .login-person-role { color: inherit; }
    a reading that is fine is `done` and a reading that wants a person is
    `attention`, exactly as a badge would say it. Two vocabularies for one idea
    is how a design system stops being one. */
-.health-value.tone-done { color: var(--color-canopy-deep); }
-.health-value.tone-attention { color: var(--color-amber); }
-.health-hint { font-size: 0.8rem; }
+.health-value.tone-done {
+  color: var(--color-canopy-deep);
+}
+.health-value.tone-attention {
+  color: var(--color-amber);
+}
+.health-hint {
+  font-size: 0.8rem;
+}
 /* A second fact under the headline value — a timestamp, one degraded
    component per line — set back at reading size. */
 .health-line {
@@ -2734,9 +3537,15 @@ button.login-person:hover .login-person-role { color: inherit; }
 /* The audit trail reads as prose now, not as a payload: one fact per line,
    and the object's kind sits under its name in the smaller size so the name
    is what the eye lands on. */
-.audit-detail { line-height: 1.5; }
-.audit-detail + .audit-detail { margin-top: var(--space-1); }
-.audit-kind { font-size: 0.8rem; }
+.audit-detail {
+  line-height: 1.5;
+}
+.audit-detail + .audit-detail {
+  margin-top: var(--space-1);
+}
+.audit-kind {
+  font-size: 0.8rem;
+}
 
 /* The one line above a detail screen's title that says which list it came
    from. Metadata weight, not heading weight: it is an exit, not a label. */
