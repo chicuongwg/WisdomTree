@@ -27,7 +27,11 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const node = await orNotFound(() => getNode(actor, id));
   const isAdmin = user.role === "admin_op";
-  const canEdit = isAdmin || (user.role === "editor" && node.createdBy === user.id);
+  const isOwnPersonalNode =
+    node.branchScope === "personal" &&
+    (node.branchOwnerId === user.id || node.createdBy === user.id);
+  const canEdit =
+    isAdmin || (user.role === "editor" && node.createdBy === user.id) || isOwnPersonalNode;
   const candidates = isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
   const wiki = await wikiIndex(actor);
 

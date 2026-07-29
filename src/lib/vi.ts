@@ -515,6 +515,10 @@ export const T = {
   nominateCta: "Đề cử lên cây tri thức", // NEW
   nominateSent: "Đã đề cử. Quản trị viên sẽ giao biên tập viên hiệu đính.", // NEW
   nominatedAwaitingAssign: "Đã đề cử — chờ giao", // NEW
+  revertNominateCta: "Rút đề cử",
+  revertNominateSent: "Đã rút đề cử, tư liệu trở lại trạng thái lưu trữ.",
+  sourceNotNominated: "Tư liệu chưa được đề cử.",
+  sourceAlreadyPromoted: "Tư liệu đã xuất bản lên cây tri thức, không thể rút đề cử.",
   nextStepColumn: "Bước tiếp theo", // NEW
   // What happens to this file next, one sentence per state — the values of
   // nextActionLabel in src/lib/source-status.ts. NEW pending humanities review.
@@ -689,6 +693,16 @@ export const T = {
   presenceHere: "Đang mở trang này:", // NEW
   collapsePanel: "Thu gọn thanh bên", // NEW
   expandPanel: "Mở rộng thanh bên", // NEW
+  // Sidebar section headers for the team/personal knowledge split
+  navTeamKnowledge: "Kho dự án chung", // NEW
+  navTeamGraph: "Bản đồ tri thức nhóm", // NEW
+  navPersonalSpace: "Không gian của tôi", // NEW
+  navPersonalGraph: "Bản đồ ghi chú của tôi", // NEW
+  navPersonalNotes: "Ghi chú cá nhân", // NEW
+  personalBranchEmpty: "Bạn chưa có ghi chú cá nhân nào.", // NEW
+  // Graph page scope tabs
+  graphScopeTeam: "Bản đồ nhóm", // NEW
+  graphScopePersonal: "Bản đồ cá nhân", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

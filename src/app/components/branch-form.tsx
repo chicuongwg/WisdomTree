@@ -12,8 +12,10 @@ import { ConfirmButton } from "./confirm-button";
  */
 export function BranchForm({
   branch,
+  scope,
 }: {
   branch?: { id: string; name: string; description: string | null; version: number };
+  scope?: "team" | "personal";
 }) {
   const router = useRouter();
   const m = useMutation();
@@ -28,6 +30,7 @@ export function BranchForm({
         body: {
           name: String(form.get("name") ?? ""),
           description: String(form.get("description") ?? ""),
+          ...(scope ? { scope } : {}),
           ...(branch ? { expectedVersion: branch.version } : {}),
         },
       },

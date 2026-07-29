@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T, verificationStateLabel } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
+import { Markdown, type WikiIndex } from "@/lib/markdown";
 import { SayMutation } from "./say";
 
 type NodeInput = {
@@ -22,7 +23,15 @@ type NodeInput = {
  * 409 message and offers a reload. The verification select (Admin/Op only)
  * exposes the state-machine transitions, incl. verified→unverified downgrade.
  */
-export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolean }) {
+export function NodeEditor({
+  node,
+  isAdmin,
+  wikiIndex = {},
+}: {
+  node: NodeInput;
+  isAdmin: boolean;
+  wikiIndex?: WikiIndex;
+}) {
   const router = useRouter();
   const m = useMutation();
   const [conflict, setConflict] = useState(false);
@@ -51,9 +60,6 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
         expectedVersion: node.version,
         ...(isAdmin ? { verification, publish } : {}),
       },
-      // A colleague saved first. The offer to reload is the only way out that
-      // does not throw away what is in the box, so it needs the code, not just
-      // the sentence.
       onError: (res, body) => setConflict(res.status === 409 && body?.code === "version_conflict"),
     });
     if (saved) router.push(`/tree/node/${node.id}`);
@@ -85,7 +91,9 @@ export function NodeEditor({ node, isAdmin }: { node: NodeInput; isAdmin: boolea
         </div>
         <div>
           <p className="muted">{T.preview}</p>
-          <pre className="raw-text" aria-label={T.preview}>{contentMd}</pre>
+          <div className="preview-pane" aria-label={T.preview}>
+            <Markdown content={contentMd} wikiIndex={wikiIndex} />
+          </div>
         </div>
       </div>
       <div className="field">

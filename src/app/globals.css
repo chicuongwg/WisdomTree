@@ -827,7 +827,8 @@ button.danger:disabled:hover { background: var(--color-surface); }
 .md-content th, .md-content td { border: 1px solid var(--color-line); padding: 0.35rem 0.6rem; }
 
 /* Extracted/corrected source text: also reading matter */
-pre.raw-text {
+pre.raw-text,
+.preview-pane {
   white-space: pre-wrap;
   background: var(--color-surface);
   border: 1px solid var(--color-line);
@@ -837,6 +838,10 @@ pre.raw-text {
   font-size: 1rem;
   line-height: 1.6;
   margin: 0;
+  min-height: 14rem;
+}
+.preview-pane {
+  white-space: normal;
 }
 /* The corrected-text and Markdown editors hold Vietnamese prose written by
    people who research culture, not code. They were set in monospace — a
@@ -1305,6 +1310,46 @@ button.searchbox kbd {
   background: var(--color-surface-sunken);
 }
 .side-body { overflow-y: auto; flex: 1; padding: 0.2rem 0.5rem 1rem; }
+.side-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  margin: 0.5rem 0.6rem 0.2rem;
+  padding: 0.25rem;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--radius) + 2px);
+}
+.side-switch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.side-switch-btn:hover {
+  color: var(--color-ink);
+  background: rgba(0, 0, 0, 0.04);
+}
+.side-switch-btn.active {
+  color: var(--color-ink);
+  background: var(--color-panel);
+  border-color: var(--color-line-strong);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+.side-switch-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
 .side-sec { margin-top: 0.7rem; }
 /* The sidebar's groups follow the same section rule as the canvas: a seam
    above the group and a tick beside its name. They used to differ from each
@@ -1366,6 +1411,7 @@ a.tree-item.active {
 .node-state.verified { color: var(--color-canopy); }
 .node-state.unverified { color: var(--color-amber); }
 .node-state.no_source { color: var(--color-ink-muted); }
+.node-state.source { color: var(--color-seal); }
 
 /* --- Status bar ----------------------------------------------- */
 .statusbar {
@@ -2491,6 +2537,57 @@ button.login-person:hover .login-person-role { color: inherit; }
   font-size: 0.74rem;
   line-height: 1.35;
   color: var(--color-ink-muted);
+}
+
+/* --- Sidebar: team / personal section colour distinction ---------- */
+/* The default tick is vermilion (--color-seal), inherited from the canvas h2
+   rule. The personal section overrides it with canopy green so the two
+   contexts are scannable without reading the label text.
+   Shape and space are unchanged — colour is a second cue, not the only one. */
+.side-label--personal::before { background: var(--color-canopy); }
+
+/* --- Graph page: scope tab toggle --------------------------------- */
+/* Two tabs that let the reader switch between the shared project knowledge
+   graph and their private note graph. Same palette as the sidebar: vermilion
+   for the team tab, canopy for the personal tab. */
+.graph-scope-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.6rem 0 0.4rem;
+}
+.graph-scope-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-line);
+  text-decoration: none;
+  transition: color var(--speed) ease, background var(--speed) ease,
+              border-color var(--speed) ease;
+}
+.graph-scope-tab:hover {
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border-color: var(--color-line-strong);
+  text-decoration: none;
+}
+/* Active team tab: vermilion accent (shared / official) */
+.graph-scope-tab.active {
+  color: var(--color-seal);
+  background: var(--color-seal-wash);
+  border-color: color-mix(in srgb, var(--color-seal) 35%, transparent);
+  font-weight: 600;
+}
+/* Active personal tab: canopy accent (private / mine) */
+.graph-scope-tab--personal.active {
+  color: var(--color-canopy-deep);
+  background: var(--color-canopy-wash);
+  border-color: color-mix(in srgb, var(--color-canopy) 35%, transparent);
 }
 
 /* ============================================================

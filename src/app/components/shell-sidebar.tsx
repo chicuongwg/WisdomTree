@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { T } from "@/lib/vi";
 import { useShortcutKey } from "@/lib/platform";
 import { NodeLink } from "./node-link";
 
-// Contextual sidebar. Three labelled destination groups come first —
-// knowledge surfaces, the day's work, and project management — so the outline
-// below can no longer be read as "these folders are my project". The outline itself is node-centric,
-// not file-centric: a page row leads with its verification dot (the state of
-// the knowledge, not a file type) and opens the same hover/focus preview card
-// as every other node link, so the row behaves like a page reference rather
-// than a file in a tree. The disclosure twisty stays on branch rows only.
-// Data comes server-rendered from the layout (treeOutline).
+// Contextual sidebar redesigned with a segmented controller:
+//   - VIỆC CHUNG: team knowledge, team branches, team projects & deadlines
+//   - CÁ NHÂN: personal space, private note branches, daily workbench & my submissions
 
 export type OutlineBranch = {
   id: string;
@@ -24,75 +19,151 @@ export type OutlineBranch = {
 
 export type RecentNode = { id: string; title: string; branchName: string };
 
-export function ShellSidebar({
-  branches,
-  recent,
-  role,
-  spaceCount,
+function BranchSection({
+  branch,
+  pathname,
 }: {
-  branches: OutlineBranch[];
-  recent: RecentNode[];
-  role: string;
-  spaceCount: number;
+  branch?: OutlineBranch;
+  pathname: string;
 }) {
-  const pathname = usePathname();
+  const nodes = branch?.nodes ?? [];
+  const currentBranch = Boolean(
+    branch &&
+      (pathname === `/tree/branch/${branch.id}` ||
+        nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`))),
+  );
+
+  const [open, setOpen] = useState(currentBranch);
+
+  useEffect(() => {
+    if (currentBranch) {
+      setOpen(true);
+    }
+  }, [currentBranch]);
+
+  if (!branch) return null;
+  const isOpen = open;
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="tree-item"
+        onClick={() => setOpen((s) => !s)}
+        aria-expanded={isOpen}
+      >
+        <span className="twisty" aria-hidden="true">
+          {isOpen ? "▾" : "▸"}
+        </span>
+        <span className="item-label">{branch.name}</span>
+      </button>
+      {isOpen && (
+        <>
+          <Link
+            href={`/tree/branch/${branch.id}`}
+            className={`tree-item depth-1${pathname === `/tree/branch/${branch.id}` ? " active" : ""}`}
+            aria-current={pathname === `/tree/branch/${branch.id}` ? "page" : undefined}
+          >
+            <span className="item-label muted">{T.openBranch}</span>
+          </Link>
+          {nodes.map((n) => (
+            <NodeLink
+              key={n.id}
+              nodeId={n.id}
+              verification={n.verification}
+              className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
+              aria-current={
+                pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined
+              }
+            >
+              <span className="item-label">{n.title}</span>
+            </NodeLink>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+function SidebarContent({
+  teamBranches = [],
+  personalBranches = [],
+  recent = [],
+  role = "user",
+  spaceCount = 0,
+}: {
+  teamBranches?: OutlineBranch[];
+  personalBranches?: OutlineBranch[];
+  recent?: RecentNode[];
+  role?: string;
+  spaceCount?: number;
+}) {
+  const pathname = usePathname() ?? "";
+  const searchParams = useSearchParams();
   const shortcut = useShortcutKey();
 
-  // the branch holding the open page starts expanded
-  const currentBranch = branches.find(
-    (b) =>
-      pathname === `/tree/branch/${b.id}` ||
-      b.nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`)),
+  const safeTeamBranches = Array.isArray(teamBranches) ? teamBranches : [];
+  const safePersonalBranches = Array.isArray(personalBranches) ? personalBranches : [];
+  const safeRecent = Array.isArray(recent) ? recent : [];
+
+  const currentScope = searchParams?.get("scope") ?? "team";
+
+  function defaultTabFor(path: string, scopeParam: string | null): "team" | "personal" {
+    if (path === "/graph" && scopeParam === "personal") return "personal";
+    if (
+      path.startsWith("/board") ||
+      path.startsWith("/source/intake") ||
+      path.startsWith("/source/mine")
+    ) {
+      return "personal";
+    }
+    if (
+      safePersonalBranches.some(
+        (b) =>
+          path === `/tree/branch/${b.id}` ||
+          b.nodes.some((n) => path.startsWith(`/tree/node/${n.id}`)),
+      )
+    ) {
+      return "personal";
+    }
+    return "team";
+  }
+
+  const [activeTab, setActiveTab] = useState<"team" | "personal">(() =>
+    defaultTabFor(pathname, currentScope),
   );
-  /**
-   * What the reader has opened or shut by hand. Everything they have not
-   * touched follows the page they are on — see `expanded` below.
-   *
-   * Seeding this from currentBranch instead was a one-shot: the sidebar lives
-   * in the layout and never remounts, so the initializer ran once, on whatever
-   * page was first loaded. Every client navigation after that left the new
-   * page's branch collapsed, and the outline stopped showing the reader where
-   * they were.
-   */
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const expanded = (branchId: string) => open[branchId] ?? branchId === currentBranch?.id;
 
-  const knowledgeNav = [
-    { href: "/graph", label: T.graph },
-    { href: "/tree", label: T.tree },
-    { href: "/tree/branches", label: T.navBranches },
-  ];
-  // Two groups, not one. "Dự án & công việc" put the day's rotating tasks and
-  // the project calendar under one heading, and readers asked why hạn chót
-  // stood next to bảng công việc: they run at different rhythms. Bảng công
-  // việc is picked up and finished in a day; hạn chót belongs to a project
-  // that runs for months. Each group now says which rhythm it holds.
-  const workNav: { href: string; label: string }[] = [
-    { href: "/board", label: T.board }, // every role — pm.board.read is global
-  ];
-  const projectNav: { href: string; label: string }[] = [
+  useEffect(() => {
+    setActiveTab(defaultTabFor(pathname, currentScope));
+  }, [pathname, currentScope]);
+
+  const teamProjects: { href: string; label: string }[] = [
     { href: "/deadlines", label: T.deadline },
+    { href: "/catalog", label: T.catalog },
   ];
-
-  const shortcuts: { href: string; label: string }[] = [
-    { href: "/source/intake", label: T.sourceIntake },
-    { href: "/source/mine", label: T.mySubmissions },
-  ];
+  if (role === "admin_op" || role === "editor") {
+    teamProjects.push({ href: "/catalog/admin", label: T.librarianDesk });
+  }
   if (role === "admin_op") {
-    shortcuts.push(
+    teamProjects.push(
       { href: "/source/inbox", label: T.sourceInbox },
-      { href: "/catalog/admin", label: T.librarianDesk },
-      // The health dashboard is its own screen now, so it needs its own way in.
       { href: "/admin/health", label: T.healthPageTitle },
     );
   }
 
+  const personalWork: { href: string; label: string }[] = [
+    { href: "/board", label: T.board },
+    { href: "/source/intake", label: T.sourceIntake },
+    { href: "/source/mine", label: T.mySubmissions },
+  ];
+
+  const recentForTab = safeRecent.filter((n) =>
+    activeTab === "personal"
+      ? safePersonalBranches.some((b) => b.name === n.branchName)
+      : !safePersonalBranches.some((b) => b.name === n.branchName),
+  );
+
   return (
-    /* Named, because it is a landmark: a screen reader listing the regions of
-       the page would otherwise offer "complementary" with nothing to say which
-       one it is. (The five unnamed <aside>s on the detail screens went the
-       other way — they became plain <div>s. A region with no name worth giving
-       it is not a region.) */
     <aside className="sidebar" aria-label={T.navPanel}>
       <div className="side-head">
         <div className="space-name">{T.appName}</div>
@@ -107,101 +178,157 @@ export function ShellSidebar({
       >
         {T.quickSearch}…<kbd>{shortcut} K</kbd>
       </button>
+
+      <div className="side-switcher" role="tablist" aria-label="Phân loại không gian làm việc">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "team"}
+          className={`side-switch-btn ${activeTab === "team" ? "active" : ""}`}
+          onClick={() => setActiveTab("team")}
+        >
+          Việc chung
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "personal"}
+          className={`side-switch-btn ${activeTab === "personal" ? "active" : ""}`}
+          onClick={() => setActiveTab("personal")}
+        >
+          Cá nhân
+        </button>
+      </div>
+
       <div className="side-body">
-        <nav className="side-sec" aria-label={T.navKnowledge}>
-          <div className="side-label">{T.navKnowledge}</div>
-          {knowledgeNav.map((n) => {
-            const here = pathname === n.href || (n.href !== "/tree" && pathname.startsWith(n.href));
-            return (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`tree-item nav-item${here ? " active" : ""}`}
-                aria-current={here ? "page" : undefined}
-              >
-                <span className="item-label">{n.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        {[
-          { label: T.navWork, hint: T.navWorkHint, items: workNav },
-          { label: T.navProjects, hint: T.navProjectsHint, items: projectNav },
-        ].map((group) => (
-          <nav key={group.label} className="side-sec" aria-label={group.label}>
-            <div className="side-label">{group.label}</div>
-            {/* The hint is what tells the two groups apart at a glance: the
-                labels alone still look like two names for the same thing. */}
-            <p className="side-hint">{group.hint}</p>
-            {group.items.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
-                aria-current={pathname.startsWith(n.href) ? "page" : undefined}
-              >
-                <span className="item-label">{n.label}</span>
-              </Link>
-            ))}
-          </nav>
-        ))}
-        <div className="side-sec">
-          <div className="side-label">
-            {T.branch}
-            {(role === "editor" || role === "admin_op") && (
-              <Link href="/tree/branch/new" title={T.createBranch} aria-label={T.createBranch}>
-                +
-              </Link>
-            )}
-          </div>
-          {branches.map((b) => {
-            const isOpen = expanded(b.id);
-            return (
-              <div key={b.id}>
-                <button
-                  type="button"
-                  className="tree-item"
-                  onClick={() => setOpen((s) => ({ ...s, [b.id]: !isOpen }))}
-                  aria-expanded={isOpen}
-                >
-                  <span className="twisty" aria-hidden="true">
-                    {isOpen ? "▾" : "▸"}
-                  </span>
-                  <span className="item-label">{b.name}</span>
-                </button>
-                {isOpen && (
-                  <>
-                    <Link
-                      href={`/tree/branch/${b.id}`}
-                      className={`tree-item depth-1${pathname === `/tree/branch/${b.id}` ? " active" : ""}`}
-                      aria-current={pathname === `/tree/branch/${b.id}` ? "page" : undefined}
-                    >
-                      <span className="item-label muted">{T.openBranch}</span>
-                    </Link>
-                    {b.nodes.map((n) => (
-                      <NodeLink
-                        key={n.id}
-                        nodeId={n.id}
-                        verification={n.verification}
-                        className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
-                        aria-current={
-                          pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined
-                        }
-                      >
-                        <span className="item-label">{n.title}</span>
-                      </NodeLink>
-                    ))}
-                  </>
+        {activeTab === "team" ? (
+          <>
+            {/* ── KHO DỰ ÁN CHUNG ───────────────────────────────── */}
+            <nav className="side-sec" aria-label={T.navTeamKnowledge}>
+              <div className="side-label side-label--team">
+                {T.navTeamKnowledge}
+              </div>
+              {(
+                [
+                  { href: "/graph", label: T.navTeamGraph },
+                  { href: "/tree", label: T.tree },
+                  { href: "/tree/branches", label: T.navBranches },
+                ] as { href: string; label: string }[]
+              ).map((n) => {
+                const here =
+                  n.href === "/graph"
+                    ? pathname === "/graph" && currentScope !== "personal"
+                    : pathname === n.href || (n.href !== "/tree" && pathname.startsWith(n.href));
+                return (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    className={`tree-item nav-item${here ? " active" : ""}`}
+                    aria-current={here ? "page" : undefined}
+                  >
+                    <span className="item-label">{n.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Team branches outline */}
+            <div className="side-sec">
+              <div className="side-label side-label--team">
+                {T.branch}
+                {(role === "editor" || role === "admin_op") && (
+                  <Link href="/tree/branch/new" title={T.createBranch} aria-label={T.createBranch}>
+                    +
+                  </Link>
                 )}
               </div>
-            );
-          })}
-          {branches.length === 0 && <p className="pal-empty">{T.empty}</p>}
-        </div>
-        {recent.length > 0 && (
+              {safeTeamBranches.map((b) => (
+                <BranchSection key={b.id} branch={b} pathname={pathname} />
+              ))}
+              {safeTeamBranches.length === 0 && <p className="pal-empty">{T.empty}</p>}
+            </div>
+
+            {/* ── QUẢN LÝ DỰ ÁN (VIỆC CHUNG) ────────────────────── */}
+            <nav className="side-sec" aria-label={T.navProjects}>
+              <div className="side-label">{T.navProjects}</div>
+              <p className="side-hint">{T.navProjectsHint}</p>
+              {teamProjects.map((n) => (
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
+                  aria-current={pathname.startsWith(n.href) ? "page" : undefined}
+                >
+                  <span className="item-label">{n.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </>
+        ) : (
+          <>
+            {/* ── KHÔNG GIAN CỦA TÔI ────────────────────────────── */}
+            <nav className="side-sec" aria-label={T.navPersonalSpace}>
+              <div className="side-label side-label--personal">
+                {T.navPersonalSpace}
+              </div>
+              {(
+                [
+                  { href: "/graph?scope=personal", label: T.navPersonalGraph },
+                ] as { href: string; label: string }[]
+              ).map((n) => {
+                const here = pathname === "/graph" && currentScope === "personal";
+                return (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    className={`tree-item nav-item${here ? " active" : ""}`}
+                    aria-current={here ? "page" : undefined}
+                  >
+                    <span className="item-label">{n.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Personal branches outline */}
+            <div className="side-sec">
+              <div className="side-label side-label--personal">
+                {T.navPersonalNotes}
+                <Link href="/tree/branch/new?scope=personal" title="Tạo chuyên đề cá nhân" aria-label="Tạo chuyên đề cá nhân">
+                  +
+                </Link>
+              </div>
+              {safePersonalBranches.map((b) => (
+                <BranchSection key={b.id} branch={b} pathname={pathname} />
+              ))}
+              {safePersonalBranches.length === 0 && (
+                <p className="side-hint">{T.personalBranchEmpty}</p>
+              )}
+            </div>
+
+            {/* ── CÔNG VIỆC HẰNG NGÀY (CÁ NHÂN) ──────────────────── */}
+            <nav className="side-sec" aria-label={T.navWork}>
+              <div className="side-label">{T.navWork}</div>
+              <p className="side-hint">{T.navWorkHint}</p>
+              {personalWork.map((n) => (
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className={`tree-item nav-item${pathname.startsWith(n.href) ? " active" : ""}`}
+                  aria-current={pathname.startsWith(n.href) ? "page" : undefined}
+                >
+                  <span className="item-label">{n.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </>
+        )}
+
+        {/* ── GẦN ĐÂY ──────────────────────────────────────── */}
+        {recentForTab.length > 0 && (
           <div className="side-sec">
             <div className="side-label">{T.recent}</div>
-            {recent.map((n) => (
+            {recentForTab.map((n) => (
               <NodeLink
                 key={n.id}
                 nodeId={n.id}
@@ -214,20 +341,21 @@ export function ShellSidebar({
             ))}
           </div>
         )}
-        <div className="side-sec">
-          <div className="side-label">{T.shortcuts}</div>
-          {shortcuts.map((s) => (
-            <Link
-              key={s.href}
-              href={s.href}
-              className={`tree-item${pathname.startsWith(s.href) ? " active" : ""}`}
-              aria-current={pathname.startsWith(s.href) ? "page" : undefined}
-            >
-              <span className="item-label">{s.label}</span>
-            </Link>
-          ))}
-        </div>
       </div>
     </aside>
+  );
+}
+
+export function ShellSidebar(props: {
+  teamBranches?: OutlineBranch[];
+  personalBranches?: OutlineBranch[];
+  recent?: RecentNode[];
+  role?: string;
+  spaceCount?: number;
+}) {
+  return (
+    <Suspense fallback={<aside className="sidebar" aria-label={T.navPanel} />}>
+      <SidebarContent {...props} />
+    </Suspense>
   );
 }

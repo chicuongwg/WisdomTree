@@ -51,10 +51,9 @@ export function NotificationLink({
         // nowhere to render a message. Refreshing puts the unread row and its
         // badge back instead of leaving a silent, stale "đã đọc" behind.
         fetch(`/api/notifications/${notificationId}/read`, { method: "POST", keepalive: true })
-          .then((res) => {
-            if (!res.ok) router.refresh();
-          })
-          .catch(() => router.refresh());
+          .finally(() => {
+            router.refresh();
+          });
       }}
     >
       {children}

@@ -162,7 +162,11 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           owned-or-assigned), this just keeps the controls off other people's
           screens. Admin/Op passes the same check on role. */}
       {canEdit && stored && (
-        <NominateSource sourceId={source.id} nominated={Boolean(source.curationState)} />
+        <NominateSource
+          sourceId={source.id}
+          nominated={Boolean(source.curationState)}
+          canRevert={source.curationState !== "promoted"}
+        />
       )}
       {(source.submittedBy === user.id || user.role === "admin_op") && (
         <SourceOwnerActions

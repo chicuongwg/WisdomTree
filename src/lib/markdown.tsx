@@ -15,7 +15,10 @@ import { T } from "./vi";
 
 export { parseBlocks, markdownToHtml } from "./markdown-core";
 
-export type WikiIndex = Record<string, { id: string; title: string; verification: string }>;
+export type WikiIndex = Record<
+  string,
+  { id: string; title: string; verification: string; kind?: "node" | "source" }
+>;
 
 function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
   return inlineTokens(text).map((token, i) => {
@@ -27,6 +30,21 @@ function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
         <span key={i} className="wiki-missing" title={T.wikiMissing} aria-label={`${token.label} — ${T.wikiMissing}`}>
           {token.label}
         </span>
+      );
+    }
+    if (target.kind === "source" || target.verification === "source") {
+      return (
+        <a
+          key={i}
+          href={`/library/${target.id}`}
+          className="wiki-link source-link"
+          title={`${target.title} — ${T.library}`}
+        >
+          <span className="node-state source" aria-hidden="true">
+            ●
+          </span>
+          {token.label}
+        </a>
       );
     }
     return (

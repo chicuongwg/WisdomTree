@@ -42,8 +42,11 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
   const gaps = await listGapsForBranch(actor, id);
 
   const verified = branch.nodes.filter((n) => n.verification === "verified").length;
-  const canEdit = user.role === "editor" || user.role === "admin_op";
-  const canEditMeta = user.role === "admin_op" || branch.createdBy === user.id;
+  const isOwnPersonalBranch =
+    branch.scope === "personal" && (branch.ownerUserId === user.id || branch.createdBy === user.id);
+  const canEdit = user.role === "editor" || user.role === "admin_op" || isOwnPersonalBranch;
+  const canEditMeta =
+    user.role === "admin_op" || branch.createdBy === user.id || isOwnPersonalBranch;
 
   return (
     <main className="page">

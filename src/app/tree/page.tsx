@@ -23,6 +23,8 @@ export default async function TreeBrowsePage({
     q?.trim() ? searchTree(actor, q) : Promise.resolve(null),
   ]);
   const canEdit = user.role === "editor" || user.role === "admin_op";
+  const teamBranches = branches.filter((b) => b.scope === "team" || !b.scope);
+  const personalBranches = branches.filter((b) => b.scope === "personal");
 
   return (
     <main className="page">
@@ -92,24 +94,48 @@ export default async function TreeBrowsePage({
           <h2>
             <Link href="/tree/branches">{T.branch}</Link>
           </h2>
-          {branches.length === 0 && (
+          {branches.length === 0 ? (
             <Empty
               panel={false}
               title={T.branchesEmptyTitle}
               hint={T.branchesEmptyHint}
               action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
             />
+          ) : (
+            <>
+              <h3 style={{ fontSize: "0.95rem", marginTop: "1rem", marginBottom: "0.5rem" }}>Kho dự án chung</h3>
+              {teamBranches.length === 0 ? (
+                <p className="muted" style={{ fontSize: "0.85rem" }}>Chưa có chuyên đề chung.</p>
+              ) : (
+                <ul>
+                  {teamBranches.slice(0, 6).map((b) => (
+                    <li key={b.id}>
+                      <Link href={`/tree/branch/${b.id}`}>{b.name}</Link>{" "}
+                      <span className="muted">
+                        {b.nodeCount} {T.node.toLowerCase()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <h3 style={{ fontSize: "0.95rem", marginTop: "1.25rem", marginBottom: "0.5rem" }}>Tài liệu cá nhân</h3>
+              {personalBranches.length === 0 ? (
+                <p className="muted" style={{ fontSize: "0.85rem" }}>Chưa có chuyên đề cá nhân.</p>
+              ) : (
+                <ul>
+                  {personalBranches.slice(0, 6).map((b) => (
+                    <li key={b.id}>
+                      <Link href={`/tree/branch/${b.id}`}>{b.name}</Link>{" "}
+                      <span className="muted">
+                        {b.nodeCount} {T.node.toLowerCase()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
-          <ul>
-            {branches.slice(0, 8).map((b) => (
-              <li key={b.id}>
-                <Link href={`/tree/branch/${b.id}`}>{b.name}</Link>{" "}
-                <span className="muted">
-                  {b.nodeCount} {T.node.toLowerCase()}
-                </span>
-              </li>
-            ))}
-          </ul>
         </div>
         <div className="panel">
           <h2>Trang cập nhật gần đây</h2>

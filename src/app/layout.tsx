@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   description: "Nền tảng lưu trữ và tri thức của nhóm",
 };
 
+export const dynamic = "force-dynamic";
+
 // Stamps the persisted (or OS-preferred) theme on <html> before first paint
 // so the dark theme never flashes light. The side panel rides along for the
 // same reason: the rail reads the key in an effect, and without this the panel
@@ -67,6 +69,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),
   ).length;
 
+  // Defensively handle HMR / cached server bundles where treeOutline might still
+  // return an array instead of { team, personal }.
+  const teamBranches = Array.isArray(outline) ? outline : (outline?.team ?? []);
+  const personalBranches = Array.isArray(outline) ? [] : (outline?.personal ?? []);
+
   return (
     <html lang="vi" suppressHydrationWarning>
       {/* suppressHydrationWarning reaches one level only, so <body> needs its
@@ -90,7 +97,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             reviewOpen={reviewOpen}
           />
           <ShellSidebar
-            branches={outline}
+            teamBranches={teamBranches}
+            personalBranches={personalBranches}
             recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
             role={user.role}
             spaceCount={user.spaceIds.length}

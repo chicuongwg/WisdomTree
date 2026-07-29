@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getNode } from "@/modules/knowledge/service";
+import { getNode, wikiIndex } from "@/modules/knowledge/service";
 import { T } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeEditor } from "@/app/components/node-editor";
@@ -19,9 +19,16 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
   const user = await requireUser();
   const actor = toPrincipal(user);
   const { id } = await params;
-  const node = await orNotFound(() => getNode(actor, id));
+  const [node, wiki] = await Promise.all([
+    orNotFound(() => getNode(actor, id)),
+    wikiIndex(actor),
+  ]);
   const isAdmin = user.role === "admin_op";
-  const canEdit = isAdmin || (user.role === "editor" && node.createdBy === user.id);
+  const isOwnPersonalNode =
+    node.branchScope === "personal" &&
+    (node.branchOwnerId === user.id || node.createdBy === user.id);
+  const canEdit =
+    isAdmin || (user.role === "editor" && node.createdBy === user.id) || isOwnPersonalNode;
   if (!canEdit || node.verification === "archived") notFound();
 
   return (
@@ -49,6 +56,7 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
           tags: node.tags,
         }}
         isAdmin={isAdmin}
+        wikiIndex={wiki}
       />
     </main>
   );

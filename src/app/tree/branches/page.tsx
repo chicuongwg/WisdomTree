@@ -6,18 +6,38 @@ import { Empty } from "@/app/components/empty";
 
 export const metadata = { title: T.navBranches };
 
+type BranchItem = Awaited<ReturnType<typeof listBranches>>[number];
+
+function BranchCard({ b }: { b: BranchItem }) {
+  return (
+    <div className="panel" key={b.id}>
+      <h3>
+        <Link href={`/tree/branch/${b.id}`}>{b.name}</Link>
+      </h3>
+      {b.description && <p className="muted">{b.description}</p>}
+      <p>
+        <strong>{b.nodeCount}</strong> {T.node.toLowerCase()} ·{" "}
+        <span className={badgeToneClass(b.verifiedCount > 0 ? "done" : "waiting")}>
+          {b.verifiedCount} đã thẩm định
+        </span>
+      </p>
+    </div>
+  );
+}
+
 // Screen: Branch List (`/tree/branches`) — branch cards with node counts and
-// verification progress (user-screen-specs.md).
+// verification progress, separated into Team and Personal branches.
 export default async function BranchListPage() {
   const user = await requireUser();
   const branches = await listBranches(toPrincipal(user));
   const canEdit = user.role === "editor" || user.role === "admin_op";
 
+  const teamBranches = branches.filter((b) => b.scope === "team" || !b.scope);
+  const personalBranches = branches.filter((b) => b.scope === "personal");
+
   return (
     <main className="page">
       <h1>{T.navBranches}</h1>
-      {/* When the list is empty the empty state carries the create button, so
-          this one would be the same button twice. */}
       {canEdit && branches.length > 0 && (
         <p>
           <Link className="button" href="/tree/branch/new">
@@ -32,26 +52,33 @@ export default async function BranchListPage() {
           action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
         />
       ) : (
-        <div className="cards">
-          {branches.map((b) => (
-            <div className="panel" key={b.id}>
-              <h2>
-                <Link href={`/tree/branch/${b.id}`}>{b.name}</Link>
-              </h2>
-              {b.description && <p className="muted">{b.description}</p>}
-              <p>
-                <strong>{b.nodeCount}</strong> {T.node.toLowerCase()} ·{" "}
-                {/* A count of nodes that reached `verified` — the same tone as
-                    the state it counts, so the card and the node badges agree.
-                    Except at zero: a green chip reading "0 đã thẩm định" would
-                    claim an achievement that has not happened. */}
-                <span className={badgeToneClass(b.verifiedCount > 0 ? "done" : "waiting")}>
-                  {b.verifiedCount} đã thẩm định
-                </span>
-              </p>
-            </div>
-          ))}
-        </div>
+        <>
+          <section aria-label="Kho dự án chung" style={{ marginBottom: "2rem" }}>
+            <h2>Kho dự án chung</h2>
+            {teamBranches.length === 0 ? (
+              <p className="muted">Chưa có chuyên đề chung nào.</p>
+            ) : (
+              <div className="cards">
+                {teamBranches.map((b) => (
+                  <BranchCard key={b.id} b={b} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section aria-label="Tài liệu cá nhân">
+            <h2>Tài liệu cá nhân</h2>
+            {personalBranches.length === 0 ? (
+              <p className="muted">Chưa có chuyên đề cá nhân nào.</p>
+            ) : (
+              <div className="cards">
+                {personalBranches.map((b) => (
+                  <BranchCard key={b.id} b={b} />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </main>
   );
