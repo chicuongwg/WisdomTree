@@ -23,6 +23,11 @@ export const branches = pgTable("branches", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
   description: text("description"),
+  // scope: 'team' = shared project knowledge (all members); 'personal' = private
+  // note tree visible only to ownerUserId. Defaults to 'team' so all existing
+  // rows stay valid after the 0010 migration.
+  scope: text("scope", { enum: ["team", "personal"] }).notNull().default("team"),
+  ownerUserId: uuid("owner_user_id").references(() => users.id),
   createdBy: uuid("created_by").notNull().references(() => users.id),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

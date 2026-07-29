@@ -284,6 +284,14 @@ async function main() {
   console.log("");
   ok("p4 text file processed", p4status === "processed", `got ${p4status}`);
 
+  // Nominate → Revert nomination → Re-nominate proof
+  const nom1 = await fetch(`${BASE}/api/source/${p4source.id}/nominate`, asUser(lan, { method: "POST" }));
+  ok("uploader nominates source → 201", nom1.status === 201, `got ${nom1.status}`);
+  const revertNom = await fetch(`${BASE}/api/source/${p4source.id}/nominate`, asUser(lan, { method: "DELETE" }));
+  ok("uploader reverts nomination → 200", revertNom.status === 200, `got ${revertNom.status}`);
+  const nom2 = await fetch(`${BASE}/api/source/${p4source.id}/nominate`, asUser(lan, { method: "POST" }));
+  ok("uploader re-nominates source → 201", nom2.status === 201, `got ${nom2.status}`);
+
   const vbase = `${BASE}/api/source/${p4source.id}/version/${p4versionId}`;
   const json = { "Content-Type": "application/json" };
 
@@ -486,6 +494,48 @@ async function main() {
   );
   ok("audit node.merge written", (await auditCount("node.merge", dupNode.id)) === 1);
   ok("outbox tree.node.merged written", (await outboxCount("tree.node.merged", "nodeId", dupNode.id)) === 1);
+
+  // Normal user (role: 'user') can create a personal branch and add notes to it,
+  // but cannot create a team branch.
+  const lanTeamBranchRes = await fetch(
+    `${BASE}/api/tree/branches`,
+    asUser(lan, { method: "POST", headers: json, body: JSON.stringify({ name: "Lan team branch", scope: "team" }) }),
+  );
+  ok("normal user cannot create team branch → 403", lanTeamBranchRes.status === 403, `got ${lanTeamBranchRes.status}`);
+
+  const lanPersonalBranchRes = await fetch(
+    `${BASE}/api/tree/branches`,
+    asUser(lan, { method: "POST", headers: json, body: JSON.stringify({ name: "Lan personal notes", scope: "personal" }) }),
+  );
+  ok("normal user creates personal branch → 201", lanPersonalBranchRes.status === 201, `got ${lanPersonalBranchRes.status}`);
+  const lanBranch = (await lanPersonalBranchRes.json()) as { id: string };
+
+  const lanNodeRes = await fetch(
+    `${BASE}/api/tree/nodes`,
+    asUser(lan, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        branchId: lanBranch.id,
+        title: "Ghi chú cá nhân của Lan",
+        contentMd: "Nội dung ghi chú riêng tư của Lan",
+      }),
+    }),
+  );
+  ok("normal user creates node in own personal branch → 201", lanNodeRes.status === 201, `got ${lanNodeRes.status}`);
+  const lanNode = (await lanNodeRes.json()) as { id: string };
+
+  const lanEditRes = await fetch(
+    `${BASE}/api/tree/nodes/${lanNode.id}`,
+    asUser(lan, {
+      method: "PATCH",
+      headers: json,
+      body: JSON.stringify({
+        contentMd: "Nội dung đã chỉnh sửa trong chuyên đề cá nhân",
+      }),
+    }),
+  );
+  ok("normal user edits own note in personal branch → 200", lanEditRes.status === 200, `got ${lanEditRes.status}`);
 
   // ---------- Proof 5: comments, notifications, deadlines ----------
   // Comment on a visible node OK + mention notification; comment on a
@@ -1330,7 +1380,7 @@ async function main() {
        FROM loan_tickets t
        JOIN users b ON b.id = t.borrower_id
        LEFT JOIN users h ON h.id = t.handled_by
-      WHERE t.state IN ('requested','approved','borrowed','overdue')
+      WHERE t.state IN ('borrowed','overdue') AND t.due_at IS NOT NULL
       ORDER BY t.requested_at DESC LIMIT 1`,
   );
   ok("a seeded active loan exists to prove the record against", activeTicket.length === 1);
@@ -1367,7 +1417,7 @@ async function main() {
   ok("no loan-ticket comment rows survive in the database", loanComments[0].n === 0);
 
   // (c) the record reads on the screen, for the member and the librarian.
-  const dueText = new Date(ticket9.due_at).toLocaleDateString("vi-VN");
+  const dueText = new Date(ticket9.due_at).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
   for (const [who, cookie] of [
     ["thành viên", lan],
     ["quản trị", huong],

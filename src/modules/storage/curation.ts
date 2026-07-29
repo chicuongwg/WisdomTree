@@ -177,6 +177,42 @@ export async function nominateSource(actor: Principal, sourceId: string) {
   });
 }
 
+/**
+ * Uploader (or Admin/Op) withdraws/reverts a nomination before it is promoted to the tree.
+ * Deletes the curation row so the source returns to "stored, never nominated" state.
+ */
+export async function revertNomination(actor: Principal, sourceId: string) {
+  const [row] = await db
+    .select({ source: sources, version: sourceVersions })
+    .from(sources)
+    .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .where(eq(sources.id, sourceId));
+  if (!row) throw notFound();
+  authorize(actor, "storage.source.manage", { ownerIds: [row.source.submittedBy], kind: "write" });
+  const [existing] = await db
+    .select({ id: curations.id, state: curations.state })
+    .from(curations)
+    .where(eq(curations.sourceVersionId, row.version.id));
+  if (!existing) {
+    throw new ApiError(409, "not_nominated", T.sourceNotNominated);
+  }
+  if (existing.state === "promoted") {
+    throw new ApiError(409, "already_promoted", T.sourceAlreadyPromoted);
+  }
+
+  return db.transaction(async (tx) => {
+    await tx.delete(curations).where(eq(curations.id, existing.id));
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.nominate_revert",
+      targetType: "source",
+      targetId: sourceId,
+      details: { sourceVersionId: row.version.id },
+    });
+    return { ok: true };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Corrected text (append-only revision chain)
 // ---------------------------------------------------------------------------

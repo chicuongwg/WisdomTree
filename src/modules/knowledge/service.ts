@@ -9,7 +9,7 @@ import {
   wikiTargetKeys,
 } from "@/lib/wikilink";
 import type { Principal } from "../auth/dev-auth";
-import { authorize } from "../auth/authorize";
+import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { sources, sourceVersions } from "../storage/schema";
@@ -63,6 +63,35 @@ async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promis
 // Branches
 // ---------------------------------------------------------------------------
 
+/**
+ * Knowledge scope & visibility rules:
+ * - Admin (`admin_op`) can view all non-archived branches (team + all personal).
+ * - Individuals can view team branches (`scope='team'`) and their OWN personal branch (`scope='personal' && ownerUserId = actor.userId`).
+ */
+export function canViewBranch(
+  actor: Principal,
+  branch: { scope: string; ownerUserId: string | null },
+): boolean {
+  if (actor.role === "admin_op") return true;
+  if (branch.scope === "team") return true;
+  if (branch.scope === "personal" && branch.ownerUserId === actor.userId) return true;
+  return false;
+}
+
+export function branchVisibilityCondition(actor: Principal) {
+  const isAdmin = actor.role === "admin_op";
+  if (isAdmin) {
+    return sql`${branches.archivedAt} IS NULL`;
+  }
+  return and(
+    sql`${branches.archivedAt} IS NULL`,
+    or(
+      eq(branches.scope, "team"),
+      and(eq(branches.scope, "personal"), eq(branches.ownerUserId, actor.userId)),
+    ),
+  );
+}
+
 export async function listBranches(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   return db
@@ -70,6 +99,8 @@ export async function listBranches(actor: Principal) {
       id: branches.id,
       name: branches.name,
       description: branches.description,
+      scope: branches.scope,
+      ownerUserId: branches.ownerUserId,
       createdBy: branches.createdBy,
       updatedAt: branches.updatedAt,
       version: branches.version,
@@ -78,18 +109,28 @@ export async function listBranches(actor: Principal) {
     })
     .from(branches)
     .leftJoin(treeNodes, eq(treeNodes.branchId, branches.id))
-    .where(sql`${branches.archivedAt} IS NULL`)
+    .where(branchVisibilityCondition(actor))
     .groupBy(branches.id)
     .orderBy(asc(branches.name));
 }
 
-/** Shell sidebar: every live branch with its node list, two queries total. */
+/**
+ * Shell sidebar: live branches split into two groups.
+ *   team     → scope='team' branches, visible to all members
+ *   personal → scope='personal' branches owned by this actor only (admin sees all)
+ * Each branch carries its non-archived node list (two queries total).
+ */
 export async function treeOutline(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const branchRows = await db
-    .select({ id: branches.id, name: branches.name })
+    .select({
+      id: branches.id,
+      name: branches.name,
+      scope: branches.scope,
+      ownerUserId: branches.ownerUserId,
+    })
     .from(branches)
-    .where(sql`${branches.archivedAt} IS NULL`)
+    .where(branchVisibilityCondition(actor))
     .orderBy(asc(branches.name));
   const nodeRows = await db
     .select({
@@ -99,18 +140,32 @@ export async function treeOutline(actor: Principal) {
       verification: treeNodes.verification,
     })
     .from(treeNodes)
-    .where(ne(treeNodes.verification, "archived"))
-    .orderBy(asc(treeNodes.title));
-  return branchRows.map((b) => ({
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(
+      and(
+        ne(treeNodes.verification, "archived"),
+        branchVisibilityCondition(actor),
+      ),
+    )
+    .orderBy(desc(treeNodes.updatedAt));
+  const withNodes = branchRows.map((b) => ({
     ...b,
     nodes: nodeRows.filter((n) => n.branchId === b.id),
   }));
+  return {
+    team: withNodes.filter((b) => b.scope === "team"),
+    personal: withNodes.filter(
+      (b) =>
+        b.scope === "personal" &&
+        (actor.role === "admin_op" || b.ownerUserId === actor.userId),
+    ),
+  };
 }
 
 export async function getBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
-  if (!branch || branch.archivedAt) throw notFound();
+  if (!branch || branch.archivedAt || !canViewBranch(actor, branch)) throw notFound();
   const nodes = await db
     .select({
       id: treeNodes.id,
@@ -126,15 +181,25 @@ export async function getBranch(actor: Principal, branchId: string) {
   return { ...branch, nodes };
 }
 
+
 export async function createBranch(
   actor: Principal,
-  input: { name: string; description?: string },
+  input: { name: string; description?: string; scope?: string },
 ) {
-  authorize(actor, "knowledge.branch.create", { kind: "write" });
+  const isPersonalScope = input.scope === "personal";
+  if (!isPersonalScope) {
+    authorize(actor, "knowledge.branch.create", { kind: "write" });
+  }
   return db.transaction(async (tx) => {
     const [created] = await tx
       .insert(branches)
-      .values({ name: input.name, description: input.description ?? null, createdBy: actor.userId })
+      .values({
+        name: input.name,
+        description: input.description ?? null,
+        scope: isPersonalScope ? "personal" : "team",
+        ownerUserId: isPersonalScope ? actor.userId : null,
+        createdBy: actor.userId,
+      })
       .returning();
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
@@ -197,7 +262,12 @@ export async function recentNodes(actor: Principal, limit = 8) {
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(ne(treeNodes.verification, "archived"))
+    .where(
+      and(
+        ne(treeNodes.verification, "archived"),
+        branchVisibilityCondition(actor),
+      ),
+    )
     .orderBy(desc(treeNodes.updatedAt))
     .limit(limit);
 }
@@ -222,6 +292,7 @@ export async function searchTree(actor: Principal, q: string, page = 1) {
     .where(
       and(
         ne(treeNodes.verification, "archived"),
+        branchVisibilityCondition(actor),
         sql`${treeNodes}.tsv @@ plainto_tsquery('simple', immutable_unaccent(${query}))`,
       ),
     )
@@ -233,10 +304,15 @@ export async function searchTree(actor: Principal, q: string, page = 1) {
 export async function getNode(actor: Principal, nodeId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [row] = await db
-    .select({ node: treeNodes, branchName: branches.name })
+    .select({
+      node: treeNodes,
+      branchName: branches.name,
+      branchScope: branches.scope,
+      branchOwnerId: branches.ownerUserId,
+    })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(eq(treeNodes.id, nodeId));
+    .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
   if (!row) throw notFound();
 
   const [tagRows, linkRows, backlinkRows, provenance] = await Promise.all([
@@ -288,6 +364,8 @@ export async function getNode(actor: Principal, nodeId: string) {
   return {
     ...row.node,
     branchName: row.branchName,
+    branchScope: row.branchScope,
+    branchOwnerId: row.branchOwnerId,
     tags: tagRows.map((t) => t.name),
     links: linkRows,
     backlinks: backlinkRows.map((b) => ({
@@ -314,7 +392,8 @@ export async function nodePreview(actor: Principal, nodeId: string) {
       contentMd: treeNodes.contentMd,
     })
     .from(treeNodes)
-    .where(eq(treeNodes.id, nodeId));
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
   if (!node) throw notFound();
   return {
     id: node.id,
@@ -330,9 +409,44 @@ export async function wikiIndex(actor: Principal) {
   const rows = await db
     .select({ id: treeNodes.id, title: treeNodes.title, verification: treeNodes.verification })
     .from(treeNodes)
-    .where(ne(treeNodes.verification, "archived"))
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(
+      and(
+        ne(treeNodes.verification, "archived"),
+        branchVisibilityCondition(actor),
+      ),
+    )
     .orderBy(asc(treeNodes.updatedAt));
-  return buildWikiIndex(rows);
+  const nodeIndex: Record<
+    string,
+    { id: string; title: string; verification: string; kind: "node" | "source" }
+  > = buildWikiIndex(rows.map((r) => ({ ...r, kind: "node" as const })));
+
+  const visibleSpaces = scopedToSpaces(actor);
+  const spaceFilter =
+    visibleSpaces !== null
+      ? visibleSpaces.length
+        ? inArray(sources.spaceId, visibleSpaces)
+        : sql`false`
+      : undefined;
+  const sourceRows = await db
+    .select({ id: sources.id, title: sources.title })
+    .from(sources)
+    .where(and(ne(sources.trustStatus, "archived"), spaceFilter));
+
+  for (const s of sourceRows) {
+    const key = normalizeTitle(s.title);
+    if (!(key in nodeIndex)) {
+      nodeIndex[key] = {
+        id: s.id,
+        title: s.title,
+        verification: "source",
+        kind: "source",
+      };
+    }
+  }
+
+  return nodeIndex;
 }
 
 // ---------------------------------------------------------------------------
@@ -349,9 +463,18 @@ export type GraphNode = {
 export type GraphEdge = { from: string; to: string; linkType: string };
 export type KnowledgeGraph = { nodes: GraphNode[]; edges: GraphEdge[] };
 
-/** Whole live graph: every non-archived page and every link between two. */
-export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
-  authorize(actor, "knowledge.node.read", { kind: "read" });
+/**
+ * Internal helper: build a graph from a set of branch IDs.
+ * Edges are kept only when both endpoints belong to the node set — this
+ * ensures cross-scope links (personal→team wiki-links) are visible on the
+ * team graph too, while orphaned edge endpoints are never returned.
+ */
+async function graphForBranches(
+  branchIds: string[],
+  includeCrossLinks: boolean,
+  allLiveIds?: Set<string>,
+): Promise<KnowledgeGraph> {
+  if (!branchIds.length) return { nodes: [], edges: [] };
   const nodes = await db
     .select({
       id: treeNodes.id,
@@ -362,17 +485,107 @@ export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> 
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(ne(treeNodes.verification, "archived"))
+    .where(
+      and(
+        inArray(treeNodes.branchId, branchIds),
+        ne(treeNodes.verification, "archived"),
+      ),
+    )
     .orderBy(asc(treeNodes.title));
-  const live = new Set(nodes.map((n) => n.id));
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  // Cross-link mode: the team graph shows links FROM personal nodes that point
+  // INTO the team graph (the personal side disappears, the link stays visible).
+  const targetSet = includeCrossLinks && allLiveIds ? allLiveIds : nodeIds;
   const edgeRows = await db
     .select({
       from: nodeLinks.fromNodeId,
       to: nodeLinks.toNodeId,
       linkType: nodeLinks.linkType,
     })
-    .from(nodeLinks);
-  return { nodes, edges: edgeRows.filter((e) => live.has(e.from) && live.has(e.to)) };
+    .from(nodeLinks)
+    .where(
+      or(
+        inArray(nodeLinks.fromNodeId, [...nodeIds]),
+        inArray(nodeLinks.toNodeId, [...nodeIds]),
+      ),
+    );
+  return {
+    nodes,
+    edges: edgeRows.filter((e) => nodeIds.has(e.from) && targetSet.has(e.to)),
+  };
+}
+
+/** Team knowledge graph: all scope='team' branches, visible to every member. */
+export async function teamKnowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const teamBranches = await db
+    .select({ id: branches.id })
+    .from(branches)
+    .where(and(eq(branches.scope, "team"), sql`${branches.archivedAt} IS NULL`));
+  return graphForBranches(
+    teamBranches.map((b) => b.id),
+    false,
+  );
+}
+
+/**
+ * Personal knowledge graph: only scope='personal' branches owned by this actor.
+ * Cross-links that point to team nodes are included so the personal map
+ * shows how private notes connect to published knowledge.
+ */
+export async function personalKnowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const [personalBranches, teamBranches] = await Promise.all([
+    db
+      .select({ id: branches.id })
+      .from(branches)
+      .where(
+        and(
+          eq(branches.scope, "personal"),
+          actor.role === "admin_op"
+            ? sql`1=1`
+            : eq(branches.ownerUserId, actor.userId),
+          sql`${branches.archivedAt} IS NULL`,
+        ),
+      ),
+    db
+      .select({ id: branches.id })
+      .from(branches)
+      .where(and(eq(branches.scope, "team"), sql`${branches.archivedAt} IS NULL`)),
+  ]);
+  // Collect all live team node IDs so cross-links can be resolved.
+  const allLiveIds = personalBranches.length
+    ? new Set(
+        (
+          await db
+            .select({ id: treeNodes.id })
+            .from(treeNodes)
+            .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+            .where(
+              and(
+                inArray(
+                  treeNodes.branchId,
+                  [...personalBranches, ...teamBranches].map((b) => b.id),
+                ),
+                ne(treeNodes.verification, "archived"),
+              ),
+            )
+        ).map((n) => n.id),
+      )
+    : new Set<string>();
+  return graphForBranches(
+    personalBranches.map((b) => b.id),
+    true,
+    allLiveIds,
+  );
+}
+
+/**
+ * @deprecated Use teamKnowledgeGraph() or personalKnowledgeGraph().
+ * Kept for any call sites not yet migrated.
+ */
+export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
+  return teamKnowledgeGraph(actor);
 }
 
 // ---------------------------------------------------------------------------
@@ -483,9 +696,14 @@ export async function createNode(
     links?: Array<{ toNodeId: string; linkType: string }>;
   },
 ) {
-  authorize(actor, "knowledge.node.create", { kind: "write" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (!branch || branch.archivedAt) throw notFound();
+  const isOwnPersonalBranch =
+    branch.scope === "personal" &&
+    (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
+  if (!isOwnPersonalBranch) {
+    authorize(actor, "knowledge.node.create", { kind: "write" });
+  }
 
   return db.transaction(async (tx) => {
     const slug = await uniqueSlug(tx, input.title);
@@ -545,7 +763,13 @@ export async function updateNode(
 ) {
   const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
   if (!node) throw notFound();
-  authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
+  const [branch] = await db.select().from(branches).where(eq(branches.id, node.branchId));
+  const isOwnPersonalBranch =
+    branch?.scope === "personal" &&
+    (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
+  if (!isOwnPersonalBranch) {
+    authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
+  }
 
   if (patch.verification !== undefined || patch.publish !== undefined) {
     // Verification transitions and the Quartz publish flag ride on
@@ -754,6 +978,12 @@ export async function listNodeOptions(actor: Principal) {
   return db
     .select({ id: treeNodes.id, title: treeNodes.title, verification: treeNodes.verification })
     .from(treeNodes)
-    .where(inArray(treeNodes.verification, ["no_source", "unverified", "verified"]))
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(
+      and(
+        inArray(treeNodes.verification, ["no_source", "unverified", "verified"]),
+        branchVisibilityCondition(actor),
+      ),
+    )
     .orderBy(asc(treeNodes.title));
 }

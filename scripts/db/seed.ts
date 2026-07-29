@@ -55,11 +55,12 @@ async function main() {
                 space_members, spaces, users CASCADE`,
     );
 
-    // --- 3 users, one per role (dev auth picker signs in as one of these) ---
+    // --- Seeded users (dev auth picker signs in as one of these) ---
     const users = [
       { id: randomUUID(), sub: "dev:lan", email: "lan@wisdomtree.local", name: "Trần Thị Lan", role: "user" },
       { id: randomUUID(), sub: "dev:minh", email: "minh@wisdomtree.local", name: "Lê Văn Minh", role: "editor" },
       { id: randomUUID(), sub: "dev:huong", email: "huong@wisdomtree.local", name: "Phạm Thu Hương", role: "admin_op" },
+      { id: randomUUID(), sub: "dev:duc", email: "duc@wisdomtree.local", name: "Tiến Đức", role: "user" },
     ] as const;
     for (const u of users) {
       await client.query(
@@ -67,7 +68,7 @@ async function main() {
         [u.id, u.sub, u.email, u.name, u.role],
       );
     }
-    const [lan, minh, huong] = users;
+    const [lan, minh, huong, duc] = users;
 
     // --- 2 team spaces + 1 personal space each ---
     // The community library is a team space (database-schema.md); it doubles
@@ -101,6 +102,7 @@ async function main() {
       [library, lan.id],
       [library, minh.id],
       [library, huong.id],
+      [library, duc.id],
       [teamCommunity, minh.id],
       [teamCommunity, huong.id],
     ];
@@ -193,17 +195,29 @@ async function main() {
       sourceByTitle[def.title] = { sourceId, versionId, chunkIds };
     }
 
-    // --- Knowledge tree: 2 branches, 4 published nodes (mixed verification,
-    // incl. one no_source manual), provenance promotions for the
-    // source-driven ones, and 1 curation mid-flow so /review is non-empty ---
+    // --- Knowledge tree: 2 team branches, 4 published nodes (mixed
+    // verification, incl. one no_source manual), provenance promotions for
+    // the source-driven ones, and 1 curation mid-flow so /review is non-empty.
+    // Each user also gets 1 personal branch (scope='personal') so the sidebar
+    // "Không Gian Của Tôi" section is non-empty from first boot. ---
     const branchFolk = randomUUID();
     const branchHistory = randomUUID();
     await client.query(
-      `INSERT INTO branches (id, name, description, created_by) VALUES
-         ($1,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.',$3),
-         ($2,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.',$3)`,
+      `INSERT INTO branches (id, name, description, scope, created_by) VALUES
+         ($1,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.','team',$3),
+         ($2,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.','team',$3)`,
       [branchFolk, branchHistory, minh.id],
     );
+
+    // Personal branches — one per user, empty by default (user fills them in).
+    for (const u of users) {
+      await client.query(
+        `INSERT INTO branches (name, scope, owner_user_id, created_by)
+         VALUES ($1,'personal',$2,$2)`,
+        [`Ghi chú cá nhân — ${u.name}`, u.id],
+      );
+    }
+
 
     type NodeDef = {
       branch: string;
