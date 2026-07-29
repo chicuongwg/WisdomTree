@@ -10,7 +10,9 @@ export const exportJobs = pgTable("export_jobs", {
   scope: text("scope", { enum: ["full_tree", "node"] }).notNull(),
   nodeId: uuid("node_id").references(() => treeNodes.id),
   state: text("state", { enum: ["queued", "running", "succeeded", "failed"] }).notNull(),
-  triggeredBy: uuid("triggered_by").notNull().references(() => users.id),
+  triggeredBy: uuid("triggered_by")
+    .notNull()
+    .references(() => users.id),
   manifest: jsonb("manifest"), // exported slugs and commit SHA
   error: text("error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

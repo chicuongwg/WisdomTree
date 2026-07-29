@@ -6,7 +6,10 @@ import { getDownloadToken } from "@/modules/storage/service";
 // GET /api/source/{sourceId}/download — authorize, then 302 to a short-lived
 // signed URL for exactly one object (authorization-design.md § Object Storage
 // Delivery). The local-FS substitution serves it via /api/blob/{token}.
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ sourceId: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ sourceId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { sourceId } = await params;

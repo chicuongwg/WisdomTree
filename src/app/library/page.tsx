@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { LIBRARY_PAGE_SIZE, listFolders, listLibrary, listMemberSpaces } from "@/modules/storage/service";
+import {
+  LIBRARY_PAGE_SIZE,
+  listFolders,
+  listLibrary,
+  listMemberSpaces,
+} from "@/modules/storage/service";
 import { badgeToneClass, T, when } from "@/lib/vi";
 import { extractionDisplay } from "@/lib/source-status";
 import { Pager } from "@/app/components/pager";
@@ -66,7 +71,15 @@ export default async function LibraryPage({
   ]);
 
   const href = (over: Record<string, string | undefined>) => {
-    const merged = { q, spaceId, folderId: sp.folderId, sort: sp.sort, dir: sp.dir, archived: sp.archived, ...over };
+    const merged = {
+      q,
+      spaceId,
+      folderId: sp.folderId,
+      sort: sp.sort,
+      dir: sp.dir,
+      archived: sp.archived,
+      ...over,
+    };
     const u = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) if (v) u.set(k, v);
     const s = u.toString();
@@ -76,7 +89,11 @@ export default async function LibraryPage({
   // Breadcrumb: walk parentId up from the open folder. Flat rows, tiny trees.
   const byId = new Map(folders.map((f) => [f.id, f]));
   const crumbs: Array<{ id: string; name: string }> = [];
-  for (let f = folderId ? byId.get(folderId) : undefined; f; f = f.parentId ? byId.get(f.parentId) : undefined) {
+  for (
+    let f = folderId ? byId.get(folderId) : undefined;
+    f;
+    f = f.parentId ? byId.get(f.parentId) : undefined
+  ) {
     crumbs.unshift(f);
   }
   const childFolders = browsing ? folders.filter((f) => (f.parentId ?? null) === folderId) : [];
@@ -96,9 +113,9 @@ export default async function LibraryPage({
 
   return (
     <LibraryDropzone spaces={spaces} spaceId={spaceId || undefined}>
-    <main className="page">
-      <h1>{T.library}</h1>
-      {/* A GET form submits ONLY its own fields, so everything the screen is
+      <main className="page">
+        <h1>{T.library}</h1>
+        {/* A GET form submits ONLY its own fields, so everything the screen is
           holding that is not a field here — the sort column, its direction,
           and whether the archive is being viewed — was silently dropped on
           every search. An admin searching inside the archive was thrown back
@@ -107,129 +124,144 @@ export default async function LibraryPage({
           inputs. (folderId is deliberately NOT one of them: a search is across
           the space, and staying inside one folder while searching would find
           almost nothing and explain none of it.) */}
-      <form className="inline" method="get" role="search">
-        {sp.sort && <input type="hidden" name="sort" value={sp.sort} />}
-        {sp.dir && <input type="hidden" name="dir" value={sp.dir} />}
-        {archived && <input type="hidden" name="archived" value="1" />}
-        <input
-          type="search"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder={`${T.search}…`}
-          aria-label={`${T.search} trong ${T.library.toLowerCase()}`}
-        />
-        <select name="spaceId" defaultValue={spaceId ?? ""} aria-label={`Lọc theo ${T.space.toLowerCase()}`}>
-          <option value="">{T.space}: tất cả</option>
-          {spaces.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit">{T.search}</button>
-      </form>
-      {archived ? (
-        <p className="muted" role="status">
-          {T.viewingArchivedNotice} <Link href={href({ archived: undefined })}>{T.backToLibrary}</Link>
-        </p>
-      ) : (
-        isAdmin && (
-          <p className="muted">
-            <Link href={href({ archived: "1", folderId: undefined })}>{T.viewArchivedLink}</Link>
-          </p>
-        )
-      )}
-      {browsing && spaceId && (
-        <nav className="muted" aria-label={T.folderPath}>
-          <Link href={href({ folderId: undefined })}>
-            {T.space} {spaces.find((s) => s.id === spaceId)?.name ?? ""}
-          </Link>
-          {crumbs.map((c) => (
-            <span key={c.id}>
-              {" / "}
-              <Link href={href({ folderId: c.id })}>{c.name}</Link>
-            </span>
-          ))}
-        </nav>
-      )}
-      {browsing && spaceId && <FolderCreate spaceId={spaceId} parentId={folderId ?? null} />}
-      {items.length === 0 && childFolders.length === 0 ? (
-        // An empty list is the most common first screen a new team sees, so it
-        // carries the next action rather than only reporting emptiness.
-        // Except past the last page, where "the library is empty — upload
-        // something" would be a lie about a library that is full.
-        page > 1 ? (
-          <Empty title={T.pageBeyondEnd} action={<Link href={href({})}>{T.backToFirstPage}</Link>} />
-        ) : folderId ? (
-          <Empty title={T.folderEmptyTitle} hint={T.folderEmptyHint} />
-        ) : q || spaceId || archived ? (
-          <Empty title={T.noMatches} action={<Link href="/library">{T.clearFilters}</Link>} />
-        ) : (
-          <Empty
-            title={T.libraryEmptyTitle}
-            hint={`${T.libraryEmptyHint} ${T.libraryEmptyDropHint}`}
-            action={{ label: T.uploadCta, href: "/source/intake" }}
+        <form className="inline" method="get" role="search">
+          {sp.sort && <input type="hidden" name="sort" value={sp.sort} />}
+          {sp.dir && <input type="hidden" name="dir" value={sp.dir} />}
+          {archived && <input type="hidden" name="archived" value="1" />}
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder={`${T.search}…`}
+            aria-label={`${T.search} trong ${T.library.toLowerCase()}`}
           />
-        )
-      ) : (
-        <div className="record-scroll">
-          <table className="list">
-            <thead>
-              <tr>
-                {sortHeader("title", T.title)}
-                <th scope="col">{T.space}</th>
-                <th scope="col">{T.uploader}</th>
-                {sortHeader("storedAt", T.storedAtLabel)}
-                <th scope="col">{T.extractionState}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {childFolders.map((f) => (
-                <tr key={f.id}>
-                  <td>
-                    <Link href={href({ folderId: f.id })}>
-                      {folderIcon}
-                      {f.name}
-                    </Link>
-                  </td>
-                  <td colSpan={4} />
+          <select
+            name="spaceId"
+            defaultValue={spaceId ?? ""}
+            aria-label={`Lọc theo ${T.space.toLowerCase()}`}
+          >
+            <option value="">{T.space}: tất cả</option>
+            {spaces.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <button type="submit">{T.search}</button>
+        </form>
+        {archived ? (
+          <p className="muted" role="status">
+            {T.viewingArchivedNotice}{" "}
+            <Link href={href({ archived: undefined })}>{T.backToLibrary}</Link>
+          </p>
+        ) : (
+          isAdmin && (
+            <p className="muted">
+              <Link href={href({ archived: "1", folderId: undefined })}>{T.viewArchivedLink}</Link>
+            </p>
+          )
+        )}
+        {browsing && spaceId && (
+          <nav className="muted" aria-label={T.folderPath}>
+            <Link href={href({ folderId: undefined })}>
+              {T.space} {spaces.find((s) => s.id === spaceId)?.name ?? ""}
+            </Link>
+            {crumbs.map((c) => (
+              <span key={c.id}>
+                {" / "}
+                <Link href={href({ folderId: c.id })}>{c.name}</Link>
+              </span>
+            ))}
+          </nav>
+        )}
+        {browsing && spaceId && <FolderCreate spaceId={spaceId} parentId={folderId ?? null} />}
+        {items.length === 0 && childFolders.length === 0 ? (
+          // An empty list is the most common first screen a new team sees, so it
+          // carries the next action rather than only reporting emptiness.
+          // Except past the last page, where "the library is empty — upload
+          // something" would be a lie about a library that is full.
+          page > 1 ? (
+            <Empty
+              title={T.pageBeyondEnd}
+              action={<Link href={href({})}>{T.backToFirstPage}</Link>}
+            />
+          ) : folderId ? (
+            <Empty title={T.folderEmptyTitle} hint={T.folderEmptyHint} />
+          ) : q || spaceId || archived ? (
+            <Empty title={T.noMatches} action={<Link href="/library">{T.clearFilters}</Link>} />
+          ) : (
+            <Empty
+              title={T.libraryEmptyTitle}
+              hint={`${T.libraryEmptyHint} ${T.libraryEmptyDropHint}`}
+              action={{ label: T.uploadCta, href: "/source/intake" }}
+            />
+          )
+        ) : (
+          <div className="record-scroll">
+            <table className="list">
+              <thead>
+                <tr>
+                  {sortHeader("title", T.title)}
+                  <th scope="col">{T.space}</th>
+                  <th scope="col">{T.uploader}</th>
+                  {sortHeader("storedAt", T.storedAtLabel)}
+                  <th scope="col">{T.extractionState}</th>
                 </tr>
-              ))}
-              {items.map((item) => {
-                const ed = extractionDisplay(item.extractionStatus, item.hasText, item.mimeType);
-                return (
-                  <tr key={item.sourceId}>
+              </thead>
+              <tbody>
+                {childFolders.map((f) => (
+                  <tr key={f.id}>
                     <td>
-                      <Link href={`/library/${item.sourceId}`}>{item.title}</Link>
+                      <Link href={href({ folderId: f.id })}>
+                        {folderIcon}
+                        {f.name}
+                      </Link>
                     </td>
-                    <td>{item.spaceName}</td>
-                    <td>{item.submitterName}</td>
-                    <td>{when(item.storedAt)}</td>
-                    <td>
-                      {/* Truly-processed rows (`done`) are ~70% of the list: a
+                    <td colSpan={4} />
+                  </tr>
+                ))}
+                {items.map((item) => {
+                  const ed = extractionDisplay(item.extractionStatus, item.hasText, item.mimeType);
+                  return (
+                    <tr key={item.sourceId}>
+                      <td>
+                        <Link href={`/library/${item.sourceId}`}>{item.title}</Link>
+                      </td>
+                      <td>{item.spaceName}</td>
+                      <td>{item.submitterName}</td>
+                      <td>{when(item.storedAt)}</td>
+                      <td>
+                        {/* Truly-processed rows (`done`) are ~70% of the list: a
                           chip on every one is a wall of green that says
                           nothing, so the empty cell IS the "đã xử lý" reading.
                           Everything else — including `processed` with no text,
                           which the stub used to hide behind that quiet cell —
                           wears its badge. */}
-                      {ed.tone !== "done" && (
-                        <span className={badgeToneClass(ed.tone)}>{ed.label}</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <Pager
-        page={page}
-        pageSize={LIBRARY_PAGE_SIZE}
-        count={items.length}
-        params={{ q, spaceId, folderId: sp.folderId, sort: sp.sort, dir: sp.dir, archived: sp.archived }}
-      />
-    </main>
+                        {ed.tone !== "done" && (
+                          <span className={badgeToneClass(ed.tone)}>{ed.label}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <Pager
+          page={page}
+          pageSize={LIBRARY_PAGE_SIZE}
+          count={items.length}
+          params={{
+            q,
+            spaceId,
+            folderId: sp.folderId,
+            sort: sp.sort,
+            dir: sp.dir,
+            archived: sp.archived,
+          }}
+        />
+      </main>
     </LibraryDropzone>
   );
 }

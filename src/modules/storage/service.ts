@@ -42,7 +42,11 @@ export async function uploadSource(
   authorize(actor, "storage.upload", { spaceId: input.spaceId, kind: "write" });
 
   if (input.file.size > MAX_SIZE_BYTES) {
-    throw new ApiError(413, "file_too_large", "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.");
+    throw new ApiError(
+      413,
+      "file_too_large",
+      "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.",
+    );
   }
   const mimeType = input.file.type || "application/octet-stream";
   if (FORMAT_DENYLIST.has(mimeType)) {
@@ -89,8 +93,16 @@ export async function uploadSource(
       targetId: sourceId,
       details: { spaceId: input.spaceId, versionId, filename: input.file.name },
     });
-    await emitOutbox(tx, "source.uploaded", { sourceId, sourceVersionId: versionId, spaceId: input.spaceId });
-    await emitOutbox(tx, "source.stored", { sourceId, sourceVersionId: versionId, spaceId: input.spaceId });
+    await emitOutbox(tx, "source.uploaded", {
+      sourceId,
+      sourceVersionId: versionId,
+      spaceId: input.spaceId,
+    });
+    await emitOutbox(tx, "source.stored", {
+      sourceId,
+      sourceVersionId: versionId,
+      spaceId: input.spaceId,
+    });
   });
 
   extractionWorker.enqueue(versionId);
@@ -467,7 +479,11 @@ export async function addSourceVersion(actor: Principal, sourceId: string, file:
     throw new ApiError(409, "not_stored", "Chỉ thêm được bản mới cho tư liệu đang lưu.");
   }
   if (file.size > MAX_SIZE_BYTES) {
-    throw new ApiError(413, "file_too_large", "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.");
+    throw new ApiError(
+      413,
+      "file_too_large",
+      "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.",
+    );
   }
   const mimeType = file.type || "application/octet-stream";
   if (FORMAT_DENYLIST.has(mimeType)) {
@@ -603,7 +619,9 @@ export async function listMemberSpaces(actor: Principal) {
   const rows = await db
     .select({ id: spaces.id, name: spaces.name, type: spaces.type })
     .from(spaces)
-    .where(visible !== null ? (visible.length ? inArray(spaces.id, visible) : sql`false`) : undefined)
+    .where(
+      visible !== null ? (visible.length ? inArray(spaces.id, visible) : sql`false`) : undefined,
+    )
     .orderBy(spaces.name);
   return rows;
 }

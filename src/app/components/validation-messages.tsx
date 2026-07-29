@@ -33,8 +33,12 @@ function messageFor(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaEleme
   return T.validationGeneric;
 }
 
-const isField = (t: EventTarget | null): t is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
-  t instanceof HTMLInputElement || t instanceof HTMLSelectElement || t instanceof HTMLTextAreaElement;
+const isField = (
+  t: EventTarget | null,
+): t is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
+  t instanceof HTMLInputElement ||
+  t instanceof HTMLSelectElement ||
+  t instanceof HTMLTextAreaElement;
 
 export function ValidationMessages() {
   useEffect(() => {

@@ -26,9 +26,13 @@ export const branches = pgTable("branches", {
   // scope: 'team' = shared project knowledge (all members); 'personal' = private
   // note tree visible only to ownerUserId. Defaults to 'team' so all existing
   // rows stay valid after the 0010 migration.
-  scope: text("scope", { enum: ["team", "personal"] }).notNull().default("team"),
+  scope: text("scope", { enum: ["team", "personal"] })
+    .notNull()
+    .default("team"),
   ownerUserId: uuid("owner_user_id").references(() => users.id),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -37,7 +41,9 @@ export const branches = pgTable("branches", {
 
 export const treeNodes = pgTable("tree_nodes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  branchId: uuid("branch_id").notNull().references(() => branches.id),
+  branchId: uuid("branch_id")
+    .notNull()
+    .references(() => branches.id),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(), // stable export/publish path
   contentMd: text("content_md").notNull(),
@@ -48,7 +54,9 @@ export const treeNodes = pgTable("tree_nodes", {
   publish: boolean("publish").notNull().default(false),
   // Merge redirect target; non-null implies verification = 'archived' (CHECK).
   canonicalNodeId: uuid("canonical_node_id"),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
@@ -58,11 +66,15 @@ export const treeNodeVersions = pgTable(
   "tree_node_versions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    nodeId: uuid("node_id").notNull().references(() => treeNodes.id),
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => treeNodes.id),
     seq: integer("seq").notNull(),
     contentMd: text("content_md").notNull(),
     verification: text("verification").notNull(), // verification at snapshot time
-    createdBy: uuid("created_by").notNull().references(() => users.id),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
     changeSummary: text("change_summary"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -72,8 +84,12 @@ export const treeNodeVersions = pgTable(
 export const nodeLinks = pgTable(
   "node_links",
   {
-    fromNodeId: uuid("from_node_id").notNull().references(() => treeNodes.id),
-    toNodeId: uuid("to_node_id").notNull().references(() => treeNodes.id),
+    fromNodeId: uuid("from_node_id")
+      .notNull()
+      .references(() => treeNodes.id),
+    toNodeId: uuid("to_node_id")
+      .notNull()
+      .references(() => treeNodes.id),
     linkType: text("link_type", {
       enum: ["related", "supports", "contrasts", "part_of"],
     }).notNull(),
@@ -85,15 +101,21 @@ export const nodeLinks = pgTable(
 export const tags = pgTable("tags", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const nodeTags = pgTable(
   "node_tags",
   {
-    nodeId: uuid("node_id").notNull().references(() => treeNodes.id),
-    tagId: uuid("tag_id").notNull().references(() => tags.id),
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => treeNodes.id),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.nodeId, t.tagId] })],
@@ -102,9 +124,15 @@ export const nodeTags = pgTable(
 // Provenance backbone: evidence-to-publication linkage (append-only).
 export const promotions = pgTable("promotions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  sourceVersionId: uuid("source_version_id").notNull().references(() => sourceVersions.id),
-  nodeVersionId: uuid("node_version_id").notNull().references(() => treeNodeVersions.id),
-  approvedBy: uuid("approved_by").notNull().references(() => users.id),
+  sourceVersionId: uuid("source_version_id")
+    .notNull()
+    .references(() => sourceVersions.id),
+  nodeVersionId: uuid("node_version_id")
+    .notNull()
+    .references(() => treeNodeVersions.id),
+  approvedBy: uuid("approved_by")
+    .notNull()
+    .references(() => users.id),
   excerptChunkIds: uuid("excerpt_chunk_ids").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -122,7 +150,9 @@ export const reviewTasks = pgTable("review_tasks", {
     enum: ["queued", "assigned", "in_review", "changes_requested", "approved", "rejected"],
   }).notNull(),
   assignedTo: uuid("assigned_to").references(() => users.id),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   resolvedBy: uuid("resolved_by").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -140,7 +170,9 @@ export const conflicts = pgTable("conflicts", {
   }).notNull(),
   baseVersion: integer("base_version").notNull(), // the version the losing save targeted
   attemptedPayload: jsonb("attempted_payload").notNull(), // the rejected save, preserved
-  attemptedBy: uuid("attempted_by").notNull().references(() => users.id),
+  attemptedBy: uuid("attempted_by")
+    .notNull()
+    .references(() => users.id),
   resolvedBy: uuid("resolved_by").references(() => users.id),
   resolution: jsonb("resolution"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

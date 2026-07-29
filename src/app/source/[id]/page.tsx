@@ -59,8 +59,7 @@ export default async function AdminSourceDetailPage({
         </h1>
         <p>
           <span className={badgeClass(gapStateLabel, gap.state)}>{gapLabel(gap.state)}</span> ·{" "}
-          {T.uploader}:{" "}
-          {gap.submitterName ?? "—"}
+          {T.uploader}: {gap.submitterName ?? "—"}
         </p>
         {gap.description && <p>{gap.description}</p>}
         {gap.convertedBranchId && (

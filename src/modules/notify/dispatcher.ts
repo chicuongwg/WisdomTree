@@ -107,7 +107,10 @@ async function channelsFor(userId: string, eventType: string): Promise<Channel[]
     .select()
     .from(notificationPreferences)
     .where(
-      and(eq(notificationPreferences.userId, userId), eq(notificationPreferences.eventType, eventType)),
+      and(
+        eq(notificationPreferences.userId, userId),
+        eq(notificationPreferences.eventType, eventType),
+      ),
     );
   if (pref) return pref.channels as Channel[];
   return DEFAULT_CHANNELS[eventType] ?? ["in_app"];
@@ -242,5 +245,7 @@ export async function dispatchOutbox(): Promise<void> {
   await db
     .update(outboxEvents)
     .set({ dispatchedAt: new Date() })
-    .where(and(isNull(outboxEvents.dispatchedAt), eq(outboxEvents.eventType, "notification.dispatched")));
+    .where(
+      and(isNull(outboxEvents.dispatchedAt), eq(outboxEvents.eventType, "notification.dispatched")),
+    );
 }

@@ -18,8 +18,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ spa
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { spaceId } = await params;
-    const body = (await request.json().catch(() => ({}))) as { parentId?: string | null; name?: string };
-    const folder = await createFolder(actor, { spaceId, parentId: body.parentId, name: body.name ?? "" });
+    const body = (await request.json().catch(() => ({}))) as {
+      parentId?: string | null;
+      name?: string;
+    };
+    const folder = await createFolder(actor, {
+      spaceId,
+      parentId: body.parentId,
+      name: body.name ?? "",
+    });
     return NextResponse.json(folder, { status: 201 });
   });
 }

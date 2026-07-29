@@ -76,7 +76,13 @@ export function ConfirmButton({
 
   return (
     <>
-      <button ref={triggerRef} type="button" className={className} disabled={disabled} onClick={open}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={className}
+        disabled={disabled}
+        onClick={open}
+      >
         {label}
       </button>
       <dialog

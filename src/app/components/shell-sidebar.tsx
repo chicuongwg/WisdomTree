@@ -19,18 +19,12 @@ export type OutlineBranch = {
 
 export type RecentNode = { id: string; title: string; branchName: string };
 
-function BranchSection({
-  branch,
-  pathname,
-}: {
-  branch?: OutlineBranch;
-  pathname: string;
-}) {
+function BranchSection({ branch, pathname }: { branch?: OutlineBranch; pathname: string }) {
   const nodes = branch?.nodes ?? [];
   const currentBranch = Boolean(
     branch &&
-      (pathname === `/tree/branch/${branch.id}` ||
-        nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`))),
+    (pathname === `/tree/branch/${branch.id}` ||
+      nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`))),
   );
 
   const [open, setOpen] = useState(currentBranch);
@@ -72,9 +66,7 @@ function BranchSection({
               nodeId={n.id}
               verification={n.verification}
               className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
-              aria-current={
-                pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined
-              }
+              aria-current={pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined}
             >
               <span className="item-label">{n.title}</span>
             </NodeLink>
@@ -205,9 +197,7 @@ function SidebarContent({
           <>
             {/* ── KHO DỰ ÁN CHUNG ───────────────────────────────── */}
             <nav className="side-sec" aria-label={T.navTeamKnowledge}>
-              <div className="side-label side-label--team">
-                {T.navTeamKnowledge}
-              </div>
+              <div className="side-label side-label--team">{T.navTeamKnowledge}</div>
               {(
                 [
                   { href: "/graph", label: T.navTeamGraph },
@@ -268,13 +258,12 @@ function SidebarContent({
           <>
             {/* ── KHÔNG GIAN CỦA TÔI ────────────────────────────── */}
             <nav className="side-sec" aria-label={T.navPersonalSpace}>
-              <div className="side-label side-label--personal">
-                {T.navPersonalSpace}
-              </div>
+              <div className="side-label side-label--personal">{T.navPersonalSpace}</div>
               {(
-                [
-                  { href: "/graph?scope=personal", label: T.navPersonalGraph },
-                ] as { href: string; label: string }[]
+                [{ href: "/graph?scope=personal", label: T.navPersonalGraph }] as {
+                  href: string;
+                  label: string;
+                }[]
               ).map((n) => {
                 const here = pathname === "/graph" && currentScope === "personal";
                 return (
@@ -294,7 +283,11 @@ function SidebarContent({
             <div className="side-sec">
               <div className="side-label side-label--personal">
                 {T.navPersonalNotes}
-                <Link href="/tree/branch/new?scope=personal" title="Tạo chuyên đề cá nhân" aria-label="Tạo chuyên đề cá nhân">
+                <Link
+                  href="/tree/branch/new?scope=personal"
+                  title="Tạo chuyên đề cá nhân"
+                  aria-label="Tạo chuyên đề cá nhân"
+                >
                   +
                 </Link>
               </div>

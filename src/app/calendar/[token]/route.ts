@@ -4,10 +4,7 @@ import { renderCalendarFeed } from "@/modules/pm/service";
 // GET /calendar/{token}.ics — outbound ICS deadline feed. Token-authenticated
 // (calendar_tokens), NO session; unknown or revoked token → 404
 // (docs/design/openapi.yaml, database-schema.md § calendar_tokens).
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ token: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   return handleApi(async () => {
     const { token } = await params;
     // The route segment captures "abc123.ics"; the stored token has no suffix.

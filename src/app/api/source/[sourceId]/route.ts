@@ -4,7 +4,10 @@ import { requirePrincipal } from "@/lib/request";
 import { getSourceDetail, renameSource, withdrawSource } from "@/modules/storage/service";
 
 // GET /api/source/{sourceId} — 404 when outside the caller's visibility scope
-export async function GET(_request: Request, { params }: { params: Promise<{ sourceId: string }> }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ sourceId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { sourceId } = await params;
@@ -13,7 +16,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sou
 }
 
 // PATCH /api/source/{sourceId} — the submitter corrects title/description.
-export async function PATCH(request: Request, { params }: { params: Promise<{ sourceId: string }> }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ sourceId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { sourceId } = await params;
@@ -25,7 +31,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ so
 
 // DELETE /api/source/{sourceId} — withdraw, not erase: the item leaves the
 // library and stops being downloadable, the bytes and audit trail remain.
-export async function DELETE(_request: Request, { params }: { params: Promise<{ sourceId: string }> }) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ sourceId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { sourceId } = await params;

@@ -9,13 +9,7 @@ import { users } from "../auth/schema";
 import { sources, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
 import { kickDispatch } from "../notify/dispatcher";
-import {
-  achievements,
-  calendarTokens,
-  deadlineLinks,
-  deadlines,
-  tasks,
-} from "./schema";
+import { achievements, calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
 
 // Module: pm — deadlines with reminder offsets and links, the operational
 // board (tasks), achievements, and the token-authenticated ICS feed.
@@ -40,7 +34,12 @@ async function withLinks(rows: DeadlineRow[]) {
   const links = await db
     .select()
     .from(deadlineLinks)
-    .where(inArray(deadlineLinks.deadlineId, rows.map((d) => d.id)));
+    .where(
+      inArray(
+        deadlineLinks.deadlineId,
+        rows.map((d) => d.id),
+      ),
+    );
   return rows.map((d) => ({
     ...d,
     links: links
@@ -90,7 +89,8 @@ type DeadlineInput = {
 
 function parseLinks(links: DeadlineInput["links"]) {
   if (links === undefined) return undefined;
-  if (!Array.isArray(links)) throw new ApiError(400, "invalid_links", "Danh sách liên kết không hợp lệ.");
+  if (!Array.isArray(links))
+    throw new ApiError(400, "invalid_links", "Danh sách liên kết không hợp lệ.");
   return links.map((l) => {
     if (!l?.targetId || !LINK_TARGETS.includes(l.targetType as LinkTarget)) {
       throw new ApiError(400, "invalid_links", "Liên kết phải có loại và mã hợp lệ.");
@@ -118,7 +118,9 @@ async function assertLinksVisibleFrom(
   links: Array<{ targetType: LinkTarget; targetId: string }>,
   spaceId: string,
 ): Promise<void> {
-  const wanted = [...new Set(links.filter((l) => l.targetType === "source").map((l) => l.targetId))];
+  const wanted = [
+    ...new Set(links.filter((l) => l.targetType === "source").map((l) => l.targetId)),
+  ];
   if (wanted.length === 0) return;
   const found = await db
     .select({ id: sources.id })
@@ -452,7 +454,12 @@ export async function listSchedule(actor: Principal, range: { from: Date; to: Da
       )
       .orderBy(asc(tasks.dueAt)),
     db
-      .select({ id: deadlines.id, title: deadlines.title, dueAt: deadlines.dueAt, type: deadlines.type })
+      .select({
+        id: deadlines.id,
+        title: deadlines.title,
+        dueAt: deadlines.dueAt,
+        type: deadlines.type,
+      })
       .from(deadlines)
       .where(sql`${deadlines.dueAt} >= ${range.from} AND ${deadlines.dueAt} < ${range.to}`)
       .orderBy(asc(deadlines.dueAt)),
@@ -634,7 +641,10 @@ const icsEscape = (s: string) =>
   s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 
 const icsDate = (d: Date) =>
-  d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  d
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
 
 /**
  * Resolve a calendar token (404 when unknown or revoked) and render the ICS

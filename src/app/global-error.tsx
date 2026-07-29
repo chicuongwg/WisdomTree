@@ -35,8 +35,8 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
         <main style={{ maxWidth: "32rem", textAlign: "center" }}>
           <h1 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>Hệ thống đang gián đoạn</h1>
           <p style={{ lineHeight: 1.6, marginBottom: "1.5rem" }}>
-            Không tải được trang này. Dữ liệu của bạn vẫn an toàn — chưa có thay đổi nào bị mất.
-            Vui lòng thử lại sau ít phút, hoặc báo quản trị viên nếu tình trạng kéo dài.
+            Không tải được trang này. Dữ liệu của bạn vẫn an toàn — chưa có thay đổi nào bị mất. Vui
+            lòng thử lại sau ít phút, hoặc báo quản trị viên nếu tình trạng kéo dài.
           </p>
           <button
             type="button"

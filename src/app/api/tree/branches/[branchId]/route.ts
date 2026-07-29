@@ -21,7 +21,8 @@ export async function PATCH(
       await updateBranch(actor, branchId, {
         name: body.name,
         description: body.description,
-        expectedVersion: typeof body.expectedVersion === "number" ? body.expectedVersion : undefined,
+        expectedVersion:
+          typeof body.expectedVersion === "number" ? body.expectedVersion : undefined,
       }),
     );
   });

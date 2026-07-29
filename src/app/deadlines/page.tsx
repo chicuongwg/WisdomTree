@@ -59,11 +59,7 @@ export default async function DeadlinesPage({
             ) : (
               // The create form is the aside on this same screen, so the empty
               // state points at it rather than repeating the button.
-              <Empty
-                panel={false}
-                title={T.deadlinesEmptyTitle}
-                hint={T.deadlinesEmptyHint}
-              />
+              <Empty panel={false} title={T.deadlinesEmptyTitle} hint={T.deadlinesEmptyHint} />
             )
           ) : (
             <div className="record-scroll">

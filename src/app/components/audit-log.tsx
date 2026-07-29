@@ -119,7 +119,9 @@ function detailLines(details: unknown, usedNameKey: string | null): string[] {
   // that moved is already named by the action ("Đổi vai trò thành viên"), so
   // the line says the movement rather than repeating the field.
   if ("from" in rest && "to" in rest) {
-    lines.push(`${T.auditChange}: ${T.auditChangeFromTo} ${say(rest.from)} ${T.auditChangeTo} ${say(rest.to)}`);
+    lines.push(
+      `${T.auditChange}: ${T.auditChangeFromTo} ${say(rest.from)} ${T.auditChangeTo} ${say(rest.to)}`,
+    );
   } else if ("from" in rest) {
     // Half a pair: an archive records what the thing WAS and nothing after,
     // because after it there is nothing. "sang để trống" would have read as
@@ -138,11 +140,19 @@ function detailLines(details: unknown, usedNameKey: string | null): string[] {
 }
 
 /** The object column: what kind of thing it is, its name, and a link if it has a page. */
-function target(row: AuditRow): { kind: string; name: string | null; nameKey: string | null; href: string | null } {
+function target(row: AuditRow): {
+  kind: string;
+  name: string | null;
+  nameKey: string | null;
+  href: string | null;
+} {
   const kind = row.targetType ? targetKindLabel(row.targetType) : null;
-  const d = row.details && typeof row.details === "object" ? (row.details as Record<string, unknown>) : {};
-  const nameKey = NAME_KEYS.find((k) => typeof d[k] === "string" && (d[k] as string).trim() !== "") ?? null;
-  const href = row.targetType && row.targetId ? (TARGET_HREF[row.targetType]?.(row.targetId) ?? null) : null;
+  const d =
+    row.details && typeof row.details === "object" ? (row.details as Record<string, unknown>) : {};
+  const nameKey =
+    NAME_KEYS.find((k) => typeof d[k] === "string" && (d[k] as string).trim() !== "") ?? null;
+  const href =
+    row.targetType && row.targetId ? (TARGET_HREF[row.targetType]?.(row.targetId) ?? null) : null;
   // A row with no target at all keeps the em dash the table used before — the
   // event is about the system, not about a thing that can be named.
   return { kind: kind ?? "—", name: nameKey ? (d[nameKey] as string) : null, nameKey, href };

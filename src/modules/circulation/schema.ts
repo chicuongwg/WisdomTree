@@ -9,8 +9,12 @@ import { catalogItems } from "../catalog/schema";
 
 export const loanTickets = pgTable("loan_tickets", {
   id: uuid("id").primaryKey().defaultRandom(),
-  itemId: uuid("item_id").notNull().references(() => catalogItems.id),
-  borrowerId: uuid("borrower_id").notNull().references(() => users.id),
+  itemId: uuid("item_id")
+    .notNull()
+    .references(() => catalogItems.id),
+  borrowerId: uuid("borrower_id")
+    .notNull()
+    .references(() => users.id),
   state: text("state", {
     enum: ["requested", "approved", "declined", "borrowed", "overdue", "returned"],
   })

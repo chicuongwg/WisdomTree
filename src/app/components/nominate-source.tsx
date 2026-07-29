@@ -35,7 +35,15 @@ export function NominateSource({
         </button>
       )}
       {nominated && canRevert && (
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+          }}
+        >
           <span className="muted">{T.nominatedAwaitingAssign}</span>
           <button
             className="secondary"

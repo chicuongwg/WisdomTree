@@ -78,7 +78,9 @@ async function otherEnabledAdmins(userId: string): Promise<number> {
   const [{ n }] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(users)
-    .where(and(eq(users.role, "admin_op"), isNull(users.disabledAt), sql`${users.id} <> ${userId}`));
+    .where(
+      and(eq(users.role, "admin_op"), isNull(users.disabledAt), sql`${users.id} <> ${userId}`),
+    );
   return n;
 }
 

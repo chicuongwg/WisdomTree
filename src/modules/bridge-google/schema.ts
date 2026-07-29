@@ -1,12 +1,4 @@
-import {
-  integer,
-  jsonb,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
 
 // Module: bridge-google — Drive/Sheets/Forms import configuration and the
@@ -21,7 +13,9 @@ export const bridgeImports = pgTable("bridge_imports", {
   watermark: text("watermark"), // last ingested row/timestamp for Forms polling
   lastRunAt: timestamp("last_run_at", { withTimezone: true }),
   lastReport: jsonb("last_report"), // created/skipped/failed row report
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
@@ -31,7 +25,9 @@ export const bridgeImports = pgTable("bridge_imports", {
 export const bridgeImportItems = pgTable(
   "bridge_import_items",
   {
-    importId: uuid("import_id").notNull().references(() => bridgeImports.id),
+    importId: uuid("import_id")
+      .notNull()
+      .references(() => bridgeImports.id),
     externalId: text("external_id").notNull(),
     targetType: text("target_type").notNull(),
     targetId: uuid("target_id"),

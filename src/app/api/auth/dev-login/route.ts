@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
     const user = await findSignInCandidate(userId);
     if (!user) throw new ApiError(400, "unknown_user", "Người dùng không tồn tại.");
 
-    const response = NextResponse.json({ userId: user.id, displayName: user.displayName, role: user.role });
+    const response = NextResponse.json({
+      userId: user.id,
+      displayName: user.displayName,
+      role: user.role,
+    });
     response.cookies.set(SESSION_COOKIE, issueSessionToken(user.id), {
       httpOnly: true,
       sameSite: "lax",

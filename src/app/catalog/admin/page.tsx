@@ -47,7 +47,9 @@ export default async function LibrarianDeskPage() {
         <CatalogItemForm spaces={spaces} />
       </section>
       {groups.map((group) => {
-        const rows = tickets.filter((t) => (group.states as readonly string[]).includes(t.ticket.state));
+        const rows = tickets.filter((t) =>
+          (group.states as readonly string[]).includes(t.ticket.state),
+        );
         return (
           <section key={group.title}>
             <h2>{group.title}</h2>

@@ -242,13 +242,10 @@ export function KnowledgeMap({
     if (dirty.current) writeSettings(settings);
   }, [settings]);
 
-  const set = useCallback(
-    <K extends keyof GraphSettings>(key: K, value: GraphSettings[K]) => {
-      dirty.current = true;
-      setSettings((current) => ({ ...current, [key]: value }));
-    },
-    [],
-  );
+  const set = useCallback(<K extends keyof GraphSettings>(key: K, value: GraphSettings[K]) => {
+    dirty.current = true;
+    setSettings((current) => ({ ...current, [key]: value }));
+  }, []);
 
   const resetSettings = useCallback(() => {
     dirty.current = true;
@@ -299,7 +296,8 @@ export function KnowledgeMap({
     );
     const ids = new Set(visible.map((n) => n.id));
     const links = edges.filter(
-      (e) => ids.has(e.from) && ids.has(e.to) && settings.linkTypes[e.linkType as LinkType] !== false,
+      (e) =>
+        ids.has(e.from) && ids.has(e.to) && settings.linkTypes[e.linkType as LinkType] !== false,
     );
 
     const degree = degreeOf(links);
@@ -563,12 +561,15 @@ export function KnowledgeMap({
 
   // ---- coordinate helpers -------------------------------------------------
   /** Client point → the coordinate space of `el` (svg viewBox, or the pan group). */
-  const toLocal = useCallback((el: SVGGraphicsElement | null, clientX: number, clientY: number): XY => {
-    const ctm = el?.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const p = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
-    return { x: p.x, y: p.y };
-  }, []);
+  const toLocal = useCallback(
+    (el: SVGGraphicsElement | null, clientX: number, clientY: number): XY => {
+      const ctm = el?.getScreenCTM();
+      if (!ctm) return { x: 0, y: 0 };
+      const p = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
+      return { x: p.x, y: p.y };
+    },
+    [],
+  );
 
   const zoomAround = useCallback(
     (factor: number, anchor?: XY) => {
@@ -612,9 +613,13 @@ export function KnowledgeMap({
   );
 
   // ---- dragging a node, panning the background ----------------------------
-  const drag = useRef<{ id: string; pointerId: number; sx: number; sy: number; moved: boolean } | null>(
-    null,
-  );
+  const drag = useRef<{
+    id: string;
+    pointerId: number;
+    sx: number;
+    sy: number;
+    moved: boolean;
+  } | null>(null);
   const pan = useRef<{ pointerId: number; sx: number; sy: number; tx: number; ty: number } | null>(
     null,
   );
@@ -781,7 +786,7 @@ export function KnowledgeMap({
   // one so the map never ends up with no tab stop at all.
   const tabStopId = view.visible.some((n) => n.id === activeId)
     ? activeId
-    : view.visible[0]?.id ?? null;
+    : (view.visible[0]?.id ?? null);
 
   const focusMark = useCallback((id: string) => {
     setActiveId(id);
@@ -1004,9 +1009,7 @@ export function KnowledgeMap({
                   }}
                   className={`g-node v-${n.verification}${n.id === centerId ? " is-focus" : ""}${
                     near ? " is-near" : " is-far"
-                  }${
-                    (view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""
-                  }`}
+                  }${(view.degree[n.id] ?? 0) >= HUB_DEGREE || n.id === centerId ? " is-hub" : ""}`}
                   role="link"
                   tabIndex={n.id === tabStopId ? 0 : -1}
                   aria-label={label}
@@ -1066,7 +1069,14 @@ export function KnowledgeMap({
                 {v === "verified" ? (
                   <circle className="g-mark" r="7" />
                 ) : v === "unverified" ? (
-                  <rect className="g-mark" x="-7" y="-7" width="14" height="14" transform="rotate(45)" />
+                  <rect
+                    className="g-mark"
+                    x="-7"
+                    y="-7"
+                    width="14"
+                    height="14"
+                    transform="rotate(45)"
+                  />
                 ) : (
                   <rect className="g-mark" x="-7" y="-7" width="14" height="14" rx="2" />
                 )}

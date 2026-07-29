@@ -39,19 +39,15 @@ const REMINDERS = ["1 day", "3 days", "7 days"] as const;
    server in the server's: the same deadline could print two different days on
    one screen. */
 
-export function DeadlineForm({
-  spaces,
-  existing,
-}: {
-  spaces: SpaceOption[];
-  existing?: Existing;
-}) {
+export function DeadlineForm({ spaces, existing }: { spaces: SpaceOption[]; existing?: Existing }) {
   const m = useMutation();
   const [title, setTitle] = useState(existing?.title ?? "");
   const [spaceId, setSpaceId] = useState(existing?.spaceId ?? spaces[0]?.id ?? "");
   const [type, setType] = useState(existing?.type ?? "milestone");
   const [dueAt, setDueAt] = useState(existing ? toAppInput(existing.dueAt) : "");
-  const [offsets, setOffsets] = useState<string[]>(existing?.reminderOffsets ?? ["7 days", "1 day"]);
+  const [offsets, setOffsets] = useState<string[]>(
+    existing?.reminderOffsets ?? ["7 days", "1 day"],
+  );
 
   // ponytail: toggling by value, not rebuilding the list from the three boxes —
   // an offset a colleague set outside these choices ("2 days") rides through an
@@ -80,7 +76,13 @@ export function DeadlineForm({
     <form onSubmit={submit}>
       <div className="field">
         <label htmlFor="dl-title">{T.title}</label>
-        <input id="dl-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <input
+          id="dl-title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
       </div>
       <div className="field">
         <label htmlFor="dl-space">{T.project}</label>
@@ -104,7 +106,13 @@ export function DeadlineForm({
       </div>
       <div className="field">
         <label htmlFor="dl-due">{T.dueAtLabel}</label>
-        <input id="dl-due" type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} required />
+        <input
+          id="dl-due"
+          type="datetime-local"
+          value={dueAt}
+          onChange={(e) => setDueAt(e.target.value)}
+          required
+        />
       </div>
       <fieldset className="plain">
         <legend>{T.reminderOffsets}</legend>

@@ -7,7 +7,9 @@ import { users } from "../auth/schema";
 
 export const auditEvents = pgTable("audit_events", {
   id: bigint("id", { mode: "bigint" }).primaryKey().generatedAlwaysAsIdentity(),
-  actorId: uuid("actor_id").notNull().references(() => users.id),
+  actorId: uuid("actor_id")
+    .notNull()
+    .references(() => users.id),
   actorRole: text("actor_role").notNull(),
   accountability: text("accountability", {
     enum: ["uploader", "editor_updater", "approver_publisher", "operator", "member"],

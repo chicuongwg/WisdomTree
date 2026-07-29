@@ -34,7 +34,9 @@ export function useSequentialUpload() {
   function uploadOne(
     form: FormData,
   ): Promise<
-    { status: "ok"; id: string } | { status: "failed"; reason: string | null } | { status: "aborted" }
+    | { status: "ok"; id: string }
+    | { status: "failed"; reason: string | null }
+    | { status: "aborted" }
   > {
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
@@ -219,17 +221,31 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
           ponytail: no .field wrapper on this one — `.field label` would repaint
           the trigger muted-on-canopy, and .file-field already lays out the row. */}
       <div className="file-field">
-        <input id="file" name="file" type="file" multiple disabled={disabled} className="sr-only"
-          onChange={(e) => setFileNames(Array.from(e.target.files ?? []).map((f) => f.name))} />
+        <input
+          id="file"
+          name="file"
+          type="file"
+          multiple
+          disabled={disabled}
+          className="sr-only"
+          onChange={(e) => setFileNames(Array.from(e.target.files ?? []).map((f) => f.name))}
+        />
         <label htmlFor="file" className="button secondary">
           Chọn {T.file.toLowerCase()}
         </label>
-        <span className="muted">{fileNames.length === 0 ? T.noFileChosen : fileNames.join(", ")}</span>
+        <span className="muted">
+          {fileNames.length === 0 ? T.noFileChosen : fileNames.join(", ")}
+        </span>
       </div>
       <div className="field">
         <label htmlFor="spaceId">{T.space}</label>
-        <select id="spaceId" name="spaceId" required
-          defaultValue={spaces.length === 1 ? spaces[0].id : ""} disabled={disabled}>
+        <select
+          id="spaceId"
+          name="spaceId"
+          required
+          defaultValue={spaces.length === 1 ? spaces[0].id : ""}
+          disabled={disabled}
+        >
           <option value="" disabled>
             — chọn {T.space.toLowerCase()} —
           </option>
@@ -245,7 +261,9 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
       {!many && (
         <>
           <div className="field">
-            <label htmlFor="title">{T.title} {T.optionalSuffix}</label>
+            <label htmlFor="title">
+              {T.title} {T.optionalSuffix}
+            </label>
             <input id="title" name="title" type="text" disabled={disabled} />
           </div>
           <div className="field">

@@ -7,7 +7,13 @@ import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { kickDispatch } from "../notify/dispatcher";
-import { branches, reviewTasks, treeNodes, treeNodeVersions, promotions } from "../knowledge/schema";
+import {
+  branches,
+  reviewTasks,
+  treeNodes,
+  treeNodeVersions,
+  promotions,
+} from "../knowledge/schema";
 import {
   branchGapRequests,
   correctedTexts,
@@ -26,7 +32,7 @@ import {
 type VersionCtx = {
   source: typeof sources.$inferSelect;
   version: typeof sourceVersions.$inferSelect;
-  curation: (typeof curations.$inferSelect) | null;
+  curation: typeof curations.$inferSelect | null;
 };
 
 async function loadVersion(sourceId: string, versionId: string): Promise<VersionCtx> {
@@ -265,7 +271,10 @@ export async function saveDraft(
     throw new ApiError(409, "invalid_state", "Việc hiệu đính của tư liệu này đã kết thúc.");
   }
   if (input.suggestedBranchId) {
-    const [branch] = await db.select().from(branches).where(eq(branches.id, input.suggestedBranchId));
+    const [branch] = await db
+      .select()
+      .from(branches)
+      .where(eq(branches.id, input.suggestedBranchId));
     if (!branch) throw notFound();
   }
 
@@ -493,7 +502,10 @@ export async function publishFromSource(
       .select({ id: textChunks.id })
       .from(textChunks)
       .where(
-        and(eq(textChunks.sourceVersionId, versionId), inArray(textChunks.id, input.excerptChunkIds)),
+        and(
+          eq(textChunks.sourceVersionId, versionId),
+          inArray(textChunks.id, input.excerptChunkIds),
+        ),
       );
     if (found.length !== input.excerptChunkIds.length) {
       throw new ApiError(400, "invalid_excerpts", "Trích đoạn dẫn chứng không thuộc tư liệu này.");
@@ -933,7 +945,11 @@ async function gapTransition(
     .where(eq(branchGapRequests.id, requestId));
   if (!request) throw notFound();
   if (!allowedFrom.includes(request.state)) {
-    throw new ApiError(409, "invalid_state", "Đề xuất không ở trạng thái phù hợp cho thao tác này.");
+    throw new ApiError(
+      409,
+      "invalid_state",
+      "Đề xuất không ở trạng thái phù hợp cho thao tác này.",
+    );
   }
   return db.transaction(async (tx) => {
     const [updated] = await tx
@@ -945,7 +961,9 @@ async function gapTransition(
         updatedAt: new Date(),
         version: request.version + 1,
       })
-      .where(and(eq(branchGapRequests.id, requestId), eq(branchGapRequests.version, request.version)))
+      .where(
+        and(eq(branchGapRequests.id, requestId), eq(branchGapRequests.version, request.version)),
+      )
       .returning();
     if (!updated) throw versionConflict();
     await recordAudit(tx, actor, {

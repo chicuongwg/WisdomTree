@@ -4,7 +4,10 @@ import { requirePrincipal } from "@/lib/request";
 import { deleteFolder, renameFolder } from "@/modules/storage/service";
 
 // PATCH /api/folders/{folderId} — creator or Admin/Op renames
-export async function PATCH(request: Request, { params }: { params: Promise<{ folderId: string }> }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ folderId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { folderId } = await params;
@@ -15,7 +18,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ fo
 }
 
 // DELETE /api/folders/{folderId} — only when empty (409 otherwise)
-export async function DELETE(_request: Request, { params }: { params: Promise<{ folderId: string }> }) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ folderId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { folderId } = await params;

@@ -98,7 +98,11 @@ export type ResourceRef = {
   kind: "read" | "write";
 };
 
-export function authorize(actor: Principal | null, permission: PermissionKey, resource: ResourceRef): Principal {
+export function authorize(
+  actor: Principal | null,
+  permission: PermissionKey,
+  resource: ResourceRef,
+): Principal {
   if (!actor) throw unauthorized();
   const entry = CATALOG[permission];
   const denial = resource.kind === "read" ? notFound() : forbidden();

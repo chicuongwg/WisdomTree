@@ -265,9 +265,17 @@ async function processTreeExport(exportJobId: string): Promise<void> {
         content:
           frontMatter({
             ...node,
-            tags: tagRows.filter((t) => t.nodeId === node.id).map((t) => t.name).sort(),
-            sourceIds: sourceRows.filter((s) => s.nodeId === node.id).map((s) => s.sourceId).sort(),
-          }) + node.contentMd + "\n",
+            tags: tagRows
+              .filter((t) => t.nodeId === node.id)
+              .map((t) => t.name)
+              .sort(),
+            sourceIds: sourceRows
+              .filter((s) => s.nodeId === node.id)
+              .map((s) => s.sourceId)
+              .sort(),
+          }) +
+          node.contentMd +
+          "\n",
       });
       manifestFiles.push({ path: filePath, slug: node.slug, publish: node.publish });
     }
@@ -378,7 +386,8 @@ export async function healthReport(actor: Principal) {
   const availability = rendererAvailability();
   const degradedComponents: string[] = [];
   if (!availability.pandoc) degradedComponents.push("pandoc (document render runs the HTML stub)");
-  else if (!availability.pdfEngine) degradedComponents.push("pdf-engine (pdf render runs the HTML stub)");
+  else if (!availability.pdfEngine)
+    degradedComponents.push("pdf-engine (pdf render runs the HTML stub)");
 
   return {
     // When these numbers were read. The screen used to stamp them with its own

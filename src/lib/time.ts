@@ -52,8 +52,7 @@ export const startOfAppDay = (d: Date): Date => {
  * and "còn 3 ngày" actually mean, and what subtracting milliseconds and
  * dividing by 86,400,000 does not.
  */
-export const appDayNumber = (d: Date): number =>
-  Math.floor(toAppClock(d).getTime() / 86_400_000);
+export const appDayNumber = (d: Date): number => Math.floor(toAppClock(d).getTime() / 86_400_000);
 
 /**
  * An instant as the string `<input type="datetime-local">` wants — the app's

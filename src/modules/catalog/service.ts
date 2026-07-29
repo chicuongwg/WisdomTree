@@ -47,7 +47,9 @@ async function activeLoanCount(runner: Tx | typeof db, itemId: string): Promise<
   const [row] = await runner
     .select({ n: sql<number>`count(*)::int` })
     .from(loanTickets)
-    .where(and(eq(loanTickets.itemId, itemId), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])));
+    .where(
+      and(eq(loanTickets.itemId, itemId), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])),
+    );
   return row?.n ?? 0;
 }
 
@@ -112,7 +114,11 @@ export async function createCatalogItem(
  * have no edit screen yet either; widen this the day one is asked for, rather
  * than shipping a generic patch nobody calls.
  */
-export async function updateCatalogItemCopies(actor: Principal, itemId: string, input: { copies?: unknown }) {
+export async function updateCatalogItemCopies(
+  actor: Principal,
+  itemId: string,
+  input: { copies?: unknown },
+) {
   authorize(actor, "catalog.item.manage", { kind: "write" });
   const copies = parseCopies(input.copies);
 
@@ -206,14 +212,20 @@ export async function getCatalogItem(actor: Principal, itemId: string) {
   const [activeLoan] = await db
     .select()
     .from(loanTickets)
-    .where(and(eq(loanTickets.itemId, item.id), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])))
+    .where(
+      and(eq(loanTickets.itemId, item.id), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])),
+    )
     .orderBy(desc(loanTickets.createdAt))
     .limit(1);
 
   // `activeLoan` is only ever ONE of the tickets out against this title now, so
   // it can no longer answer "is anything left" — the count does.
   const onLoan = await activeLoanCount(db, item.id);
-  return { ...item, activeLoan: activeLoan ?? null, availableCopies: Math.max(item.copies - onLoan, 0) };
+  return {
+    ...item,
+    activeLoan: activeLoan ?? null,
+    availableCopies: Math.max(item.copies - onLoan, 0),
+  };
 }
 
 /**

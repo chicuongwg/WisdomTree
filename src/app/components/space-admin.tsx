@@ -88,7 +88,11 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                       {/* ponytail: no member-count service function — the count
                           is only known for the selected space, whose member
                           list this component already fetched. */}
-                      {s.id === spaceId ? (members?.length ?? T.loading) : <span className="muted">—</span>}
+                      {s.id === spaceId ? (
+                        (members?.length ?? T.loading)
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -100,7 +104,13 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
           <SayMutation m={create} />
           <div className="field">
             <label htmlFor="sa-name">{T.newSpaceName}</label>
-            <input id="sa-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+            <input
+              id="sa-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
           <button type="submit" disabled={create.busy || !name.trim()}>
             {create.busy ? T.loading : T.createSpace}
@@ -194,7 +204,10 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                   disabled={change.busy || !addId}
                   onClick={() => {
                     void change
-                      .run(`/api/spaces/${spaceId}/members`, { body: { userId: addId }, ok: T.memberAdded })
+                      .run(`/api/spaces/${spaceId}/members`, {
+                        body: { userId: addId },
+                        ok: T.memberAdded,
+                      })
                       .then((done) => {
                         if (done) {
                           setAddId("");

@@ -141,12 +141,7 @@ export async function treeOutline(actor: Principal) {
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(
-      and(
-        ne(treeNodes.verification, "archived"),
-        branchVisibilityCondition(actor),
-      ),
-    )
+    .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
     .orderBy(desc(treeNodes.updatedAt));
   const withNodes = branchRows.map((b) => ({
     ...b,
@@ -156,8 +151,7 @@ export async function treeOutline(actor: Principal) {
     team: withNodes.filter((b) => b.scope === "team"),
     personal: withNodes.filter(
       (b) =>
-        b.scope === "personal" &&
-        (actor.role === "admin_op" || b.ownerUserId === actor.userId),
+        b.scope === "personal" && (actor.role === "admin_op" || b.ownerUserId === actor.userId),
     ),
   };
 }
@@ -180,7 +174,6 @@ export async function getBranch(actor: Principal, branchId: string) {
     .orderBy(desc(treeNodes.updatedAt));
   return { ...branch, nodes };
 }
-
 
 export async function createBranch(
   actor: Principal,
@@ -262,12 +255,7 @@ export async function recentNodes(actor: Principal, limit = 8) {
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(
-      and(
-        ne(treeNodes.verification, "archived"),
-        branchVisibilityCondition(actor),
-      ),
-    )
+    .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
     .orderBy(desc(treeNodes.updatedAt))
     .limit(limit);
 }
@@ -296,7 +284,9 @@ export async function searchTree(actor: Principal, q: string, page = 1) {
         sql`${treeNodes}.tsv @@ plainto_tsquery('simple', immutable_unaccent(${query}))`,
       ),
     )
-    .orderBy(sql`ts_rank(${treeNodes}.tsv, plainto_tsquery('simple', immutable_unaccent(${query}))) DESC`)
+    .orderBy(
+      sql`ts_rank(${treeNodes}.tsv, plainto_tsquery('simple', immutable_unaccent(${query}))) DESC`,
+    )
     .limit(PAGE_SIZE)
     .offset((Math.max(1, page) - 1) * PAGE_SIZE);
 }
@@ -322,7 +312,11 @@ export async function getNode(actor: Principal, nodeId: string) {
       .innerJoin(tags, eq(nodeTags.tagId, tags.id))
       .where(eq(nodeTags.nodeId, nodeId)),
     db
-      .select({ toNodeId: nodeLinks.toNodeId, linkType: nodeLinks.linkType, title: treeNodes.title })
+      .select({
+        toNodeId: nodeLinks.toNodeId,
+        linkType: nodeLinks.linkType,
+        title: treeNodes.title,
+      })
       .from(nodeLinks)
       .innerJoin(treeNodes, eq(nodeLinks.toNodeId, treeNodes.id))
       .where(eq(nodeLinks.fromNodeId, nodeId)),
@@ -410,12 +404,7 @@ export async function wikiIndex(actor: Principal) {
     .select({ id: treeNodes.id, title: treeNodes.title, verification: treeNodes.verification })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(
-      and(
-        ne(treeNodes.verification, "archived"),
-        branchVisibilityCondition(actor),
-      ),
-    )
+    .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
     .orderBy(asc(treeNodes.updatedAt));
   const nodeIndex: Record<
     string,
@@ -485,12 +474,7 @@ async function graphForBranches(
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(
-      and(
-        inArray(treeNodes.branchId, branchIds),
-        ne(treeNodes.verification, "archived"),
-      ),
-    )
+    .where(and(inArray(treeNodes.branchId, branchIds), ne(treeNodes.verification, "archived")))
     .orderBy(asc(treeNodes.title));
   const nodeIds = new Set(nodes.map((n) => n.id));
   // Cross-link mode: the team graph shows links FROM personal nodes that point
@@ -504,10 +488,7 @@ async function graphForBranches(
     })
     .from(nodeLinks)
     .where(
-      or(
-        inArray(nodeLinks.fromNodeId, [...nodeIds]),
-        inArray(nodeLinks.toNodeId, [...nodeIds]),
-      ),
+      or(inArray(nodeLinks.fromNodeId, [...nodeIds]), inArray(nodeLinks.toNodeId, [...nodeIds])),
     );
   return {
     nodes,
@@ -542,9 +523,7 @@ export async function personalKnowledgeGraph(actor: Principal): Promise<Knowledg
       .where(
         and(
           eq(branches.scope, "personal"),
-          actor.role === "admin_op"
-            ? sql`1=1`
-            : eq(branches.ownerUserId, actor.userId),
+          actor.role === "admin_op" ? sql`1=1` : eq(branches.ownerUserId, actor.userId),
           sql`${branches.archivedAt} IS NULL`,
         ),
       ),
@@ -876,7 +855,12 @@ export async function archiveNode(actor: Principal, nodeId: string) {
   const result = await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(treeNodes)
-      .set({ verification: "archived", publish: false, updatedAt: new Date(), version: node.version + 1 })
+      .set({
+        verification: "archived",
+        publish: false,
+        updatedAt: new Date(),
+        version: node.version + 1,
+      })
       .where(and(eq(treeNodes.id, nodeId), eq(treeNodes.version, node.version)))
       .returning();
     if (!updated) throw versionConflict();

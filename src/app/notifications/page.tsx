@@ -25,11 +25,7 @@ export default async function NotificationsPage() {
         {notes.length === 0 ? (
           // Nothing to press: notifications arrive on their own, and the
           // channel settings are already on this page just below.
-          <Empty
-            panel={false}
-            title={T.notificationsEmptyTitle}
-            hint={T.notificationsEmptyHint}
-          />
+          <Empty panel={false} title={T.notificationsEmptyTitle} hint={T.notificationsEmptyHint} />
         ) : (
           <div className="record-scroll">
             {/* A full page means there are older ones the list does not reach.

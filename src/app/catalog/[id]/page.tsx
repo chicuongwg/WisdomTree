@@ -115,7 +115,9 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
             borrower away from a shelf holding two more books. */}
         <LoanRequestButton
           itemId={item.id}
-          disabled={item.status === "lost" || item.status === "repair" || item.availableCopies === 0}
+          disabled={
+            item.status === "lost" || item.status === "repair" || item.availableCopies === 0
+          }
         />
         {user.role === "admin_op" && (
           <>
@@ -131,44 +133,44 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
         <h3>{T.currentLoan}</h3>
         {active.length > 0 ? (
           active.map((active) => (
-          <dl key={active.ticket.id} className="record">
-            <dt>{T.state}</dt>
-            <dd>
-              <StateBadge ticket={active.ticket} />
-              {isOverdue(active.ticket) && (
-                <>
-                  {" "}
-                  <span className="overdue-note">
-                    {T.overdueLabel} · {T.dueDate} {day(active.ticket.dueAt)}
+            <dl key={active.ticket.id} className="record">
+              <dt>{T.state}</dt>
+              <dd>
+                <StateBadge ticket={active.ticket} />
+                {isOverdue(active.ticket) && (
+                  <>
+                    {" "}
+                    <span className="overdue-note">
+                      {T.overdueLabel} · {T.dueDate} {day(active.ticket.dueAt)}
+                    </span>
+                  </>
+                )}
+              </dd>
+              <dt>{T.borrower}</dt>
+              <dd>{active.borrowerName}</dd>
+              <dt>{T.requestedAtLabel}</dt>
+              <dd>{when(active.ticket.requestedAt)}</dd>
+              <dt>{T.approvedByLabel}</dt>
+              <dd>
+                {active.handlerName ?? T.notYet}
+                {active.ticket.approvedAt && (
+                  <span className="muted">
+                    {" · "}
+                    {T.approvedAtLabel} {when(active.ticket.approvedAt)}
                   </span>
+                )}
+              </dd>
+              <dt>{T.borrowedAtLabel}</dt>
+              <dd>{active.ticket.borrowedAt ? when(active.ticket.borrowedAt) : T.notYet}</dd>
+              <dt>{T.dueDate}</dt>
+              <dd>{active.ticket.dueAt ? day(active.ticket.dueAt) : T.notYet}</dd>
+              {active.ticket.returnedAt && (
+                <>
+                  <dt>{T.returnedAtLabel}</dt>
+                  <dd>{when(active.ticket.returnedAt)}</dd>
                 </>
               )}
-            </dd>
-            <dt>{T.borrower}</dt>
-            <dd>{active.borrowerName}</dd>
-            <dt>{T.requestedAtLabel}</dt>
-            <dd>{when(active.ticket.requestedAt)}</dd>
-            <dt>{T.approvedByLabel}</dt>
-            <dd>
-              {active.handlerName ?? T.notYet}
-              {active.ticket.approvedAt && (
-                <span className="muted">
-                  {" · "}
-                  {T.approvedAtLabel} {when(active.ticket.approvedAt)}
-                </span>
-              )}
-            </dd>
-            <dt>{T.borrowedAtLabel}</dt>
-            <dd>{active.ticket.borrowedAt ? when(active.ticket.borrowedAt) : T.notYet}</dd>
-            <dt>{T.dueDate}</dt>
-            <dd>{active.ticket.dueAt ? day(active.ticket.dueAt) : T.notYet}</dd>
-            {active.ticket.returnedAt && (
-              <>
-                <dt>{T.returnedAtLabel}</dt>
-                <dd>{when(active.ticket.returnedAt)}</dd>
-              </>
-            )}
-          </dl>
+            </dl>
           ))
         ) : (
           <p className="muted">{tickets.length === 0 ? T.noLoanRecord : T.noCurrentLoan}</p>

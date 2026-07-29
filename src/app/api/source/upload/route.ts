@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     const source = await uploadSource(actor, {
       spaceId,
       title,
-      description: typeof description === "string" && description.trim() ? description.trim() : undefined,
+      description:
+        typeof description === "string" && description.trim() ? description.trim() : undefined,
       file,
     });
     return NextResponse.json(source, { status: 201 });

@@ -37,7 +37,11 @@ export function NodeAdminActions({
         <label htmlFor="canonical">
           {T.merge} {T.mergeCanonicalLabel}
         </label>
-        <select id="canonical" value={canonicalNodeId} onChange={(e) => setCanonicalNodeId(e.target.value)}>
+        <select
+          id="canonical"
+          value={canonicalNodeId}
+          onChange={(e) => setCanonicalNodeId(e.target.value)}
+        >
           <option value="">{T.chooseCanonicalNode}</option>
           {candidates
             .filter((c) => c.id !== nodeId)
@@ -54,7 +58,9 @@ export function NodeAdminActions({
           label={m.busy ? T.loading : T.merge}
           title={T.confirmMergeTitle}
           body={T.confirmMergeBody}
-          onConfirm={() => void m.run(`/api/tree/nodes/${nodeId}/merge`, { body: { canonicalNodeId } })}
+          onConfirm={() =>
+            void m.run(`/api/tree/nodes/${nodeId}/merge`, { body: { canonicalNodeId } })
+          }
         />
       </div>
     </div>

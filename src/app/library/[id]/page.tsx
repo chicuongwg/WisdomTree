@@ -72,7 +72,9 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                         return <span className={badgeToneClass(ed.tone)}>{ed.label}</span>;
                       })()}{" "}
                       {v.extractionStatus === "unprocessable" && (
-                        <span className="muted">Tệp gốc vẫn được lưu và tải xuống bình thường.</span>
+                        <span className="muted">
+                          Tệp gốc vẫn được lưu và tải xuống bình thường.
+                        </span>
                       )}
                       {v.extractionStatus === "processed" && !v.hasText && (
                         <span className="muted">{T.extractionNoTextDetail}</span>
@@ -116,9 +118,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
             </a>
           </p>
         )}
-        {v && !stored && (
-          <p className="muted">{T.sourceWithdrawnNotice}</p>
-        )}
+        {v && !stored && <p className="muted">{T.sourceWithdrawnNotice}</p>}
       </div>
       {source.versions.length > 1 && (
         <div className="panel">
@@ -176,10 +176,10 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
         />
       )}
       <CommentsSection
-            anchorType="source"
-            anchorId={source.id}
-            members={await listMentionCandidates("source", source.id)}
-          />
+        anchorType="source"
+        anchorId={source.id}
+        members={await listMentionCandidates("source", source.id)}
+      />
     </main>
   );
 }

@@ -218,7 +218,12 @@ export function ShellRail({
     });
     items.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
   }
-  items.push({ href: "/notifications", label: T.notificationCenter, icon: icons.bell, pip: unread });
+  items.push({
+    href: "/notifications",
+    label: T.notificationCenter,
+    icon: icons.bell,
+    pip: unread,
+  });
 
   /**
    * How current an item is. The rail names MODULES, not pages: on
@@ -240,11 +245,7 @@ export function ShellRail({
     return inModule ? "true" : undefined;
   };
 
-  const initials = displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-1)[0]
-    ?.slice(0, 2);
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(-1)[0]?.slice(0, 2);
 
   return (
     <nav className="rail" aria-label={T.modules}>
@@ -274,21 +275,19 @@ export function ShellRail({
       {items.map((item) => {
         const name = item.group ? `${item.group} · ${item.label}` : item.label;
         return (
-        <Link
-          key={item.href}
-          href={item.href}
-          className="rail-btn"
-          title={name}
-          aria-label={
-            item.pip
-              ? `${name} (${item.pip} ${(item.pipNoun ?? T.unread).toLowerCase()})`
-              : name
-          }
-          aria-current={current(item)}
-        >
-          {item.icon}
-          {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}
-        </Link>
+          <Link
+            key={item.href}
+            href={item.href}
+            className="rail-btn"
+            title={name}
+            aria-label={
+              item.pip ? `${name} (${item.pip} ${(item.pipNoun ?? T.unread).toLowerCase()})` : name
+            }
+            aria-current={current(item)}
+          >
+            {item.icon}
+            {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}
+          </Link>
         );
       })}
       {/* ponytail: below 56rem the sidebar is display:none, and six screens

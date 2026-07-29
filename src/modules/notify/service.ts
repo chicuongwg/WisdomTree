@@ -228,11 +228,7 @@ export async function createComment(
 
   if (input.parentCommentId) {
     const [parent] = await db.select().from(comments).where(eq(comments.id, input.parentCommentId));
-    if (
-      !parent ||
-      parent.anchorType !== input.anchorType ||
-      parent.anchorId !== input.anchorId
-    ) {
+    if (!parent || parent.anchorType !== input.anchorType || parent.anchorId !== input.anchorId) {
       throw new ApiError(400, "invalid_parent_comment", "Bình luận gốc không thuộc mục này.");
     }
   }

@@ -4,3186 +4,3186 @@
  */
 
 export interface paths {
-    "/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Current session and role/space claims */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Session"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    /** Current session and role/space claims */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Session"];
+          };
         };
-        get?: never;
-        put?: never;
-        /** End session */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Logged out */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        401: components["responses"]["Unauthorized"];
+      };
     };
-    "/spaces": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List spaces visible to the caller (members see own spaces; Admin/Op sees all) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Space"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /** Create a space (Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["SpaceCreate"];
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Space"];
-                    };
-                };
-                403: components["responses"]["Forbidden"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/spaces/{spaceId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                spaceId: components["parameters"]["spaceId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** End session */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Logged out */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update space metadata (Admin/Op) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    spaceId: components["parameters"]["spaceId"];
-                };
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["SpaceUpdate"];
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Space"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
-        };
-        trace?: never;
+      };
     };
-    "/spaces/{spaceId}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                spaceId: components["parameters"]["spaceId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a member (Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    spaceId: components["parameters"]["spaceId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        userId: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Added */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                403: components["responses"]["Forbidden"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/spaces": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/spaces/{spaceId}/members/{userId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                spaceId: components["parameters"]["spaceId"];
-                userId: string;
-            };
-            cookie?: never;
+    /** List spaces visible to the caller (members see own spaces; Admin/Op sees all) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Space"][];
+          };
         };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a member (Admin/Op) */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    spaceId: components["parameters"]["spaceId"];
-                    userId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Removed */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/source/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    put?: never;
+    /** Create a space (Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["SpaceCreate"];
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Space"];
+          };
         };
-        get?: never;
-        put?: never;
-        /** Upload a new source file into a member space (store-first; returns once stored) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        /**
-                         * Format: binary
-                         * @description Bounded by intake-constraints (100 MB, allowed formats)
-                         */
-                        file: string;
-                        /** Format: uuid */
-                        spaceId: string;
-                        title: string;
-                        description?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Stored */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Source"];
-                    };
-                };
-                /** @description File exceeds intake size limit */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Format not in the intake allow-list */
-                415: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        403: components["responses"]["Forbidden"];
+      };
     };
-    "/source/{sourceId}/version": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload a new version of an existing source */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        /** Format: binary */
-                        file: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Stored */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SourceVersion"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/spaces/{spaceId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        spaceId: components["parameters"]["spaceId"];
+      };
+      cookie?: never;
     };
-    "/source/gap-request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update space metadata (Admin/Op) */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          spaceId: components["parameters"]["spaceId"];
         };
-        get?: never;
-        put?: never;
-        /** Create a branch-gap request (non-file intake) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        title: string;
-                        description?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GapRequest"];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["SpaceUpdate"];
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Space"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        409: components["responses"]["VersionConflict"];
+      };
     };
-    "/library": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Browse stored items across the caller's member spaces (store-first Library) */
-        get: {
-            parameters: {
-                query?: {
-                    spaceId?: string;
-                    /** @description Title/metadata and full-text query */
-                    q?: string;
-                    page?: components["parameters"]["page"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Space-scoped result list */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LibraryItem"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    trace?: never;
+  };
+  "/spaces/{spaceId}/members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        spaceId: components["parameters"]["spaceId"];
+      };
+      cookie?: never;
     };
-    "/source/my-submissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Add a member (Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          spaceId: components["parameters"]["spaceId"];
         };
-        /** Unified intake history (sources and gap requests) for the caller */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["IntakeItem"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            userId: string;
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
+      responses: {
+        /** @description Added */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        403: components["responses"]["Forbidden"];
+      };
     };
-    "/source/{sourceId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
-        };
-        /** Source detail (member view is space-scoped; review internals are Admin/Op) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Source"];
-                    };
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/spaces/{spaceId}/members/{userId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        spaceId: components["parameters"]["spaceId"];
+        userId: string;
+      };
+      cookie?: never;
     };
-    "/source/{sourceId}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a member (Admin/Op) */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          spaceId: components["parameters"]["spaceId"];
+          userId: string;
         };
-        /** Download the original file (space members and Admin/Op; served via short-lived signed URL redirect) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Redirect to time-limited object-storage URL */
-                302: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                403: components["responses"]["Forbidden"];
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Removed */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/source/gap-request/{requestId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["requestId"];
-            };
-            cookie?: never;
-        };
-        /** Gap request detail */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: components["parameters"]["requestId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GapRequest"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/upload": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/source/{sourceId}/version/{versionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Upload a new source file into a member space (store-first; returns once stored) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /**
+             * Format: binary
+             * @description Bounded by intake-constraints (100 MB, allowed formats)
+             */
+            file: string;
+            /** Format: uuid */
+            spaceId: string;
+            title: string;
+            description?: string;
+          };
         };
-        /** Source version detail including extraction status and text chunk references */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SourceVersion"];
-                    };
-                };
-            };
+      };
+      responses: {
+        /** @description Stored */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Source"];
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        /** @description File exceeds intake size limit */
+        413: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+        /** @description Format not in the intake allow-list */
+        415: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
     };
-    "/source/gap-request/{requestId}/triage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["requestId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark a gap request triaged */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: components["parameters"]["requestId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Triaged */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GapRequest"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+      };
+      cookie?: never;
     };
-    "/source/gap-request/{requestId}/convert": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["requestId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Upload a new version of an existing source */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
         };
-        get?: never;
-        put?: never;
-        /** Convert a triaged gap request into branch or node work */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: components["parameters"]["requestId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        branchId?: string;
-                        /** Format: uuid */
-                        nodeId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Converted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GapRequest"];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /** Format: binary */
+            file: string;
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
+      responses: {
+        /** @description Stored */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SourceVersion"];
+          };
+        };
+      };
     };
-    "/source/gap-request/{requestId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["requestId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reject a gap request */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: components["parameters"]["requestId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Rejected */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/gap-request": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/source/gap-request/{requestId}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requestId: components["parameters"]["requestId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Create a branch-gap request (non-file intake) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            title: string;
+            description?: string;
+          };
         };
-        get?: never;
-        put?: never;
-        /** Archive a gap request */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: components["parameters"]["requestId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Archived */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GapRequest"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/source/{sourceId}/version/{versionId}/assign": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Assign curation work to an editor (Admin/Op; opens curation as under_correction) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        assigneeId: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Assigned */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Curation"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/library": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/source/{sourceId}/version/{versionId}/corrected-text": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
+    /** Browse stored items across the caller's member spaces (store-first Library) */
+    get: {
+      parameters: {
+        query?: {
+          spaceId?: string;
+          /** @description Title/metadata and full-text query */
+          q?: string;
+          page?: components["parameters"]["page"];
         };
-        get?: never;
-        put?: never;
-        /** Append a corrected-text revision (owned or assigned editors, Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        content: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Revision appended */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CorrectedText"];
-                    };
-                };
-                403: components["responses"]["Forbidden"];
-            };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Space-scoped result list */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["LibraryItem"][];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/source/{sourceId}/version/{versionId}/mark-ready-for-review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Move curation to ready_for_review */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Ready for review */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Curation"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/my-submissions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/source/{sourceId}/version/{versionId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
+    /** Unified intake history (sources and gap requests) for the caller */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["IntakeItem"][];
+          };
         };
-        get?: never;
-        put?: never;
-        /** Close curation as rejected (Admin/Op; item stays stored in Library) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Curation rejected */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/source/{sourceId}/version/{versionId}/md-draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create or update the Markdown draft (owned or assigned) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        contentMd: string;
-                        /** Format: uuid */
-                        suggestedBranchId?: string;
-                        expectedVersion?: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Draft saved */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MarkdownDraft"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+      };
+      cookie?: never;
     };
-    "/source/{sourceId}/version/{versionId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
+    /** Source detail (member view is space-scoped; review internals are Admin/Op) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
         };
-        get?: never;
-        put?: never;
-        /** Approve corrected text / draft for publication (Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Approved */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Source"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        404: components["responses"]["NotFound"];
+      };
     };
-    "/source/{sourceId}/version/{versionId}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sourceId: components["parameters"]["sourceId"];
-                versionId: components["parameters"]["versionId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publish the approved draft into the tree (Admin/Op; idempotent; creates promotion provenance) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sourceId: components["parameters"]["sourceId"];
-                    versionId: components["parameters"]["versionId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        branchId: string;
-                        /**
-                         * Format: uuid
-                         * @description Existing node to update; omitted creates a new node
-                         */
-                        nodeId?: string;
-                        /** @enum {string} */
-                        verification: "unverified" | "verified";
-                        excerptChunkIds?: string[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Published */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TreeNode"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/download": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+      };
+      cookie?: never;
     };
-    "/review/queue": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    /** Download the original file (space members and Admin/Op; served via short-lived signed URL redirect) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
         };
-        /** Review queue (Admin/Op) */
-        get: {
-            parameters: {
-                query?: {
-                    taskType?: string;
-                    state?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReviewTask"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Redirect to time-limited object-storage URL */
+        302: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        403: components["responses"]["Forbidden"];
+      };
     };
-    "/review/publish/{reviewId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reviewId: string;
-            };
-            cookie?: never;
-        };
-        /** Publish-review workbench payload (draft, corrected text, chunks, provenance) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    reviewId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PublishReview"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/gap-request/{requestId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: components["parameters"]["requestId"];
+      };
+      cookie?: never;
     };
-    "/tree/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    /** Gap request detail */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: components["parameters"]["requestId"];
         };
-        /** Full-text search over tree nodes */
-        get: {
-            parameters: {
-                query: {
-                    q: string;
-                    page?: components["parameters"]["page"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TreeNodeSummary"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GapRequest"];
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/tree/nodes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a manual node (Editor; enters no_source) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["NodeWrite"];
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TreeNode"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/tree/nodes/{nodeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                nodeId: components["parameters"]["nodeId"];
-            };
-            cookie?: never;
+    /** Source version detail including extraction status and text chunk references */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        /** Node detail with links, tags, provenance, verification */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeId: components["parameters"]["nodeId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TreeNode"];
-                    };
-                };
-                404: components["responses"]["NotFound"];
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SourceVersion"];
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Edit node (owned or assigned Editor, Admin/Op; optimistic-locked) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeId: components["parameters"]["nodeId"];
-                };
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["NodeWrite"];
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TreeNode"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
-        };
-        trace?: never;
+      };
     };
-    "/tree/nodes/{nodeId}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                nodeId: components["parameters"]["nodeId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Archive a node (Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeId: components["parameters"]["nodeId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Archived */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/gap-request/{requestId}/triage": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: components["parameters"]["requestId"];
+      };
+      cookie?: never;
     };
-    "/tree/nodes/{nodeId}/merge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                nodeId: components["parameters"]["nodeId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Mark a gap request triaged */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: components["parameters"]["requestId"];
         };
-        get?: never;
-        put?: never;
-        /** Merge this node into a canonical node (Admin/Op; archives and redirects) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeId: components["parameters"]["nodeId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        canonicalNodeId: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Merged */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Triaged */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GapRequest"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/tree/nodes/{nodeId}/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                nodeId: components["parameters"]["nodeId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Render node Markdown to docx or pdf (any role; worker job) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    nodeId: components["parameters"]["nodeId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        format: "docx" | "pdf";
-                    };
-                };
-            };
-            responses: {
-                /** @description Render job queued */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobRef"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/gap-request/{requestId}/convert": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: components["parameters"]["requestId"];
+      };
+      cookie?: never;
     };
-    "/tree/branches": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Convert a triaged gap request into branch or node work */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: components["parameters"]["requestId"];
         };
-        get?: never;
-        put?: never;
-        /** Create a branch (Editor) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        description?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Branch"];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            branchId?: string;
+            /** Format: uuid */
+            nodeId?: string;
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
+      responses: {
+        /** @description Converted */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GapRequest"];
+          };
+        };
+      };
     };
-    "/tree/branches/{branchId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                branchId: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Edit branch metadata (owned or assigned Editor, Admin/Op) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    branchId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        description?: string;
-                        expectedVersion?: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Branch"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
-        };
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/gap-request/{requestId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: components["parameters"]["requestId"];
+      };
+      cookie?: never;
     };
-    "/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Reject a gap request */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: components["parameters"]["requestId"];
         };
-        /** In-app notification center for the caller */
-        get: {
-            parameters: {
-                query?: {
-                    unreadOnly?: boolean;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Notification"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Rejected */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/notifications/{notificationId}/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                notificationId: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark a notification read */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    notificationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Marked read */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/gap-request/{requestId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: components["parameters"]["requestId"];
+      };
+      cookie?: never;
     };
-    "/notifications/preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Archive a gap request */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: components["parameters"]["requestId"];
         };
-        /** Caller's per-event channel preferences */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NotificationPreference"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update per-event channel preferences */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["NotificationPreference"][];
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        trace?: never;
+      };
     };
-    "/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List comments on an object the caller can see */
-        get: {
-            parameters: {
-                query: {
-                    anchorType: "source" | "tree_node" | "deadline";
-                    anchorId: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Comment"][];
-                    };
-                };
-                403: components["responses"]["Forbidden"];
-            };
-        };
-        put?: never;
-        /** Comment on an object the caller can see (@Name in the body is resolved server-side and notifies that member) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        anchorType: "source" | "tree_node" | "deadline";
-                        /** Format: uuid */
-                        anchorId: string;
-                        /** Format: uuid */
-                        parentCommentId?: string;
-                        body: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Comment"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/assign": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/catalog": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Assign curation work to an editor (Admin/Op; opens curation as under_correction) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        /** Browse the physical catalog (library-space members) */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Title */
-                    q?: string;
-                    page?: components["parameters"]["page"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CatalogItem"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            assigneeId: string;
+          };
         };
-        put?: never;
-        /** Add a catalog item (Admin/Op librarian; issues item_code) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["CatalogItemWrite"];
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CatalogItem"];
-                    };
-                };
-            };
+      };
+      responses: {
+        /** @description Assigned */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Curation"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/catalog/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk-load the catalog from a spreadsheet via the Sheets bridge (Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        sheetId: string;
-                        columnMapping: Record<string, never>;
-                        /** Format: uuid */
-                        spaceId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Import job queued */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobRef"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/corrected-text": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/catalog/{itemId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                itemId: components["parameters"]["itemId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Append a corrected-text revision (owned or assigned editors, Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        /** Catalog item detail including linked digitized source and active loan */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    itemId: components["parameters"]["itemId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CatalogItem"];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            content: string;
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Edit item, set lost/repair, or link a digitized source (Admin/Op) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    itemId: components["parameters"]["itemId"];
-                };
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["CatalogItemWrite"];
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CatalogItem"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
+      };
+      responses: {
+        /** @description Revision appended */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CorrectedText"];
+          };
         };
-        trace?: never;
+        403: components["responses"]["Forbidden"];
+      };
     };
-    "/catalog/{itemId}/loan/request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                itemId: components["parameters"]["itemId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Request to borrow (library-space member) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    itemId: components["parameters"]["itemId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Ticket created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LoanTicket"];
-                    };
-                };
-                /** @description Item already has an active loan */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/mark-ready-for-review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/catalog/loan/{ticketId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: components["parameters"]["ticketId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Move curation to ready_for_review */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        get?: never;
-        put?: never;
-        /** Approve a loan request (librarian) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    ticketId: components["parameters"]["ticketId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Approved */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LoanTicket"];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Ready for review */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Curation"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        409: components["responses"]["VersionConflict"];
+      };
     };
-    "/catalog/loan/{ticketId}/decline": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: components["parameters"]["ticketId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Decline a loan request (librarian) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    ticketId: components["parameters"]["ticketId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Declined */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/catalog/loan/{ticketId}/borrow": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: components["parameters"]["ticketId"];
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Close curation as rejected (Admin/Op; item stays stored in Library) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        get?: never;
-        put?: never;
-        /** Mark handed over and set due date (librarian) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    ticketId: components["parameters"]["ticketId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: date-time */
-                        dueAt: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Borrowed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LoanTicket"];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Curation rejected */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/catalog/loan/{ticketId}/return": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticketId: components["parameters"]["ticketId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark returned; item goes back to available (librarian) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    ticketId: components["parameters"]["ticketId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Returned */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/md-draft": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/board": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Create or update the Markdown draft (owned or assigned) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        /** Operational board (Editor, Admin/Op) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Task"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            contentMd: string;
+            /** Format: uuid */
+            suggestedBranchId?: string;
+            expectedVersion?: number;
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
+      responses: {
+        /** @description Draft saved */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["MarkdownDraft"];
+          };
+        };
+        409: components["responses"]["VersionConflict"];
+      };
     };
-    "/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a task */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["TaskWrite"];
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Task"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/tasks/{taskId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                taskId: string;
-            };
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Approve corrected text / draft for publication (Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update a task (owned or assigned for Editors) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    taskId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["TaskWrite"];
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Task"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Approved */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        trace?: never;
+      };
     };
-    "/achievements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Log an achievement */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        title: string;
-                        /** Format: uuid */
-                        branchId?: string;
-                        /** Format: date-time */
-                        achievedAt?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/source/{sourceId}/version/{versionId}/publish": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: components["parameters"]["sourceId"];
+        versionId: components["parameters"]["versionId"];
+      };
+      cookie?: never;
     };
-    "/deadlines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Publish the approved draft into the tree (Admin/Op; idempotent; creates promotion provenance) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sourceId: components["parameters"]["sourceId"];
+          versionId: components["parameters"]["versionId"];
         };
-        /** Deadlines across the caller's projects */
-        get: {
-            parameters: {
-                query?: {
-                    spaceId?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Deadline"][];
-                    };
-                };
-            };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            branchId: string;
+            /**
+             * Format: uuid
+             * @description Existing node to update; omitted creates a new node
+             */
+            nodeId?: string;
+            /** @enum {string} */
+            verification: "unverified" | "verified";
+            excerptChunkIds?: string[];
+          };
         };
-        put?: never;
-        /** Create a deadline (project members) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["DeadlineWrite"];
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Deadline"];
-                    };
-                };
-            };
+      };
+      responses: {
+        /** @description Published */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TreeNode"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/deadlines/{deadlineId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                deadlineId: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Edit a deadline (project members) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    deadlineId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["DeadlineWrite"];
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Deadline"];
-                    };
-                };
-                409: components["responses"]["VersionConflict"];
-            };
-        };
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/review/queue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/admin/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    /** Review queue (Admin/Op) */
+    get: {
+      parameters: {
+        query?: {
+          taskType?: string;
+          state?: string;
         };
-        /** System health, job counters, backup status, overdue loans (Admin/Op) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["HealthReport"];
-                    };
-                };
-            };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ReviewTask"][];
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/export/tree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trigger one-way tree export to the content repo (Admin/Op; idempotent) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Export job queued */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobRef"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/review/publish/{reviewId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
     };
-    "/jobs/{jobId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                jobId: string;
-            };
-            cookie?: never;
+    /** Publish-review workbench payload (draft, corrected text, chunks, provenance) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          reviewId: string;
         };
-        /** Job status for render/export jobs (added 2026-07-20; export_jobs ids resolve for Admin/Op only) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    jobId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobRef"];
-                    };
-                };
-                404: components["responses"]["NotFound"];
-            };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PublishReview"];
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/bridge/drive/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Import a Drive folder into a space (Admin/Op; idempotent by Drive file id) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        driveFolderId: string;
-                        /** Format: uuid */
-                        spaceId: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Import job queued */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobRef"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/bridge/sheet/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    /** Full-text search over tree nodes */
+    get: {
+      parameters: {
+        query: {
+          q: string;
+          page?: components["parameters"]["page"];
         };
-        get?: never;
-        put?: never;
-        /** Import a Sheet into catalog or metrics (Admin/Op) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        sheetId: string;
-                        /** @enum {string} */
-                        target: "catalog" | "metrics";
-                        columnMapping?: Record<string, never>;
-                    };
-                };
-            };
-            responses: {
-                /** @description Import job queued */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobRef"];
-                    };
-                };
-            };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TreeNodeSummary"][];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/bridge/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Status and last reports of all configured bridges (Admin/Op) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BridgeImport"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/nodes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/calendar/{token}.ics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    /** Create a manual node (Editor; enters no_source) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["NodeWrite"];
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TreeNode"];
+          };
         };
-        /** Outbound ICS deadline feed (token-authenticated, no session) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    token: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description ICS feed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/calendar": string;
-                    };
-                };
-                /** @description Unknown or revoked token */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/nodes/{nodeId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: components["parameters"]["nodeId"];
+      };
+      cookie?: never;
+    };
+    /** Node detail with links, tags, provenance, verification */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          nodeId: components["parameters"]["nodeId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TreeNode"];
+          };
+        };
+        404: components["responses"]["NotFound"];
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Edit node (owned or assigned Editor, Admin/Op; optimistic-locked) */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          nodeId: components["parameters"]["nodeId"];
+        };
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["NodeWrite"];
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TreeNode"];
+          };
+        };
+        409: components["responses"]["VersionConflict"];
+      };
+    };
+    trace?: never;
+  };
+  "/tree/nodes/{nodeId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: components["parameters"]["nodeId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive a node (Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          nodeId: components["parameters"]["nodeId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/nodes/{nodeId}/merge": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: components["parameters"]["nodeId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Merge this node into a canonical node (Admin/Op; archives and redirects) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          nodeId: components["parameters"]["nodeId"];
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            canonicalNodeId: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Merged */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/nodes/{nodeId}/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nodeId: components["parameters"]["nodeId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Render node Markdown to docx or pdf (any role; worker job) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          nodeId: components["parameters"]["nodeId"];
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            format: "docx" | "pdf";
+          };
+        };
+      };
+      responses: {
+        /** @description Render job queued */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["JobRef"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/branches": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a branch (Editor) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string;
+            description?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Branch"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tree/branches/{branchId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        branchId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Edit branch metadata (owned or assigned Editor, Admin/Op) */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          branchId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            name?: string;
+            description?: string;
+            expectedVersion?: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Branch"];
+          };
+        };
+        409: components["responses"]["VersionConflict"];
+      };
+    };
+    trace?: never;
+  };
+  "/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** In-app notification center for the caller */
+    get: {
+      parameters: {
+        query?: {
+          unreadOnly?: boolean;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Notification"][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/{notificationId}/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        notificationId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark a notification read */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          notificationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Marked read */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/preferences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Caller's per-event channel preferences */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["NotificationPreference"][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update per-event channel preferences */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["NotificationPreference"][];
+        };
+      };
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/comments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List comments on an object the caller can see */
+    get: {
+      parameters: {
+        query: {
+          anchorType: "source" | "tree_node" | "deadline";
+          anchorId: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Comment"][];
+          };
+        };
+        403: components["responses"]["Forbidden"];
+      };
+    };
+    put?: never;
+    /** Comment on an object the caller can see (@Name in the body is resolved server-side and notifies that member) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            anchorType: "source" | "tree_node" | "deadline";
+            /** Format: uuid */
+            anchorId: string;
+            /** Format: uuid */
+            parentCommentId?: string;
+            body: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Comment"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Browse the physical catalog (library-space members) */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Title */
+          q?: string;
+          page?: components["parameters"]["page"];
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CatalogItem"][];
+          };
+        };
+      };
+    };
+    put?: never;
+    /** Add a catalog item (Admin/Op librarian; issues item_code) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["CatalogItemWrite"];
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CatalogItem"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Bulk-load the catalog from a spreadsheet via the Sheets bridge (Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            sheetId: string;
+            columnMapping: Record<string, never>;
+            /** Format: uuid */
+            spaceId?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Import job queued */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["JobRef"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog/{itemId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        itemId: components["parameters"]["itemId"];
+      };
+      cookie?: never;
+    };
+    /** Catalog item detail including linked digitized source and active loan */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          itemId: components["parameters"]["itemId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CatalogItem"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Edit item, set lost/repair, or link a digitized source (Admin/Op) */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          itemId: components["parameters"]["itemId"];
+        };
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["CatalogItemWrite"];
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CatalogItem"];
+          };
+        };
+        409: components["responses"]["VersionConflict"];
+      };
+    };
+    trace?: never;
+  };
+  "/catalog/{itemId}/loan/request": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        itemId: components["parameters"]["itemId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Request to borrow (library-space member) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          itemId: components["parameters"]["itemId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Ticket created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["LoanTicket"];
+          };
+        };
+        /** @description Item already has an active loan */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Error"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog/loan/{ticketId}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components["parameters"]["ticketId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve a loan request (librarian) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          ticketId: components["parameters"]["ticketId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Approved */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["LoanTicket"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog/loan/{ticketId}/decline": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components["parameters"]["ticketId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Decline a loan request (librarian) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          ticketId: components["parameters"]["ticketId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Declined */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog/loan/{ticketId}/borrow": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components["parameters"]["ticketId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark handed over and set due date (librarian) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          ticketId: components["parameters"]["ticketId"];
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: date-time */
+            dueAt: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Borrowed */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["LoanTicket"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/catalog/loan/{ticketId}/return": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components["parameters"]["ticketId"];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark returned; item goes back to available (librarian) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          ticketId: components["parameters"]["ticketId"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Returned */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Operational board (Editor, Admin/Op) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Task"][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tasks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a task */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["TaskWrite"];
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Task"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tasks/{taskId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        taskId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update a task (owned or assigned for Editors) */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          taskId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["TaskWrite"];
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Task"];
+          };
+        };
+        409: components["responses"]["VersionConflict"];
+      };
+    };
+    trace?: never;
+  };
+  "/achievements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Log an achievement */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            title: string;
+            /** Format: uuid */
+            branchId?: string;
+            /** Format: date-time */
+            achievedAt?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/deadlines": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Deadlines across the caller's projects */
+    get: {
+      parameters: {
+        query?: {
+          spaceId?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Deadline"][];
+          };
+        };
+      };
+    };
+    put?: never;
+    /** Create a deadline (project members) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["DeadlineWrite"];
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Deadline"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/deadlines/{deadlineId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        deadlineId: string;
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Edit a deadline (project members) */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          deadlineId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: components["requestBodies"]["DeadlineWrite"];
+      responses: {
+        /** @description Updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Deadline"];
+          };
+        };
+        409: components["responses"]["VersionConflict"];
+      };
+    };
+    trace?: never;
+  };
+  "/admin/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** System health, job counters, backup status, overdue loans (Admin/Op) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["HealthReport"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/export/tree": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger one-way tree export to the content repo (Admin/Op; idempotent) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Export job queued */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["JobRef"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/jobs/{jobId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    /** Job status for render/export jobs (added 2026-07-20; export_jobs ids resolve for Admin/Op only) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          jobId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["JobRef"];
+          };
+        };
+        404: components["responses"]["NotFound"];
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/bridge/drive/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Import a Drive folder into a space (Admin/Op; idempotent by Drive file id) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            driveFolderId: string;
+            /** Format: uuid */
+            spaceId: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Import job queued */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["JobRef"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/bridge/sheet/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Import a Sheet into catalog or metrics (Admin/Op) */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            sheetId: string;
+            /** @enum {string} */
+            target: "catalog" | "metrics";
+            columnMapping?: Record<string, never>;
+          };
+        };
+      };
+      responses: {
+        /** @description Import job queued */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["JobRef"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/bridge/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Status and last reports of all configured bridges (Admin/Op) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BridgeImport"][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/calendar/{token}.ics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Outbound ICS deadline feed (token-authenticated, no session) */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          token: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description ICS feed */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/calendar": string;
+          };
+        };
+        /** @description Unknown or revoked token */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Error: {
-            code: string;
-            /** @description User-facing */
-            message: string;
-            details?: Record<string, never>;
+  schemas: {
+    Error: {
+      code: string;
+      /** @description User-facing */
+      message: string;
+      details?: Record<string, never>;
+    };
+    Session: {
+      /** Format: uuid */
+      userId?: string;
+      displayName?: string;
+      /** @enum {string} */
+      role?: "user" | "editor" | "admin_op";
+      spaceIds?: string[];
+      locale?: string;
+    };
+    Space: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      /** @enum {string} */
+      type?: "team" | "personal";
+      memberCount?: number;
+      version?: number;
+    };
+    Source: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      spaceId?: string;
+      title?: string;
+      /** @enum {string} */
+      trustStatus?: "unknown" | "candidate" | "trusted" | "rejected" | "archived";
+      /** Format: uuid */
+      submittedBy?: string;
+      /** Format: uuid */
+      assignedTo?: string;
+      currentVersion?: components["schemas"]["SourceVersion"];
+      version?: number;
+    };
+    SourceVersion: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      sourceId?: string;
+      seq?: number;
+      originalFilename?: string;
+      mimeType?: string;
+      sizeBytes?: number;
+      /** @enum {string} */
+      storageState?: "uploaded" | "stored" | "quarantined" | "archived";
+      /** @enum {string} */
+      extractionStatus?: "pending" | "processed" | "unprocessable";
+      /** Format: date-time */
+      storedAt?: string;
+      chunkCount?: number;
+    };
+    LibraryItem: {
+      /** Format: uuid */
+      sourceId?: string;
+      /** Format: uuid */
+      spaceId?: string;
+      title?: string;
+      mimeType?: string;
+      /** Format: date-time */
+      storedAt?: string;
+      extractionStatus?: string;
+      /** @description Full-text match context when q matched extracted text */
+      snippet?: string;
+    };
+    IntakeItem: {
+      /** Format: uuid */
+      submissionId?: string;
+      /** @enum {string} */
+      itemType?: "source" | "branch_gap_request";
+      title?: string;
+      state?: string;
+      /** Format: uuid */
+      submittedBy?: string;
+      /** Format: date-time */
+      lastUpdatedAt?: string;
+      nextAction?: string;
+    };
+    GapRequest: {
+      /** Format: uuid */
+      id?: string;
+      title?: string;
+      description?: string;
+      /** @enum {string} */
+      state?: "submitted" | "triaged" | "converted_to_branch" | "rejected" | "archived";
+      /** Format: uuid */
+      submittedBy?: string;
+      /** Format: uuid */
+      triagedBy?: string;
+      version?: number;
+    };
+    Curation: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      sourceVersionId?: string;
+      /** @enum {string} */
+      state?: "under_correction" | "ready_for_review" | "promoted" | "rejected";
+      /** Format: uuid */
+      assignedTo?: string;
+      version?: number;
+    };
+    CorrectedText: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      sourceVersionId?: string;
+      seq?: number;
+      content?: string;
+      /** Format: uuid */
+      editedBy?: string;
+      /** Format: date-time */
+      createdAt?: string;
+    };
+    MarkdownDraft: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      sourceVersionId?: string;
+      contentMd?: string;
+      /** Format: uuid */
+      suggestedBranchId?: string;
+      version?: number;
+    };
+    ReviewTask: {
+      /** Format: uuid */
+      id?: string;
+      /** @enum {string} */
+      taskType?: "correction" | "gap_triage" | "publish" | "merge" | "archive" | "operational";
+      targetType?: string;
+      /** Format: uuid */
+      targetId?: string;
+      /** @enum {string} */
+      state?: "queued" | "assigned" | "in_review" | "changes_requested" | "approved" | "rejected";
+      /** Format: uuid */
+      assignedTo?: string;
+      version?: number;
+    };
+    PublishReview: {
+      reviewTask?: components["schemas"]["ReviewTask"];
+      source?: components["schemas"]["Source"];
+      sourceVersion?: components["schemas"]["SourceVersion"];
+      correctedText?: components["schemas"]["CorrectedText"];
+      draft?: components["schemas"]["MarkdownDraft"];
+    };
+    TreeNodeSummary: {
+      /** Format: uuid */
+      id?: string;
+      title?: string;
+      slug?: string;
+      /** Format: uuid */
+      branchId?: string;
+      /** @enum {string} */
+      verification?: "no_source" | "unverified" | "verified" | "archived";
+      snippet?: string;
+    };
+    TreeNode: components["schemas"]["TreeNodeSummary"] & {
+      contentMd?: string;
+      publish?: boolean;
+      /**
+       * Format: uuid
+       * @description Redirect target when merged
+       */
+      canonicalNodeId?: string;
+      tags?: string[];
+      links?: {
+        /** Format: uuid */
+        toNodeId?: string;
+        linkType?: string;
+      }[];
+      provenance?: {
+        /** Format: uuid */
+        sourceVersionId?: string;
+        /** Format: uuid */
+        approvedBy?: string;
+        /** Format: date-time */
+        createdAt?: string;
+      }[];
+      version?: number;
+    };
+    Branch: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      description?: string;
+      version?: number;
+    };
+    Notification: {
+      /** Format: uuid */
+      id?: string;
+      eventType?: string;
+      payload?: Record<string, never>;
+      /** Format: date-time */
+      readAt?: string;
+      /** Format: date-time */
+      createdAt?: string;
+    };
+    NotificationPreference: {
+      eventType?: string;
+      channels?: ("in_app" | "email" | "zalo")[];
+    };
+    Comment: {
+      /** Format: uuid */
+      id?: string;
+      /** @enum {string} */
+      anchorType?: "source" | "tree_node" | "deadline";
+      /** Format: uuid */
+      anchorId?: string;
+      /** Format: uuid */
+      parentCommentId?: string;
+      /** Format: uuid */
+      authorId?: string;
+      body?: string;
+      mentions?: string[];
+      /** Format: date-time */
+      createdAt?: string;
+    };
+    CatalogItem: {
+      /** Format: uuid */
+      id?: string;
+      itemCode?: string;
+      title?: string;
+      author?: string;
+      coverPhotoUrl?: string;
+      location?: string;
+      /** @enum {string} */
+      status?: "available" | "borrowed" | "lost" | "repair";
+      /** Format: uuid */
+      spaceId?: string;
+      /** Format: uuid */
+      linkedSourceId?: string;
+      activeLoan?: components["schemas"]["LoanTicket"];
+      version?: number;
+    };
+    LoanTicket: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      itemId?: string;
+      /** Format: uuid */
+      borrowerId?: string;
+      /** @enum {string} */
+      state?: "requested" | "approved" | "declined" | "borrowed" | "overdue" | "returned";
+      /** Format: date-time */
+      requestedAt?: string;
+      /** Format: date-time */
+      dueAt?: string;
+      /** Format: date-time */
+      returnedAt?: string;
+      /** Format: uuid */
+      handledBy?: string;
+      version?: number;
+    };
+    Task: {
+      /** Format: uuid */
+      id?: string;
+      title?: string;
+      /** @enum {string} */
+      state?: "todo" | "doing" | "done" | "archived";
+      /** Format: uuid */
+      assignedTo?: string;
+      targetType?: string;
+      /** Format: uuid */
+      targetId?: string;
+      version?: number;
+    };
+    Deadline: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      spaceId?: string;
+      title?: string;
+      /** @enum {string} */
+      type?: "conference" | "funding" | "report" | "milestone";
+      /** Format: date-time */
+      dueAt?: string;
+      reminderOffsets?: string[];
+      links?: {
+        targetType?: string;
+        /** Format: uuid */
+        targetId?: string;
+      }[];
+      version?: number;
+    };
+    BridgeImport: {
+      /** Format: uuid */
+      id?: string;
+      /** @enum {string} */
+      kind?: "drive" | "sheet_catalog" | "sheet_metrics" | "forms";
+      /** @enum {string} */
+      state?: "configured" | "running" | "succeeded" | "failed";
+      /** Format: date-time */
+      lastRunAt?: string;
+      lastReport?: Record<string, never>;
+    };
+    JobRef: {
+      /** Format: uuid */
+      jobId?: string;
+      jobType?: string;
+      /** @enum {string} */
+      state?: "queued" | "running" | "succeeded" | "failed" | "dead";
+      /** @description Present on succeeded render jobs */
+      result?: {
+        downloadUrl?: string;
+        converterWarnings?: string[];
+      };
+    };
+    HealthReport: {
+      /** @description Success and failure counts by job type */
+      jobCounts?: Record<string, never>;
+      ocrFailureRate?: number;
+      publishSuccessRate?: number;
+      exportValidationFailures?: number;
+      queueLatencySeconds?: number;
+      backlogOver7Days?: number;
+      /** Format: date-time */
+      lastBackupAt?: string;
+      backupStatus?: string;
+      overdueLoanCount?: number;
+      degradedComponents?: string[];
+    };
+  };
+  responses: {
+    /** @description No valid session */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Role or scope check failed (audited as outcome=denied) */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Not found, or outside the caller's visibility scope */
+    NotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Optimistic-lock failure; the save targeted a stale version and was rejected, not merged */
+    VersionConflict: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+  };
+  parameters: {
+    spaceId: string;
+    sourceId: string;
+    versionId: string;
+    requestId: string;
+    nodeId: string;
+    itemId: string;
+    ticketId: string;
+    page: number;
+  };
+  requestBodies: {
+    SpaceCreate: {
+      content: {
+        "application/json": {
+          name: string;
+          /** @enum {string} */
+          type: "team" | "personal";
         };
-        Session: {
-            /** Format: uuid */
-            userId?: string;
-            displayName?: string;
-            /** @enum {string} */
-            role?: "user" | "editor" | "admin_op";
-            spaceIds?: string[];
-            locale?: string;
+      };
+    };
+    SpaceUpdate: {
+      content: {
+        "application/json": {
+          name?: string;
+          expectedVersion?: number;
         };
-        Space: {
+      };
+    };
+    NodeWrite: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          branchId?: string;
+          title?: string;
+          contentMd?: string;
+          tags?: string[];
+          links?: {
             /** Format: uuid */
-            id?: string;
-            name?: string;
-            /** @enum {string} */
-            type?: "team" | "personal";
-            memberCount?: number;
-            version?: number;
+            toNodeId?: string;
+            linkType?: string;
+          }[];
+          /** @description Quartz flag; settable only by Admin/Op on verified nodes */
+          publish?: boolean;
+          expectedVersion?: number;
         };
-        Source: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            spaceId?: string;
-            title?: string;
-            /** @enum {string} */
-            trustStatus?: "unknown" | "candidate" | "trusted" | "rejected" | "archived";
-            /** Format: uuid */
-            submittedBy?: string;
-            /** Format: uuid */
-            assignedTo?: string;
-            currentVersion?: components["schemas"]["SourceVersion"];
-            version?: number;
+      };
+    };
+    CatalogItemWrite: {
+      content: {
+        "application/json": {
+          title?: string;
+          author?: string;
+          location?: string;
+          /** @enum {string} */
+          status?: "available" | "lost" | "repair";
+          /** Format: uuid */
+          linkedSourceId?: string;
+          expectedVersion?: number;
         };
-        SourceVersion: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            sourceId?: string;
-            seq?: number;
-            originalFilename?: string;
-            mimeType?: string;
-            sizeBytes?: number;
-            /** @enum {string} */
-            storageState?: "uploaded" | "stored" | "quarantined" | "archived";
-            /** @enum {string} */
-            extractionStatus?: "pending" | "processed" | "unprocessable";
-            /** Format: date-time */
-            storedAt?: string;
-            chunkCount?: number;
+      };
+    };
+    TaskWrite: {
+      content: {
+        "application/json": {
+          title?: string;
+          /** @enum {string} */
+          state?: "todo" | "doing" | "done" | "archived";
+          /** Format: uuid */
+          assigneeId?: string;
+          targetType?: string;
+          /** Format: uuid */
+          targetId?: string;
+          expectedVersion?: number;
         };
-        LibraryItem: {
-            /** Format: uuid */
-            sourceId?: string;
-            /** Format: uuid */
-            spaceId?: string;
-            title?: string;
-            mimeType?: string;
-            /** Format: date-time */
-            storedAt?: string;
-            extractionStatus?: string;
-            /** @description Full-text match context when q matched extracted text */
-            snippet?: string;
-        };
-        IntakeItem: {
-            /** Format: uuid */
-            submissionId?: string;
-            /** @enum {string} */
-            itemType?: "source" | "branch_gap_request";
-            title?: string;
-            state?: string;
-            /** Format: uuid */
-            submittedBy?: string;
-            /** Format: date-time */
-            lastUpdatedAt?: string;
-            nextAction?: string;
-        };
-        GapRequest: {
-            /** Format: uuid */
-            id?: string;
-            title?: string;
-            description?: string;
-            /** @enum {string} */
-            state?: "submitted" | "triaged" | "converted_to_branch" | "rejected" | "archived";
-            /** Format: uuid */
-            submittedBy?: string;
-            /** Format: uuid */
-            triagedBy?: string;
-            version?: number;
-        };
-        Curation: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            sourceVersionId?: string;
-            /** @enum {string} */
-            state?: "under_correction" | "ready_for_review" | "promoted" | "rejected";
-            /** Format: uuid */
-            assignedTo?: string;
-            version?: number;
-        };
-        CorrectedText: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            sourceVersionId?: string;
-            seq?: number;
-            content?: string;
-            /** Format: uuid */
-            editedBy?: string;
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        MarkdownDraft: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            sourceVersionId?: string;
-            contentMd?: string;
-            /** Format: uuid */
-            suggestedBranchId?: string;
-            version?: number;
-        };
-        ReviewTask: {
-            /** Format: uuid */
-            id?: string;
-            /** @enum {string} */
-            taskType?: "correction" | "gap_triage" | "publish" | "merge" | "archive" | "operational";
+      };
+    };
+    DeadlineWrite: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          spaceId?: string;
+          title?: string;
+          /** @enum {string} */
+          type?: "conference" | "funding" | "report" | "milestone";
+          /** Format: date-time */
+          dueAt?: string;
+          /** @description Postgres interval strings before dueAt (e.g. '7 days', '1 day') */
+          reminderOffsets?: string[];
+          links?: {
             targetType?: string;
             /** Format: uuid */
             targetId?: string;
-            /** @enum {string} */
-            state?: "queued" | "assigned" | "in_review" | "changes_requested" | "approved" | "rejected";
-            /** Format: uuid */
-            assignedTo?: string;
-            version?: number;
+          }[];
+          expectedVersion?: number;
         };
-        PublishReview: {
-            reviewTask?: components["schemas"]["ReviewTask"];
-            source?: components["schemas"]["Source"];
-            sourceVersion?: components["schemas"]["SourceVersion"];
-            correctedText?: components["schemas"]["CorrectedText"];
-            draft?: components["schemas"]["MarkdownDraft"];
-        };
-        TreeNodeSummary: {
-            /** Format: uuid */
-            id?: string;
-            title?: string;
-            slug?: string;
-            /** Format: uuid */
-            branchId?: string;
-            /** @enum {string} */
-            verification?: "no_source" | "unverified" | "verified" | "archived";
-            snippet?: string;
-        };
-        TreeNode: components["schemas"]["TreeNodeSummary"] & {
-            contentMd?: string;
-            publish?: boolean;
-            /**
-             * Format: uuid
-             * @description Redirect target when merged
-             */
-            canonicalNodeId?: string;
-            tags?: string[];
-            links?: {
-                /** Format: uuid */
-                toNodeId?: string;
-                linkType?: string;
-            }[];
-            provenance?: {
-                /** Format: uuid */
-                sourceVersionId?: string;
-                /** Format: uuid */
-                approvedBy?: string;
-                /** Format: date-time */
-                createdAt?: string;
-            }[];
-            version?: number;
-        };
-        Branch: {
-            /** Format: uuid */
-            id?: string;
-            name?: string;
-            description?: string;
-            version?: number;
-        };
-        Notification: {
-            /** Format: uuid */
-            id?: string;
-            eventType?: string;
-            payload?: Record<string, never>;
-            /** Format: date-time */
-            readAt?: string;
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        NotificationPreference: {
-            eventType?: string;
-            channels?: ("in_app" | "email" | "zalo")[];
-        };
-        Comment: {
-            /** Format: uuid */
-            id?: string;
-            /** @enum {string} */
-            anchorType?: "source" | "tree_node" | "deadline";
-            /** Format: uuid */
-            anchorId?: string;
-            /** Format: uuid */
-            parentCommentId?: string;
-            /** Format: uuid */
-            authorId?: string;
-            body?: string;
-            mentions?: string[];
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        CatalogItem: {
-            /** Format: uuid */
-            id?: string;
-            itemCode?: string;
-            title?: string;
-            author?: string;
-            coverPhotoUrl?: string;
-            location?: string;
-            /** @enum {string} */
-            status?: "available" | "borrowed" | "lost" | "repair";
-            /** Format: uuid */
-            spaceId?: string;
-            /** Format: uuid */
-            linkedSourceId?: string;
-            activeLoan?: components["schemas"]["LoanTicket"];
-            version?: number;
-        };
-        LoanTicket: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            itemId?: string;
-            /** Format: uuid */
-            borrowerId?: string;
-            /** @enum {string} */
-            state?: "requested" | "approved" | "declined" | "borrowed" | "overdue" | "returned";
-            /** Format: date-time */
-            requestedAt?: string;
-            /** Format: date-time */
-            dueAt?: string;
-            /** Format: date-time */
-            returnedAt?: string;
-            /** Format: uuid */
-            handledBy?: string;
-            version?: number;
-        };
-        Task: {
-            /** Format: uuid */
-            id?: string;
-            title?: string;
-            /** @enum {string} */
-            state?: "todo" | "doing" | "done" | "archived";
-            /** Format: uuid */
-            assignedTo?: string;
-            targetType?: string;
-            /** Format: uuid */
-            targetId?: string;
-            version?: number;
-        };
-        Deadline: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            spaceId?: string;
-            title?: string;
-            /** @enum {string} */
-            type?: "conference" | "funding" | "report" | "milestone";
-            /** Format: date-time */
-            dueAt?: string;
-            reminderOffsets?: string[];
-            links?: {
-                targetType?: string;
-                /** Format: uuid */
-                targetId?: string;
-            }[];
-            version?: number;
-        };
-        BridgeImport: {
-            /** Format: uuid */
-            id?: string;
-            /** @enum {string} */
-            kind?: "drive" | "sheet_catalog" | "sheet_metrics" | "forms";
-            /** @enum {string} */
-            state?: "configured" | "running" | "succeeded" | "failed";
-            /** Format: date-time */
-            lastRunAt?: string;
-            lastReport?: Record<string, never>;
-        };
-        JobRef: {
-            /** Format: uuid */
-            jobId?: string;
-            jobType?: string;
-            /** @enum {string} */
-            state?: "queued" | "running" | "succeeded" | "failed" | "dead";
-            /** @description Present on succeeded render jobs */
-            result?: {
-                downloadUrl?: string;
-                converterWarnings?: string[];
-            };
-        };
-        HealthReport: {
-            /** @description Success and failure counts by job type */
-            jobCounts?: Record<string, never>;
-            ocrFailureRate?: number;
-            publishSuccessRate?: number;
-            exportValidationFailures?: number;
-            queueLatencySeconds?: number;
-            backlogOver7Days?: number;
-            /** Format: date-time */
-            lastBackupAt?: string;
-            backupStatus?: string;
-            overdueLoanCount?: number;
-            degradedComponents?: string[];
-        };
+      };
     };
-    responses: {
-        /** @description No valid session */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Role or scope check failed (audited as outcome=denied) */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Not found, or outside the caller's visibility scope */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Optimistic-lock failure; the save targeted a stale version and was rejected, not merged */
-        VersionConflict: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-    };
-    parameters: {
-        spaceId: string;
-        sourceId: string;
-        versionId: string;
-        requestId: string;
-        nodeId: string;
-        itemId: string;
-        ticketId: string;
-        page: number;
-    };
-    requestBodies: {
-        SpaceCreate: {
-            content: {
-                "application/json": {
-                    name: string;
-                    /** @enum {string} */
-                    type: "team" | "personal";
-                };
-            };
-        };
-        SpaceUpdate: {
-            content: {
-                "application/json": {
-                    name?: string;
-                    expectedVersion?: number;
-                };
-            };
-        };
-        NodeWrite: {
-            content: {
-                "application/json": {
-                    /** Format: uuid */
-                    branchId?: string;
-                    title?: string;
-                    contentMd?: string;
-                    tags?: string[];
-                    links?: {
-                        /** Format: uuid */
-                        toNodeId?: string;
-                        linkType?: string;
-                    }[];
-                    /** @description Quartz flag; settable only by Admin/Op on verified nodes */
-                    publish?: boolean;
-                    expectedVersion?: number;
-                };
-            };
-        };
-        CatalogItemWrite: {
-            content: {
-                "application/json": {
-                    title?: string;
-                    author?: string;
-                    location?: string;
-                    /** @enum {string} */
-                    status?: "available" | "lost" | "repair";
-                    /** Format: uuid */
-                    linkedSourceId?: string;
-                    expectedVersion?: number;
-                };
-            };
-        };
-        TaskWrite: {
-            content: {
-                "application/json": {
-                    title?: string;
-                    /** @enum {string} */
-                    state?: "todo" | "doing" | "done" | "archived";
-                    /** Format: uuid */
-                    assigneeId?: string;
-                    targetType?: string;
-                    /** Format: uuid */
-                    targetId?: string;
-                    expectedVersion?: number;
-                };
-            };
-        };
-        DeadlineWrite: {
-            content: {
-                "application/json": {
-                    /** Format: uuid */
-                    spaceId?: string;
-                    title?: string;
-                    /** @enum {string} */
-                    type?: "conference" | "funding" | "report" | "milestone";
-                    /** Format: date-time */
-                    dueAt?: string;
-                    /** @description Postgres interval strings before dueAt (e.g. '7 days', '1 day') */
-                    reminderOffsets?: string[];
-                    links?: {
-                        targetType?: string;
-                        /** Format: uuid */
-                        targetId?: string;
-                    }[];
-                    expectedVersion?: number;
-                };
-            };
-        };
-    };
-    headers: never;
-    pathItems: never;
+  };
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

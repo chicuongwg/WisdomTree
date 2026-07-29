@@ -17,15 +17,22 @@ export const comments = pgTable("comments", {
   }).notNull(),
   anchorId: uuid("anchor_id").notNull(),
   parentCommentId: uuid("parent_comment_id"), // threading; self-FK in the migration
-  authorId: uuid("author_id").notNull().references(() => users.id),
+  authorId: uuid("author_id")
+    .notNull()
+    .references(() => users.id),
   body: text("body").notNull(),
-  mentions: uuid("mentions").array().notNull().default(sql`'{}'::uuid[]`),
+  mentions: uuid("mentions")
+    .array()
+    .notNull()
+    .default(sql`'{}'::uuid[]`),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull().references(() => users.id),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
   eventType: text("event_type").notNull(),
   payload: jsonb("payload").notNull(),
   readAt: timestamp("read_at", { withTimezone: true }),
@@ -36,9 +43,13 @@ export const notifications = pgTable("notifications", {
 // in the in-app center; channel outages never touch the triggering workflow.
 export const notificationDeliveries = pgTable("notification_deliveries", {
   id: uuid("id").primaryKey().defaultRandom(),
-  notificationId: uuid("notification_id").notNull().references(() => notifications.id),
+  notificationId: uuid("notification_id")
+    .notNull()
+    .references(() => notifications.id),
   channel: text("channel", { enum: ["in_app", "email", "zalo"] }).notNull(),
-  state: text("state", { enum: ["pending", "sent", "failed"] }).notNull().default("pending"),
+  state: text("state", { enum: ["pending", "sent", "failed"] })
+    .notNull()
+    .default("pending"),
   attempts: integer("attempts").notNull().default(0),
   lastError: text("last_error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -49,7 +60,9 @@ export const notificationDeliveries = pgTable("notification_deliveries", {
 export const notificationPreferences = pgTable(
   "notification_preferences",
   {
-    userId: uuid("user_id").notNull().references(() => users.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
     eventType: text("event_type").notNull(),
     channels: text("channels").array().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -66,7 +79,9 @@ export const notificationPreferences = pgTable(
 export const presence = pgTable(
   "presence",
   {
-    userId: uuid("user_id").notNull().references(() => users.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
     /** The surface being viewed, e.g. `node:<uuid>`. Opaque to this module. */
     pageKey: text("page_key").notNull(),
     seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),

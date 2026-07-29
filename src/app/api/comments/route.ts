@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
     const anchorType = request.nextUrl.searchParams.get("anchorType") as AnchorType | null;
     const anchorId = request.nextUrl.searchParams.get("anchorId");
     if (!anchorType || !ANCHOR_TYPES.includes(anchorType) || !anchorId) {
-      throw new ApiError(400, "invalid_anchor", "Vui lòng cung cấp loại và mã của mục cần xem thảo luận.");
+      throw new ApiError(
+        400,
+        "invalid_anchor",
+        "Vui lòng cung cấp loại và mã của mục cần xem thảo luận.",
+      );
     }
     return NextResponse.json(await listComments(actor, anchorType, anchorId));
   });

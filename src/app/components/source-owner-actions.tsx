@@ -71,7 +71,12 @@ export function SourceOwnerActions({
             />
           </div>
           <div className="button-row">
-            <button type="button" className="secondary" onClick={() => setOpen(false)} disabled={m.busy}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setOpen(false)}
+              disabled={m.busy}
+            >
               {T.cancel}
             </button>
             <button type="submit" disabled={m.busy || !nextTitle.trim()}>
@@ -81,7 +86,12 @@ export function SourceOwnerActions({
         </form>
       ) : (
         <div className="button-row">
-          <button type="button" className="secondary" onClick={() => setOpen(true)} disabled={m.busy}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => setOpen(true)}
+            disabled={m.busy}
+          >
             {T.renameSource}
           </button>
           <ConfirmButton

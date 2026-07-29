@@ -48,7 +48,12 @@ export function BranchForm({
       </div>
       <div className="field">
         <label htmlFor="description">{T.description}</label>
-        <textarea id="description" name="description" rows={3} defaultValue={branch?.description ?? ""} />
+        <textarea
+          id="description"
+          name="description"
+          rows={3}
+          defaultValue={branch?.description ?? ""}
+        />
       </div>
       <button type="submit" disabled={m.busy}>
         {m.busy ? T.loading : T.save}

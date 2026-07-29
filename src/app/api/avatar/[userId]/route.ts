@@ -6,10 +6,7 @@ import { getAvatar } from "@/modules/auth/profile";
 // the same footing as the display name it sits beside. `private` because the
 // session decides who may fetch it; five minutes because the page busts the
 // cache itself (?v=avatarKey) whenever the picture changes.
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ userId: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ userId: string }> }) {
   return handleApi(async () => {
     await requirePrincipal();
     const { userId } = await params;

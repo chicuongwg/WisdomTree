@@ -29,7 +29,11 @@ export function oidcConfig() {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const appUrl = process.env.APP_URL; // e.g. https://tree.example.org
   if (!clientId || !clientSecret || !appUrl) return null;
-  return { clientId, clientSecret, redirectUri: `${appUrl.replace(/\/$/, "")}/api/auth/oidc/callback` };
+  return {
+    clientId,
+    clientSecret,
+    redirectUri: `${appUrl.replace(/\/$/, "")}/api/auth/oidc/callback`,
+  };
 }
 
 export const oidcEnabled = () => oidcConfig() !== null;

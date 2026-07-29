@@ -8,11 +8,7 @@ import type { Principal } from "../auth/dev-auth";
 // acceptance criteria. Services call these two helpers inside their tx.
 
 export type Accountability =
-  | "uploader"
-  | "editor_updater"
-  | "approver_publisher"
-  | "operator"
-  | "member"; // baseline member actions (loan requests, comments) — gate-2 ruling
+  "uploader" | "editor_updater" | "approver_publisher" | "operator" | "member"; // baseline member actions (loan requests, comments) — gate-2 ruling
 
 export async function recordAudit(
   tx: Tx,
@@ -39,6 +35,10 @@ export async function recordAudit(
 }
 
 /** Event names come from docs/system/integration-contracts.md § Event Triggers. */
-export async function emitOutbox(tx: Tx, eventType: string, payload: Record<string, unknown>): Promise<void> {
+export async function emitOutbox(
+  tx: Tx,
+  eventType: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
   await tx.insert(outboxEvents).values({ eventType, payload });
 }

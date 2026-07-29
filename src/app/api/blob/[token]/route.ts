@@ -16,7 +16,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     // Images and PDFs render in the page (the detail screen's preview panel);
     // everything else downloads. nosniff so the browser honours the stored
     // content type instead of guessing something executable.
-    const inline = object.contentType.startsWith("image/") || object.contentType === "application/pdf";
+    const inline =
+      object.contentType.startsWith("image/") || object.contentType === "application/pdf";
     return new Response(new Uint8Array(object.body), {
       headers: {
         "Content-Type": object.contentType,

@@ -25,7 +25,9 @@ export async function PATCH(request: NextRequest) {
     if (
       !body ||
       (body.displayName !== undefined && typeof body.displayName !== "string") ||
-      (body.zaloUserId !== undefined && body.zaloUserId !== null && typeof body.zaloUserId !== "string")
+      (body.zaloUserId !== undefined &&
+        body.zaloUserId !== null &&
+        typeof body.zaloUserId !== "string")
     ) {
       throw new ApiError(400, "invalid_profile", T.invalidProfile);
     }

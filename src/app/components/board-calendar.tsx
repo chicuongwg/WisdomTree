@@ -19,7 +19,13 @@ import { Empty } from "@/app/components/empty";
 // getters: the same arithmetic as before, with the zone pinned.
 
 export type Schedule = {
-  tasks: { id: string; title: string; state: string; assigneeName: string | null; dueAt: Date | null }[];
+  tasks: {
+    id: string;
+    title: string;
+    state: string;
+    assigneeName: string | null;
+    dueAt: Date | null;
+  }[];
   deadlines: { id: string; title: string; dueAt: Date; type: string }[];
 };
 
@@ -91,7 +97,9 @@ function DayChips({
   day: Date;
   taskHref: TaskHref;
 }) {
-  const tasks = schedule.tasks.filter((t) => t.dueAt && sameDay(toAppClock(new Date(t.dueAt)), day));
+  const tasks = schedule.tasks.filter(
+    (t) => t.dueAt && sameDay(toAppClock(new Date(t.dueAt)), day),
+  );
   const deadlines = schedule.deadlines.filter((d) => sameDay(toAppClock(new Date(d.dueAt)), day));
   return (
     <>

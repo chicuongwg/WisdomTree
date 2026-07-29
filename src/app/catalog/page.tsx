@@ -75,7 +75,10 @@ export default async function CatalogPage({
         page > 1 ? (
           <Empty
             title={T.pageBeyondEnd}
-            action={{ label: T.backToFirstPage, href: q ? `/catalog?q=${encodeURIComponent(q)}` : "/catalog" }}
+            action={{
+              label: T.backToFirstPage,
+              href: q ? `/catalog?q=${encodeURIComponent(q)}` : "/catalog",
+            }}
           />
         ) : q ? (
           <Empty title={T.noMatches} action={<Link href="/catalog">{T.clearFilters}</Link>} />

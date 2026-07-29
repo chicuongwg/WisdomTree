@@ -215,13 +215,7 @@ export function CommentsSection({
         if (typeof piece !== "string") continue;
         const at = foldName(piece).indexOf(needle);
         if (at < 0) continue;
-        parts.splice(
-          i,
-          1,
-          piece.slice(0, at),
-          { name },
-          piece.slice(at + needle.length),
-        );
+        parts.splice(i, 1, piece.slice(0, at), { name }, piece.slice(at + needle.length));
         i += 2;
       }
     }

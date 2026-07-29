@@ -120,11 +120,21 @@ export function TaskCreateForm({ assignees }: { assignees: UserOption[] }) {
     <form onSubmit={submit}>
       <div className="field">
         <label htmlFor="task-title">{T.title}</label>
-        <input id="task-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <input
+          id="task-title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
       </div>
       <div className="field">
         <label htmlFor="task-assignee">{T.assignee}</label>
-        <select id="task-assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+        <select
+          id="task-assignee"
+          value={assigneeId}
+          onChange={(e) => setAssigneeId(e.target.value)}
+        >
           <option value="">{T.noAssignee}</option>
           {assignees.map((u) => (
             <option key={u.id} value={u.id}>

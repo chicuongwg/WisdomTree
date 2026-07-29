@@ -48,7 +48,15 @@ export function FolderCreate({ spaceId, parentId }: { spaceId: string; parentId:
       <button type="submit" disabled={m.busy || !name.trim()}>
         {m.busy ? T.loading : T.save}
       </button>
-      <button type="button" className="secondary" onClick={() => { setOpen(false); m.reset(); }} disabled={m.busy}>
+      <button
+        type="button"
+        className="secondary"
+        onClick={() => {
+          setOpen(false);
+          m.reset();
+        }}
+        disabled={m.busy}
+      >
         {T.cancel}
       </button>
       <SayMutation m={m} />

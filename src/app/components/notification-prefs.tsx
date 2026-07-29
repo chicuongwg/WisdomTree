@@ -20,7 +20,10 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
     setPrefs((prev) =>
       prev.map((p) =>
         p.eventType === eventType
-          ? { ...p, channels: on ? [...p.channels, channel] : p.channels.filter((c) => c !== channel) }
+          ? {
+              ...p,
+              channels: on ? [...p.channels, channel] : p.channels.filter((c) => c !== channel),
+            }
           : p,
       ),
     );

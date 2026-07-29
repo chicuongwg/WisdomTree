@@ -56,7 +56,10 @@ export function NodeEditor({
       body: {
         title,
         contentMd,
-        tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
+        tags: tagsText
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
         expectedVersion: node.version,
         ...(isAdmin ? { verification, publish } : {}),
       },

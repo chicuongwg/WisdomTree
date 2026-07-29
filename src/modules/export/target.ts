@@ -62,7 +62,8 @@ class LocalGitExportTarget implements ExportTarget {
       }
       for (const file of files) {
         const target = path.normalize(path.join(work, file.path));
-        if (!target.startsWith(work + path.sep)) throw new Error(`invalid export path: ${file.path}`);
+        if (!target.startsWith(work + path.sep))
+          throw new Error(`invalid export path: ${file.path}`);
         await mkdir(path.dirname(target), { recursive: true });
         await writeFile(target, file.content, "utf8");
       }

@@ -142,8 +142,7 @@ export function notificationLink(
   payload: unknown,
   ctx: NotificationLinkContext = {},
 ): NotificationLink | null {
-  const p: Payload =
-    payload !== null && typeof payload === "object" ? (payload as Payload) : {};
+  const p: Payload = payload !== null && typeof payload === "object" ? (payload as Payload) : {};
   const href = hrefFor(eventType, p, ctx);
   if (!href) return null;
   // Link text is the event sentence itself ("Bạn được giao việc hiệu đính"),

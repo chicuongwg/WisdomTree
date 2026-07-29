@@ -20,17 +20,26 @@ export class ApiError extends Error {
   }
 
   toBody(): ErrorBody {
-    return { code: this.code, message: this.message, ...(this.details ? { details: this.details } : {}) };
+    return {
+      code: this.code,
+      message: this.message,
+      ...(this.details ? { details: this.details } : {}),
+    };
   }
 }
 
-export const unauthorized = () => new ApiError(401, "unauthorized", "Bạn cần đăng nhập để tiếp tục.");
+export const unauthorized = () =>
+  new ApiError(401, "unauthorized", "Bạn cần đăng nhập để tiếp tục.");
 // Denied writes → 403 (authorization-design.md); message uses the vocabulary term.
 export const forbidden = () => new ApiError(403, "forbidden", "Không có quyền truy cập.");
 // Out-of-scope reads → 404, never 403, so cross-space existence is not leaked.
 export const notFound = () => new ApiError(404, "not_found", "Không tìm thấy nội dung này.");
 export const versionConflict = () =>
-  new ApiError(409, "version_conflict", "Nội dung vừa được người khác cập nhật. Vui lòng tải lại và thử lại.");
+  new ApiError(
+    409,
+    "version_conflict",
+    "Nội dung vừa được người khác cập nhật. Vui lòng tải lại và thử lại.",
+  );
 
 type PgError = { code?: string; constraint?: string };
 
@@ -55,12 +64,16 @@ export async function handleApi(fn: () => Promise<Response>): Promise<Response> 
     if (pg?.code === "23505" && pg.constraint === "loan_tickets_one_active_per_borrower") {
       const body: ErrorBody = {
         code: "loan_already_active",
-        message: "Bạn đang có phiếu mượn hiệu lực cho đầu sách này. Mỗi người chỉ giữ một cuốn của cùng một đầu sách.",
+        message:
+          "Bạn đang có phiếu mượn hiệu lực cho đầu sách này. Mỗi người chỉ giữ một cuốn của cùng một đầu sách.",
       };
       return NextResponse.json(body, { status: 409 });
     }
     console.error(err);
-    const body: ErrorBody = { code: "internal_error", message: "Có lỗi xảy ra. Vui lòng thử lại sau." };
+    const body: ErrorBody = {
+      code: "internal_error",
+      message: "Có lỗi xảy ra. Vui lòng thử lại sau.",
+    };
     return NextResponse.json(body, { status: 500 });
   }
 }

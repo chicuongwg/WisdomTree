@@ -4,7 +4,10 @@ import { requirePrincipal } from "@/lib/request";
 import { borrowLoan } from "@/modules/circulation/service";
 
 // POST /api/catalog/loan/{ticketId}/borrow — librarian; body { dueAt }
-export async function POST(request: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ ticketId: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { ticketId } = await params;

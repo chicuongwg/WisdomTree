@@ -30,11 +30,7 @@ export default async function AccountPage() {
   const proto = headerList.get("x-forwarded-proto") ?? "http";
 
   // Same last-word initials as the rail, for the member who has no picture.
-  const initials = profile.displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-1)[0]
-    ?.slice(0, 2);
+  const initials = profile.displayName.split(/\s+/).filter(Boolean).slice(-1)[0]?.slice(0, 2);
 
   return (
     <main className="page">

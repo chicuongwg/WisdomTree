@@ -173,8 +173,8 @@ export default async function BoardPage({
                               a workload board exists to answer. */}
                           {t.startAt && t.dueAt && spanLabel(t.startAt, t.dueAt) && (
                             <div className="meta">
-                              {T.taskDurationLabel}: {spanLabel(t.startAt, t.dueAt)} ({day(t.startAt)}{" "}
-                              – {day(t.dueAt)})
+                              {T.taskDurationLabel}: {spanLabel(t.startAt, t.dueAt)} (
+                              {day(t.startAt)} – {day(t.dueAt)})
                             </div>
                           )}
                           <TaskStateButtons taskId={t.id} state={t.state} version={t.version} />

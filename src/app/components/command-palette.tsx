@@ -61,7 +61,12 @@ export function CommandPalette({ role }: { role: string }) {
     // and the palette is often how they are reached.
     { key: "board", label: T.board, hint: T.navWork, href: "/board" },
     { key: "deadlines", label: T.deadline, hint: T.navProjects, href: "/deadlines" },
-    { key: "notifications", label: T.notificationCenter, hint: T.paletteHintGo, href: "/notifications" },
+    {
+      key: "notifications",
+      label: T.notificationCenter,
+      hint: T.paletteHintGo,
+      href: "/notifications",
+    },
     { key: "account", label: T.account, hint: T.paletteHintGo, href: "/account" },
   ];
   if (role === "editor" || role === "admin_op") {

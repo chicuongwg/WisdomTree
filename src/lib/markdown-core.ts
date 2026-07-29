@@ -10,8 +10,7 @@
 import { normalizeTitle } from "./wikilink";
 
 export type Block =
-  | { type: "h1" | "h2" | "h3" | "p"; text: string }
-  | { type: "ul"; items: string[] };
+  { type: "h1" | "h2" | "h3" | "p"; text: string } | { type: "ul"; items: string[] };
 
 export function parseBlocks(content: string): Block[] {
   const blocks: Block[] = [];
@@ -65,7 +64,9 @@ const WIKI_LINK = /\[\[([^[\]|]+?)(?:\|([^[\]]+?))?\]\]/g;
 function boldTokens(text: string): Inline[] {
   return text
     .split(/\*\*(.+?)\*\*/g)
-    .map<Inline>((part, i) => (i % 2 === 1 ? { kind: "bold", text: part } : { kind: "text", text: part }))
+    .map<Inline>((part, i) =>
+      i % 2 === 1 ? { kind: "bold", text: part } : { kind: "text", text: part },
+    )
     .filter((t) => t.kind !== "text" || t.text !== "");
 }
 

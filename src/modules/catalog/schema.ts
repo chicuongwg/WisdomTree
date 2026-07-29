@@ -19,10 +19,14 @@ export const catalogItems = pgTable("catalog_items", {
     .default("available"),
   /** Retired from the shelf list. Set = hidden from every read, kept on record. */
   archivedAt: timestamp("archived_at", { withTimezone: true }),
-  spaceId: uuid("space_id").notNull().references(() => spaces.id),
+  spaceId: uuid("space_id")
+    .notNull()
+    .references(() => spaces.id),
   linkedSourceId: uuid("linked_source_id").references(() => sources.id),
   importId: uuid("import_id"),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),

@@ -21,7 +21,9 @@ export const spaces = pgTable("spaces", {
   name: text("name").notNull(),
   type: text("type", { enum: ["team", "personal"] }).notNull(),
   ownerUserId: uuid("owner_user_id").references(() => users.id),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -31,9 +33,15 @@ export const spaces = pgTable("spaces", {
 export const spaceMembers = pgTable(
   "space_members",
   {
-    spaceId: uuid("space_id").notNull().references(() => spaces.id),
-    userId: uuid("user_id").notNull().references(() => users.id),
-    addedBy: uuid("added_by").notNull().references(() => users.id),
+    spaceId: uuid("space_id")
+      .notNull()
+      .references(() => spaces.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    addedBy: uuid("added_by")
+      .notNull()
+      .references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.spaceId, t.userId] })],
@@ -44,16 +52,22 @@ export const spaceMembers = pgTable(
 // with a partial index for the root because NULLs compare distinct).
 export const folders = pgTable("folders", {
   id: uuid("id").primaryKey().defaultRandom(),
-  spaceId: uuid("space_id").notNull().references(() => spaces.id),
+  spaceId: uuid("space_id")
+    .notNull()
+    .references(() => spaces.id),
   parentId: uuid("parent_id"),
   name: text("name").notNull(),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const sources = pgTable("sources", {
   id: uuid("id").primaryKey().defaultRandom(),
-  spaceId: uuid("space_id").notNull().references(() => spaces.id),
+  spaceId: uuid("space_id")
+    .notNull()
+    .references(() => spaces.id),
   folderId: uuid("folder_id").references(() => folders.id),
   title: text("title").notNull(),
   description: text("description"),
@@ -62,7 +76,9 @@ export const sources = pgTable("sources", {
   })
     .notNull()
     .default("unknown"),
-  submittedBy: uuid("submitted_by").notNull().references(() => users.id),
+  submittedBy: uuid("submitted_by")
+    .notNull()
+    .references(() => users.id),
   assignedTo: uuid("assigned_to").references(() => users.id),
   currentVersionId: uuid("current_version_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -74,7 +90,9 @@ export const sourceVersions = pgTable(
   "source_versions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    sourceId: uuid("source_id").notNull().references(() => sources.id),
+    sourceId: uuid("source_id")
+      .notNull()
+      .references(() => sources.id),
     seq: integer("seq").notNull(),
     originalObjectKey: text("original_object_key").notNull(),
     originalFilename: text("original_filename").notNull(),
@@ -93,7 +111,9 @@ export const sourceVersions = pgTable(
       .default("pending"),
     extractionMeta: jsonb("extraction_meta"),
     previewObjectKeys: jsonb("preview_object_keys"),
-    uploadedBy: uuid("uploaded_by").notNull().references(() => users.id),
+    uploadedBy: uuid("uploaded_by")
+      .notNull()
+      .references(() => users.id),
     storedAt: timestamp("stored_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -106,7 +126,9 @@ export const textChunks = pgTable(
   "text_chunks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    sourceVersionId: uuid("source_version_id").notNull().references(() => sourceVersions.id),
+    sourceVersionId: uuid("source_version_id")
+      .notNull()
+      .references(() => sourceVersions.id),
     position: integer("position").notNull(),
     refType: text("ref_type", { enum: ["page", "paragraph"] }).notNull(),
     refLabel: text("ref_label").notNull(),
@@ -122,10 +144,14 @@ export const correctedTexts = pgTable(
   "corrected_texts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    sourceVersionId: uuid("source_version_id").notNull().references(() => sourceVersions.id),
+    sourceVersionId: uuid("source_version_id")
+      .notNull()
+      .references(() => sourceVersions.id),
     seq: integer("seq").notNull(),
     content: text("content").notNull(),
-    editedBy: uuid("edited_by").notNull().references(() => users.id),
+    editedBy: uuid("edited_by")
+      .notNull()
+      .references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.sourceVersionId, t.seq)],
@@ -135,12 +161,17 @@ export const correctedTexts = pgTable(
 // is simply "stored, never nominated".
 export const curations = pgTable("curations", {
   id: uuid("id").primaryKey().defaultRandom(),
-  sourceVersionId: uuid("source_version_id").notNull().unique().references(() => sourceVersions.id),
+  sourceVersionId: uuid("source_version_id")
+    .notNull()
+    .unique()
+    .references(() => sourceVersions.id),
   state: text("state", {
     enum: ["under_correction", "ready_for_review", "promoted", "rejected"],
   }).notNull(),
   assignedTo: uuid("assigned_to").references(() => users.id),
-  nominatedBy: uuid("nominated_by").notNull().references(() => users.id),
+  nominatedBy: uuid("nominated_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
@@ -148,12 +179,17 @@ export const curations = pgTable("curations", {
 
 export const markdownDrafts = pgTable("markdown_drafts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  sourceVersionId: uuid("source_version_id").notNull().unique().references(() => sourceVersions.id),
+  sourceVersionId: uuid("source_version_id")
+    .notNull()
+    .unique()
+    .references(() => sourceVersions.id),
   contentMd: text("content_md").notNull(),
   // FK to branches lives in the migration; mapped plain here to avoid a
   // storage ↔ knowledge module import cycle (same pattern as currentVersionId).
   suggestedBranchId: uuid("suggested_branch_id"),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
@@ -168,7 +204,9 @@ export const branchGapRequests = pgTable("branch_gap_requests", {
   })
     .notNull()
     .default("submitted"),
-  submittedBy: uuid("submitted_by").notNull().references(() => users.id),
+  submittedBy: uuid("submitted_by")
+    .notNull()
+    .references(() => users.id),
   triagedBy: uuid("triaged_by").references(() => users.id),
   convertedBranchId: uuid("converted_branch_id"),
   convertedNodeId: uuid("converted_node_id"),

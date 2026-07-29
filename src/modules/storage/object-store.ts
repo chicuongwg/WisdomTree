@@ -38,7 +38,9 @@ class LocalFsObjectStore implements ObjectStore {
   async get(key: string): Promise<{ body: Buffer; contentType: string }> {
     const file = this.resolve(key);
     const body = await readFile(file);
-    const contentType = await readFile(`${file}.meta`, "utf8").catch(() => "application/octet-stream");
+    const contentType = await readFile(`${file}.meta`, "utf8").catch(
+      () => "application/octet-stream",
+    );
     return { body, contentType };
   }
 }

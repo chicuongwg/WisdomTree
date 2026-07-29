@@ -14,7 +14,11 @@ export default async function CreateBranchPage({
   const user = await requireUser();
   const sp = await searchParams;
   const isEditorOrAdmin = user.role === "editor" || user.role === "admin_op";
-  const defaultScope = isEditorOrAdmin ? (sp.scope === "personal" ? "personal" : "team") : "personal";
+  const defaultScope = isEditorOrAdmin
+    ? sp.scope === "personal"
+      ? "personal"
+      : "team"
+    : "personal";
 
   return (
     <main className="page">

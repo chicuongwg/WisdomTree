@@ -70,9 +70,7 @@ export default async function TreeBrowsePage({
                     <tr key={r.id}>
                       <td>
                         <Link href={`/tree/node/${r.id}`}>{r.title}</Link>
-                        <div className="meta">
-                          {r.snippet}…
-                        </div>
+                        <div className="meta">{r.snippet}…</div>
                       </td>
                       <td>
                         <Link href={`/tree/branch/${r.branchId}`}>{r.branchName}</Link>
@@ -103,9 +101,13 @@ export default async function TreeBrowsePage({
             />
           ) : (
             <>
-              <h3 style={{ fontSize: "0.95rem", marginTop: "1rem", marginBottom: "0.5rem" }}>Kho dự án chung</h3>
+              <h3 style={{ fontSize: "0.95rem", marginTop: "1rem", marginBottom: "0.5rem" }}>
+                Kho dự án chung
+              </h3>
               {teamBranches.length === 0 ? (
-                <p className="muted" style={{ fontSize: "0.85rem" }}>Chưa có chuyên đề chung.</p>
+                <p className="muted" style={{ fontSize: "0.85rem" }}>
+                  Chưa có chuyên đề chung.
+                </p>
               ) : (
                 <ul>
                   {teamBranches.slice(0, 6).map((b) => (
@@ -119,9 +121,13 @@ export default async function TreeBrowsePage({
                 </ul>
               )}
 
-              <h3 style={{ fontSize: "0.95rem", marginTop: "1.25rem", marginBottom: "0.5rem" }}>Tài liệu cá nhân</h3>
+              <h3 style={{ fontSize: "0.95rem", marginTop: "1.25rem", marginBottom: "0.5rem" }}>
+                Tài liệu cá nhân
+              </h3>
               {personalBranches.length === 0 ? (
-                <p className="muted" style={{ fontSize: "0.85rem" }}>Chưa có chuyên đề cá nhân.</p>
+                <p className="muted" style={{ fontSize: "0.85rem" }}>
+                  Chưa có chuyên đề cá nhân.
+                </p>
               ) : (
                 <ul>
                   {personalBranches.slice(0, 6).map((b) => (

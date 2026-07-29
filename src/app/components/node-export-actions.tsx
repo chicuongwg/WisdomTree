@@ -99,7 +99,11 @@ export function NodeExportActions({ nodeId }: { nodeId: string }) {
           {T.exportPdf}
         </button>
       </p>
-      {busy && <p className="muted" role="status">{T.exporting}</p>}
+      {busy && (
+        <p className="muted" role="status">
+          {T.exporting}
+        </p>
+      )}
       {job?.state === "succeeded" && job.result && (
         <p>
           <a className="button" href={job.result.downloadUrl}>

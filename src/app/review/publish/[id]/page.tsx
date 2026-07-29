@@ -25,11 +25,7 @@ export const metadata = { title: T.publishReview };
 // Screen: Publish Review (`/review/publish/:id`, admin-op-screen-specs.md) —
 // corrected text vs draft comparison, excerpt mapping, accountability chain,
 // and the final publish decision.
-export default async function PublishReviewPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function PublishReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   if (user.role !== "admin_op") notFound();
   const actor = toPrincipal(user);

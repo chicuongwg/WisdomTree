@@ -19,10 +19,7 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
   const user = await requireUser();
   const actor = toPrincipal(user);
   const { id } = await params;
-  const [node, wiki] = await Promise.all([
-    orNotFound(() => getNode(actor, id)),
-    wikiIndex(actor),
-  ]);
+  const [node, wiki] = await Promise.all([orNotFound(() => getNode(actor, id)), wikiIndex(actor)]);
   const isAdmin = user.role === "admin_op";
   const isOwnPersonalNode =
     node.branchScope === "personal" &&

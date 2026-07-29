@@ -48,7 +48,10 @@ export function useMutation(): Mutation {
   const [ok, setOk] = useState<string | null>(null);
 
   /** The whole round trip. Resolves the parsed success body, or null. */
-  async function send<R>(path: string, opts?: MutationOpts): Promise<{ ok: boolean; data: R | null }> {
+  async function send<R>(
+    path: string,
+    opts?: MutationOpts,
+  ): Promise<{ ok: boolean; data: R | null }> {
     const failed = { ok: false, data: null };
     setBusy(true);
     setError(null);
@@ -68,7 +71,10 @@ export function useMutation(): Mutation {
       return failed;
     }
     if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { message?: string; code?: string } | null;
+      const payload = (await res.json().catch(() => null)) as {
+        message?: string;
+        code?: string;
+      } | null;
       setError(payload?.message ?? T.genericError);
       opts?.onError?.(res, payload);
       setBusy(false);
@@ -100,7 +106,10 @@ export function useMutation(): Mutation {
     error,
     ok,
     run: async (path, opts) => (await send(path, opts)).ok,
-    runJson: async <R,>(path: string, opts?: MutationOpts) => (await send<R>(path, opts)).data,
-    reset: () => { setError(null); setOk(null); },
+    runJson: async <R>(path: string, opts?: MutationOpts) => (await send<R>(path, opts)).data,
+    reset: () => {
+      setError(null);
+      setOk(null);
+    },
   };
 }

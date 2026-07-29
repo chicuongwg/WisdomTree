@@ -63,7 +63,11 @@ export async function requestLoan(actor: Principal, itemId: string) {
     throw new ApiError(409, "loan_already_active", "Bạn đang có phiếu mượn cho đầu sách này.");
   }
   if ((await activeLoanCount(db, itemId)) >= item.copies) {
-    throw new ApiError(409, "item_unavailable", "Tất cả bản sao của đầu sách này đang có người mượn.");
+    throw new ApiError(
+      409,
+      "item_unavailable",
+      "Tất cả bản sao của đầu sách này đang có người mượn.",
+    );
   }
 
   const ticket = await db.transaction(async (tx) => {
@@ -71,7 +75,11 @@ export async function requestLoan(actor: Principal, itemId: string) {
     // same title twice; the copy count above is checked again here, inside
     // the transaction, so two people racing for the last copy cannot both win.
     if ((await activeLoanCount(tx, itemId)) >= item.copies) {
-      throw new ApiError(409, "item_unavailable", "Tất cả bản sao của đầu sách này đang có người mượn.");
+      throw new ApiError(
+        409,
+        "item_unavailable",
+        "Tất cả bản sao của đầu sách này đang có người mượn.",
+      );
     }
     const [created] = await tx
       .insert(loanTickets)
@@ -84,7 +92,11 @@ export async function requestLoan(actor: Principal, itemId: string) {
       targetId: created.id,
       details: { itemId },
     });
-    await emitOutbox(tx, "loan.requested", { ticketId: created.id, itemId, borrowerId: actor.userId });
+    await emitOutbox(tx, "loan.requested", {
+      ticketId: created.id,
+      itemId,
+      borrowerId: actor.userId,
+    });
     // Requesting the last copy takes the title off the shelf immediately.
     await syncItemStatus(tx, itemId);
     return created;
@@ -104,7 +116,11 @@ async function loadTicket(tx: Tx, ticketId: string): Promise<TicketRow> {
 
 function assertState(ticket: TicketRow, expected: TicketRow["state"][]): void {
   if (!expected.includes(ticket.state)) {
-    throw new ApiError(409, "invalid_state", "Phiếu mượn không ở trạng thái phù hợp cho thao tác này.");
+    throw new ApiError(
+      409,
+      "invalid_state",
+      "Phiếu mượn không ở trạng thái phù hợp cho thao tác này.",
+    );
   }
 }
 
@@ -131,7 +147,9 @@ async function activeLoanCount(runner: Tx | typeof db, itemId: string): Promise<
   const [row] = await runner
     .select({ n: sql<number>`count(*)::int` })
     .from(loanTickets)
-    .where(and(eq(loanTickets.itemId, itemId), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])));
+    .where(
+      and(eq(loanTickets.itemId, itemId), inArray(loanTickets.state, [...ACTIVE_LOAN_STATES])),
+    );
   return row?.n ?? 0;
 }
 

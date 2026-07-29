@@ -86,9 +86,7 @@ export function PublishDecision({
       </div>
       {chunks.length > 0 && (
         <fieldset className="plain">
-          <legend>
-            {T.excerpts}
-          </legend>
+          <legend>{T.excerpts}</legend>
           {chunks.map((c) => (
             <div className="checkbox-row" key={c.id}>
               <input

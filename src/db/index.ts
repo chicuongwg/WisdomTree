@@ -9,7 +9,8 @@ import * as schema from "./schema";
 // to connect — and scripts/db/migrate.ts, which is never imported by the
 // build, does require it explicitly.
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",
+  connectionString:
+    process.env.DATABASE_URL ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",
 });
 
 // An idle client erroring (a database restart, a dropped connection) emits on

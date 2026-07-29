@@ -50,7 +50,12 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
       </div>
       <div className="field">
         <label htmlFor="ci-author">{T.author}</label>
-        <input id="ci-author" type="text" value={author} onChange={(e) => setAuthor(e.target.value)} />
+        <input
+          id="ci-author"
+          type="text"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+        />
       </div>
       <div className="field">
         <label htmlFor="ci-location">{T.shelfLocation}</label>

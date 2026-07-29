@@ -27,7 +27,12 @@ function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
     const target = wikiIndex[token.key];
     if (!target) {
       return (
-        <span key={i} className="wiki-missing" title={T.wikiMissing} aria-label={`${token.label} — ${T.wikiMissing}`}>
+        <span
+          key={i}
+          className="wiki-missing"
+          title={T.wikiMissing}
+          aria-label={`${token.label} — ${T.wikiMissing}`}
+        >
           {token.label}
         </span>
       );
@@ -48,12 +53,7 @@ function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
       );
     }
     return (
-      <NodeLink
-        key={i}
-        nodeId={target.id}
-        className="wiki-link"
-        verification={target.verification}
-      >
+      <NodeLink key={i} nodeId={target.id} className="wiki-link" verification={target.verification}>
         {token.label}
       </NodeLink>
     );

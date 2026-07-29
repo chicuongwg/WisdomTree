@@ -110,7 +110,11 @@ export function GraphSettingsPanel({
     // Controlled `open`: React re-applies the `open` attribute on every
     // render, so an uncontrolled <details> would spring back open by itself.
     // Starts closed — see the comment on `panelOpen` in knowledge-map.tsx.
-    <details className="graph-panel" open={open} onToggle={(e) => onOpenChange(e.currentTarget.open)}>
+    <details
+      className="graph-panel"
+      open={open}
+      onToggle={(e) => onOpenChange(e.currentTarget.open)}
+    >
       <summary>{T.graphSettings}</summary>
       <div className="graph-panel-body">
         {/* No title here: the <summary> above is already the panel's name, and
