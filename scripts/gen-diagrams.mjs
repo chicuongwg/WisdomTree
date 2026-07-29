@@ -35,7 +35,8 @@ class D {
   id() { return 'c' + (++this.n); }
   v(value, style, x, y, w, h) {
     const id = this.id();
-    this.geo[id] = { x, y, w, h };
+    const match = /strokeColor=([^;]+)/.exec(style);
+    this.geo[id] = { x, y, w, h, strokeColor: match ? match[1] : '#999999' };
     this.cells.push(`        <mxCell id="${id}" value="${ESC(value)}" style="${style}" vertex="1" parent="1">\n          <mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry" />\n        </mxCell>`);
     return id;
   }
@@ -63,10 +64,11 @@ class D {
       ? `exitX=${exX};exitY=1;entryX=${enX};entryY=0;`
       : `exitX=${exX};exitY=0;entryX=${enX};entryY=1;`;
   }
-  e(src, tgt, label = '', { dashed = false, color = '#999999', width = 1.2, pin = true, pinStr = null, points = null, lift = false } = {}) {
+  e(src, tgt, label = '', { dashed = false, color = null, width = 1.2, pin = true, pinStr = null, points = null, lift = false } = {}) {
     const id = this.id();
+    const stroke = color || this.geo[src]?.strokeColor || '#999999';
     const style = EDGE_BASE
-      + `strokeColor=${color};strokeWidth=${width};`
+      + `strokeColor=${stroke};strokeWidth=${width};`
       + (dashed ? 'dashed=1;' : '')
       + (lift ? 'verticalAlign=bottom;spacingBottom=6;' : '')
       + (pinStr ?? (pin ? this.pins(src, tgt) : ''));
@@ -83,7 +85,7 @@ class D {
     const style = EDGE_BASE + `strokeColor=${color};` + (dashed ? 'dashed=1;' : '') + 'verticalAlign=bottom;spacingBottom=4;';
     this.cells.push(`        <mxCell id="${id}" value="${ESC(BADGE(label))}" style="${style}" edge="1" parent="1">\n          <mxGeometry relative="1" as="geometry"><mxPoint x="${x1}" y="${y}" as="sourcePoint" /><mxPoint x="${x2}" y="${y}" as="targetPoint" /></mxGeometry>\n        </mxCell>`);
   }
-  title(text, date = '2026-07-20') { this.v(`<b>WISDOMTREE</b> — ${text} (${date})`, TITLE, 40, 10, this.w - 80, 30); }
+  title(text, date = new Date().toISOString().slice(0, 10)) { this.v(`<b>WISDOMTREE</b> — ${text} (${date})`, TITLE, 40, 10, this.w - 80, 30); }
   guide(text) { this.v(`<i><b>How to read:</b> ${text}</i>`, GUIDE, 40, 44, this.w - 80, 20); }
   section(text, x, y, w = 420) { return this.v(text, SECTION, x, y, w, 26); }
   state(label, x, y, w = 110, h = 40, style = STATE) { return this.v(label, style, x, y, w, h); }
@@ -93,7 +95,7 @@ class D {
   legend(text, y) { this.v(text, LEGEND, 40, y, this.w - 80, 24); }
   ghost(titleText, x, y, w, h) { return this.v(titleText, GHOST, x, y, w, h); }
   out(file, pageName) {
-    const xml = `<?xml version="1.0" encoding="utf-8"?>\n<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">\n  <diagram id="diagram_id" name="${pageName}">\n    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="${this.w}" pageHeight="${this.h}" background="#ffffff" math="0" shadow="0">\n      <root>\n        <mxCell id="0" />\n        <mxCell id="1" parent="0" />\n${this.cells.join('\n')}\n      </root>\n    </mxGraphModel>\n  </diagram>\n</mxfile>\n`;
+    const xml = `<?xml version="1.0" encoding="utf-8"?>\n<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">\n  <diagram id="diagram_id" name="${ESC(pageName)}">\n    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="${this.w}" pageHeight="${this.h}" background="#ffffff" math="0" shadow="0">\n      <root>\n        <mxCell id="0" />\n        <mxCell id="1" parent="0" />\n${this.cells.join('\n')}\n      </root>\n    </mxGraphModel>\n  </diagram>\n</mxfile>\n`;
     writeFileSync(OUT + file, xml);
     console.log('wrote', file, this.cells.length, 'cells');
   }
@@ -282,11 +284,13 @@ class D {
   const CAT_B = [{ k: 'loans', n: 'loan_tickets', f: ['id PK, item_id FK', 'borrower_id FK', 'state requested | approved | declined | borrowed | overdue | returned', 'due_at, handled_by? FK', 'UQ: one active loan / item'] }];
   const PM_A = [
     { k: 'deadlines', n: 'deadlines', f: ['id PK, space_id FK', 'type conference | funding | report | milestone', 'due_at, reminder_offsets[]'] },
+    { k: 'drem', n: 'deadline_reminders', f: ['deadline_id + offset PK', 'sent_at'] },
     { k: 'dlinks', n: 'deadline_links', f: ['deadline_id FK', 'target_type, target_id'] },
   ];
   const PM_B = [
     { k: 'caltok', n: 'calendar_tokens', f: ['token PK (unguessable)', 'user_id FK, space_id?', 'revoked_at?'] },
-    { k: 'tasks', n: 'tasks · achievements', f: ['task: title, state, assigned_to?', 'achievement: title, branch_id?'] },
+    { k: 'tasks', n: 'tasks', f: ['id PK, title', 'state todo | doing | done | archived', 'assigned_to? FK, target_type/id?'] },
+    { k: 'achiev', n: 'achievements', f: ['id PK, title, branch_id?', 'logged_by FK, achieved_at'] },
   ];
   const CROSS = [
     { k: 'audit', n: 'audit_events · append-only', f: ['actor_id FK, actor_role', 'accountability uploader | editor_updater | approver_publisher | operator', 'action, target_type/id, outcome'], s: '#D97706' },
@@ -420,7 +424,7 @@ class D {
 
   d.e(spacesB, libB); d.e(libB, extB, 'async', { dashed: true, color: C.work.stroke }); d.e(extB, curB, 'nominate');
   d.e(curB, provB, 'publish (promotion)', { color: C.app.stroke, width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.7;', points: [[695, 492], [695, 369]] });
-  d.e(nodesB, exportB, 'export commits', { color: C.app.stroke, pinStr: 'exitX=1;exitY=0.5;entryX=1;entryY=0.5;', points: [[1030, 157], [1030, 577]] });
+  d.e(nodesB, exportB, 'export commits', { color: C.app.stroke, pinStr: 'exitX=1;exitY=0.5;entryX=0.5;entryY=1;', points: [[1330, 157.5], [1330, 640], [860, 640]] });
   d.e(exportB, quartzB, 'CI build', { dashed: true, color: '#404040', lift: true });
 
   d.message('The Source Repo is the product core, not a feeder pipeline: members live in Library at &quot;stored&quot;; promotion into the tree is optional and one-way, and the content repo is derived, never the source of truth.', 680);
@@ -561,7 +565,7 @@ class D {
     '<b>Open app</b><br>Google sign-in', '<b>Open Library</b><br>Kho t&#432; li&#7879;u', '<b>Search / browse</b><br>member space', '<b>Open stored item</b><br>preview + metadata', '<b>Download original</b>',
   ], true);
   chain('Path 1 — Learn from the tree', 310, [
-    '<b>Search the tree</b>', '<b>Open node</b><br>trust state visible', '<b>Follow links</b><br>mini-graph', '<b>Open branch hub</b>', '<b>Export docx / pdf</b><br>if needed',
+    '<b>Search the tree</b>', '<b>Open node</b><br>trust state visible', '<b>Follow links</b><br>mini-graph', '<b>Open branch hub</b>', '<b>Continue or contribute</b><br>new source item',
   ]);
   chain('Path 2 — Contribute', 480, [
     '<b>Open Source Intake</b>', '<b>Upload file</b><br>or gap request', '<b>Item stored</b><br>in space Library', '<b>Track</b><br>My Submissions', '<b>Notified on changes</b><br>Zalo / in-app',
@@ -574,4 +578,410 @@ class D {
   d.legend('<b>Node grammar</b> (repo theme, fixed): heavier border = the hero journey · unlabeled solid edges = sequential steps. Sources of truth: docs/flows/user-flows.md, docs/ui/screen-inventory.md.', 830);
   d.out('user-happy-path.drawio', 'User Happy Paths');
 }
+
+/* ============ 9. database-schema-architecture.drawio ============ */
+{
+  const d = new D(1600, 1000);
+  d.title('DATABASE SCHEMA ARCHITECTURE — 10 functional modules, provenance spine, and space scoping');
+  d.guide('module groupings of PostgreSQL tables; solid lines indicate foreign keys along the provenance spine; dashed lines indicate space scoping and audit relationships.');
+
+  // Core & Auth
+  d.section('1 · Auth &amp; Spaces (auth, storage)', 50, 70);
+  const auth = d.v('<b>users &amp; sessions</b><hr>id, role, name<br>session_cookie, expires_at', ENTITY + 'strokeColor=#3B82F6;', 50, 110, 260, 90);
+  const sp = d.v('<b>spaces &amp; space_members</b><hr>id, name, kind (team|personal)<br>space_id, user_id, role', ENTITY + 'strokeColor=#3B82F6;', 50, 220, 260, 105);
+
+  // Storage & Ingestion
+  d.section('2 · Source Repo &amp; Ingestion (storage)', 360, 70);
+  const src = d.v('<b>sources &amp; source_versions</b><hr>id, space_id, title, status<br>sha256, storage_path, extraction_status', ENTITY + 'strokeColor=#D97706;', 360, 110, 280, 105);
+  const cur = d.v('<b>curations &amp; corrected_texts</b><hr>id, source_id, state<br>corrected_text, markdown_draft', ENTITY + 'strokeColor=#D97706;', 360, 235, 280, 105);
+  const gap = d.v('<b>gap_requests</b><hr>id, space_id, requester_id, title', ENTITY + 'strokeColor=#D97706;', 360, 360, 280, 80);
+
+  // Knowledge Tree
+  d.section('3 · Knowledge Tree (knowledge)', 700, 70);
+  const node = d.v('<b>tree_nodes &amp; tree_node_versions</b><hr>id, branch_id, title, verification<br>content, slug, updatedAt DESC', ENTITY + 'strokeColor=#A855F7;', 700, 110, 300, 105);
+  const prom = d.v('<b>promotions</b><hr>id, tree_node_id, curation_id<br>provenance_spine_link', ENTITY + 'strokeColor=#A855F7;', 700, 235, 300, 90);
+  const lk = d.v('<b>node_links &amp; node_tags</b><hr>source_node_id, target_node_id<br>tag_name, slug', ENTITY + 'strokeColor=#A855F7;', 700, 345, 300, 90);
+
+  // Circulation & Catalog
+  d.section('4 · Catalog &amp; Circulation (catalog, circulation)', 1060, 70);
+  const cat = d.v('<b>catalog_items</b><hr>id, space_id, title, isbn, status', ENTITY + 'strokeColor=#10B981;', 1060, 110, 260, 90);
+  const loan = d.v('<b>loan_tickets</b><hr>id, item_id, borrower_id, status<br>due_at, returned_at', ENTITY + 'strokeColor=#10B981;', 1060, 220, 260, 105);
+
+  // Google Bridge & PM & Export (All 10 modules)
+  d.section('6 · Google Bridge (bridge-google)', 50, 355, 260);
+  const brd = d.v('<b>bridge_imports &amp; items</b><hr>id, kind (drive|sheet|forms), config<br>external_id, watermark, idempotent', ENTITY + 'strokeColor=#D97706;', 50, 395, 260, 95);
+  d.section('7 · Project Management (pm)', 1060, 355, 260);
+  const pm = d.v('<b>deadlines &amp; tasks (pm)</b><hr>id, space_id, title, due_at, type<br>tasks, achievements, calendar_tokens', ENTITY + 'strokeColor=#A855F7;', 1060, 395, 260, 95);
+  d.section('8 · Export Jobs (export)', 1060, 500, 260);
+  const exp = d.v('<b>export_jobs</b><hr>id, scope (full_tree|node), state<br>node_id, manifest, triggered_by', ENTITY + 'strokeColor=#A855F7;', 1060, 540, 260, 85);
+
+  // Notifications & Outbox
+  d.section('5 · Outbox, Audit &amp; Notify (notify, audit)', 360, 480);
+  const obx = d.v('<b>outbox_events &amp; audit_events</b><hr>id, event_type, payload, dispatched_at<br>actor_id, action, resource_type', ENTITY + 'strokeColor=#64748B;', 360, 520, 320, 105);
+  const notif = d.v('<b>notification_preferences &amp; comments</b><hr>user_id, event_type, channels<br>mentions[], anchor_type (append-only)', ENTITY + 'strokeColor=#64748B;', 730, 520, 320, 105);
+
+  d.e(sp, src, 'space_id');
+  d.e(src, cur, 'source_id');
+  d.e(cur, prom, 'curation_id');
+  d.e(prom, node, 'tree_node_id');
+  d.e(sp, cat, 'space_id', { dashed: true, pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=0;', points: [[25, 272.5], [25, 46], [1190, 46]] });
+  d.e(sp, pm, 'space_id', { dashed: true, pinStr: 'exitX=0;exitY=0.3;entryX=0;entryY=0.5;', points: [[15, 251.5], [15, 36], [1030, 36], [1030, 442.5]] });
+  d.e(brd, src, 'imports into', { pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=0;', points: [[25, 442.5], [25, 56], [500, 56]] });
+  d.e(node, exp, 'exports tree', { pinStr: 'exitX=1;exitY=0.8;entryX=1;entryY=0.5;', points: [[1030, 194], [1030, 505], [1380, 505], [1380, 582.5]] });
+  d.e(cat, loan, 'item_id');
+  d.e(obx, notif, 'dispatches');
+
+  d.message('All mutations execute within ACID database transactions, writing domain changes, audit_events, and outbox_events simultaneously.', 680);
+  d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; Auth &amp; Spaces</font> · <font color="#D97706">&#9632; Storage</font> · <font color="#A855F7">&#9632; Knowledge Tree</font> · <font color="#10B981">&#9632; Circulation</font> · <font color="#64748B">&#9632; Outbox / Notify</font>. Authoritative schema: docs/design/database-schema.md.', 730);
+  d.out('database-schema-architecture.drawio', 'Database Schema Architecture');
+}
+
+/* ============ 10. transactional-outbox-pattern.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('TRANSACTIONAL OUTBOX PATTERN — reliable notification dispatching on serverless / edge runtime');
+  d.guide('flow diagram of how ACID database transactions and after() / cron workers prevent notification loss.');
+
+  d.section('1 · Atomic Mutation Transaction (PostgreSQL)', 50, 100);
+  const txBox = d.v('<b>ACID Transaction</b><hr>1. Domain Mutation (e.g. comment / node)<br>2. audit_events INSERT<br>3. outbox_events INSERT (dispatched_at IS NULL)', ENTITY + 'strokeColor=#D97706;', 50, 140, 380, 115);
+
+  d.section('2 · Dispatch Triggers (Serverless Safe)', 510, 100);
+  const afterTrigger = d.v('<b>Next.js 15 after() / kickDispatch()</b><hr>Executes background task without blocking<br>HTTP 201 response to caller', ENTITY + 'strokeColor=#A855F7;', 510, 140, 320, 100);
+  const cronTrigger = d.v('<b>Safety Cron: GET /api/cron/dispatch</b><hr>Periodic worker sweeping outbox_events<br>where dispatched_at IS NULL', ENTITY + 'strokeColor=#10B981;', 510, 270, 320, 100);
+
+  d.section('3 · Dispatcher Processing', 900, 100);
+  const disp = d.v('<b>dispatchOutbox()</b><hr>1. resolveRecipients (matrix / @mention)<br>2. channelsFor(user, eventType)<br>3. INSERT notifications + notification_deliveries<br>4. UPDATE outbox_events SET dispatched_at = NOW()', ENTITY + 'strokeColor=#3B82F6;', 900, 140, 360, 140);
+
+  d.e(txBox, afterTrigger, 'immediate kick');
+  d.e(txBox, cronTrigger, 'fallback drain', { pinStr: 'exitX=0.5;exitY=1;entryX=0;entryY=0.5;', points: [[240, 320]] });
+  d.e(afterTrigger, disp, 'run');
+  d.e(cronTrigger, disp, 'run');
+
+  d.message('The zero-latency after() hook ensures lambda runtimes do not terminate early, while /api/cron/dispatch acts as a permanent fallback safety net.', 430);
+  d.legend('<b>Colour roles</b>: <font color="#D97706">&#9632; database transaction</font> · <font color="#A855F7">&#9632; serverless trigger</font> · <font color="#10B981">&#9632; safety cron</font> · <font color="#3B82F6">&#9632; dispatcher</font> · <b>Pattern rules</b>: All mutations commit atomically. Source of truth: docs/design/sequence-diagrams.md.', 480);
+  d.out('transactional-outbox-pattern.drawio', 'Transactional Outbox Pattern');
+}
+
+/* ============ 11. erd-1-provenance-spine.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('ERD 1: GLOBAL PROVENANCE SPINE & TWO-REPOSITORY CORE');
+  d.guide('The core bridge between the Source Repo (evidence storage) and the Knowledge Tree (curated articles).');
+
+  d.section('1 · Source Repository (Storage)', 50, 80);
+  const u = d.v('<b>users</b><hr>id, role, display_name<br>locale, created_at', ENTITY + 'strokeColor=#3B82F6;', 50, 130, 260, 90);
+  const sp = d.v('<b>spaces</b><hr>id, name, type (team|personal)<br>owner_user_id', ENTITY + 'strokeColor=#3B82F6;', 50, 260, 260, 90);
+  const sm = d.v('<b>space_members</b><hr>space_id, user_id, role<br>created_at', ENTITY + 'strokeColor=#3B82F6;', 50, 390, 260, 90);
+
+  const src = d.v('<b>sources</b><hr>id, space_id, title, trust_status<br>submitted_by, assigned_to', ENTITY + 'strokeColor=#D97706;', 370, 130, 260, 90);
+  const sv = d.v('<b>source_versions</b><hr>id, source_id, sha256<br>storage_path, extraction_status', ENTITY + 'strokeColor=#D97706;', 370, 260, 260, 90);
+  const cur = d.v('<b>curations</b><hr>id, source_version_id, state<br>corrected_text, markdown_draft', ENTITY + 'strokeColor=#D97706;', 370, 390, 260, 90);
+
+  d.section('2 · Provenance Bridge', 710, 80);
+  const prom = d.v('<b>promotions</b><hr>id, curation_id, tree_node_id<br>created_by, created_at', ENTITY + 'strokeColor=#A855F7;strokeWidth=3;', 710, 260, 280, 105);
+
+  d.section('3 · Knowledge Tree', 1060, 80);
+  const br = d.v('<b>branches</b><hr>id, space_id, name, kind<br>created_by', ENTITY + 'strokeColor=#A855F7;', 1060, 130, 260, 90);
+  const node = d.v('<b>tree_nodes</b><hr>id, branch_id, title, slug<br>verification, updatedAt DESC', ENTITY + 'strokeColor=#A855F7;', 1060, 260, 260, 90);
+  const nv = d.v('<b>tree_node_versions</b><hr>id, tree_node_id, content<br>versionId, commit_msg', ENTITY + 'strokeColor=#A855F7;', 1060, 390, 260, 90);
+
+  d.e(u, sm, 'member of', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[-40, 175], [-40, 435]] });
+  d.e(sp, sm, 'grants access');
+  d.e(sp, src, 'stores evidence');
+  d.e(src, sv, 'versions');
+  d.e(sv, cur, 'enters review');
+  d.e(cur, prom, 'approved for publish');
+  d.e(prom, node, 'promotes to tree');
+  d.e(br, node, 'organizes notes');
+  d.e(node, nv, 'maintains history');
+
+  d.message('The promotions table is the immutable bridge between a verified curation in the Source Repo and a published note in the Knowledge Tree.', 540);
+  d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; Auth &amp; Spaces</font> · <font color="#D97706">&#9632; Source Storage</font> · <font color="#A855F7">&#9632; Knowledge Tree &amp; Provenance</font>. Authoritative docs: docs/design/database-erds.md.', 590);
+  d.out('erd-1-provenance-spine.drawio', 'ERD 1: Provenance Spine');
+}
+
+/* ============ 12. erd-2-storage-ingestion.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('ERD 2: STORAGE & INGESTION MODULE (storage, auth)');
+  d.guide('Manages spaces, folders, uploaded source evidence, OCR text extraction, corrections, and gap requests.');
+
+  d.section('1 · Space &amp; Members', 50, 80);
+  const sp = d.v('<b>spaces</b><hr>id, name, type (team|personal)<br>owner_user_id', ENTITY + 'strokeColor=#3B82F6;', 50, 130, 260, 90);
+  const sm = d.v('<b>space_members</b><hr>space_id, user_id, added_by<br>created_at (PK: space_id+user_id)', ENTITY + 'strokeColor=#3B82F6;', 50, 270, 260, 90);
+  const gap = d.v('<b>branch_gap_requests</b><hr>id, space_id, requester_id<br>title, status, description', ENTITY + 'strokeColor=#D97706;', 50, 410, 260, 90);
+
+  d.section('2 · Source &amp; Versions', 380, 80);
+  const src = d.v('<b>sources</b><hr>id, space_id, title, trust_status<br>submitted_by, assigned_to', ENTITY + 'strokeColor=#D97706;', 380, 130, 280, 90);
+  const sv = d.v('<b>source_versions</b><hr>id, source_id, sha256<br>storage_path, extraction_status', ENTITY + 'strokeColor=#D97706;', 380, 270, 280, 90);
+
+  d.section('3 · Extraction &amp; Curation', 730, 80);
+  const chunk = d.v('<b>text_chunks</b><hr>id, source_version_id, page_idx<br>content, ocr_engine', ENTITY + 'strokeColor=#10B981;', 730, 130, 280, 90);
+  const cor = d.v('<b>corrected_texts</b><hr>id, source_version_id<br>corrected_text, editor_id', ENTITY + 'strokeColor=#10B981;', 730, 270, 280, 90);
+  const drf = d.v('<b>markdown_drafts</b><hr>id, source_version_id<br>markdown_content, author_id', ENTITY + 'strokeColor=#10B981;', 730, 410, 280, 90);
+  const cur = d.v('<b>curations</b><hr>id, source_version_id, state<br>reviewer_id, ready_at', ENTITY + 'strokeColor=#D97706;', 1080, 270, 280, 90);
+
+  d.e(sp, sm, 'authorizes members');
+  d.e(sp, gap, 'gap req', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[15, 175], [15, 455]] });
+  d.e(sp, src, 'space-scoped');
+  d.e(src, sv, 'immutable uploads');
+  d.e(sv, chunk, 'parsed chunks / OCR');
+  d.e(sv, cor, 'human corrections');
+  d.e(sv, drf, 'drafting area');
+  d.e(sv, cur, 'curation status', { pinStr: 'exitX=1;exitY=0.25;entryX=0.5;entryY=0;', points: [[695, 292.5], [695, 68], [1220, 68]] });
+
+  d.message('Every upload creates an immutable SHA-256 source_version; extraction chunks, human corrections, and drafts are layered on top without overwriting.', 540);
+  d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; Spaces / Hierarchy</font> · <font color="#D97706">&#9632; Sources &amp; Curation</font> · <font color="#10B981">&#9632; Extracted &amp; Corrected Text</font>. Authoritative docs: docs/design/database-erds.md.', 590);
+  d.out('erd-2-storage-ingestion.drawio', 'ERD 2: Storage & Ingestion');
+}
+
+/* ============ 13. erd-3-knowledge-tree.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('ERD 3: KNOWLEDGE TREE & CURATION MODULE (knowledge)');
+  d.guide('Manages canonical Markdown articles, branch organization, node version snapshots, Wiki-links graph, and tag taxonomies.');
+
+  d.section('1 · Branches &amp; Nodes', 50, 80);
+  const br = d.v('<b>branches</b><hr>id, space_id, name, kind<br>created_by, updatedAt DESC', ENTITY + 'strokeColor=#A855F7;', 50, 130, 280, 90);
+  const node = d.v('<b>tree_nodes</b><hr>id, branch_id, title, slug<br>verification, updatedAt DESC', ENTITY + 'strokeColor=#A855F7;', 390, 130, 280, 90);
+  const nv = d.v('<b>tree_node_versions</b><hr>id, tree_node_id, content<br>versionId, commit_msg, author_id', ENTITY + 'strokeColor=#A855F7;', 390, 280, 280, 90);
+  const prom = d.v('<b>promotions</b><hr>id, tree_node_id, curation_id<br>created_at, created_by', ENTITY + 'strokeColor=#D97706;', 390, 430, 280, 90);
+
+  d.section('2 · Graph &amp; Taxonomies', 740, 80);
+  const link = d.v('<b>node_links</b><hr>id, source_node_id, target_node_id<br>context_snippet, link_type', ENTITY + 'strokeColor=#A855F7;', 740, 130, 280, 90);
+  const ntag = d.v('<b>node_tags</b><hr>id, tree_node_id, tag_id<br>applied_by, applied_at', ENTITY + 'strokeColor=#A855F7;', 740, 280, 280, 90);
+  const tag = d.v('<b>tags</b><hr>id, name, slug<br>created_at', ENTITY + 'strokeColor=#A855F7;', 1080, 280, 260, 90);
+
+  d.e(br, node, 'contains articles');
+  d.e(node, nv, 'immutable snapshots');
+  d.e(node, prom, 'provenance', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[340, 175], [340, 475]] });
+  d.e(node, link, 'source link (from)');
+  d.e(node, link, 'target link (to)');
+  d.e(node, ntag, 'has tag');
+  d.e(tag, ntag, 'applied to');
+
+  d.message('Articles in tree_nodes sort by updatedAt DESC across sidebar and main view; node_links powers real-time Wiki-link backlink discovery.', 540);
+  d.legend('<b>Colour roles</b>: <font color="#A855F7">&#9632; Knowledge Tree &amp; Graph</font> · <font color="#D97706">&#9632; Provenance Link</font>. Authoritative docs: docs/design/database-erds.md.', 590);
+  d.out('erd-3-knowledge-tree.drawio', 'ERD 3: Knowledge Tree');
+}
+
+/* ============ 14. erd-4-catalog-circulation.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('ERD 4: CATALOG & CIRCULATION MODULE (catalog, circulation)');
+  d.guide('Manages the physical library (Thư viện Sách), digitization links to the Source Repo, and borrow-return tickets.');
+
+  d.section('1 · Space &amp; Source Repo Link', 50, 80);
+  const sp = d.v('<b>spaces</b><hr>id, name, type (team|personal)<br>owner_user_id', ENTITY + 'strokeColor=#3B82F6;', 50, 140, 260, 90);
+  const src = d.v('<b>sources</b><hr>id, space_id, title, trust_status<br>submitted_by (digitized PDF copy)', ENTITY + 'strokeColor=#D97706;', 50, 300, 260, 90);
+
+  d.section('2 · Physical Catalog &amp; Circulation', 380, 80);
+  const cat = d.v('<b>catalog_items</b><hr>id, space_id, source_id, title<br>isbn, status (available|borrowed|repair|lost)', ENTITY + 'strokeColor=#10B981;', 380, 140, 320, 105);
+  const loan = d.v('<b>loan_tickets</b><hr>id, item_id, borrower_id, librarian_id<br>status (requested|approved|borrowed|returned|overdue)<br>due_at, returned_at', ENTITY + 'strokeColor=#10B981;', 780, 140, 340, 125);
+  const u = d.v('<b>users</b><hr>id, display_name, role<br>email, locale', ENTITY + 'strokeColor=#3B82F6;', 780, 320, 340, 90);
+
+  d.e(sp, cat, 'owns physical inventory');
+  d.e(src, cat, 'digitized copy link');
+  d.e(cat, loan, 'borrowed via');
+  d.e(u, loan, 'borrower / librarian');
+
+  d.message('Physical catalog items can optionally link to a digitized PDF in sources; loan_tickets tracks borrow/return state transitions.', 480);
+  d.legend('<b>Colour roles</b>: <font color="#10B981">&#9632; Catalog &amp; Circulation</font> · <font color="#3B82F6">&#9632; Spaces &amp; Users</font> · <font color="#D97706">&#9632; Digitized PDF Link</font>. Authoritative docs: docs/design/database-erds.md.', 530);
+  d.out('erd-4-catalog-circulation.drawio', 'ERD 4: Catalog & Circulation');
+}
+
+/* ============ 15. erd-5-notify-audit.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('ERD 5: NOTIFICATION, OUTBOX & AUDIT MODULE (notify, audit)');
+  d.guide('Implements the Transactional Outbox Pattern and immutable audit trail for serverless-safe event dispatching.');
+
+  d.section('1 · Actor &amp; ACID Outbox / Audit', 50, 80);
+  const u = d.v('<b>users</b><hr>id, display_name, role<br>email, zalo_user_id', ENTITY + 'strokeColor=#3B82F6;', 50, 130, 260, 90);
+  const obx = d.v('<b>outbox_events</b><hr>id, event_type, payload<br>dispatched_at IS NULL, created_at', ENTITY + 'strokeColor=#64748B;', 380, 130, 280, 90);
+  const aud = d.v('<b>audit_events</b><hr>id, actor_id, action, target_type<br>target_id, ip_address, created_at', ENTITY + 'strokeColor=#64748B;', 380, 270, 280, 90);
+
+  d.section('2 · Comments (Threaded)', 50, 390);
+  const cmt = d.v('<b>comments (append-only)</b><hr>id, author_id, anchor_type, anchor_id<br>parent_comment_id, body, mentions[]', ENTITY + 'strokeColor=#3B82F6;', 50, 440, 280, 90);
+  const cmtidx = d.v('<b>comments anchor scope</b><hr>anchor_type (source|tree_node|deadline)<br>index: (type, id, created_at)', ENTITY + 'strokeColor=#3B82F6;', 380, 440, 280, 90);
+
+  d.section('3 · Notifications &amp; Delivery Channels', 730, 80);
+  const notif = d.v('<b>notifications</b><hr>id, user_id, event_type, title<br>read_at, created_at', ENTITY + 'strokeColor=#64748B;', 730, 130, 280, 90);
+  const deliv = d.v('<b>notification_deliveries</b><hr>id, notification_id, channel (in_app|zalo|email)<br>status, delivered_at', ENTITY + 'strokeColor=#64748B;', 730, 270, 280, 90);
+  const pref = d.v('<b>notification_preferences</b><hr>user_id, event_type (PK)<br>channels (in_app|email|zalo)', ENTITY + 'strokeColor=#64748B;', 730, 440, 280, 90);
+
+  d.e(u, obx, 'triggers event');
+  d.e(u, aud, 'performs action');
+  d.e(u, cmt, 'writes comment');
+  d.e(cmt, cmtidx, 'anchored to');
+  d.e(obx, notif, 'dispatches via outbox runner');
+  d.e(notif, deliv, 'per channel delivery');
+  d.e(u, pref, 'sets preferences', { pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=1;', points: [[20, 175], [20, 560], [870, 560]] });
+
+  d.message('outbox_events is inserted in the same PostgreSQL transaction as domain mutations; after() and /api/cron/dispatch drain pending deliveries.', 600);
+  d.legend('<b>Colour roles</b>: <font color="#64748B">&#9632; Outbox, Notify &amp; Audit</font> · <font color="#3B82F6">&#9632; Users &amp; Comments</font>. Authoritative docs: docs/design/database-erds.md.', 650);
+  d.out('erd-5-notify-audit.drawio', 'ERD 5: Notify & Audit');
+}
+
+/* ============ 16. erd-6-project-management.drawio ============ */
+{
+  const d = new D(1600, 900);
+  d.title('ERD 6: PROJECT MANAGEMENT & COLLABORATION MODULE (pm)');
+  d.guide('Manages team deadlines, review tasks, board tasks, and achievement milestones.');
+
+  d.section('1 · Space &amp; Users', 50, 80);
+  const sp = d.v('<b>spaces</b><hr>id, name, type<br>owner_user_id', ENTITY + 'strokeColor=#3B82F6;', 50, 130, 260, 90);
+  const u = d.v('<b>users</b><hr>id, display_name, role<br>email, locale', ENTITY + 'strokeColor=#3B82F6;', 50, 255, 260, 90);
+  const caltok = d.v('<b>calendar_tokens</b><hr>token PK (unguessable), user_id<br>space_id, revoked_at', ENTITY + 'strokeColor=#3B82F6;', 50, 380, 260, 90);
+
+  d.section('2 · Deadlines &amp; Reminders', 380, 80);
+  const dln = d.v('<b>deadlines</b><hr>id, space_id, title, due_at<br>status, created_by', ENTITY + 'strokeColor=#A855F7;', 380, 130, 280, 90);
+  const lnk = d.v('<b>deadline_links</b><hr>id, deadline_id, target_type<br>target_id (source|tree_node)', ENTITY + 'strokeColor=#A855F7;', 730, 130, 280, 90);
+  const rem = d.v('<b>deadline_reminders</b><hr>id, deadline_id, remind_at<br>sent_at, channel', ENTITY + 'strokeColor=#A855F7;', 730, 255, 280, 90);
+
+  d.section('3 · Tasks &amp; Achievements', 380, 390);
+  const tasks = d.v('<b>tasks</b><hr>id, title, state (todo|doing|done|archived)<br>assigned_to, target_type, target_id', ENTITY + 'strokeColor=#10B981;', 380, 440, 280, 90);
+  const achiev = d.v('<b>achievements</b><hr>id, user_id, milestone_code<br>earned_at, metadata', ENTITY + 'strokeColor=#10B981;', 730, 440, 280, 90);
+
+  d.e(sp, dln, 'scoped deadline');
+  d.e(dln, lnk, 'attached evidence / node');
+  d.e(dln, rem, 'sent alerts', { pinStr: 'exitX=0.5;exitY=1;entryX=0;entryY=0.5;', points: [[520, 300]] });
+  d.e(u, tasks, 'assigned task', { pinStr: 'exitX=1;exitY=0;entryX=0.5;entryY=0;', points: [[345, 255], [345, 238], [520, 238]] });
+  d.e(u, achiev, 'logged milestone', { pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=1;', points: [[20, 300], [20, 550], [870, 550]] });
+  d.e(u, caltok, 'subscribed user');
+
+  d.message('Deadlines can link directly to evidence in sources or notes in tree_nodes; tasks and achievements track team collaboration milestones.', 600);
+  d.legend('<b>Colour roles</b>: <font color="#A855F7">&#9632; Deadlines</font> · <font color="#10B981">&#9632; Tasks &amp; Achievements</font> · <font color="#3B82F6">&#9632; Spaces &amp; Users</font>. Authoritative docs: docs/design/database-erds.md.', 650);
+  d.out('erd-6-project-management.drawio', 'ERD 6: Project Management');
+}
 console.log('done');
+
+/* ============ 17. authorization-pipeline.drawio ============ */
+{
+  const d = new D(1750, 550);
+  d.title('AUTHORIZATION ENFORCEMENT PIPELINE — request authentication, route guard, authorize() check, query scoping, and audit');
+  d.guide('left to right; green edges = happy path, red/gray edges = denial / exception path; checks are performed in the service layer before any DB action.');
+
+  // Pipeline Nodes
+  const start = d.dot(50, 150);
+  const session = d.v('<b>1 · Session Middleware</b><hr>Resolves cookie / token<br>Retrieves actor userId &amp; role<br>Caches member spaceIds', ENTITY + 'strokeColor=#3B82F6;', 120, 115, 240, 90);
+  const guard = d.v('<b>2 · Route Guard</b><hr>Identifies target capability<br>Extracts resource identifiers<br>Calls authorize() helper', ENTITY + 'strokeColor=#3B82F6;', 410, 115, 220, 90);
+  const authz = d.v('<b>3 · authorize() Helper</b><hr>Validates role capability<br>Checks scope qualifier:<br>space | owned-or-assigned | self | global', ENTITY + 'strokeColor=#3B82F6;', 680, 115, 260, 90);
+  const scope = d.v('<b>4 · Query Scoping</b><hr>List queries call scopedToSpaces()<br>Appends membership filters<br>(No-op for Admin/Op role)', ENTITY + 'strokeColor=#3B82F6;', 990, 115, 240, 90);
+  const db = d.v('<b>5 · DB Transaction</b><hr>Applies mutation + writes audit_events<br>+ inserts outbox_events<br>(committed atomically)', ENTITY + 'strokeColor=#D97706;', 1280, 115, 250, 90);
+  const ok = d.state('HTTP 200/201', 1580, 140, 110, 40, TERMINAL);
+
+  // Denial / Exception Nodes
+  const err401 = d.state('HTTP 401', 185, 280, 110, 40, STATE);
+  const err404 = d.state('HTTP 404', 700, 280, 110, 40, STATE);
+  const err403 = d.state('HTTP 403', 880, 280, 110, 40, STATE);
+  const auditDeny = d.v('<b>audit_events</b><hr>actor_id, action, resource_type<br>outcome = denied', ENTITY + 'strokeColor=#C00000;', 850, 360, 220, 75);
+
+  // Connections
+  d.e(start, session, '', { color: '#10B981', width: 1.5 });
+  d.e(session, guard, 'authenticated', { color: '#10B981', width: 1.5 });
+  d.e(guard, authz, 'checks guard', { color: '#10B981', width: 1.5 });
+  d.e(authz, scope, 'allowed', { color: '#10B981', width: 1.5 });
+  d.e(scope, db, 'scoped', { color: '#10B981', width: 1.5 });
+  d.e(db, ok, 'success', { color: '#10B981', width: 1.5 });
+
+  // Denials
+  d.e(session, err401, 'invalid session', { dashed: true, color: '#C00000' });
+  d.e(authz, err404, 'read forbidden\n(hide existence)', { dashed: true, color: '#C00000' });
+  d.e(authz, err403, 'write forbidden', { dashed: true, color: '#C00000', pinStr: 'exitX=0.7;exitY=1;entryX=0.5;entryY=0;' });
+  d.e(err403, auditDeny, 'records denial');
+
+  d.message('Read denials return 404 (Not Found) instead of 403 (Forbidden) to prevent leaking resource existence across space boundaries.', 470);
+  d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; authentication / check middleware</font> · <font color="#D97706">&#9632; database operations</font> · <font color="#C00000">&#9632; audit denial / error paths</font>. Source of truth: docs/design/authorization-design.md.', 510);
+  d.out('authorization-pipeline.drawio', 'Authorization Pipeline');
+}
+
+/* ============ 18. user-roles-authorization.drawio ============ */
+{
+  const d = new D(1500, 750);
+  d.title('USER ROLES & AUTHORIZATION SCOPE — Role separation, capability boundaries, and resource access qualifiers');
+  d.guide('top-down within columns; Editor inherits User capabilities; Admin/Op has global privilege; role colors match the repo theme.');
+
+  // Ghost Frames representing Roles
+  const userFrame = d.ghost('ROLE: USER (Baseline Authenticated User)', 40, 100, 440, 460);
+  const editorFrame = d.ghost('ROLE: EDITOR (Content Curators & Editors)', 530, 100, 440, 460);
+  const adminFrame = d.ghost('ROLE: ADMIN/OP (Librarians & System Operators)', 1020, 100, 440, 460);
+
+  // User capabilities
+  d.v('<b>Read tree nodes &amp; Search tree</b><br>Qualifier: global (visible to all logged-in users)', ENTITY + 'strokeColor=#3B82F6;', 60, 140, 400, 50);
+  d.v('<b>Browse Library &amp; Search source repo</b><br>Qualifier: space (restricted to member spaces)', ENTITY + 'strokeColor=#3B82F6;', 60, 210, 400, 50);
+  d.v('<b>Upload source file &amp; Download original</b><br>Qualifier: space (membership in target space)', ENTITY + 'strokeColor=#3B82F6;', 60, 280, 400, 50);
+  d.v('<b>Create branch-gap request &amp; Request loan</b><br>Qualifier: self / space (own records &amp; member catalog)', ENTITY + 'strokeColor=#3B82F6;', 60, 350, 400, 50);
+  d.v('<b>View own submissions &amp; Comment on objects</b><br>Qualifier: self / space (membership of commented object)', ENTITY + 'strokeColor=#3B82F6;', 60, 420, 400, 50);
+
+  // Editor capabilities
+  d.v('<b>Create manual node &amp; Create branch</b><br>Qualifier: global (inherits all baseline User permissions)', ENTITY + 'strokeColor=#10B981;', 550, 140, 400, 50);
+  d.v('<b>Edit branch metadata</b><br>Qualifier: owned-or-assigned (creator or active assignment)', ENTITY + 'strokeColor=#10B981;', 550, 210, 400, 50);
+  d.v('<b>Edit corrected text &amp; Edit Markdown draft</b><br>Qualifier: owned-or-assigned (creator or active assignment)', ENTITY + 'strokeColor=#10B981;', 550, 280, 400, 50);
+  d.v('<b>Edit manual node &amp; View node audit</b><br>Qualifier: owned-or-assigned (creator or active assignment)', ENTITY + 'strokeColor=#10B981;', 550, 350, 400, 50);
+  d.v('<b>Suggest tags &amp; Board task updates</b><br>Qualifier: owned-or-assigned suggestion and task updates', ENTITY + 'strokeColor=#10B981;', 550, 420, 400, 50);
+
+  // Admin/Op capabilities
+  d.v('<b>Approve corrected text &amp; Approve MD draft</b><br>Qualifier: global (unrestricted global access)', ENTITY + 'strokeColor=#A855F7;', 1040, 140, 400, 50);
+  d.v('<b>Publish to tree &amp; Merge duplicate nodes</b><br>Qualifier: global (unrestricted global access)', ENTITY + 'strokeColor=#A855F7;', 1040, 210, 400, 50);
+  d.v('<b>Archive node or source &amp; Change trust status</b><br>Qualifier: global (unrestricted global access)', ENTITY + 'strokeColor=#A855F7;', 1040, 280, 400, 50);
+  d.v('<b>Manage spaces &amp; membership &amp; Catalog items</b><br>Qualifier: global (unrestricted global access)', ENTITY + 'strokeColor=#A855F7;', 1040, 350, 400, 50);
+  d.v('<b>Approve/decline loans &amp; System health &amp; Export</b><br>Qualifier: global (unrestricted global access)', ENTITY + 'strokeColor=#A855F7;', 1040, 420, 400, 50);
+
+  // Role inheritance arrows (going from frame to frame)
+  d.e(userFrame, editorFrame, 'inherits', { dashed: true, color: '#3B82F6', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+  d.e(editorFrame, adminFrame, 'extends', { dashed: true, color: '#10B981', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+
+  d.message('Editor inherits all User baseline permissions; Admin/Op acts as a superuser with global scope qualifier across all modules.', 590);
+  d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; User role (blue)</font> · <font color="#10B981">&#9632; Editor role (green)</font> · <font color="#A855F7">&#9632; Admin/Op role (purple)</font>. Authoritative matrix: docs/requirements/permissions-matrix.md.', 640);
+  d.out('user-roles-authorization.drawio', 'User Roles Authorization');
+}
+
+/* ============ 19. content-lifecycle-by-role.drawio ============ */
+{
+  const d = new D(1500, 800);
+  d.title('CONTENT LIFECYCLE & ROLE SEPARATION — swimlanes showing User, Editor, and Admin/Op actions in the curation workflow');
+  d.guide('top down within columns; dashed arrows indicate handoffs between roles; this lifecycle spans from raw source ingestion to curated publication.');
+
+  // Lanes (ghost frames)
+  const userLane = d.ghost('ROLE: USER (Contributor)', 40, 100, 440, 560);
+  const editorLane = d.ghost('ROLE: EDITOR (Curation / Drafting)', 530, 100, 440, 560);
+  const adminLane = d.ghost('ROLE: ADMIN/OP (Approver / Publisher)', 1020, 100, 440, 560);
+
+  // User Actions
+  const uUpload = d.v('<b>Upload Source File</b><br>Intake of original PDF/Docx<br>Status: stored', ENTITY + 'strokeColor=#3B82F6;', 60, 140, 400, 55);
+  const uSubmissions = d.v('<b>View Own Submissions</b><br>Track intake processing &amp;<br>curation state progress', ENTITY + 'strokeColor=#3B82F6;', 60, 230, 400, 55);
+  const uRead = d.v('<b>Explore Tree &amp; Read Node</b><br>View verified knowledge &amp;<br>contextual provenance spine', ENTITY + 'strokeColor=#3B82F6;', 60, 570, 400, 55);
+
+  // Editor Actions
+  const eReceive = d.v('<b>Receive Assigned Curation Task</b><br>Work allocation by Admin/Op<br>Status: under_correction', ENTITY + 'strokeColor=#10B981;', 550, 230, 400, 55);
+  const eEdit = d.v('<b>Edit Corrected Text</b><br>Align OCR extracted text with<br>original source file content', ENTITY + 'strokeColor=#10B981;', 550, 320, 400, 55);
+  const eDraft = d.v('<b>Refine Markdown Draft</b><br>Write canonical markdown content<br>ready for the public tree', ENTITY + 'strokeColor=#10B981;', 550, 410, 400, 55);
+  const eSubmit = d.v('<b>Submit for Review</b><br>Mark curation ready for review<br>Status: ready_for_review', ENTITY + 'strokeColor=#10B981;', 550, 500, 400, 55);
+
+  // Admin/Op Actions
+  const aTriage = d.v('<b>Triage Source &amp; Assign Editor</b><br>Assess document trust status<br>Allocate review task', ENTITY + 'strokeColor=#A855F7;', 1040, 140, 400, 55);
+  const aReview = d.v('<b>Review &amp; Approve Curation</b><br>Verify corrected text &amp;<br>markdown draft quality', ENTITY + 'strokeColor=#A855F7;', 1040, 500, 400, 55);
+  const aPublish = d.v('<b>Publish to Tree</b><br>Commit version snapshot &amp;<br>create Promotion provenance', ENTITY + 'strokeColor=#A855F7;', 1040, 570, 400, 55);
+
+  // Edge Flows
+  d.e(uUpload, aTriage, '1 · submits file', { color: '#3B82F6', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+  d.e(aTriage, eReceive, '2 · assigns curation', { dashed: true, color: '#A855F7', width: 1.2, pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;', points: [[1240, 210], [750, 210]] });
+  d.e(eReceive, eEdit, '3 · prepare text');
+  d.e(eEdit, eDraft, '4 · write draft');
+  d.e(eDraft, eSubmit, '5 · request review');
+  d.e(eSubmit, aReview, '6 · review draft', { color: '#10B981', width: 1.2, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+  d.e(aReview, aPublish, '7 · approves');
+  d.e(aPublish, uRead, '8 · makes available', { color: '#A855F7', width: 1.5, pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=1;', points: [[1240, 650], [260, 650]] });
+
+  // Self loop
+  d.e(uUpload, uSubmissions, 'track');
+
+  d.message('Users upload raw evidence; Editors structure and transcribe content; Admin/Ops govern verification and publish to preserve trust.', 680);
+  d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; User task (blue)</font> · <font color="#10B981">&#9632; Editor task (green)</font> · <font color="#A855F7">&#9632; Admin/Op task (purple)</font>. Source of truth: docs/system/data-model-lifecycle.md.', 730);
+  d.out('content-lifecycle-by-role.drawio', 'Content Lifecycle by Role');
+}
+
+
+
+
