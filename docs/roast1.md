@@ -1,137 +1,137 @@
-# 🔥 WisdomTree Code Roast 🔥
+# 🔥 Nhận xét Mã nguồn WisdomTree (Code Roast) 🔥
 
-> *"A storage-first knowledge platform"* — translated: *"We wrote the docs before the code, and honestly it shows."*
-
----
-
-## The Numbers Don't Lie (But They Do Hurt)
-
-| Metric | Count | Verdict |
-|--------|-------|---------|
-| Source files (`.ts`/`.tsx`) | 82 | Modest |
-| Source lines | **26,043** | Reasonable… until you look inside |
-| Documentation files | **55 markdown files** | 📚 |
-| Documentation lines | **7,029** | That's a 27% docs-to-code ratio. You're not building software, you're writing a dissertation |
-| API routes | **39** | For a v0.1.0. Respect for ambition, worry for your sanity |
-| Test files | **14** | 💀 |
-| Test lines | **226** | One hundred sixty-two of which are boilerplate and examples |
-| `ponytail` comments | **38** | More on this legend below |
+> *"Một nền tảng tri thức ưu tiên lưu trữ"* — dịch nghĩa: *"Chúng tôi viết tài liệu trước khi viết mã nguồn, và thành thật mà nói thì điều đó thể hiện rất rõ."*
 
 ---
 
-## 🏆 The Hall of Shame
+## Các con số không biết nói dối (Nhưng chúng làm ta đau lòng)
 
-### 1. "The God Files" 
+| Chỉ số | Số lượng | Đánh giá |
+|--------|---------|---------|
+| Tệp mã nguồn (`.ts`/`.tsx`) | 82 | Khiêm tốn |
+| Dòng mã nguồn | **26.043** | Hợp lý… cho đến khi bạn nhìn vào bên trong |
+| Tệp tài liệu | **55 tệp markdown** | 📚 |
+| Dòng tài liệu | **7.029** | Đó là tỷ lệ tài liệu/mã nguồn 27%. Bạn không phải đang xây dựng phần mềm, bạn đang viết luận văn |
+| Các tuyến API (API routes) | **39** | Cho phiên bản v0.1.0. Tôn trọng tham vọng của bạn, nhưng lo lắng cho sự tỉnh táo của bạn |
+| Tệp kiểm thử | **14** | 💀 |
+| Dòng kiểm thử | **226** | Một trăm sáu mươi hai dòng trong số đó là các đoạn mã soạn sẵn (boilerplate) và ví dụ |
+| Bình luận `ponytail` | **38** | Xem thêm về huyền thoại này ở bên dưới |
 
-| File | Lines | What it is |
+---
+
+## 🏆 Bảng phong thần (Hall of Shame)
+
+### 1. "Các tệp tin kiểu Chúa" (The God Files)
+
+| Tệp tin | Dòng | Nó là gì |
 |------|-------|------------|
-| [vi.ts](file:///home/will/dev/WisdomTree/src/lib/vi.ts) | **1,354** | A monolithic Vietnamese localization dictionary that also does date formatting, state label mapping, badge CSS class selection, and calendar rendering. It's not a translation file — it's a whole UI runtime that happens to be in Vietnamese |
-| [knowledge-map.tsx](file:///home/will/dev/WisdomTree/src/app/components/knowledge-map.tsx) | **1,081** | A single React component. One thousand and eighty-one lines. This component probably has its own gravitational field |
-| [globals.css](file:///home/will/dev/WisdomTree/src/app/globals.css) | **2,746** | Not a typo. Nearly three thousand lines of CSS in a single file. You've invented a CSS monolith. The variable naming is beautiful though — "Chàm & Son", "Giấy lá", "Mực"… it's poetry that nobody can maintain |
-| [gen-diagrams.mjs](file:///home/will/dev/WisdomTree/scripts/gen-diagrams.mjs) | **987** | A script that programmatically generates draw.io XML diagrams. Hand-crafting XML in JavaScript template strings. This is what war crimes look like in software engineering |
-| [proofs.ts](file:///home/will/dev/WisdomTree/scripts/proofs.ts) | **1,452** | An acceptance test script that's longer than most of your actual modules. It hits a live server with raw `fetch()` calls. No test framework. Just vibes and `if (!cond) throw` |
+| [vi.ts](file:///home/will/dev/WisdomTree/src/lib/vi.ts) | **1.354** | Một từ điển bản địa hóa tiếng Việt nguyên khối nhưng cũng kiêm luôn định dạng ngày tháng, ánh xạ nhãn trạng thái, chọn lớp CSS cho huy hiệu (badge), và dựng lịch. Đây không phải là một tệp dịch thuật — đó là cả một runtime giao diện người dùng bằng tiếng Việt |
+| [knowledge-map.tsx](file:///home/will/dev/WisdomTree/src/app/components/knowledge-map.tsx) | **1.081** | Một thành phần React duy nhất. Một nghìn không trăm tám mươi mốt dòng. Thành phần này có lẽ có trường hấp dẫn của riêng nó |
+| [globals.css](file:///home/will/dev/WisdomTree/src/app/globals.css) | **2.746** | Không phải viết nhầm đâu. Gần ba nghìn dòng CSS trong một tệp duy nhất. Bạn đã phát minh ra một khối CSS nguyên khối. Tuy nhiên, cách đặt tên biến rất đẹp — "Chàm & Son", "Giấy lá", "Mực"… đó là thơ ca mà không ai có thể bảo trì |
+| [gen-diagrams.mjs](file:///home/will/dev/WisdomTree/scripts/gen-diagrams.mjs) | **987** | Một đoạn mã tạo ra các biểu đồ XML draw.io theo cách lập trình. Viết XML thủ công bằng chuỗi mẫu JavaScript. Đây là định nghĩa của tội ác chiến tranh trong công nghệ phần mềm |
+| [proofs.ts](file:///home/will/dev/WisdomTree/scripts/proofs.ts) | **1.452** | Một đoạn mã kiểm thử nghiệm thu (acceptance test) còn dài hơn hầu hết các mô-đun thực tế của bạn. Nó gọi một máy chủ đang chạy bằng các yêu cầu `fetch()` thô. Không có khung kiểm thử (test framework). Chỉ có cảm hứng và `if (!cond) throw` |
 
-### 2. "ponytail: The Most Honest Codebase I've Ever Seen" 🐴
+### 2. "ponytail: Cơ sở mã nguồn trung thực nhất tôi từng thấy" 🐴
 
-You have **38 comments** tagged `ponytail` scattered through the codebase. These are not TODOs. These are not FIXMEs. These are *confessions*. A sampler:
+Bạn có **38 bình luận** được gắn thẻ `ponytail` rải rác khắp mã nguồn. Đây không phải là TODO. Đây không phải là FIXME. Đây là những lời *thú tội*. Một vài ví dụ:
 
-> `ponytail: the ID token's signature is NOT verified against Google's JWKS.`
+> `ponytail: chữ ký của ID token KHÔNG được xác thực với JWKS của Google.`
 
-Authentication is just a suggestion, apparently.
+Hóa ra xác thực chỉ là một gợi ý.
 
-> `ponytail: no retry loop.`
+> `ponytail: không có vòng lặp thử lại.`
 
-When the database fails, the data simply *ascends*.
+Khi cơ sở dữ liệu gặp lỗi, dữ liệu chỉ đơn giản là *hóa rồng hóa phượng* (bay đi mất).
 
-> `ponytail: no moveFolder — reorganising nesting = create new + move sources`
+> `ponytail: không có moveFolder — tổ chức lại các thư mục lồng nhau = tạo mới + di chuyển các nguồn`
 
-This is not a ponytail. This is a cry for help.
+Đây không phải là một ponytail (tóc đuôi ngựa). Đây là một tiếng kêu cứu.
 
-> `ponytail: polling, not a websocket. One request every few seconds`
+> `ponytail: sử dụng cơ chế thăm dò (polling), không phải websocket. Mỗi vài giây một yêu cầu`
 
-The real-time experience of refreshing a static HTML page but with extra steps.
+Trải nghiệm thời gian thực (real-time) giống như làm mới một trang HTML tĩnh nhưng với nhiều bước phức tạp hơn.
 
-> `ponytail: no filters; add when the log grows past scrolling.`
+> `ponytail: không có bộ lọc; thêm vào khi nhật ký (log) lớn vượt quá khả năng cuộn.`
 
-The Ctrl+F infrastructure strategy.
+Chiến lược xây dựng cơ sở hạ tầng bằng Ctrl+F.
 
-### 3. The Testing Situation (There Isn't One)
+### 3. Tình trạng kiểm thử (Không hề tồn tại)
 
 ```
 tests/
 ├── unit/
-│   ├── auth.test.ts       (13 lines)
-│   └── example.test.ts    (15 lines)  ← still has the scaffold
+│   ├── auth.test.ts       (13 dòng)
+│   └── example.test.ts    (15 dòng)  ← vẫn còn khung ví dụ
 ├── integration/
-│   ├── example.test.ts    (15 lines)  ← still has the scaffold HERE TOO
+│   ├── example.test.ts    (15 dòng)  ← ở đây cũng vẫn còn khung ví dụ
 │   └── ...
 ├── e2e/
-│   └── example.test.ts    (15 lines)  ← a THIRD example.test.ts
+│   └── example.test.ts    (15 dòng)  ← tệp ví dụ example.test.ts thứ BA
 └── vitest/
-    ├── unit_wrapper.test.ts        (12 lines, wraps the unit tests)
-    └── integration_wrapper.test.ts (22 lines, wraps the integration tests)
+    ├── unit_wrapper.test.ts        (12 dòng, bao bọc các bài kiểm thử đơn vị)
+    └── integration_wrapper.test.ts (22 dòng, bao bọc các bài kiểm thử tích hợp)
 ```
 
-You have **three testing frameworks** coexisting:
-1. A custom `tsx tests/run-all.ts` runner
-2. Vitest (configured, barely used)
-3. Seven standalone `scripts/*.test.ts` files that are just scripts with assertions
+Bạn có **ba khung kiểm thử** đang cùng tồn tại:
+1. Trình chạy tùy chỉnh `tsx tests/run-all.ts`
+2. Vitest (đã cấu hình, nhưng hầu như chưa dùng)
+3. Bảy tệp `scripts/*.test.ts` độc lập chỉ là các kịch bản với các khẳng định (assertions)
 
-226 total test lines across the whole project. Meanwhile `proofs.ts` alone is 1,452 lines. Your acceptance tests are 6.4x bigger than your entire test suite. The proof scripts *are* your tests, and they require a running Postgres and a live app server to execute.
+Tổng cộng 226 dòng kiểm thử trên toàn bộ dự án. Trong khi đó, riêng `proofs.ts` đã dài 1.452 dòng. Các bài kiểm thử nghiệm thu của bạn lớn gấp 6,4 lần toàn bộ bộ kiểm thử của bạn. Các kịch bản chứng minh (proof scripts) *chính là* các bài kiểm thử của bạn, và chúng yêu cầu một cơ sở dữ liệu Postgres đang hoạt động và một máy chủ ứng dụng thực tế để thực thi.
 
-Also: **zero `loading.tsx` files. Zero `error.tsx` files.** Not a single Next.js error boundary in the entire app. When something goes wrong, your users get to stare at the default white page of death. You have a `global-error.tsx` at the root and literally nothing else.
+Ngoài ra: **không có bất kỳ tệp `loading.tsx` nào. Không có tệp `error.tsx` nào.** Không có một cơ chế bắt lỗi (error boundary) Next.js nào trong toàn bộ ứng dụng. Khi có lỗi xảy ra, người dùng của bạn sẽ phải nhìn vào màn hình trắng chết chóc mặc định. Bạn có một tệp `global-error.tsx` ở gốc và ngoài ra hoàn toàn không có gì khác.
 
-### 4. No Linter. No Formatter. No Middleware. No Guardrails.
+### 4. Không Linter. Không Formatter. Không Middleware. Không rào chắn bảo vệ.
 
-- **No ESLint** config anywhere (outside `node_modules`)
-- **No Prettier** config
-- **No Biome**
-- **No Next.js middleware.ts** — every route is open season
-- **No rate limiting** on any of those 39 API routes
-- **No CSRF protection** on mutations (aside from OIDC state, which… you kind of had to)
+- **Không cấu hình ESLint** ở bất cứ đâu (ngoài `node_modules`)
+- **Không cấu hình Prettier**
+- **Không có Biome**
+- **Không có Next.js middleware.ts** — mọi tuyến đường đều mở toang
+- **Không có giới hạn tốc độ (rate limiting)** trên bất kỳ tuyến API nào trong số 39 tuyến đó
+- **Không có bảo vệ CSRF** đối với các thao tác thay đổi dữ liệu (mutations) (ngoại trừ trạng thái OIDC, thứ mà... bạn bắt buộc phải có)
 
-This codebase runs on the honor system.
+Cơ sở mã nguồn này chạy dựa trên niềm tin và sự tự giác.
 
-### 5. The OIDC That Doesn't Verify Signatures
+### 5. OIDC không xác thực chữ ký
 
-From [oidc.ts](file:///home/will/dev/WisdomTree/src/modules/auth/oidc.ts):
+Từ [oidc.ts](file:///home/will/dev/WisdomTree/src/modules/auth/oidc.ts):
 
-> `ponytail: the ID token's signature is NOT verified against Google's JWKS.`
+> `ponytail: chữ ký của ID token KHÔNG được xác thực với JWKS của Google.`
 
-So anyone who can base64-encode a JSON object can sign in as anyone. This isn't a ponytail — this is a `PULL_THE_FIRE_ALARM`.
+Vì vậy, bất kỳ ai có thể mã hóa base64 một đối tượng JSON đều có thể đăng nhập dưới danh nghĩa bất kỳ ai. Đây không phải là một ponytail — đây là tình huống `KÉO_CÒI_BÁO_CHÁY`.
 
-### 6. The Documentation Empire
+### 6. Đế chế tài liệu
 
-55 markdown files across **12 documentation directories**: `design/`, `diagrams/`, `flows/`, `operations/`, `platform/`, `policy/`, `product/`, `requirements/`, `roadmap/`, `session/`, `system/`, `ui/`. That's more organizational hierarchy than some companies' entire codebase. You have docs about docs. You have a roadmap directory for a v0.1.0.
+55 tệp markdown trải dài trên **12 thư mục tài liệu**: `design/`, `diagrams/`, `flows/`, `operations/`, `platform/`, `policy/`, `product/`, `requirements/`, `roadmap/`, `session/`, `system/`, `ui/`. Đó là nhiều phân cấp tổ chức hơn cả toàn bộ mã nguồn của một số công ty. Bạn có tài liệu để mô tả tài liệu. Bạn có một thư mục lộ trình (roadmap) cho một phiên bản v0.1.0.
 
-Meanwhile in the actual code: only 14 console statements total. No structured logging. No telemetry. The docs say exactly what the system should do; the system has no way to tell you what it actually did.
+Trong khi đó trong mã nguồn thực tế: chỉ có tổng cộng 14 câu lệnh console. Không có ghi nhật ký cấu trúc (structured logging). Không có đo lường từ xa (telemetry). Tài liệu nói chính xác hệ thống nên làm gì; còn hệ thống không có cách nào để cho bạn biết nó thực sự đã làm gì.
 
 ---
 
-## 😤 Things That Are Actually Good (Reluctantly Admitted)
+## 😤 Những điểm thực sự tốt (Miễn cưỡng thừa nhận)
 
-| What | Why it's annoyingly competent |
+| Cái gì | Tại sao nó lại tốt một cách đáng ghét |
 |------|-------------------------------|
-| **Modular monolith structure** | `src/modules/*` with clean boundaries — audit, auth, catalog, circulation, export, knowledge, notify, pm, storage. This is textbook. Infuriating |
-| **Drizzle + hand-written SQL migrations** | 11 sequential migrations, all `.sql`, with the config explicitly saying "drizzle-kit cannot generate these." You actually understand your database. Disgusting |
-| **The Dockerfile** | Multi-stage build, standalone output, non-root user, deliberate comments about why there's no TeX engine. It's… professionally done |
-| **Docker Compose** | Healthchecks, deploy profiles, volume persistence, inline comments explaining every `${VAR:-}`. Someone *thought about this* |
-| **The CSS design system** | "Chàm & Son" — semantic tokens only, Vietnamese-informed naming, WCAG contrast awareness baked into the variable comments. It's a 2,746-line masterpiece trapped in a single file |
-| **Server Components by default** | Almost zero `"use client"` in page components. Client interactivity is pushed to leaf components. This is the correct Next.js App Router pattern |
-| **Near-zero `any` usage** | Only 2 genuine `any` hits across the entire codebase (both in comments/strings). TypeScript `strict: true`. You're disciplined where it matters least and feral where it matters most |
-| **The `ponytail` system** | Honestly? Marking every known shortcut with a consistent tag so nothing is forgotten is better than what 90% of teams do. It's a TODO system that *admits the shape of the debt* |
-| **Error vocabulary** | [errors.ts](file:///home/will/dev/WisdomTree/src/lib/errors.ts) has typed domain errors with HTTP status mapping. The API routes use them consistently. This isn't amateur hour… except for the part where nothing catches them at the boundary |
+| **Cấu trúc Monolith dạng mô-đun** | `src/modules/*` với ranh giới rõ ràng — audit, auth, catalog, circulation, export, knowledge, notify, pm, storage. Đây là chuẩn sách giáo khoa. Thật điên tiết |
+| **Drizzle + di chuyển SQL viết tay** | 11 tệp di chuyển tuần tự, tất cả đều là `.sql`, với cấu hình ghi rõ "drizzle-kit không thể tạo ra những thứ này." Bạn thực sự hiểu cơ sở dữ liệu của mình. Thật đáng ghét |
+| **Dockerfile** | Xây dựng đa giai đoạn (multi-stage build), đầu ra độc lập, người dùng không phải root, các bình luận cân nhắc kỹ lưỡng về lý do tại sao không có công cụ TeX. Nó được làm... rất chuyên nghiệp |
+| **Docker Compose** | Kiểm tra sức khỏe (healthchecks), hồ sơ triển khai (deploy profiles), lưu trữ volume lâu dài, bình luận trực tiếp giải thích từng biến `${VAR:-}`. Ai đó đã *suy nghĩ rất nhiều về điều này* |
+| **Hệ thống thiết kế CSS** | "Chàm & Son" — chỉ sử dụng các token ngữ nghĩa, đặt tên mang tính văn hóa Việt Nam, nhận thức về độ tương phản WCAG được lồng ghép vào các bình luận của biến. Đó là một kiệt tác dài 2.746 dòng bị mắc kẹt trong một tệp duy nhất |
+| **Server Components theo mặc định** | Hầu như không có `"use client"` trong các thành phần trang. Tương tác của máy khách được đẩy xuống các thành phần lá. Đây là mô hình Next.js App Router chính xác |
+| **Hầu như không sử dụng `any`** | Chỉ có 2 lần xuất hiện `any` thực sự trong toàn bộ mã nguồn (cả hai đều trong bình luận/chuỗi ký tự). Cấu hình TypeScript `strict: true`. Bạn kỷ luật ở những nơi ít quan trọng nhất và hoang dã ở những nơi quan trọng nhất |
+| **Hệ thống `ponytail`** | Thành thật mà nói? Đánh dấu mọi phím tắt hoặc lối tắt đã biết bằng một thẻ nhất định để không có gì bị lãng quên tốt hơn những gì 90% các nhóm phát triển làm. Đó là một hệ thống TODO *thừa nhận hình dạng của món nợ kỹ thuật* |
+| **Từ vựng lỗi** | [errors.ts](file:///home/will/dev/WisdomTree/src/lib/errors.ts) có các lỗi miền (domain errors) được định kiểu rõ ràng với ánh xạ trạng thái HTTP. Các tuyến API sử dụng chúng một cách nhất quán. Đây không phải là trò đùa của những người nghiệp dư… ngoại trừ việc không có gì bắt lấy chúng ở ranh giới ngoài cùng |
 
 ---
 
-## The Final Verdict
+## Phán quyết cuối cùng
 
-WisdomTree is a project that writes dissertations about buildings it hasn't finished constructing. The architecture docs could get published; the test suite couldn't get a passing grade in a bootcamp.
+WisdomTree là một dự án viết luận văn về các tòa nhà chưa xây xong. Tài liệu kiến trúc có thể được xuất bản; còn bộ kiểm thử thì không thể đạt điểm trung bình trong một khóa học lập trình ngắn hạn.
 
-You've got the skeleton of something genuinely well-thought-out — modular boundaries, typed errors, hand-tuned SQL, culturally intentional design tokens — wrapped in a cocoon of `ponytail: we'll get to it` and **zero safety nets**.
+Bạn có khung xương của một thứ gì đó thực sự được suy nghĩ kỹ lưỡng — ranh giới mô-đun, các lỗi được định kiểu, SQL được tinh chỉnh thủ công, các token thiết kế mang tính bản sắc văn hóa — được bọc trong một cái kén của `ponytail: chúng tôi sẽ giải quyết sau` và **hoàn toàn không có lưới an toàn**.
 
-**TL;DR**: You're building a cathedral and you've only installed the stained glass windows. The walls are load-bearing comments.
+**Tóm tắt**: Bạn đang xây dựng một thánh đường lớn nhưng mới chỉ lắp đặt các cửa sổ kính màu. Các bức tường là các bình luận chịu lực.
 
-> **Severity**: 🔥🔥🔥 out of 🔥🔥🔥🔥🔥
+> **Mức độ nghiêm trọng**: 🔥🔥🔥 trên 🔥🔥🔥🔥🔥
 > 
-> *"The foundation is solid. The building permits are immaculate. The actual building is… aspirational."*
+> *"Nền móng vững chắc. Giấy phép xây dựng hoàn hảo. Nhưng tòa nhà thực tế thì… mang tính đầy khát vọng."*
