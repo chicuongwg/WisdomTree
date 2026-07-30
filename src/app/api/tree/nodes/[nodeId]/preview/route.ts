@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { handleApi } from "@/lib/errors";
+import { handleApi, notFound } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
-import { nodePreview } from "@/modules/knowledge/service";
+import { createGraphProvider } from "@/modules/graph/provider";
 
 // GET /api/tree/nodes/{nodeId}/preview — the hover/focus card payload:
 // title, verification and a ~200-character excerpt. Read-only, gated by
@@ -11,6 +11,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ nod
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { nodeId } = await params;
-    return NextResponse.json(await nodePreview(actor, nodeId));
+    const preview = await createGraphProvider(actor).loadPreview(nodeId);
+    if (!preview) throw notFound();
+    return NextResponse.json(preview);
   });
 }

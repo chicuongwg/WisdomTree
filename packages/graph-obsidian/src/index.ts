@@ -20,7 +20,8 @@ export type GraphEdge = {
 export type GraphData = { nodes: GraphNode[]; edges: GraphEdge[] };
 
 export type GraphQuery = {
-  vaultId: string;
+  scope: "shared" | "personal";
+  vaultId?: string;
   centerId?: string;
   depth?: number;
   search?: string;

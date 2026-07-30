@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { teamKnowledgeGraph, personalKnowledgeGraph } from "@/modules/knowledge/service";
+import { createGraphProvider } from "@/modules/graph/provider";
 import { T } from "@/lib/vi";
 import { KnowledgeMap } from "../components/knowledge-map";
 
@@ -21,9 +21,10 @@ export default async function GraphPage({
   const { node, scope } = await searchParams;
 
   const isPersonal = scope === "personal";
-  const graph = await (isPersonal
-    ? personalKnowledgeGraph(principal)
-    : teamKnowledgeGraph(principal));
+  const graph = await createGraphProvider(principal).loadGraph({
+    scope: isPersonal ? "personal" : "shared",
+    vaultId: isPersonal ? principal.vaultIds?.[0] : undefined,
+  });
 
   const teamHref = "/graph";
   const personalHref = "/graph?scope=personal";
@@ -57,7 +58,17 @@ export default async function GraphPage({
         {T.graphIntro} <Link href="/tree">{T.tree}</Link> ·{" "}
         <Link href="/tree/branches">{T.navBranches}</Link>
       </p>
-      <KnowledgeMap nodes={graph.nodes} edges={graph.edges} centerId={node} />
+      <KnowledgeMap
+        nodes={graph.nodes.map((item) => ({
+          id: item.id,
+          title: item.title,
+          branchId: item.topicId ?? "",
+          branchName: item.path.split("/")[0],
+          verification: item.verification,
+        }))}
+        edges={graph.edges.map((edge) => ({ ...edge, linkType: edge.type }))}
+        centerId={node}
+      />
     </main>
   );
 }
