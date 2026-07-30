@@ -7,7 +7,7 @@ import { signDownload } from "@/lib/sign";
 import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
-import { extractionWorker } from "./extraction";
+import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { objectStore } from "./object-store";
 import {
   branchGapRequests,
@@ -37,7 +37,13 @@ const FORMAT_DENYLIST = new Set([
 
 export async function uploadSource(
   actor: Principal,
-  input: { spaceId: string; title: string; description?: string; file: File },
+  input: {
+    spaceId: string;
+    title: string;
+    description?: string;
+    file: File;
+    extractionMethod?: ExtractionMethod;
+  },
 ) {
   authorize(actor, "storage.upload", { spaceId: input.spaceId, kind: "write" });
 
@@ -105,7 +111,7 @@ export async function uploadSource(
     });
   });
 
-  extractionWorker.enqueue(versionId);
+  extractionWorker.enqueue(versionId, input.extractionMethod ?? "auto");
   return getSourceDetail(actor, sourceId);
 }
 

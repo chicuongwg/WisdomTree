@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { uploadSource } from "@/modules/storage/service";
+import type { ExtractionMethod } from "@/modules/storage/extraction";
 
 // POST /api/source/upload — multipart; store-first, returns once stored (201)
 export async function POST(request: NextRequest) {
@@ -21,12 +22,18 @@ export async function POST(request: NextRequest) {
     const typed = typeof rawTitle === "string" ? rawTitle.trim() : "";
     const title = typed || file.name.replace(/\.[^./\\]+$/, "").trim() || file.name;
     const description = form.get("description");
+    const rawMethod = form.get("extractionMethod");
+    const extractionMethod: ExtractionMethod =
+      typeof rawMethod === "string" && ["auto", "pandoc", "ocr"].includes(rawMethod)
+        ? (rawMethod as ExtractionMethod)
+        : "auto";
     const source = await uploadSource(actor, {
       spaceId,
       title,
       description:
         typeof description === "string" && description.trim() ? description.trim() : undefined,
       file,
+      extractionMethod,
     });
     return NextResponse.json(source, { status: 201 });
   });

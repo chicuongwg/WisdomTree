@@ -77,7 +77,7 @@ export function useSequentialUpload() {
   async function start(
     files: File[],
     spaceId: string,
-    extras?: { title?: string; description?: string },
+    extras?: { title?: string; description?: string; extractionMethod?: string },
   ): Promise<{ ids: string[]; failed: UploadFailure[]; aborted: boolean }> {
     stopRef.current = false;
     const ids: string[] = [];
@@ -93,6 +93,7 @@ export function useSequentialUpload() {
       const form = new FormData();
       form.set("spaceId", spaceId);
       form.set("file", file);
+      if (extras?.extractionMethod) form.set("extractionMethod", extras.extractionMethod);
       // Typed metadata only describes one file; with several, titles default
       // from filenames server-side.
       // ponytail: per-file metadata editing is not built; rename after upload covers it.
@@ -187,6 +188,7 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
     const { ids, failed, aborted } = await start(files, spaceId, {
       title: String(data.get("title") ?? "").trim() || undefined,
       description: String(data.get("description") ?? "").trim() || undefined,
+      extractionMethod: String(data.get("extractionMethod") ?? "auto"),
     });
     if (ids.length > 0) router.refresh();
     if (aborted) return;
@@ -254,6 +256,19 @@ export function UploadForm({ spaces }: { spaces: Array<{ id: string; name: strin
               {s.name}
             </option>
           ))}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="extractionMethod">Cách trích xuất Markdown</label>
+        <select
+          id="extractionMethod"
+          name="extractionMethod"
+          defaultValue="auto"
+          disabled={disabled}
+        >
+          <option value="auto">Tự chọn theo định dạng</option>
+          <option value="pandoc">Pandoc — tài liệu Word/ODT/HTML</option>
+          <option value="ocr">OCR — PDF scan hoặc ảnh</option>
         </select>
       </div>
       {/* With several files there is nothing one title could honestly name, so
