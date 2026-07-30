@@ -179,15 +179,22 @@ class LocalExtractionWorker {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "lỗi trích xuất";
-      await db
-        .update(sourceVersions)
-        .set({
-          extractionStatus: "unprocessable",
-          extractionMeta: { error: message },
-          updatedAt: new Date(),
-          version: row.version.version + 1,
-        })
-        .where(eq(sourceVersions.id, sourceVersionId));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(sourceVersions)
+          .set({
+            extractionStatus: "unprocessable",
+            extractionMeta: { error: message },
+            updatedAt: new Date(),
+            version: row.version.version + 1,
+          })
+          .where(eq(sourceVersions.id, sourceVersionId));
+        await emitOutbox(tx, "source.processing_failed", {
+          sourceId: row.version.sourceId,
+          sourceVersionId,
+          error: message,
+        });
+      });
       throw error;
     }
   }

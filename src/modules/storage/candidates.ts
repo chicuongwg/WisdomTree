@@ -41,15 +41,24 @@ export async function requestExtraction(
   if (existing) {
     throw new ApiError(409, "candidate_exists", "Tệp này đã có bản Markdown chờ duyệt.");
   }
-  await db
-    .update(sourceVersions)
-    .set({
-      extractionStatus: "pending",
-      extractionMeta: { requestedMethod: method },
-      updatedAt: new Date(),
-      version: row.version.version + 1,
-    })
-    .where(eq(sourceVersions.id, versionId));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(sourceVersions)
+      .set({
+        extractionStatus: "pending",
+        extractionMeta: { requestedMethod: method },
+        updatedAt: new Date(),
+        version: row.version.version + 1,
+      })
+      .where(eq(sourceVersions.id, versionId));
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.extraction.request",
+      targetType: "source_version",
+      targetId: versionId,
+      details: { sourceId, method },
+    });
+  });
   extractionWorker.enqueue(versionId, method);
   return { sourceId, versionId, status: "pending" as const, method };
 }
@@ -90,17 +99,27 @@ export async function rejectCandidate(actor: Principal, candidateId: string) {
   if (candidate.state !== "pending_review") {
     throw new ApiError(409, "invalid_state", "Bản trích xuất này đã được xử lý.");
   }
-  const [updated] = await db
-    .update(extractionCandidates)
-    .set({ state: "rejected", reviewedBy: actor.userId, reviewedAt: new Date() })
-    .where(
-      and(
-        eq(extractionCandidates.id, candidateId),
-        eq(extractionCandidates.state, "pending_review"),
-      ),
-    )
-    .returning();
-  return updated;
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(extractionCandidates)
+      .set({ state: "rejected", reviewedBy: actor.userId, reviewedAt: new Date() })
+      .where(
+        and(
+          eq(extractionCandidates.id, candidateId),
+          eq(extractionCandidates.state, "pending_review"),
+        ),
+      )
+      .returning();
+    if (!updated) throw new ApiError(409, "invalid_state", "Bản trích xuất đã được xử lý.");
+    await recordAudit(tx, actor, {
+      accountability: "editor_updater",
+      action: "candidate.reject",
+      targetType: "extraction_candidate",
+      targetId: candidateId,
+      details: { sourceVersionId: candidate.sourceVersionId },
+    });
+    return updated;
+  });
 }
 
 export async function evolveCandidate(
