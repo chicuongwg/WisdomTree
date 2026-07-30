@@ -4,7 +4,6 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import {
   backlinkContext,
   buildWikiIndex,
-  excerpt,
   normalizeTitle,
   wikiTargetKeys,
 } from "@/lib/wikilink";
@@ -381,28 +380,6 @@ export async function getNode(actor: Principal, nodeId: string) {
   };
 }
 
-/** Hover/focus preview payload: title, verification, ~200 chars of content. */
-export async function nodePreview(actor: Principal, nodeId: string) {
-  authorize(actor, "knowledge.node.read", { kind: "read" });
-  const [node] = await db
-    .select({
-      id: treeNodes.id,
-      title: treeNodes.title,
-      verification: treeNodes.verification,
-      contentMd: treeNodes.contentMd,
-    })
-    .from(treeNodes)
-    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
-  if (!node) throw notFound();
-  return {
-    id: node.id,
-    title: node.title,
-    verification: node.verification,
-    excerpt: excerpt(node.contentMd, 200),
-  };
-}
-
 /** Title → node index used to resolve `[[wiki-links]]` while rendering. */
 export async function wikiIndex(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
@@ -442,127 +419,6 @@ export async function wikiIndex(actor: Principal) {
   }
 
   return nodeIndex;
-}
-
-// ---------------------------------------------------------------------------
-// Graph Explorer (screen-inventory.md) — nodes + edges for the map surface
-// ---------------------------------------------------------------------------
-
-export type GraphNode = {
-  id: string;
-  title: string;
-  branchId: string;
-  branchName: string;
-  verification: string;
-};
-export type GraphEdge = { from: string; to: string; linkType: string };
-export type KnowledgeGraph = { nodes: GraphNode[]; edges: GraphEdge[] };
-
-/**
- * Internal helper: build a graph from a set of branch IDs.
- * Edges are kept only when both endpoints belong to the node set — this
- * ensures cross-scope links (personal→team wiki-links) are visible on the
- * team graph too, while orphaned edge endpoints are never returned.
- */
-async function graphForBranches(
-  branchIds: string[],
-  includeCrossLinks: boolean,
-  allLiveIds?: Set<string>,
-): Promise<KnowledgeGraph> {
-  if (!branchIds.length) return { nodes: [], edges: [] };
-  const nodes = await db
-    .select({
-      id: treeNodes.id,
-      title: treeNodes.title,
-      branchId: treeNodes.branchId,
-      branchName: branches.name,
-      verification: treeNodes.verification,
-    })
-    .from(treeNodes)
-    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-    .where(and(inArray(treeNodes.branchId, branchIds), ne(treeNodes.verification, "archived")))
-    .orderBy(asc(treeNodes.title));
-  const nodeIds = new Set(nodes.map((n) => n.id));
-  // Cross-link mode: the team graph shows links FROM personal nodes that point
-  // INTO the team graph (the personal side disappears, the link stays visible).
-  const targetSet = includeCrossLinks && allLiveIds ? allLiveIds : nodeIds;
-  const edgeRows = await db
-    .select({
-      from: nodeLinks.fromNodeId,
-      to: nodeLinks.toNodeId,
-      linkType: nodeLinks.linkType,
-    })
-    .from(nodeLinks)
-    .where(
-      or(inArray(nodeLinks.fromNodeId, [...nodeIds]), inArray(nodeLinks.toNodeId, [...nodeIds])),
-    );
-  return {
-    nodes,
-    edges: edgeRows.filter((e) => nodeIds.has(e.from) && targetSet.has(e.to)),
-  };
-}
-
-/** Team knowledge graph: all scope='team' branches, visible to every member. */
-export async function teamKnowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
-  authorize(actor, "knowledge.node.read", { kind: "read" });
-  const teamBranches = await db
-    .select({ id: branches.id })
-    .from(branches)
-    .where(and(eq(branches.scope, "team"), sql`${branches.archivedAt} IS NULL`));
-  return graphForBranches(
-    teamBranches.map((b) => b.id),
-    false,
-  );
-}
-
-/**
- * Personal knowledge graph: only scope='personal' branches owned by this actor.
- * Cross-links that point to team nodes are included so the personal map
- * shows how private notes connect to published knowledge.
- */
-export async function personalKnowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
-  authorize(actor, "knowledge.node.read", { kind: "read" });
-  const [personalBranches, teamBranches] = await Promise.all([
-    db
-      .select({ id: branches.id })
-      .from(branches)
-      .where(
-        and(
-          eq(branches.scope, "personal"),
-          actor.vaultIds?.length ? inArray(branches.vaultId, actor.vaultIds) : sql`false`,
-          sql`${branches.archivedAt} IS NULL`,
-        ),
-      ),
-    db
-      .select({ id: branches.id })
-      .from(branches)
-      .where(and(eq(branches.scope, "team"), sql`${branches.archivedAt} IS NULL`)),
-  ]);
-  // Collect all live team node IDs so cross-links can be resolved.
-  const allLiveIds = personalBranches.length
-    ? new Set(
-        (
-          await db
-            .select({ id: treeNodes.id })
-            .from(treeNodes)
-            .innerJoin(branches, eq(treeNodes.branchId, branches.id))
-            .where(
-              and(
-                inArray(
-                  treeNodes.branchId,
-                  [...personalBranches, ...teamBranches].map((b) => b.id),
-                ),
-                ne(treeNodes.verification, "archived"),
-              ),
-            )
-        ).map((n) => n.id),
-      )
-    : new Set<string>();
-  return graphForBranches(
-    personalBranches.map((b) => b.id),
-    true,
-    allLiveIds,
-  );
 }
 
 // ---------------------------------------------------------------------------
