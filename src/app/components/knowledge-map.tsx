@@ -13,20 +13,27 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
-import { createSimulation, SIM_NODE_CAP, type Simulation } from "@/lib/graph-force";
+import { SIM_NODE_CAP } from "@/lib/graph-force";
 import {
   DEFAULT_SETTINGS,
   LINK_TYPES,
   readSettings,
   scale,
   writeSettings,
+  type GraphGroup,
   type GraphSettings,
   type LinkType,
 } from "@/lib/graph-settings";
 import { T, verificationStateLabel } from "@/lib/vi";
 import { useShortcutKey } from "@/lib/platform";
 import { GraphSettingsPanel } from "./graph-settings-panel";
-import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
+import {
+  cardPosition,
+  loadPreview,
+  NodePreviewCard,
+  PREVIEW_HOVER_DELAY_MS,
+  type NodePreview,
+} from "./node-link";
 
 // Knowledge map — the Graph Explorer surface (screen-inventory.md) and the
 // local map on Node Detail, one component. No graph library and no new
@@ -52,6 +59,7 @@ export type MapNode = {
   branchId: string;
   branchName: string;
   verification: string;
+  tags: string[];
 };
 export type MapEdge = { from: string; to: string; linkType: string };
 
@@ -179,15 +187,31 @@ function nodeId(e: { currentTarget: SVGGElement }): string {
   return e.currentTarget.dataset.id ?? "";
 }
 
+function groupFor(node: MapNode, groups: GraphGroup[]): GraphGroup | undefined {
+  return groups.find((group) => {
+    const query = group.query.trim().toLocaleLowerCase("vi");
+    if (!query) return false;
+    if (query.startsWith("tag:"))
+      return node.tags.some((tag) => tag.toLocaleLowerCase("vi") === query.slice(4).trim());
+    if (query.startsWith("branch:"))
+      return node.branchName.toLocaleLowerCase("vi") === query.slice(7).trim();
+    return node.title.toLocaleLowerCase("vi").includes(query);
+  });
+}
+
 export function KnowledgeMap({
   nodes,
   edges,
   centerId,
+  scope = "shared",
+  initialDepth,
 }: {
   nodes: MapNode[];
   edges: MapEdge[];
   /** this page sits at the centre, is pinned there, and is drawn larger */
   centerId?: string;
+  scope?: "shared" | "personal";
+  initialDepth?: number;
 }) {
   const router = useRouter();
   // React's generated ids contain punctuation that is not valid in an HTML id,
@@ -197,7 +221,10 @@ export function KnowledgeMap({
   // ---- settings -----------------------------------------------------------
   // Initialised to the defaults so the server render and the first client
   // render are identical; the stored values arrive in an effect below.
-  const [settings, setSettings] = useState<GraphSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<GraphSettings>(() => ({
+    ...DEFAULT_SETTINGS,
+    localDepth: initialDepth ?? DEFAULT_SETTINGS.localDepth,
+  }));
   const [term, setTerm] = useState("");
   /**
    * What the map is actually filtered by. The box keeps `term` so typing stays
@@ -233,14 +260,24 @@ export function KnowledgeMap({
   // the first HTML is already filtered. Worth doing when someone reports the
   // flash; not worth a navigation on every change of a checkbox before then.
   useEffect(() => {
-    setSettings(readSettings());
-  }, []);
+    const stored = readSettings();
+    setSettings({
+      ...stored,
+      localDepth: initialDepth ?? stored.localDepth,
+    });
+  }, [initialDepth]);
 
   // Persisting from inside a `setSettings` updater would be a side effect in a
   // function React is allowed to call twice (and does, under StrictMode).
   useEffect(() => {
     if (dirty.current) writeSettings(settings);
   }, [settings]);
+  useEffect(() => {
+    if (!centerId) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("depth", String(settings.localDepth));
+    window.history.replaceState(window.history.state, "", url);
+  }, [centerId, settings.localDepth]);
 
   const set = useCallback(<K extends keyof GraphSettings>(key: K, value: GraphSettings[K]) => {
     dirty.current = true;
@@ -261,6 +298,13 @@ export function KnowledgeMap({
   const [active, setActive] = useState<string | null>(null);
   /** Bumped per request, so a slow card for A cannot land on top of B's. */
   const peekToken = useRef(0);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    },
+    [],
+  );
 
   const onPeek = useCallback((id: string, target: Element) => {
     const token = ++peekToken.current;
@@ -271,7 +315,22 @@ export function KnowledgeMap({
       if (peekToken.current === token) setPreview(p);
     });
   }, []);
+  const onPeekAt = useCallback((id: string, clientX: number, clientY: number) => {
+    const token = ++peekToken.current;
+    setActive(id);
+    setPeek({
+      id,
+      left: Math.min(clientX + 12, window.innerWidth - 340),
+      top: Math.min(clientY + 12, window.innerHeight - 260),
+    });
+    setPreview(null);
+    void loadPreview(id).then((result) => {
+      if (peekToken.current === token) setPreview(result);
+    });
+  }, []);
   const onLeave = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
     peekToken.current++;
     setActive(null);
     setPeek(null);
@@ -283,31 +342,81 @@ export function KnowledgeMap({
     for (const n of nodes) seen.set(n.branchId, n.branchName);
     return [...seen].sort((a, b) => a[1].localeCompare(b[1], "vi"));
   }, [nodes]);
+  const tagOptions = useMemo(
+    () => [...new Set(nodes.flatMap((node) => node.tags))].sort((a, b) => a.localeCompare(b, "vi")),
+    [nodes],
+  );
 
   const view = useMemo(() => {
-    const q = appliedTerm.trim().toLowerCase();
+    const q = appliedTerm.trim().toLocaleLowerCase("vi");
+    const enabledEdges = edges.filter(
+      (edge) => settings.linkTypes[edge.linkType as LinkType] !== false,
+    );
     // The centre of a local map is the thing the map is about: no filter may
-    // remove it. Orphans stay visible — a page with no links is information.
-    const visible = nodes.filter(
+    // remove it.
+    let visible = nodes.filter(
       (n) =>
         n.id === centerId ||
         ((!settings.branchId || n.branchId === settings.branchId) &&
-          (!q || n.title.toLowerCase().includes(q))),
+          (!settings.tag || n.tags.includes(settings.tag)) &&
+          (!q || n.title.toLocaleLowerCase("vi").includes(q))),
     );
-    const ids = new Set(visible.map((n) => n.id));
-    const links = edges.filter(
-      (e) =>
-        ids.has(e.from) && ids.has(e.to) && settings.linkTypes[e.linkType as LinkType] !== false,
-    );
+    let ids = new Set(visible.map((n) => n.id));
+    if (!settings.includeOrphans) {
+      const linked = new Set<string>();
+      for (const edge of enabledEdges) {
+        if (!ids.has(edge.from) || !ids.has(edge.to)) continue;
+        linked.add(edge.from);
+        linked.add(edge.to);
+      }
+      visible = visible.filter((node) => node.id === centerId || linked.has(node.id));
+      ids = new Set(visible.map((node) => node.id));
+    }
+
+    if (centerId && ids.has(centerId)) {
+      const adjacency = new Map<string, Set<string>>();
+      for (const edge of enabledEdges) {
+        if (!ids.has(edge.from) || !ids.has(edge.to)) continue;
+        if (!adjacency.has(edge.from)) adjacency.set(edge.from, new Set());
+        if (!adjacency.has(edge.to)) adjacency.set(edge.to, new Set());
+        adjacency.get(edge.from)!.add(edge.to);
+        adjacency.get(edge.to)!.add(edge.from);
+      }
+      const reached = new Set([centerId]);
+      let frontier = [centerId];
+      for (let depth = 0; depth < settings.localDepth; depth++) {
+        const next: string[] = [];
+        for (const id of frontier) {
+          for (const neighbour of adjacency.get(id) ?? []) {
+            if (reached.has(neighbour)) continue;
+            reached.add(neighbour);
+            next.push(neighbour);
+          }
+        }
+        frontier = next;
+      }
+      visible = visible.filter((node) => reached.has(node.id));
+      ids = reached;
+    }
+    const links = enabledEdges.filter((edge) => ids.has(edge.from) && ids.has(edge.to));
 
     const degree = degreeOf(links);
     const seed = centerId ? egoLayout(visible, centerId) : branchLayout(visible, degree);
     return { visible, links, seed, degree };
-  }, [nodes, edges, centerId, appliedTerm, settings.branchId, settings.linkTypes]);
+  }, [
+    nodes,
+    edges,
+    centerId,
+    appliedTerm,
+    settings.branchId,
+    settings.tag,
+    settings.includeOrphans,
+    settings.localDepth,
+    settings.linkTypes,
+  ]);
 
-  // Past this size the loop costs more than it explains: keep the
-  // deterministic layout, silently.
-  const animating = !reducedMotion && view.visible.length <= SIM_NODE_CAP;
+  const useCanvas = view.visible.length > SIM_NODE_CAP;
+  const animating = !reducedMotion;
 
   const radii = useMemo(() => {
     const map = new Map<string, number>();
@@ -316,6 +425,16 @@ export function KnowledgeMap({
     }
     return map;
   }, [view, centerId]);
+  const canvasLabelIds = useMemo(
+    () =>
+      new Set(
+        [...view.visible]
+          .sort((a, b) => (view.degree[b.id] ?? 0) - (view.degree[a.id] ?? 0))
+          .slice(0, 120)
+          .map((node) => node.id),
+      ),
+    [view],
+  );
 
   const neighbours = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -335,21 +454,24 @@ export function KnowledgeMap({
 
   // ---- refs the animation writes through ----------------------------------
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasPaint = useRef<() => void>(() => undefined);
+  const hitGrid = useRef(new Map<string, string[]>());
   const viewportRef = useRef<SVGGElement | null>(null);
   const nodeEls = useRef(new Map<string, SVGGElement>());
   const edgeEls = useRef(new Map<string, { el: SVGLineElement; from: string; to: string }>());
   const posRef = useRef(new Map<string, XY>());
-  const simRef = useRef<Simulation | null>(null);
-  const rafRef = useRef(0);
+  const workerRef = useRef<Worker | null>(null);
+  const workerGeneration = useRef(0);
+  const workerOrder = useRef<string[]>([]);
   const viewT = useRef<ViewTransform>({ k: 1, tx: 0, ty: 0 });
   // The two zoom thresholds the labels step at, held in a ref rather than read
   // from `settings` inside `paint`. `paint` is a dependency of the effect that
   // builds the simulation, so letting it change identity on every drag of the
   // fade slider would tear down and rebuild the physics sixty times a second.
   const labelZoom = useRef({ all: LABEL_ZOOM_ALL, hubs: LABEL_ZOOM_HUBS });
-  // ponytail: rather than detect "the simulation has settled", the view refits
-  // every tick until the reader zooms or pans. Fewer lines, and the map is
-  // framed at every instant instead of only at the end.
+  // Fit once on entry. Physics and filters must not take the camera back from
+  // the reader while the graph is moving.
   const autoFit = useRef(true);
 
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
@@ -358,6 +480,24 @@ export function KnowledgeMap({
   // it reads it through a ref to avoid acting on a stale closure.
   const pinnedRef = useRef(pinned);
   const [announce, setAnnounce] = useState("");
+  const [context, setContext] = useState<{ id: string; x: number; y: number } | null>(null);
+  const contextRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!context) return;
+    contextRef.current?.querySelector("button")?.focus();
+    const close = (event: PointerEvent) => {
+      if (!contextRef.current?.contains(event.target as Node)) setContext(null);
+    };
+    const closeView = () => setContext(null);
+    document.addEventListener("pointerdown", close);
+    window.addEventListener("scroll", closeView, true);
+    window.addEventListener("resize", closeView);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      window.removeEventListener("scroll", closeView, true);
+      window.removeEventListener("resize", closeView);
+    };
+  }, [context]);
 
   /** Write the current positions and view transform straight to the DOM. */
   const paint = useCallback(() => {
@@ -391,6 +531,7 @@ export function KnowledgeMap({
       el.setAttribute("x2", b.x.toFixed(2));
       el.setAttribute("y2", b.y.toFixed(2));
     }
+    canvasPaint.current();
   }, []);
 
   /** Frame every mark. `speak` is off for the automatic fit — a live region
@@ -433,26 +574,10 @@ export function KnowledgeMap({
     [paint],
   );
 
-  /** Paint, but keep the view framed while the reader has not moved it. */
+  /** Paint the current frame without changing the reader's camera. */
   const settle = useCallback(() => {
-    if (autoFit.current) fitToView(false);
-    else paint();
-  }, [fitToView, paint]);
-
-  const runLoop = useCallback(() => {
-    if (rafRef.current) return;
-    const step = () => {
-      rafRef.current = 0;
-      const sim = simRef.current;
-      if (!sim) return;
-      const alive = sim.tick();
-      for (const n of sim.nodes) posRef.current.set(n.id, { x: n.x, y: n.y });
-      settle();
-      // Stopping at the alpha floor is what keeps an idle tab at 0% CPU.
-      if (alive) rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-  }, [settle]);
+    paint();
+  }, [paint]);
 
   // ---- the display sliders ------------------------------------------------
   // Labels: a ref write, then one repaint. No React work per frame, and no
@@ -469,6 +594,181 @@ export function KnowledgeMap({
    *  reach the physics, so moving them cannot disturb a settled layout. */
   const nodeScale = scale(settings.nodeSize, ...NODE_SCALE_RANGE);
   const edgeWidth = scale(settings.linkThickness, ...EDGE_WIDTH_RANGE);
+
+  canvasPaint.current = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !useCanvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const width = Math.max(1, Math.round(rect.width * ratio));
+    const height = Math.max(1, Math.round(rect.height * ratio));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const css = getComputedStyle(canvas);
+    const baseScale = Math.min(rect.width / CANVAS.width, rect.height / CANVAS.height);
+    const ox = (rect.width - CANVAS.width * baseScale) / 2;
+    const oy = (rect.height - CANVAS.height * baseScale) / 2;
+    const vt = viewT.current;
+    const cull = view.visible.length > 2000;
+    const bounds = {
+      x0: -vt.tx / vt.k - 80,
+      y0: -vt.ty / vt.k - 80,
+      x1: (CANVAS.width - vt.tx) / vt.k + 80,
+      y1: (CANVAS.height - vt.ty) / vt.k + 80,
+    };
+    const inView = (point: XY) =>
+      !cull ||
+      (point.x >= bounds.x0 &&
+        point.x <= bounds.x1 &&
+        point.y >= bounds.y0 &&
+        point.y <= bounds.y1);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, rect.width, rect.height);
+    context.fillStyle = css.getPropertyValue("--color-surface");
+    context.fillRect(0, 0, rect.width, rect.height);
+    context.translate(ox, oy);
+    context.scale(baseScale, baseScale);
+    context.translate(vt.tx, vt.ty);
+    context.scale(vt.k, vt.k);
+
+    const visibleIds = new Set(view.visible.map((node) => node.id));
+    context.lineWidth = edgeWidth / vt.k;
+    for (const edge of view.links) {
+      const from = posRef.current.get(edge.from);
+      const to = posRef.current.get(edge.to);
+      if (!from || !to) continue;
+      if (!inView(from) && !inView(to)) continue;
+      const near = !lit || (lit.has(edge.from) && lit.has(edge.to));
+      context.globalAlpha = near ? 1 : 0.18;
+      context.strokeStyle =
+        edge.linkType === "supports"
+          ? css.getPropertyValue("--color-canopy")
+          : edge.linkType === "contrasts"
+            ? css.getPropertyValue("--color-seal")
+            : edge.linkType === "part_of"
+              ? css.getPropertyValue("--color-cham")
+              : css.getPropertyValue("--color-line-strong");
+      context.beginPath();
+      context.moveTo(from.x, from.y);
+      context.lineTo(to.x, to.y);
+      context.stroke();
+      if (settings.arrows) {
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const targetRadius = (radii.get(edge.to) ?? 8) * nodeScale + 5;
+        const x = to.x - Math.cos(angle) * targetRadius;
+        const y = to.y - Math.sin(angle) * targetRadius;
+        context.fillStyle = context.strokeStyle;
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(
+          x - Math.cos(angle - Math.PI / 6) * 7,
+          y - Math.sin(angle - Math.PI / 6) * 7,
+        );
+        context.lineTo(
+          x - Math.cos(angle + Math.PI / 6) * 7,
+          y - Math.sin(angle + Math.PI / 6) * 7,
+        );
+        context.closePath();
+        context.fill();
+      }
+    }
+
+    const grid = new Map<string, string[]>();
+    const labelMode =
+      vt.k >= labelZoom.current.all ? "all" : vt.k >= labelZoom.current.hubs ? "hubs" : "none";
+    context.font = `12px ${css.getPropertyValue("--font-display")}`;
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    for (const node of view.visible) {
+      if (!visibleIds.has(node.id)) continue;
+      const position = posRef.current.get(node.id);
+      if (!position) continue;
+      if (!inView(position)) continue;
+      const radius = (radii.get(node.id) ?? 8) * nodeScale;
+      const group = groupFor(node, settings.groups);
+      const near = !lit || lit.has(node.id);
+      context.globalAlpha = near ? 1 : 0.18;
+      if (group) {
+        context.strokeStyle = group.color;
+        context.lineWidth = 3 / vt.k;
+        context.beginPath();
+        context.arc(position.x, position.y, radius + 5, 0, Math.PI * 2);
+        context.stroke();
+      }
+      context.fillStyle =
+        node.verification === "verified"
+          ? css.getPropertyValue("--color-canopy")
+          : node.verification === "unverified"
+            ? css.getPropertyValue("--color-amber-wash")
+            : css.getPropertyValue("--color-surface-sunken");
+      context.strokeStyle =
+        node.verification === "verified"
+          ? css.getPropertyValue("--color-canopy-deep")
+          : node.verification === "unverified"
+            ? css.getPropertyValue("--color-amber")
+            : css.getPropertyValue("--color-ink-muted");
+      context.lineWidth = 2 / vt.k;
+      context.beginPath();
+      if (node.verification === "verified") {
+        context.arc(position.x, position.y, radius, 0, Math.PI * 2);
+      } else if (node.verification === "unverified") {
+        context.save();
+        context.translate(position.x, position.y);
+        context.rotate(Math.PI / 4);
+        context.rect(-radius, -radius, radius * 2, radius * 2);
+        context.fill();
+        context.stroke();
+        context.restore();
+      } else {
+        const size = radius * 2;
+        context.rect(position.x - radius, position.y - radius, size, size);
+      }
+      if (node.verification !== "unverified") {
+        context.fill();
+        context.stroke();
+      }
+      if (
+        node.id === active ||
+        ((!cull || canvasLabelIds.has(node.id)) &&
+          (labelMode === "all" ||
+            (labelMode === "hubs" && (view.degree[node.id] ?? 0) >= HUB_DEGREE)))
+      ) {
+        context.globalAlpha = near ? 1 : 0.18;
+        context.fillStyle = css.getPropertyValue("--color-ink");
+        const title =
+          node.title.length > LABEL_MAX ? `${node.title.slice(0, LABEL_CUT)}…` : node.title;
+        context.fillText(title, position.x, position.y + radius + LABEL_DY);
+      }
+      const key = `${Math.floor(position.x / 64)}:${Math.floor(position.y / 64)}`;
+      grid.set(key, [...(grid.get(key) ?? []), node.id]);
+    }
+    context.globalAlpha = 1;
+    hitGrid.current = grid;
+  };
+  useEffect(() => {
+    paint();
+  }, [
+    active,
+    canvasLabelIds,
+    edgeWidth,
+    nodeScale,
+    paint,
+    settings.arrows,
+    settings.groups,
+    useCanvas,
+    view,
+  ]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !useCanvas) return;
+    const observer = new ResizeObserver(() => paint());
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [paint, useCanvas]);
 
   // ---- the four force sliders ---------------------------------------------
   const tuning = useMemo(
@@ -491,39 +791,37 @@ export function KnowledgeMap({
   // remount — and the map is reheated, because a settled graph would otherwise
   // absorb the new force silently and show nothing.
   useEffect(() => {
-    const sim = simRef.current;
-    if (!sim) return;
-    sim.setTuning(tuning);
-    sim.reheat(0.5);
-    runLoop();
-  }, [tuning, runLoop]);
+    workerRef.current?.postMessage({ type: "tuning", tuning });
+  }, [tuning]);
 
-  /** Obsidian's "Animate": run the layout again from where it stands. The
-   *  frame is handed back to the auto-fit so the replay stays in view. */
+  /** Run the layout again from where it stands without moving the camera. */
   const replay = useCallback(() => {
-    autoFit.current = true;
-    simRef.current?.reheat(1);
-    runLoop();
-  }, [runLoop]);
+    workerRef.current?.postMessage({ type: "reheat", alpha: 1 });
+  }, []);
 
   // Build (or rebuild) the simulation whenever the drawn set of nodes/edges
   // changes. Surviving nodes keep the position they already had, so changing a
   // filter nudges the map instead of reshuffling it.
   useEffect(() => {
-    cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
+    const generation = ++workerGeneration.current;
+    workerRef.current?.terminate();
+    workerRef.current = null;
 
     if (!animating) {
       // Reduced motion, or too large to simulate: keep the deterministic
       // layout the server already painted, exactly as rendered.
-      simRef.current = null;
       const still = new Map<string, XY>();
       for (const n of view.visible) {
         const p = view.seed[n.id];
         if (p) still.set(n.id, { x: p.x, y: p.y });
       }
       posRef.current = still;
-      settle();
+      if (autoFit.current) {
+        autoFit.current = false;
+        fitToView(false);
+      } else {
+        settle();
+      }
       return;
     }
 
@@ -541,14 +839,45 @@ export function KnowledgeMap({
     const next = new Map<string, XY>();
     for (const s of seed) next.set(s.id, { x: s.x, y: s.y });
     posRef.current = next;
+    if (autoFit.current) {
+      autoFit.current = false;
+      fitToView(false);
+    }
 
-    simRef.current = createSimulation(seed, view.links, tuningRef.current);
-    runLoop();
+    workerOrder.current = seed.map((node) => node.id);
+    try {
+      const worker = new Worker(new URL("../../lib/graph-worker.ts", import.meta.url));
+      workerRef.current = worker;
+      worker.onmessage = (
+        event: MessageEvent<{ type: string; generation: number; positions: ArrayBuffer }>,
+      ) => {
+        if (event.data.type !== "frame" || event.data.generation !== workerGeneration.current)
+          return;
+        const positions = new Float32Array(event.data.positions);
+        workerOrder.current.forEach((id, index) => {
+          posRef.current.set(id, {
+            x: positions[index * 2],
+            y: positions[index * 2 + 1],
+          });
+        });
+        settle();
+      };
+      worker.postMessage({
+        type: "init",
+        generation,
+        seed,
+        edges: view.links,
+        tuning: tuningRef.current,
+      });
+    } catch {
+      workerRef.current = null;
+      settle();
+    }
     return () => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = 0;
+      workerRef.current?.terminate();
+      workerRef.current = null;
     };
-  }, [view, animating, centerId, radii, settle, runLoop]);
+  }, [view, animating, centerId, radii, fitToView, settle]);
 
   // After a re-render that rebuilt the marks, put the DOM back on the
   // simulated positions — the JSX carries the deterministic seed transform,
@@ -571,6 +900,42 @@ export function KnowledgeMap({
     [],
   );
 
+  const canvasToGraph = useCallback((clientX: number, clientY: number): XY => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const base = Math.min(rect.width / CANVAS.width, rect.height / CANVAS.height);
+    const ox = (rect.width - CANVAS.width * base) / 2;
+    const oy = (rect.height - CANVAS.height * base) / 2;
+    const vt = viewT.current;
+    return {
+      x: ((clientX - rect.left - ox) / base - vt.tx) / vt.k,
+      y: ((clientY - rect.top - oy) / base - vt.ty) / vt.k,
+    };
+  }, []);
+
+  const canvasHit = useCallback(
+    (clientX: number, clientY: number): string | null => {
+      const point = canvasToGraph(clientX, clientY);
+      const cx = Math.floor(point.x / 64);
+      const cy = Math.floor(point.y / 64);
+      let best: { id: string; distance: number } | null = null;
+      for (let x = cx - 1; x <= cx + 1; x++) {
+        for (let y = cy - 1; y <= cy + 1; y++) {
+          for (const id of hitGrid.current.get(`${x}:${y}`) ?? []) {
+            const position = posRef.current.get(id);
+            if (!position) continue;
+            const distance = Math.hypot(position.x - point.x, position.y - point.y);
+            const radius = (radii.get(id) ?? 8) * nodeScale + 6 / viewT.current.k;
+            if (distance <= radius && (!best || distance < best.distance)) best = { id, distance };
+          }
+        }
+      }
+      return best?.id ?? null;
+    },
+    [canvasToGraph, nodeScale, radii],
+  );
+
   const zoomAround = useCallback(
     (factor: number, anchor?: XY) => {
       autoFit.current = false; // the reader owns the view from here on
@@ -586,10 +951,7 @@ export function KnowledgeMap({
     [paint],
   );
 
-  // ---- wheel: never trap the page scroll ----------------------------------
-  // Plain wheel is left entirely alone, so the page scrolls exactly as it does
-  // everywhere else. Ctrl/⌘ + wheel zooms, which is the modifier browsers and
-  // canvas tools already use for zoom, and the help text below says so.
+  // ---- wheel zooms around the point under the cursor ----------------------
   //
   // The listener is attached by the ref callback rather than by an effect, so
   // it follows the element itself rather than a render: whatever React does
@@ -599,7 +961,6 @@ export function KnowledgeMap({
       svgRef.current = el;
       if (!el) return;
       const onWheel = (e: WheelEvent) => {
-        if (!e.ctrlKey && !e.metaKey) return;
         e.preventDefault();
         zoomAround(Math.exp(-e.deltaY * 0.0022), toLocal(el, e.clientX, e.clientY));
       };
@@ -611,6 +972,27 @@ export function KnowledgeMap({
     },
     [zoomAround, toLocal],
   );
+  const attachCanvas = useCallback(
+    (element: HTMLCanvasElement | null) => {
+      canvasRef.current = element;
+      if (!element) return;
+      const onWheel = (event: WheelEvent) => {
+        event.preventDefault();
+        const point = canvasToGraph(event.clientX, event.clientY);
+        const vt = viewT.current;
+        zoomAround(Math.exp(-event.deltaY * 0.0022), {
+          x: point.x * vt.k + vt.tx,
+          y: point.y * vt.k + vt.ty,
+        });
+      };
+      element.addEventListener("wheel", onWheel, { passive: false });
+      return () => {
+        element.removeEventListener("wheel", onWheel);
+        canvasRef.current = null;
+      };
+    },
+    [canvasToGraph, zoomAround],
+  );
 
   // ---- dragging a node, panning the background ----------------------------
   const drag = useRef<{
@@ -620,80 +1002,111 @@ export function KnowledgeMap({
     sy: number;
     moved: boolean;
   } | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    },
+    [],
+  );
   const pan = useRef<{ pointerId: number; sx: number; sy: number; tx: number; ty: number } | null>(
     null,
   );
+  const touchPoints = useRef(new Map<number, XY>());
+  const pinch = useRef<{
+    distance: number;
+    midpoint: XY;
+    transform: ViewTransform;
+  } | null>(null);
 
   const pinNode = useCallback(
     (id: string, on: boolean) => {
       // The centre of a local map is pinned by definition — it is the thing
       // the map is about, and letting it drift would make the view meaningless.
       if (!on && id === centerId) return;
-      const n = simRef.current?.nodes.find((x) => x.id === id);
-      if (n) n.pinned = on;
+      workerRef.current?.postMessage({ type: "pin", id, pinned: on });
       setPinned((current) => {
         const next = new Set(current);
         if (on) next.add(id);
         else next.delete(id);
         return next;
       });
-      if (!on && animating) {
-        simRef.current?.reheat(0.5);
-        runLoop();
-      }
     },
-    [animating, centerId, runLoop],
+    [centerId],
   );
 
   const open = useCallback((id: string) => router.push(`/tree/node/${id}`), [router]);
+  const openLocal = useCallback(
+    (id: string) =>
+      router.push(
+        `/graph?node=${encodeURIComponent(id)}${scope === "personal" ? "&scope=personal" : ""}`,
+      ),
+    [router, scope],
+  );
 
-  const onNodePointerDown = useCallback((e: React.PointerEvent<SVGGElement>) => {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    e.stopPropagation(); // do not also start a background pan
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Capture is an optimisation, not a requirement — carry on without it.
-    }
-    drag.current = {
-      id: nodeId(e),
-      pointerId: e.pointerId,
-      sx: e.clientX,
-      sy: e.clientY,
-      moved: false,
-    };
+  const showContext = useCallback((id: string, clientX: number, clientY: number) => {
+    setContext({
+      id,
+      x: Math.min(clientX, window.innerWidth - 220),
+      y: Math.min(clientY, window.innerHeight - 170),
+    });
   }, []);
+
+  const onNodePointerDown = useCallback(
+    (e: React.PointerEvent<SVGGElement>) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.stopPropagation(); // do not also start a background pan
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // Capture is an optimisation, not a requirement — carry on without it.
+      }
+      const id = nodeId(e);
+      drag.current = {
+        id,
+        pointerId: e.pointerId,
+        sx: e.clientX,
+        sy: e.clientY,
+        moved: false,
+      };
+      if (e.pointerType !== "mouse") {
+        longPressTimer.current = setTimeout(() => {
+          drag.current = null;
+          showContext(id, e.clientX, e.clientY);
+        }, 500);
+      }
+    },
+    [showContext],
+  );
 
   const onNodePointerMove = useCallback(
     (e: React.PointerEvent<SVGGElement>) => {
       const d = drag.current;
       if (!d || d.pointerId !== e.pointerId) return;
       if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < DRAG_THRESHOLD) return;
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
       d.moved = true;
       const p = toLocal(viewportRef.current, e.clientX, e.clientY);
-      const sim = simRef.current;
-      const n = sim?.nodes.find((x) => x.id === d.id);
-      if (n) {
-        n.x = p.x;
-        n.y = p.y;
-        n.vx = 0;
-        n.vy = 0;
-        n.pinned = true; // a dragged node stays where it is dropped
-      }
+      workerRef.current?.postMessage({
+        type: "move",
+        id: d.id,
+        x: p.x,
+        y: p.y,
+        pinned: true,
+      });
       posRef.current.set(d.id, p);
       paint();
-      if (animating) {
-        sim?.reheat(0.35);
-        runLoop();
-      }
     },
-    [animating, paint, runLoop, toLocal],
+    [paint, toLocal],
   );
 
   const onNodePointerUp = useCallback(
     (e: React.PointerEvent<SVGGElement>) => {
       const d = drag.current;
       drag.current = null;
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
       if (!d || d.pointerId !== e.pointerId) return;
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -710,12 +1123,18 @@ export function KnowledgeMap({
   );
 
   const onNodePointerCancel = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
     drag.current = null;
   }, []);
 
   const onNodeEnter = useCallback(
-    (e: React.MouseEvent<SVGGElement> | React.FocusEvent<SVGGElement>) => {
-      onPeek(nodeId(e), e.currentTarget);
+    (e: React.MouseEvent<SVGGElement>) => {
+      const id = nodeId(e);
+      const target = e.currentTarget;
+      setActive(id);
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      hoverTimer.current = setTimeout(() => onPeek(id, target), PREVIEW_HOVER_DELAY_MS);
     },
     [onPeek],
   );
@@ -727,6 +1146,8 @@ export function KnowledgeMap({
    */
   const onNodeFocus = useCallback(
     (e: React.FocusEvent<SVGGElement>) => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
       setActiveId(nodeId(e));
       onPeek(nodeId(e), e.currentTarget);
     },
@@ -768,6 +1189,165 @@ export function KnowledgeMap({
     }
   };
 
+  const canvasHoverId = useRef<string | null>(null);
+  const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.pointerType === "touch") {
+      touchPoints.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (touchPoints.current.size === 2) {
+        const [a, b] = [...touchPoints.current.values()];
+        pinch.current = {
+          distance: Math.hypot(b.x - a.x, b.y - a.y),
+          midpoint: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+          transform: { ...viewT.current },
+        };
+        drag.current = null;
+        pan.current = null;
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      /* capture is optional */
+    }
+    if (pinch.current) return;
+    const id = canvasHit(event.clientX, event.clientY);
+    if (id) {
+      drag.current = {
+        id,
+        pointerId: event.pointerId,
+        sx: event.clientX,
+        sy: event.clientY,
+        moved: false,
+      };
+      if (event.pointerType !== "mouse") {
+        longPressTimer.current = setTimeout(() => {
+          drag.current = null;
+          showContext(id, event.clientX, event.clientY);
+        }, 500);
+      }
+      return;
+    }
+    const vt = viewT.current;
+    pan.current = {
+      pointerId: event.pointerId,
+      sx: event.clientX,
+      sy: event.clientY,
+      tx: vt.tx,
+      ty: vt.ty,
+    };
+  };
+
+  const onCanvasPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.pointerType === "touch" && touchPoints.current.has(event.pointerId)) {
+      touchPoints.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (pinch.current && touchPoints.current.size >= 2) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const [a, b] = [...touchPoints.current.values()];
+      const nowDistance = Math.hypot(b.x - a.x, b.y - a.y);
+      const nowMidpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const rect = canvas.getBoundingClientRect();
+      const base = Math.min(rect.width / CANVAS.width, rect.height / CANVAS.height);
+      const ox = (rect.width - CANVAS.width * base) / 2;
+      const oy = (rect.height - CANVAS.height * base) / 2;
+      const start = pinch.current;
+      const startAnchor = {
+        x: (start.midpoint.x - rect.left - ox) / base,
+        y: (start.midpoint.y - rect.top - oy) / base,
+      };
+      const currentAnchor = {
+        x: (nowMidpoint.x - rect.left - ox) / base,
+        y: (nowMidpoint.y - rect.top - oy) / base,
+      };
+      const graphPoint = {
+        x: (startAnchor.x - start.transform.tx) / start.transform.k,
+        y: (startAnchor.y - start.transform.ty) / start.transform.k,
+      };
+      const k = Math.max(
+        ZOOM_LIMIT.min,
+        Math.min(ZOOM_LIMIT.max, start.transform.k * (nowDistance / start.distance)),
+      );
+      viewT.current = {
+        k,
+        tx: currentAnchor.x - graphPoint.x * k,
+        ty: currentAnchor.y - graphPoint.y * k,
+      };
+      paint();
+      return;
+    }
+    const moving = drag.current;
+    if (moving?.pointerId === event.pointerId) {
+      if (
+        !moving.moved &&
+        Math.hypot(event.clientX - moving.sx, event.clientY - moving.sy) < DRAG_THRESHOLD
+      )
+        return;
+      moving.moved = true;
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+      const point = canvasToGraph(event.clientX, event.clientY);
+      posRef.current.set(moving.id, point);
+      workerRef.current?.postMessage({
+        type: "move",
+        id: moving.id,
+        x: point.x,
+        y: point.y,
+        pinned: true,
+      });
+      paint();
+      return;
+    }
+    const panning = pan.current;
+    if (panning?.pointerId === event.pointerId) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const base = Math.min(rect.width / CANVAS.width, rect.height / CANVAS.height);
+      viewT.current = {
+        ...viewT.current,
+        tx: panning.tx + (event.clientX - panning.sx) / base,
+        ty: panning.ty + (event.clientY - panning.sy) / base,
+      };
+      paint();
+      return;
+    }
+    const id = canvasHit(event.clientX, event.clientY);
+    if (id === canvasHoverId.current) return;
+    canvasHoverId.current = id;
+    onLeave();
+    if (!id) {
+      paint();
+      return;
+    }
+    setActive(id);
+    hoverTimer.current = setTimeout(
+      () => onPeekAt(id, event.clientX, event.clientY),
+      PREVIEW_HOVER_DELAY_MS,
+    );
+  };
+
+  const onCanvasPointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    touchPoints.current.delete(event.pointerId);
+    if (touchPoints.current.size < 2) pinch.current = null;
+    const moving = drag.current;
+    drag.current = null;
+    pan.current = null;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+    if (moving?.pointerId === event.pointerId) {
+      if (moving.moved) pinNode(moving.id, true);
+      else open(moving.id);
+    }
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      /* already released */
+    }
+  };
+
   /**
    * The map is one tab stop, not one per mark.
    *
@@ -801,8 +1381,20 @@ export function KnowledgeMap({
         open(id);
         return;
       }
+      if (e.key === "+" || e.key === "=" || e.key === "-") {
+        e.preventDefault();
+        zoomAround(e.key === "-" ? 0.8 : 1.25);
+        return;
+      }
       if (e.key === "Escape") {
         onLeave();
+        setContext(null);
+        return;
+      }
+      if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        showContext(id, rect.left + rect.width / 2, rect.top + rect.height / 2);
         return;
       }
       const order = view.visible;
@@ -834,7 +1426,7 @@ export function KnowledgeMap({
         setAnnounce(was ? T.graphUnpinned : T.graphPinnedOne);
       }
     },
-    [focusMark, onLeave, open, pinNode, view.visible],
+    [focusMark, onLeave, open, pinNode, showContext, view.visible, zoomAround],
   );
 
   if (nodes.length === 0) return <p className="muted">{T.graphEmpty}</p>;
@@ -889,6 +1481,8 @@ export function KnowledgeMap({
           open={panelOpen}
           onOpenChange={setPanelOpen}
           branchOptions={branchOptions}
+          tagOptions={tagOptions}
+          local={Boolean(centerId)}
           term={term}
           onTerm={setTerm}
           idPrefix={uid}
@@ -902,16 +1496,79 @@ export function KnowledgeMap({
             the reader keeps a blank map exactly where the map was, and gets it
             back the moment the term matches something again. */}
         {view.visible.length === 0 && <p className="map-empty">{T.graphNoMatch}</p>}
+        <canvas
+          ref={attachCanvas}
+          className="knowledge-map graph-canvas"
+          hidden={!useCanvas}
+          tabIndex={useCanvas ? 0 : -1}
+          role="application"
+          aria-label={
+            active
+              ? `${nodes.find((node) => node.id === active)?.title ?? T.graph} · ${T.graph}`
+              : T.graph
+          }
+          onPointerDown={onCanvasPointerDown}
+          onPointerMove={onCanvasPointerMove}
+          onPointerUp={onCanvasPointerUp}
+          onPointerCancel={onCanvasPointerUp}
+          onPointerLeave={() => {
+            if (!drag.current && !pan.current) {
+              canvasHoverId.current = null;
+              onLeave();
+              paint();
+            }
+          }}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            const id = canvasHit(event.clientX, event.clientY);
+            if (id) showContext(id, event.clientX, event.clientY);
+          }}
+          onKeyDown={(event) => {
+            if (!view.visible.length) return;
+            const current = view.visible.findIndex((node) => node.id === active);
+            if (event.key === "Enter" && active) {
+              open(active);
+              return;
+            }
+            if (event.key === "+" || event.key === "=" || event.key === "-") {
+              event.preventDefault();
+              zoomAround(event.key === "-" ? 0.8 : 1.25);
+              return;
+            }
+            if (event.key.startsWith("Arrow")) {
+              event.preventDefault();
+              const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
+              const next =
+                view.visible[(current + step + view.visible.length) % view.visible.length];
+              if (next) {
+                setActive(next.id);
+                setAnnounce(next.title);
+                paint();
+              }
+            }
+            if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+              event.preventDefault();
+              const rect = event.currentTarget.getBoundingClientRect();
+              if (active) showContext(active, rect.left + rect.width / 2, rect.top + 40);
+            }
+          }}
+        />
         <svg
           ref={attachSvg}
           className="knowledge-map"
           viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
           /* the drawn height is the map screen fill in globals.css now */
-          style={{ "--g-edge-w": edgeWidth } as React.CSSProperties}
+          style={
+            {
+              "--g-edge-w": edgeWidth,
+              display: useCanvas ? "none" : undefined,
+            } as React.CSSProperties
+          }
           role="group"
           aria-label={T.graph}
           aria-describedby={`${uid}-help`}
           data-dim={lit ? "on" : "off"}
+          aria-hidden={useCanvas || undefined}
         >
           {/* One arrowhead per link type, so a direction marker keeps the
               colour of the line it ends. `context-stroke` would do this with a
@@ -960,7 +1617,7 @@ export function KnowledgeMap({
 
           <g ref={viewportRef}>
             <g>
-              {view.links.map((e) => {
+              {(useCanvas ? [] : view.links).map((e) => {
                 const key = `${e.from}-${e.to}-${e.linkType}`;
                 const a = view.seed[e.from];
                 const b = view.seed[e.to];
@@ -986,13 +1643,14 @@ export function KnowledgeMap({
               })}
             </g>
 
-            {view.visible.map((n) => {
+            {(useCanvas ? [] : view.visible).map((n) => {
               const at = view.seed[n.id];
               if (!at) return null;
               // The DRAWN radius. `radii` stays the physical one the collision
               // pass was given, so scaling the marks never moves them.
               const r = (radii.get(n.id) ?? 8) * nodeScale;
               const isPinned = pinned.has(n.id) || n.id === centerId;
+              const group = groupFor(n, settings.groups);
               const near = !lit || lit.has(n.id);
               const label = `${n.title} — ${verificationStateLabel(n.verification)} (${
                 SHAPE_LABEL[n.verification] ?? ""
@@ -1014,6 +1672,7 @@ export function KnowledgeMap({
                   tabIndex={n.id === tabStopId ? 0 : -1}
                   aria-label={label}
                   aria-describedby={peek?.id === n.id ? cardId : undefined}
+                  style={group ? ({ "--g-group": group.color } as React.CSSProperties) : undefined}
                   transform={`translate(${at.x}, ${at.y})`}
                   onPointerDown={onNodePointerDown}
                   onPointerMove={onNodePointerMove}
@@ -1024,8 +1683,13 @@ export function KnowledgeMap({
                   onMouseLeave={onLeave}
                   onFocus={onNodeFocus}
                   onBlur={onLeave}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    showContext(n.id, event.clientX, event.clientY);
+                  }}
                 >
                   {/* The seal ring: a pinned mark is stamped in place. */}
+                  {group && <circle className="g-group-ring" r={r + 5} />}
                   {isPinned && <circle className="g-seal" r={r + 6} />}
                   {n.verification === "verified" ? (
                     <circle className="g-mark" r={r} />
@@ -1053,6 +1717,40 @@ export function KnowledgeMap({
 
       {peek && (
         <NodePreviewCard preview={preview} id={cardId} style={{ top: peek.top, left: peek.left }} />
+      )}
+      {context && (
+        <div
+          ref={contextRef}
+          className="graph-context-menu"
+          role="menu"
+          style={{ left: context.x, top: context.y }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setContext(null);
+          }}
+        >
+          <button type="button" role="menuitem" onClick={() => open(context.id)}>
+            {T.graphContextOpen}
+          </button>
+          <button type="button" role="menuitem" onClick={() => openLocal(context.id)}>
+            {T.graphContextLocal}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={context.id === centerId}
+            onClick={() => {
+              const on = !pinnedRef.current.has(context.id);
+              pinNode(context.id, on);
+              setContext(null);
+            }}
+          >
+            {context.id === centerId
+              ? T.graphPinnedOne
+              : pinned.has(context.id)
+                ? T.graphContextUnpin
+                : T.graphContextPin}
+          </button>
+        </div>
       )}
 
       {/* Help for the input device actually in the reader's hand. A phone was

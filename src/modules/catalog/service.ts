@@ -6,11 +6,14 @@ import { authorize, scopedToSpaces } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { loanTickets } from "../circulation/schema";
 import { ACTIVE_LOAN_STATES } from "../circulation/service";
+import { objectStore } from "../storage/object-store";
 import { catalogItems } from "./schema";
 
 /** Exported so the Catalog page's pager agrees with the query's LIMIT. */
 export const CATALOG_PAGE_SIZE = 24;
 const PAGE_SIZE = CATALOG_PAGE_SIZE;
+const COVER_MAX_BYTES = 5 * 1024 * 1024;
+const COVER_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 /**
  * How many of a title's copies are in someone's hands right now, as a
@@ -169,6 +172,7 @@ export async function listCatalog(actor: Principal, opts: { q?: string; page?: n
       itemCode: catalogItems.itemCode,
       title: catalogItems.title,
       author: catalogItems.author,
+      coverPhotoKey: catalogItems.coverPhotoKey,
       location: catalogItems.location,
       status: catalogItems.status,
       spaceId: catalogItems.spaceId,
@@ -226,6 +230,46 @@ export async function getCatalogItem(actor: Principal, itemId: string) {
     activeLoan: activeLoan ?? null,
     availableCopies: Math.max(item.copies - onLoan, 0),
   };
+}
+
+/** Store a catalogue cover in the object store and keep only its key in DB. */
+export async function setCatalogCover(actor: Principal, itemId: string, file: File) {
+  authorize(actor, "catalog.item.manage", { kind: "write" });
+  if (!COVER_TYPES.has(file.type)) {
+    throw new ApiError(415, "not_an_image", "Ảnh bìa phải là PNG, JPEG hoặc WebP.");
+  }
+  if (file.size > COVER_MAX_BYTES) {
+    throw new ApiError(413, "image_too_large", "Ảnh bìa vượt quá 5 MB.");
+  }
+  const [item] = await db.select().from(catalogItems).where(eq(catalogItems.id, itemId));
+  if (!item || item.archivedAt) throw notFound();
+  const key = `catalog-covers/${itemId}/${Date.now()}`;
+  await objectStore.put(key, Buffer.from(await file.arrayBuffer()), file.type);
+  await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(catalogItems)
+      .set({ coverPhotoKey: key, updatedAt: new Date(), version: item.version + 1 })
+      .where(and(eq(catalogItems.id, itemId), eq(catalogItems.version, item.version)))
+      .returning({ id: catalogItems.id });
+    if (!updated) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "catalog.item.cover.set",
+      targetType: "catalog_item",
+      targetId: itemId,
+      details: { itemCode: item.itemCode },
+    });
+  });
+}
+
+export async function getCatalogCover(actor: Principal, itemId: string) {
+  const [item] = await db
+    .select({ spaceId: catalogItems.spaceId, coverPhotoKey: catalogItems.coverPhotoKey })
+    .from(catalogItems)
+    .where(and(eq(catalogItems.id, itemId), isNull(catalogItems.archivedAt)));
+  if (!item?.coverPhotoKey) throw notFound();
+  authorize(actor, "catalog.browse", { spaceId: item.spaceId, kind: "read" });
+  return objectStore.get(item.coverPhotoKey).catch(() => null);
 }
 
 /**

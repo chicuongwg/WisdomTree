@@ -14,11 +14,15 @@ export const metadata = { title: T.graph };
 export default async function GraphPage({
   searchParams,
 }: {
-  searchParams: Promise<{ node?: string; scope?: string }>;
+  searchParams: Promise<{ node?: string; scope?: string; depth?: string }>;
 }) {
   const user = await requireUser();
   const principal = toPrincipal(user);
-  const { node, scope } = await searchParams;
+  const { node, scope, depth } = await searchParams;
+  const requestedDepth = Number(depth);
+  const initialDepth = Number.isFinite(requestedDepth)
+    ? Math.min(5, Math.max(1, Math.round(requestedDepth)))
+    : undefined;
 
   const isPersonal = scope === "personal";
   const graph = await createGraphProvider(principal).loadGraph({
@@ -65,9 +69,12 @@ export default async function GraphPage({
           branchId: item.topicId ?? "",
           branchName: item.path.split("/")[0],
           verification: item.verification,
+          tags: item.tags,
         }))}
         edges={graph.edges.map((edge) => ({ ...edge, linkType: edge.type }))}
         centerId={node}
+        scope={isPersonal ? "personal" : "shared"}
+        initialDepth={initialDepth}
       />
     </main>
   );

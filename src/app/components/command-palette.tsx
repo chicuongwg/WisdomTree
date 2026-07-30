@@ -3,13 +3,19 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { verificationStateLabel } from "@/lib/vi";
-import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
+import {
+  cardPosition,
+  loadPreview,
+  NodePreviewCard,
+  PREVIEW_HOVER_DELAY_MS,
+  type NodePreview,
+} from "./node-link";
 import { useShellCopy } from "./shell-locale-provider";
 
 // Command palette (VS Code / Obsidian, Ctrl+K): full-text search over tree
 // nodes via GET /api/tree/search, plus quick-open entries for every screen
 // the current role can reach. Opened by the shortcut, the sidebar searchbox
-// or the rail's "more" button (all three send "wt:open-palette").
+// or the rail's search button (all three send "wt:open-palette").
 //
 // The element is the platform's own <dialog> opened with showModal(), the same
 // as ConfirmButton: focus trapping, Escape and the inert page behind come from
@@ -98,7 +104,7 @@ export function CommandPalette({ role }: { role: string }) {
 
   const q = query.trim().toLowerCase();
   const screenMatches = q
-    ? // The hint counts as searchable text, so typing "dự án" finds Hạn chót
+    ? // The hint counts as searchable text, so typing "dự án" finds Lịch dự án
       // even though the word is not in its name.
       screens.filter((s) => `${s.label} ${s.hint}`.toLowerCase().includes(q))
     : screens;
@@ -117,6 +123,7 @@ export function CommandPalette({ role }: { role: string }) {
     setQuery("");
     setHits([]);
     setSel(0);
+    setHoveredKey(null);
   };
 
   useEffect(() => {
@@ -186,27 +193,30 @@ export function CommandPalette({ role }: { role: string }) {
 
   useEffect(() => setSel(0), [query, hits.length]);
 
-  // Preview follows the selection, so the card is reachable by arrow keys and
-  // not only by pointer (same card component as every other node link).
+  // Selection follows both pointer and keyboard, but the preview is pointer
+  // hover intent only: moving through results must not cover the list.
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
   const [peek, setPeek] = useState<{ top: number; left: number } | null>(null);
   const [preview, setPreview] = useState<NodePreview | null>(null);
-  const selectedKey = results[sel]?.key;
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   useEffect(() => {
-    if (!open || !selectedKey?.startsWith("node:")) {
+    if (!open || !hoveredKey?.startsWith("node:")) {
       setPeek(null);
       return;
     }
-    const nodeId = selectedKey.slice(5);
-    const row = rowRefs.current.get(selectedKey);
-    if (row) setPeek(cardPosition(row));
     setPreview(null);
     let alive = true;
-    void loadPreview(nodeId).then((p) => alive && setPreview(p));
+    const timer = setTimeout(() => {
+      const nodeId = hoveredKey.slice(5);
+      const row = rowRefs.current.get(hoveredKey);
+      if (row) setPeek(cardPosition(row));
+      void loadPreview(nodeId).then((p) => alive && setPreview(p));
+    }, PREVIEW_HOVER_DELAY_MS);
     return () => {
       alive = false;
+      clearTimeout(timer);
     };
-  }, [open, selectedKey]);
+  }, [open, hoveredKey]);
 
   const go = (entry: Entry) => {
     close();
@@ -276,7 +286,11 @@ export function CommandPalette({ role }: { role: string }) {
               else rowRefs.current.delete(entry.key);
             }}
             className={`pal-item${i === sel ? " sel" : ""}`}
-            onMouseEnter={() => setSel(i)}
+            onMouseEnter={() => {
+              setSel(i);
+              setHoveredKey(entry.key);
+            }}
+            onMouseLeave={() => setHoveredKey(null)}
             onFocus={() => setSel(i)}
             onClick={() => go(entry)}
           >

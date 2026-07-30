@@ -20,13 +20,19 @@
 // applied on the tick after mount instead, which is invisible to the reader
 // and keeps hydration honest.
 
-// v2: the key changes with the shape. A v1 blob has no display or force
-// fields, and reviving it would silently give the reader half a panel.
-export const SETTINGS_KEY = "wisdomtree.graph.v2";
+export const SETTINGS_KEY = "wisdomtree.graph.v3";
+const PREVIOUS_SETTINGS_KEY = "wisdomtree.graph.v2";
 
 /** The four link types the schema actually allows (drizzle/0001, link_type CHECK). */
 export const LINK_TYPES = ["related", "supports", "contrasts", "part_of"] as const;
 export type LinkType = (typeof LINK_TYPES)[number];
+
+export type GraphGroup = {
+  id: string;
+  name: string;
+  query: string;
+  color: string;
+};
 
 export type GraphSettings = {
   /**
@@ -36,6 +42,10 @@ export type GraphSettings = {
    * would show a near-empty map with no visible reason why.
    */
   branchId: string;
+  tag: string;
+  includeOrphans: boolean;
+  localDepth: number;
+  groups: GraphGroup[];
   linkTypes: Record<LinkType, boolean>;
   /** Draw an arrowhead on each edge, so a link reads as a direction. */
   arrows: boolean;
@@ -57,6 +67,10 @@ export type GraphSettings = {
 /** The slider positions that reproduce the shipped map exactly. */
 export const DEFAULT_SETTINGS: GraphSettings = {
   branchId: "",
+  tag: "",
+  includeOrphans: true,
+  localDepth: 1,
+  groups: [],
   linkTypes: { related: true, supports: true, contrasts: true, part_of: true },
   arrows: false,
   textFade: 0.5,
@@ -118,6 +132,33 @@ export function parseSettings(raw: string | null): GraphSettings {
     }
     return {
       branchId: typeof d.branchId === "string" ? d.branchId : "",
+      tag: typeof d.tag === "string" ? d.tag : "",
+      includeOrphans: d.includeOrphans !== false,
+      localDepth:
+        typeof d.localDepth === "number" && Number.isFinite(d.localDepth)
+          ? Math.min(5, Math.max(1, Math.round(d.localDepth)))
+          : 1,
+      groups: Array.isArray(d.groups)
+        ? d.groups.flatMap((value) => {
+            if (typeof value !== "object" || value === null) return [];
+            const group = value as Record<string, unknown>;
+            if (
+              typeof group.id !== "string" ||
+              typeof group.name !== "string" ||
+              typeof group.query !== "string" ||
+              typeof group.color !== "string"
+            )
+              return [];
+            return [
+              {
+                id: group.id,
+                name: group.name,
+                query: group.query,
+                color: /^#[0-9a-f]{6}$/i.test(group.color) ? group.color : "#526fa8",
+              },
+            ];
+          })
+        : [],
       linkTypes,
       arrows: d.arrows === true,
       ...sliders,
@@ -130,7 +171,10 @@ export function parseSettings(raw: string | null): GraphSettings {
 export function readSettings(): GraphSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
-    return parseSettings(window.localStorage.getItem(SETTINGS_KEY));
+    return parseSettings(
+      window.localStorage.getItem(SETTINGS_KEY) ??
+        window.localStorage.getItem(PREVIOUS_SETTINGS_KEY),
+    );
   } catch {
     // Private-browsing modes throw on localStorage access; defaults are fine.
     return DEFAULT_SETTINGS;

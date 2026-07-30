@@ -4,6 +4,7 @@ import { CATALOG_PAGE_SIZE, listCatalog } from "@/modules/catalog/service";
 import { badgeClass, itemLabelShort, itemStatusLabel, T } from "@/lib/vi";
 import { Pager } from "@/app/components/pager";
 import { Empty } from "@/app/components/empty";
+import { CatalogCover, CatalogItemLink } from "@/app/components/catalog-cover";
 
 export const metadata = { title: T.catalog };
 
@@ -98,6 +99,9 @@ export default async function CatalogPage({
           <table className="list">
             <thead>
               <tr>
+                <th scope="col">
+                  <span className="sr-only">{T.coverPhoto}</span>
+                </th>
                 <th scope="col">{T.itemCode}</th>
                 <th scope="col">{T.catalogItem}</th>
                 <th scope="col">{T.author}</th>
@@ -109,9 +113,21 @@ export default async function CatalogPage({
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
+                  <td>
+                    <CatalogCover
+                      itemId={item.id}
+                      title={item.title}
+                      coverPhotoKey={item.coverPhotoKey}
+                      compact
+                    />
+                  </td>
                   <td className="muted">{item.itemCode}</td>
                   <td>
-                    <Link href={`/catalog/${item.id}`}>{item.title}</Link>
+                    <CatalogItemLink
+                      itemId={item.id}
+                      title={item.title}
+                      coverPhotoKey={item.coverPhotoKey}
+                    />
                   </td>
                   <td>{item.author}</td>
                   <td>{item.location}</td>

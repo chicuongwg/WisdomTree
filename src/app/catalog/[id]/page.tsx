@@ -14,6 +14,7 @@ import {
 } from "@/lib/vi";
 import { LoanRequestButton } from "@/app/components/loan-request-button";
 import { CatalogArchiveButton, CatalogCopiesForm } from "@/app/components/catalog-copies-form";
+import { CatalogCover, CatalogCoverForm } from "@/app/components/catalog-cover";
 
 // Static, not generateMetadata: naming the record in the tab would cost a
 // second read of it on every detail view (the getters take a freshly built
@@ -70,45 +71,51 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
       <Crumbs items={[{ label: T.catalog, href: "/catalog" }]} />
       <h1>{item.title}</h1>
       <div className="panel">
-        <div className="record-scroll">
-          <table className="list">
-            <tbody>
-              <tr>
-                <th scope="row">{T.itemCode}</th>
-                <td>{item.itemCode}</td>
-              </tr>
-              <tr>
-                <th scope="row">{T.author}</th>
-                <td>{item.author}</td>
-              </tr>
-              <tr>
-                <th scope="row">{T.shelfLocation}</th>
-                <td>{item.location}</td>
-              </tr>
-              <tr>
-                <th scope="row">{T.state}</th>
-                <td>
-                  <span className={badgeClass(itemStatusLabel, item.status)}>
-                    {itemLabel(item.status)}
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">{T.copiesTotal}</th>
-                <td>{item.copies}</td>
-              </tr>
-              <tr>
-                <th scope="row">{T.copiesAvailable}</th>
-                {/* In words and in numbers both: a reader must not have to
+        <div className="catalog-detail-head">
+          <div>
+            <CatalogCover itemId={item.id} title={item.title} coverPhotoKey={item.coverPhotoKey} />
+            {user.role === "admin_op" && <CatalogCoverForm itemId={item.id} />}
+          </div>
+          <div className="record-scroll">
+            <table className="list">
+              <tbody>
+                <tr>
+                  <th scope="row">{T.itemCode}</th>
+                  <td>{item.itemCode}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{T.author}</th>
+                  <td>{item.author}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{T.shelfLocation}</th>
+                  <td>{item.location}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{T.state}</th>
+                  <td>
+                    <span className={badgeClass(itemStatusLabel, item.status)}>
+                      {itemLabel(item.status)}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">{T.copiesTotal}</th>
+                  <td>{item.copies}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{T.copiesAvailable}</th>
+                  {/* In words and in numbers both: a reader must not have to
                     infer "hết sách" from a badge colour. */}
-                <td>
-                  {item.availableCopies === 0
-                    ? T.copiesAllOut
-                    : T.copiesOf(item.availableCopies, item.copies)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  <td>
+                    {item.availableCopies === 0
+                      ? T.copiesAllOut
+                      : T.copiesOf(item.availableCopies, item.copies)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         {/* A borrowable title is one with a copy left — not one with no ticket
             against it. The old test (`activeLoan` is null) turned the second

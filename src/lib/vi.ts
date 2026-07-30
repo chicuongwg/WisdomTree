@@ -8,9 +8,14 @@ export const T = {
   appName: "WisdomTree",
   home: "Trang chủ",
   space: "Kho",
-  library: "Kho tư liệu",
-  catalog: "Thư viện",
+  library: "Tư liệu số",
+  catalog: "Sách & tài liệu vật lý",
   catalogItem: "Đầu sách",
+  coverPhoto: "Ảnh bìa",
+  coverPlaceholder: "Chưa có ảnh bìa",
+  chooseCover: "Chọn ảnh bìa",
+  coverConstraint: "PNG, JPEG hoặc WebP · tối đa 5 MB",
+  coverSaved: "Đã lưu ảnh bìa.",
   loanTicket: "Phiếu mượn",
   source: "Tư liệu",
   sourceIntake: "Gửi tư liệu",
@@ -165,13 +170,13 @@ export const T = {
   withdrawSourceTitle: "Thu hồi tư liệu này?",
   withdrawSourceBody:
     "Tư liệu sẽ không còn hiện trong kho và không tải xuống được nữa. Tệp gốc vẫn được giữ lại, nên quản trị viên có thể khôi phục nếu cần. Không thu hồi được nếu đã có người biên tập hoặc xuất bản dựa trên tư liệu này.",
-  // Knowledge tree terms (vocabulary-vi.md § Term Map)
-  tree: "Cây tri thức",
+  // Knowledge content terms (vocabulary-vi.md § Term Map)
+  tree: "Nội dung tri thức",
   node: "Trang tri thức",
   branch: "Chuyên đề",
   markdownDraft: "Bản thảo",
   publish: "Xuất bản",
-  reviewQueue: "Hàng chờ duyệt",
+  reviewQueue: "Duyệt tư liệu",
   publishReview: "Duyệt xuất bản",
   correctedText: "Văn bản đã hiệu đính", // NEW
   rawText: "Văn bản trích xuất", // NEW
@@ -230,9 +235,9 @@ export const T = {
     "Nếu người khác lưu trước bạn, hệ thống sẽ báo và giữ nguyên nội dung bạn đang soạn.", // NEW
   suggestedBranch: "Chuyên đề đề xuất", // NEW
   preview: "Xem trước", // NEW
-  // Notify + PM terms; Deadline "Hạn chót" and Comment "Thảo luận" come from
-  // vocabulary-vi.md § Term Map, the rest are NEW pending humanities review.
-  deadline: "Hạn chót",
+  // Notify + PM terms; Comment "Thảo luận" comes from vocabulary-vi.md § Term
+  // Map, the rest are NEW pending humanities review.
+  deadline: "Lịch dự án",
   comments: "Thảo luận",
   addComment: "Gửi thảo luận", // NEW
   newComment: "Viết thảo luận mới", // NEW
@@ -256,7 +261,7 @@ export const T = {
   markRead: "Đánh dấu đã đọc", // NEW
   unread: "Chưa đọc", // NEW
   notificationPrefs: "Tùy chọn nhận thông báo", // NEW
-  board: "Bảng công việc", // NEW
+  board: "Bảng phân công", // NEW
   task: "Công việc", // NEW
   createTask: "Thêm công việc", // NEW
   achievement: "Thành quả", // NEW
@@ -333,7 +338,7 @@ export const T = {
   modules: "Mô-đun", // NEW
   navPanel: "Bảng điều hướng", // NEW
   // Knowledge graph / wiki-links — NEW pending humanities review
-  graph: "Bản đồ tri thức", // NEW
+  graph: "Liên kết tri thức", // NEW
   graphIntro: "Mỗi chấm là một trang tri thức, mỗi đường là một liên kết giữa hai trang.", // NEW
   backlinks: "Liên kết đến trang này", // NEW
   outgoingLinks: "Trang này liên kết đến", // NEW
@@ -344,6 +349,8 @@ export const T = {
   filterByBranch: "Lọc theo chuyên đề", // NEW
   allBranches: "Tất cả chuyên đề", // NEW
   filterByTitle: "Lọc theo tên trang", // NEW
+  filterByTag: "Lọc theo thẻ", // NEW
+  allTags: "Tất cả thẻ", // NEW
   graphEmpty: "Chưa có trang tri thức nào để vẽ bản đồ.", // NEW
   graphNoMatch: "Không có trang nào khớp bộ lọc. Xóa bớt điều kiện để xem lại.", // NEW
   noBacklinks: "Chưa trang nào liên kết đến trang này.", // NEW
@@ -364,9 +371,8 @@ export const T = {
   graphResetSettings: "Khôi phục mặc định", // NEW
   graphPinnedOne: "Đã ghim tại chỗ", // NEW
   graphUnpinned: "Đã bỏ ghim", // NEW
-  // The modifier is passed in: on a Mac it is ⌘, and the map listens for both.
-  graphHelp: (key: string) =>
-    `Kéo một chấm để ghim nó vào chỗ mới. Giữ ${key} và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.`, // NEW
+  graphHelp: (_key: string) =>
+    "Kéo một chấm để ghim nó vào chỗ mới. Lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
   // The map is one tab stop; the arrows move between marks inside it. Saying
   // "Tab để đi giữa các trang" was both wrong and a promise of two hundred
   // presses of it.
@@ -379,6 +385,7 @@ export const T = {
   // Bảng điều khiển bản đồ: ba mục Bộ lọc / Hiển thị / Lực, dựng theo bảng
   // điều khiển của Obsidian. NEW pending humanities review.
   graphPanelFilters: "Bộ lọc", // NEW
+  graphPanelGroups: "Nhóm màu", // NEW
   graphPanelDisplay: "Hiển thị", // NEW
   graphPanelForces: "Lực", // NEW
   graphClosePanel: "Đóng bảng tùy chỉnh", // NEW
@@ -393,6 +400,17 @@ export const T = {
   graphRepelForce: "Lực đẩy nhau", // NEW
   graphLinkForce: "Lực của liên kết", // NEW
   graphLinkDistance: "Độ dài liên kết", // NEW
+  graphLocalDepth: "Độ sâu liên kết", // NEW
+  graphShowOrphans: "Hiện trang chưa có liên kết", // NEW
+  graphNewGroup: "Thêm nhóm màu", // NEW
+  graphGroupName: "Tên nhóm", // NEW
+  graphGroupQuery: "Điều kiện", // NEW
+  graphGroupQueryHelp: "Tên trang, tag:<tên thẻ> hoặc branch:<tên chuyên đề>", // NEW
+  graphRemoveGroup: "Xóa nhóm", // NEW
+  graphContextOpen: "Mở trang", // NEW
+  graphContextLocal: "Mở liên kết quanh trang này", // NEW
+  graphContextPin: "Ghim tại chỗ", // NEW
+  graphContextUnpin: "Bỏ ghim", // NEW
   // Câu hỏi xác nhận trước những việc không có đường lui. Mỗi câu nói rõ điều
   // gì sẽ thay đổi và có lấy lại được hay không — không bao giờ hỏi trống
   // "Bạn có chắc không?". NEW pending humanities review.
@@ -484,7 +502,7 @@ export const T = {
   adminConsole: "Quản trị hệ thống", // NEW
   // Library: archive view, folders, drag-drop filing (NEW — not yet in vocabulary-vi.md)
   viewingArchivedNotice: "Đang xem tư liệu đã thu hồi.", // NEW
-  backToLibrary: "Quay lại thư viện", // NEW
+  backToLibrary: "Quay lại tư liệu số", // NEW
   viewArchivedLink: "Xem tư liệu đã thu hồi", // NEW
   folderEmptyTitle: "Thư mục trống.", // NEW
   folderEmptyHint:
@@ -705,14 +723,14 @@ export const T = {
   expandPanel: "Mở rộng thanh bên", // NEW
   // Sidebar section headers for the team/personal knowledge split
   navTeamKnowledge: "Kho dự án chung", // NEW
-  navTeamGraph: "Bản đồ tri thức nhóm", // NEW
+  navTeamGraph: "Liên kết tri thức nhóm", // NEW
   navPersonalSpace: "Không gian của tôi", // NEW
-  navPersonalGraph: "Bản đồ ghi chú của tôi", // NEW
+  navPersonalGraph: "Liên kết ghi chú của tôi", // NEW
   navPersonalNotes: "Ghi chú cá nhân", // NEW
   personalBranchEmpty: "Bạn chưa có ghi chú cá nhân nào.", // NEW
   // Graph page scope tabs
-  graphScopeTeam: "Bản đồ nhóm", // NEW
-  graphScopePersonal: "Bản đồ cá nhân", // NEW
+  graphScopeTeam: "Tri thức nhóm", // NEW
+  graphScopePersonal: "Ghi chú cá nhân", // NEW
 } as const;
 
 // State labels. `unprocessable`, trust `candidate/trusted/rejected` come from

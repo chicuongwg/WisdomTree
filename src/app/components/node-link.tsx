@@ -10,10 +10,11 @@ import { T, verificationStateLabel } from "@/lib/vi";
 // tabbing to a page name always shows the same card: title, verification,
 // ~200 characters of content.
 //
-// Accessibility: the card opens on pointer enter AND on keyboard focus
-// (no hover-only affordance), closes on blur/leave/Escape, is described by
-// aria-describedby, and never animates when the reader asks for reduced
-// motion (the CSS honours prefers-reduced-motion).
+// Accessibility: pointer hover waits for intent before opening; keyboard focus
+// opens immediately, so the information is never hover-only. The card closes
+// on blur/leave/Escape, is described by aria-describedby, and never animates
+// when the reader asks for reduced motion (the CSS honours
+// prefers-reduced-motion).
 
 export type NodePreview = {
   id: string;
@@ -27,6 +28,7 @@ export type NodePreview = {
 // succession issue a single request.
 const cache = new Map<string, NodePreview>();
 const inflight = new Map<string, Promise<NodePreview | null>>();
+export const PREVIEW_HOVER_DELAY_MS = 1000;
 
 export function loadPreview(nodeId: string): Promise<NodePreview | null> {
   const hit = cache.get(nodeId);
@@ -117,10 +119,12 @@ export function useNodePreview(nodeId: string) {
   const [openAt, setOpenAt] = useState<{ top: number; left: number } | null>(null);
   const cardId = useId();
   const alive = useRef(true);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
     };
   }, []);
 
@@ -133,7 +137,11 @@ export function useNodePreview(nodeId: string) {
     },
     [nodeId],
   );
-  const close = useCallback(() => setOpenAt(null), []);
+  const close = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+    setOpenAt(null);
+  }, []);
 
   /**
    * The card is `position: fixed` and placed once, from the trigger's box at
@@ -159,9 +167,16 @@ export function useNodePreview(nodeId: string) {
   }, [openAt]);
 
   const handlers = {
-    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => open(e.currentTarget),
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+      const target = e.currentTarget;
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      hoverTimer.current = setTimeout(() => open(target), PREVIEW_HOVER_DELAY_MS);
+    },
     onMouseLeave: close,
-    onFocus: (e: React.FocusEvent<HTMLElement>) => open(e.currentTarget),
+    onFocus: (e: React.FocusEvent<HTMLElement>) => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      open(e.currentTarget);
+    },
     onBlur: close,
     onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
       if (e.key === "Escape") close();

@@ -103,7 +103,7 @@ function SidebarContent({
   const currentScope = searchParams?.get("scope") ?? "team";
 
   function defaultTabFor(path: string, scopeParam: string | null): "team" | "personal" {
-    if (path === "/graph" && scopeParam === "personal") return "personal";
+    if (scopeParam === "personal") return "personal";
     if (
       path.startsWith("/board") ||
       path.startsWith("/source/intake") ||

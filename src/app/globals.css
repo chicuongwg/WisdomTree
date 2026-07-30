@@ -17,6 +17,42 @@
    loads this file — it repeats a handful of hexes on purpose, and says so.
    ============================================================ */
 
+@font-face {
+  font-family: "CDA Independence Text";
+  src: url("/fonts/cda-independence-text-regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "CDA Independence Text";
+  src: url("/fonts/cda-independence-text-italic.otf") format("opentype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "CDA Independence Text";
+  src: url("/fonts/cda-independence-text-semibold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "CDA Independence Text";
+  src: url("/fonts/cda-independence-text-bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "CDA Independence Text";
+  src: url("/fonts/cda-independence-text-bold-italic.otf") format("opentype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -102,19 +138,13 @@
   --graph-dim: 0.28;
 
   /* --- Type roles ---------------------------------------------------- */
-  /* Display + long-form knowledge content: bookish serif.
-     EVERY family listed here must carry the Vietnamese precomposed range
-     (U+1EA0–U+1EF9 plus ơ/ư U+01A1/U+01B0) — a font missing them does not
-     fail visibly, it renders the unaccented letters itself and lets the
-     browser substitute per glyph, so "Việc được giao" comes out in two
-     different typefaces. Charter, Bitstream Charter and Georgia were in this
-     list and none of them cover Vietnamese; Georgia is installed on Linux and
-     was therefore the one actually chosen. Check before adding a family:
-       fc-list ':charset=1ec7' family | grep -i '<name>'
-     Self-hosting a real Charter subset would be the nicer answer, and would
-     replace this list rather than extend it. */
+  /* Display + long-form knowledge content. CDA Independence Text was designed
+     with Vietnamese diacritics as part of the typeface rather than relying on
+     per-glyph fallback. The system serif stack remains only as a load-failure
+     fallback. */
   --font-display:
-    "Noto Serif", "Source Serif 4", "Liberation Serif", "DejaVu Serif", "Times New Roman", serif;
+    "CDA Independence Text", "Noto Serif", "Source Serif 4", "Liberation Serif", "DejaVu Serif",
+    "Times New Roman", serif;
   /* Interface: quiet sans for nav, controls, tables, badges */
   --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Utility: machine text only — code blocks, a subscription URL, a key hint.
@@ -1646,6 +1676,7 @@ body {
 .rail a.rail-btn[aria-current] {
   color: var(--shell-rail-active);
   border-left-color: var(--color-seal);
+  background: color-mix(in srgb, var(--shell-rail-active) 10%, transparent);
 }
 .rail .rail-btn svg {
   width: 1.3rem;
@@ -1675,6 +1706,13 @@ body {
 .rail .rail-spacer {
   flex: 1;
 }
+.rail .rail-divider {
+  width: 1.5rem;
+  height: 1px;
+  min-height: 1px;
+  margin: 0.3rem 0;
+  background: color-mix(in srgb, var(--shell-rail-ink) 35%, transparent);
+}
 /* One person, one disc, two sizes — see .rail .rail-avatar / .account-avatar
    below, which are this rule at --avatar-size. It was written out twice, and
    the two copies had already drifted: only one of them declared the interface
@@ -1700,6 +1738,66 @@ body {
   --avatar-size: 1.85rem;
   font-size: 0.72rem;
   margin: 0.35rem 0;
+}
+
+/* Physical catalogue covers keep one book-like ratio. The placeholder occupies
+   the same box, so rows and detail metadata do not jump when a cover is added. */
+.catalog-cover {
+  display: flex;
+  width: 8rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+.catalog-cover.placeholder > [aria-hidden="true"] {
+  font-size: 2rem;
+}
+.catalog-cover.compact {
+  width: 2.5rem;
+  min-width: 2.5rem;
+}
+.catalog-cover.compact.placeholder > [aria-hidden="true"] {
+  font-size: 1rem;
+}
+.catalog-cover-card {
+  position: fixed;
+  z-index: 60;
+  display: block;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  pointer-events: none;
+}
+.catalog-detail-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.catalog-detail-head .record-scroll {
+  width: 100%;
+}
+.catalog-cover-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  max-width: 22rem;
+}
+@container main (max-width: 34rem) {
+  .catalog-detail-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* --- Sidebar -------------------------------------------------- */
@@ -2433,6 +2531,15 @@ a.tree-item.nav-item {
 .gp-wide {
   width: 100%;
 }
+.gp-color-group {
+  gap: var(--space-2);
+}
+.gp-group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
 
 .graph-group {
   display: flex;
@@ -2464,7 +2571,8 @@ a.tree-item.nav-item {
 @container main (max-width: 40rem) {
   /* On a phone the map goes back to its own proportions: a 72vh box around a
      350px-wide drawing is mostly empty paper above and below the marks. */
-  svg.knowledge-map {
+  svg.knowledge-map,
+  canvas.knowledge-map {
     height: auto;
   }
   .graph-panel {
@@ -2545,7 +2653,8 @@ a.tree-item.nav-item {
   pointer-events: none;
 }
 
-svg.knowledge-map {
+svg.knowledge-map,
+canvas.knowledge-map {
   width: 100%;
   /* Full size is the point of this screen (owner: "ưu tiên full size"), and the
      floating control panel eats into it as well, so the map takes the height of
@@ -2564,6 +2673,17 @@ svg.knowledge-map {
      was `none` while the map claimed pinch-to-zoom for itself.) Plain wheel
      over the map is never intercepted either. */
   touch-action: pan-y;
+}
+canvas.graph-canvas {
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+canvas.graph-canvas:active {
+  cursor: grabbing;
+}
+canvas.graph-canvas[hidden] {
+  display: none;
 }
 .g-surface {
   fill: var(--color-surface);
@@ -2633,6 +2753,11 @@ svg.knowledge-map[data-dim="on"] .g-edge.is-near {
   stroke: var(--color-seal);
   stroke-width: 1.5;
   stroke-dasharray: 3 3.5;
+}
+.g-node .g-group-ring {
+  fill: none;
+  stroke: var(--g-group);
+  stroke-width: 3;
 }
 .g-node.v-verified .g-mark {
   fill: var(--color-canopy);
@@ -2707,6 +2832,29 @@ svg.knowledge-map .g-node:focus-visible .g-label {
   width: 1rem;
   height: 1rem;
   flex: none;
+}
+.graph-context-menu {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  width: 13rem;
+  flex-direction: column;
+  padding: var(--space-1);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+}
+.graph-context-menu > button {
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+}
+.graph-context-menu > button:hover,
+.graph-context-menu > button:focus-visible {
+  background: var(--color-surface-sunken);
 }
 
 /* Pagination + empty states

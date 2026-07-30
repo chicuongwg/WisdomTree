@@ -93,11 +93,10 @@ const icons = {
       <path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M17.7 6.3l-1.8 1.8M8.1 15.9l-1.8 1.8" />
     </svg>
   ),
-  more: (
+  search: (
     <svg viewBox="0 0 24 24" {...stroke} aria-hidden="true">
-      <circle cx="5.5" cy="12" r="1.1" />
-      <circle cx="12" cy="12" r="1.1" />
-      <circle cx="18.5" cy="12" r="1.1" />
+      <circle cx="10.5" cy="10.5" r="5.5" />
+      <path d="m15 15 4 4" />
     </svg>
   ),
   // A pane with one column shaded off: the button says what it does, which
@@ -199,11 +198,13 @@ export function ShellRail({
 
   const togglePanel = () => writeSidebar(!collapsed);
 
-  const items: RailItem[] = [
-    { href: "/graph", label: T.graph, icon: icons.graph },
-    { href: "/tree", label: T.tree, icon: icons.tree },
+  const knowledgeItems: RailItem[] = [
     { href: "/library", label: T.library, icon: icons.library, also: ["/source"] },
     { href: "/catalog", label: T.catalog, icon: icons.catalog },
+    { href: "/tree", label: T.tree, icon: icons.tree },
+    { href: "/graph", label: T.graph, icon: icons.graph },
+  ];
+  const workItems: RailItem[] = [
     // Same order as the sidebar: the day's board first, then the project
     // calendar, which is a different space and says so in its tooltip.
     // Every role: pm.board.read is global, and unheld work is a pool anyone
@@ -211,22 +212,23 @@ export function ShellRail({
     { href: "/board", label: T.board, icon: icons.board, group: T.navWork },
     { href: "/deadlines", label: T.deadline, icon: icons.deadlines, group: T.navProjects },
   ];
+  const roleItems: RailItem[] = [];
   if (role === "admin_op") {
-    items.push({
+    roleItems.push({
       href: "/review",
       label: T.reviewQueue,
       icon: icons.review,
       pip: reviewOpen,
       pipNoun: T.pipOpenTasks,
     });
-    items.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
+    roleItems.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
   }
-  items.push({
+  const notificationItem: RailItem = {
     href: "/notifications",
     label: T.notificationCenter,
     icon: icons.bell,
     pip: unread,
-  });
+  };
 
   /**
    * How current an item is. The rail names MODULES, not pages: on
@@ -249,6 +251,25 @@ export function ShellRail({
   };
 
   const initials = displayName.split(/\s+/).filter(Boolean).slice(-1)[0]?.slice(0, 2);
+
+  const itemLink = (item: RailItem) => {
+    const name = item.group ? `${item.group} · ${item.label}` : item.label;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className="rail-btn"
+        title={name}
+        aria-label={
+          item.pip ? `${name} (${item.pip} ${(item.pipNoun ?? T.unread).toLowerCase()})` : name
+        }
+        aria-current={current(item)}
+      >
+        {item.icon}
+        {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}
+      </Link>
+    );
+  };
 
   return (
     <nav className="rail" aria-label={T.modules}>
@@ -275,24 +296,6 @@ export function ShellRail({
       >
         {icons.panel}
       </button>
-      {items.map((item) => {
-        const name = item.group ? `${item.group} · ${item.label}` : item.label;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="rail-btn"
-            title={name}
-            aria-label={
-              item.pip ? `${name} (${item.pip} ${(item.pipNoun ?? T.unread).toLowerCase()})` : name
-            }
-            aria-current={current(item)}
-          >
-            {item.icon}
-            {item.pip ? <span className="pip">{item.pip > 99 ? "99+" : item.pip}</span> : null}
-          </Link>
-        );
-      })}
       {/* ponytail: below 56rem the sidebar is display:none, and six screens
           (nộp nguồn, bài nộp của tôi, hộp nguồn, bàn thủ thư, danh sách
           chuyên đề, chuyên đề mới) live only there — including the palette's
@@ -306,9 +309,16 @@ export function ShellRail({
         aria-label={T.quickSearch}
         onClick={() => window.dispatchEvent(new CustomEvent("wt:open-palette"))}
       >
-        {icons.more}
+        {icons.search}
       </button>
+      <span className="rail-divider" aria-hidden="true" />
+      {knowledgeItems.map(itemLink)}
+      <span className="rail-divider" aria-hidden="true" />
+      {workItems.map(itemLink)}
+      {roleItems.length > 0 && <span className="rail-divider" aria-hidden="true" />}
+      {roleItems.map(itemLink)}
       <span className="rail-spacer" />
+      {itemLink(notificationItem)}
       <ThemeToggle />
       {/* The avatar is the door to the member's own settings — same corner
           convention as every workspace app. */}

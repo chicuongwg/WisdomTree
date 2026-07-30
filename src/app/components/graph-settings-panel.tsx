@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   LINK_TYPES,
+  type GraphGroup,
   type GraphSettings,
   type LinkType,
   type SliderKey,
@@ -47,6 +48,7 @@ const SLIDER_LABEL: Record<SliderKey, string> = {
 
 const DISPLAY_SLIDERS = ["textFade", "nodeSize", "linkThickness"] as const;
 const FORCE_SLIDERS = ["centreForce", "repelForce", "linkForce", "linkDistance"] as const;
+const GROUP_COLORS = ["#2f7d62", "#b64a31", "#a97818", "#526fa8", "#855f99"] as const;
 
 /**
  * A collapsible section. `open` is component state rather than an uncontrolled
@@ -72,6 +74,8 @@ export function GraphSettingsPanel({
   open,
   onOpenChange,
   branchOptions,
+  tagOptions,
+  local,
   term,
   onTerm,
   idPrefix,
@@ -84,11 +88,14 @@ export function GraphSettingsPanel({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   branchOptions: Array<[string, string]>;
+  tagOptions: string[];
+  local: boolean;
   term: string;
   onTerm: (v: string) => void;
   idPrefix: string;
 }) {
   const p = (s: string) => `${idPrefix}-${s}`;
+  const setGroups = (groups: GraphGroup[]) => set("groups", groups);
 
   const slider = (k: SliderKey) => (
     <div className="gp-slider" key={k}>
@@ -155,6 +162,42 @@ export function GraphSettingsPanel({
             />
           </div>
           <div className="field">
+            <label htmlFor={p("tag")}>{T.filterByTag}</label>
+            <select id={p("tag")} value={settings.tag} onChange={(e) => set("tag", e.target.value)}>
+              <option value="">{T.allTags}</option>
+              {tagOptions.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
+          </div>
+          {local && (
+            <div className="gp-slider">
+              <label htmlFor={p("depth")}>
+                {T.graphLocalDepth}: {settings.localDepth}
+              </label>
+              <input
+                id={p("depth")}
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={settings.localDepth}
+                onChange={(e) => set("localDepth", e.currentTarget.valueAsNumber)}
+              />
+            </div>
+          )}
+          <div className="graph-check">
+            <input
+              id={p("orphans")}
+              type="checkbox"
+              checked={settings.includeOrphans}
+              onChange={(e) => set("includeOrphans", e.target.checked)}
+            />
+            <label htmlFor={p("orphans")}>{T.graphShowOrphans}</label>
+          </div>
+          <div className="field">
             <label htmlFor={p("branch")}>{T.filterByBranch}</label>
             <select
               id={p("branch")}
@@ -188,6 +231,75 @@ export function GraphSettingsPanel({
               </div>
             ))}
           </fieldset>
+        </Section>
+
+        <Section title={T.graphPanelGroups}>
+          {settings.groups.map((group, index) => (
+            <fieldset className="graph-group gp-color-group" key={group.id}>
+              <input
+                aria-label={T.graphGroupName}
+                value={group.name}
+                placeholder={T.graphGroupName}
+                onChange={(e) =>
+                  setGroups(
+                    settings.groups.map((item, at) =>
+                      at === index ? { ...item, name: e.target.value } : item,
+                    ),
+                  )
+                }
+              />
+              <input
+                aria-label={T.graphGroupQuery}
+                value={group.query}
+                placeholder={T.graphGroupQueryHelp}
+                onChange={(e) =>
+                  setGroups(
+                    settings.groups.map((item, at) =>
+                      at === index ? { ...item, query: e.target.value } : item,
+                    ),
+                  )
+                }
+              />
+              <div className="gp-group-row">
+                <input
+                  type="color"
+                  aria-label="Màu"
+                  value={group.color}
+                  onChange={(e) =>
+                    setGroups(
+                      settings.groups.map((item, at) =>
+                        at === index ? { ...item, color: e.target.value } : item,
+                      ),
+                    )
+                  }
+                />
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setGroups(settings.groups.filter((_, at) => at !== index))}
+                >
+                  {T.graphRemoveGroup}
+                </button>
+              </div>
+            </fieldset>
+          ))}
+          <button
+            type="button"
+            className="secondary gp-wide"
+            onClick={() =>
+              setGroups([
+                ...settings.groups,
+                {
+                  id: crypto.randomUUID(),
+                  name: "",
+                  query: "",
+                  color: GROUP_COLORS[settings.groups.length % GROUP_COLORS.length],
+                },
+              ])
+            }
+          >
+            {T.graphNewGroup}
+          </button>
         </Section>
 
         <Section title={T.graphPanelDisplay}>

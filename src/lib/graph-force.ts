@@ -1,9 +1,9 @@
 // A small force simulation for the knowledge map. No dependency: this is a
-// deliberately plain velocity-Verlet loop so the graph can settle into a
-// readable shape without pulling d3-force (or anything else) into the bundle.
+// deliberately plain loop, run by graph-worker.ts, so the graph can settle
+// without blocking pointer input or pulling a graph dependency into the bundle.
 //
 // Three forces, all scaled by `alpha` so the system cools to a stop:
-//   - repel   : every pair pushes apart (approximate n², capped by SIM_NODE_CAP)
+//   - repel   : Barnes–Hut approximation over a quadtree
 //   - link    : each edge is a spring that wants to be TUNE.distance long
 //   - centre  : a weak pull toward the canvas centre so nothing drifts away
 //
@@ -13,7 +13,7 @@
 
 import { CANVAS } from "./graph-layout";
 
-/** Above this many nodes we stop simulating and fall back to the static layout. */
+/** Above this many nodes the renderer switches from SVG to Canvas 2D. */
 export const SIM_NODE_CAP = 300;
 
 /** The loop stops once alpha drops below this — an idle tab then burns no CPU. */
@@ -25,6 +25,80 @@ const VELOCITY_KEEP = 0.62;
 /** Hard cap on per-tick displacement, so a dense cluster cannot explode. */
 const MAX_SPEED = 28;
 const PAD = 48;
+const BARNES_HUT_THETA = 0.85;
+
+type Quad = {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  mass: number;
+  cx: number;
+  cy: number;
+  maxR: number;
+  indices: number[];
+  children?: Quad[];
+};
+
+function buildQuad(
+  nodes: SimNode[],
+  indices: number[],
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  depth = 0,
+): Quad {
+  let sx = 0;
+  let sy = 0;
+  let maxR = 0;
+  for (const index of indices) {
+    sx += nodes[index].x;
+    sy += nodes[index].y;
+    maxR = Math.max(maxR, nodes[index].r);
+  }
+  const quad: Quad = {
+    x0,
+    y0,
+    x1,
+    y1,
+    mass: indices.length,
+    cx: indices.length ? sx / indices.length : 0,
+    cy: indices.length ? sy / indices.length : 0,
+    maxR,
+    indices,
+  };
+  if (indices.length <= 1 || depth >= 16) return quad;
+  const mx = (x0 + x1) / 2;
+  const my = (y0 + y1) / 2;
+  const parts: number[][] = [[], [], [], []];
+  for (const index of indices) {
+    const node = nodes[index];
+    parts[(node.x >= mx ? 1 : 0) + (node.y >= my ? 2 : 0)].push(index);
+  }
+  if (parts.some((part) => part.length === indices.length)) return quad;
+  const bounds = [
+    [x0, y0, mx, my],
+    [mx, y0, x1, my],
+    [x0, my, mx, y1],
+    [mx, my, x1, y1],
+  ] as const;
+  quad.children = parts.flatMap((part, index) =>
+    part.length ? [buildQuad(nodes, part, ...bounds[index], depth + 1)] : [],
+  );
+  quad.indices = [];
+  return quad;
+}
+
+function contains(quad: Quad, node: SimNode): boolean {
+  return node.x >= quad.x0 && node.x <= quad.x1 && node.y >= quad.y0 && node.y <= quad.y1;
+}
+
+function distanceToQuad(node: SimNode, quad: Quad): number {
+  const dx = Math.max(quad.x0 - node.x, 0, node.x - quad.x1);
+  const dy = Math.max(quad.y0 - node.y, 0, node.y - quad.y1);
+  return Math.hypot(dx, dy);
+}
 
 /**
  * The default strengths — where the map sits for a reader who never opens the
@@ -115,36 +189,57 @@ export function createSimulation(
   function tick(): boolean {
     if (alpha < ALPHA_MIN) return false;
     const n = nodes.length;
+    if (n === 0) {
+      alpha = 0;
+      return false;
+    }
+    const tree = buildQuad(
+      nodes,
+      nodes.map((_, index) => index),
+      0,
+      0,
+      CANVAS.width,
+      CANVAS.height,
+    );
 
-    // Repulsion — every pair. n² is honest at this scale and SIM_NODE_CAP
-    // keeps the worst case bounded (300² / 2 = 45k pair tests per frame).
+    // Barnes–Hut repulsion: distant quadrants act as one body, while nearby
+    // marks are still evaluated exactly.
     const k = tune.repel * alpha;
     if (k > 0) {
       for (let i = 0; i < n; i++) {
         const a = nodes[i];
-        for (let j = i + 1; j < n; j++) {
-          const b = nodes[j];
-          let dx = b.x - a.x;
-          let dy = b.y - a.y;
-          let d2 = dx * dx + dy * dy;
-          if (d2 < 1) {
-            // Coincident nodes: deterministic tiny offset, never Math.random,
-            // so two runs of the same graph still agree.
-            dx = ((i % 7) - 3) * 0.5 || 0.5;
-            dy = ((j % 5) - 2) * 0.5 || 0.5;
-            d2 = dx * dx + dy * dy;
+        const visit = (quad: Quad) => {
+          if (!quad.mass) return;
+          if (quad.indices.length) {
+            for (const j of quad.indices) {
+              if (j === i) continue;
+              let dx = nodes[j].x - a.x;
+              let dy = nodes[j].y - a.y;
+              let d2 = dx * dx + dy * dy;
+              if (d2 < 1) {
+                dx = ((i % 7) - 3) * 0.5 || 0.5;
+                dy = ((j % 5) - 2) * 0.5 || 0.5;
+                d2 = dx * dx + dy * dy;
+              }
+              const w = k / d2;
+              a.vx -= dx * w;
+              a.vy -= dy * w;
+            }
+            return;
           }
-          // d3-force's law: w = k/d², applied along the raw delta, so the
-          // force itself falls off as 1/d. Multiplying by the *unit* vector
-          // instead (as this did) makes it fall off as 1/d², which is strong
-          // enough to stop two marks touching and far too weak to open a graph
-          // out — hence the clump.
-          const w = k / d2;
-          a.vx -= dx * w;
-          a.vy -= dy * w;
-          b.vx += dx * w;
-          b.vy += dy * w;
-        }
+          const dx = quad.cx - a.x;
+          const dy = quad.cy - a.y;
+          const d2 = dx * dx + dy * dy || 0.01;
+          const width = quad.x1 - quad.x0;
+          if (!contains(quad, a) && width / Math.sqrt(d2) < BARNES_HUT_THETA) {
+            const w = (k * quad.mass) / d2;
+            a.vx -= dx * w;
+            a.vy -= dy * w;
+            return;
+          }
+          quad.children?.forEach(visit);
+        };
+        visit(tree);
       }
     }
 
@@ -213,34 +308,51 @@ export function createSimulation(
     // this: it is a smooth field, so two marks reach an equilibrium wherever
     // the spring pulling them together balances it — which was on top of each
     // other. Two pages are two things and must read as two.
+    const collisionTree = buildQuad(
+      nodes,
+      nodes.map((_, index) => index),
+      0,
+      0,
+      CANVAS.width,
+      CANVAS.height,
+    );
     for (let i = 0; i < n; i++) {
       const a = nodes[i];
-      for (let j = i + 1; j < n; j++) {
-        const b = nodes[j];
-        const want = a.r + b.r + tune.collide;
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        let d = Math.hypot(dx, dy);
-        if (d >= want) continue;
-        if (d < 0.01) {
-          // Exactly coincident: separate along a fixed axis per pair, never
-          // Math.random, so two runs of the same graph still agree.
-          dx = (i % 2 ? 1 : -1) * 0.7;
-          dy = (j % 2 ? 1 : -1) * 0.7;
-          d = Math.hypot(dx, dy);
+      const visit = (quad: Quad) => {
+        if (distanceToQuad(a, quad) > a.r + quad.maxR + tune.collide) return;
+        if (!quad.indices.length) {
+          quad.children?.forEach(visit);
+          return;
         }
-        const push = (want - d) / d / 2;
-        const ox = dx * push;
-        const oy = dy * push;
-        if (!a.pinned) {
-          a.x -= ox;
-          a.y -= oy;
+        for (const j of quad.indices) {
+          if (j <= i) continue;
+          const b = nodes[j];
+          const want = a.r + b.r + tune.collide;
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let d = Math.hypot(dx, dy);
+          if (d >= want) continue;
+          if (d < 0.01) {
+            // Exactly coincident: separate along a fixed axis per pair, never
+            // Math.random, so two runs of the same graph still agree.
+            dx = (i % 2 ? 1 : -1) * 0.7;
+            dy = (j % 2 ? 1 : -1) * 0.7;
+            d = Math.hypot(dx, dy);
+          }
+          const push = (want - d) / d / 2;
+          const ox = dx * push;
+          const oy = dy * push;
+          if (!a.pinned) {
+            a.x -= ox;
+            a.y -= oy;
+          }
+          if (!b.pinned) {
+            b.x += ox;
+            b.y += oy;
+          }
         }
-        if (!b.pinned) {
-          b.x += ox;
-          b.y += oy;
-        }
-      }
+      };
+      visit(collisionTree);
     }
 
     alpha *= ALPHA_DECAY;
