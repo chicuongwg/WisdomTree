@@ -18,13 +18,17 @@ RUN npm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
-# git is load-bearing — the export target commits into a bare repo
-# (src/modules/export/target.ts). pandoc gives real docx export; without a TeX
-# engine, pdf degrades to the HTML artifact with a converterWarning, which
-# src/modules/export/renderer.ts already handles.
+# git is load-bearing — the export target commits into a bare repo.
+# pandoc converts office documents, while Poppler and Tesseract handle PDF
+# text extraction and local OCR, including Vietnamese.
 # ponytail: no TeX engine here, it is ~1 GB for one format. Add texmf-dist if
 # real PDF export is ever asked for.
-RUN apk add --no-cache git pandoc
+RUN apk add --no-cache \
+    git \
+    pandoc \
+    poppler-utils \
+    tesseract-ocr \
+    tesseract-ocr-data-vie
 
 ENV NODE_ENV=production
 ENV PORT=3000

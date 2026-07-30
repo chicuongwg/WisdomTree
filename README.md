@@ -19,8 +19,13 @@ extraction stub, console notification adapters, local bare content repo).
 
 ```sh
 npm install
+npm run setup:system   # once per machine; Pandoc + PDF/OCR tools
 npm run demo   # docker compose up db → migrate → seed → build → start
 ```
+
+`git clone` cannot safely run commands by itself. For direct host installs,
+run `npm run setup:system` once. Deployments built from the included
+`Dockerfile` already contain these tools and need no host setup.
 
 Or step by step:
 
@@ -133,10 +138,9 @@ real sessions.
 | Health | `GET /api/health` (unauthenticated, `SELECT 1`), wired to the container healthcheck |
 | Backups | `scripts/backup.sh` — `pg_dump` plus a tarball of the object store, on cron |
 
-The image carries `git` (the export target commits into a bare repo) and
-`pandoc` (real `docx` export). There is no TeX engine, so `pdf` degrades to the
-HTML artifact with a converter warning — add `texmf-dist` to the Dockerfile if
-real PDF export is ever needed.
+The image carries `git`, `pandoc`, Poppler, and Tesseract with Vietnamese
+language data. There is no TeX engine, so PDF export degrades to the HTML
+artifact with a converter warning; PDF input extraction and OCR are supported.
 
 Back up **both** halves or neither: a database row whose file is missing is not
 a restorable source.
