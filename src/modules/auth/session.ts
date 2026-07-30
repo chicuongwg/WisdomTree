@@ -36,7 +36,7 @@ export async function resolvePrincipal(): Promise<Principal | null> {
       .from(userCapabilities)
       .where(eq(userCapabilities.userId, user.id)),
     db
-      .select({ vaultId: vaultGrants.vaultId })
+      .select({ vaultId: vaultGrants.vaultId, grant: vaultGrants.grant })
       .from(vaultGrants)
       .where(eq(vaultGrants.userId, user.id)),
   ]);
@@ -47,6 +47,7 @@ export async function resolvePrincipal(): Promise<Principal | null> {
     spaceIds: memberships.map((m) => m.spaceId),
     capabilities: capabilities.map((c) => c.capability),
     vaultIds: grants.map((g) => g.vaultId),
+    vaultGrants: grants,
   };
 }
 
@@ -60,6 +61,7 @@ export async function currentUser() {
         spaceIds: principal.spaceIds,
         capabilities: principal.capabilities ?? [],
         vaultIds: principal.vaultIds ?? [],
+        vaultGrants: principal.vaultGrants ?? [],
       }
     : null;
 }

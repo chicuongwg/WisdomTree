@@ -19,6 +19,7 @@ export function toPrincipal(user: PageUser): Principal {
     spaceIds: user.spaceIds,
     capabilities: user.capabilities,
     vaultIds: user.vaultIds,
+    vaultGrants: user.vaultGrants,
   };
 }
 

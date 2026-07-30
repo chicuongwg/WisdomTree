@@ -28,6 +28,10 @@ export interface Principal {
   capabilities?: string[];
   /** Vaults explicitly granted to this principal. */
   vaultIds?: string[];
+  vaultGrants?: Array<{
+    vaultId: string;
+    grant: "owner" | "editor" | "reviewer" | "viewer";
+  }>;
 }
 
 export interface AuthProvider {
