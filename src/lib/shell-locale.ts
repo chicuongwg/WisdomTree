@@ -1,81 +1,16 @@
 import { T } from "./vi";
 
-export type ShellLocale = "vi" | "en";
-
 const vi = {
   ...T,
   candidateReview: "Kho tạm chờ duyệt",
   aiLibrarian: "Thủ thư AI",
   workspaceKind: "Phân loại không gian làm việc",
   skipNavigation: "Bỏ qua điều hướng",
-  switchLanguage: "English",
   roleUser: "Thành viên",
   roleEditor: "Biên tập viên",
   roleAdmin: "Quản trị viên",
 };
 
-const en = {
-  ...vi,
-  home: "Home",
-  space: "Space",
-  library: "Source files",
-  catalog: "Physical library",
-  sourceIntake: "Submit source",
-  mySubmissions: "My submissions",
-  search: "Search",
-  notifications: "Notifications",
-  tree: "Knowledge content",
-  branch: "Topic",
-  reviewQueue: "Review submissions",
-  sourceInbox: "Source inbox",
-  createBranch: "Create topic",
-  account: "Account",
-  board: "Team work board",
-  deadline: "Project schedule",
-  graph: "Knowledge connections",
-  quickSearch: "Quick search",
-  notificationCenter: "Notifications",
-  unread: "Unread",
-  adminConsole: "Admin console",
-  librarianDesk: "Librarian desk",
-  healthPageTitle: "System health",
-  navBranches: "Topics",
-  navPersonalSpace: "Personal space",
-  navProjects: "Projects",
-  navWork: "Work",
-  navPanel: "Navigation panel",
-  navPersonalGraph: "Personal note connections",
-  navPersonalNotes: "Personal notes",
-  navProjectsHint: "Team projects and deadlines",
-  navTeamGraph: "Team knowledge connections",
-  navTeamKnowledge: "Team knowledge",
-  navWorkHint: "Your daily work",
-  openBranch: "Open topic",
-  personalBranchEmpty: "No personal topics yet.",
-  recent: "Recent",
-  yourSpaces: "spaces",
-  modules: "Modules",
-  collapsePanel: "Collapse sidebar",
-  expandPanel: "Expand sidebar",
-  pipOpenTasks: "open tasks",
-  paletteHintGo: "Go to",
-  paletteHintTree: "Knowledge content",
-  graphScopeTeam: "Team knowledge",
-  graphScopePersonal: "Personal notes",
-  paletteNoResults: "No results.",
-  palettePlaceholder: "Search pages and screens…",
-  paletteSearchFailed: "Search failed.",
-  paletteSearching: "Searching…",
-  candidateReview: "Candidate review",
-  aiLibrarian: "AI librarian",
-  workspaceKind: "Workspace category",
-  skipNavigation: "Skip navigation",
-  switchLanguage: "Tiếng Việt",
-  roleUser: "Member",
-  roleEditor: "Editor",
-  roleAdmin: "Administrator",
-};
-
-export function shellCopy(locale: ShellLocale) {
-  return locale === "en" ? en : vi;
+export function shellCopy() {
+  return vi;
 }

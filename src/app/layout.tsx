@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import "./globals.css";
 import { currentUser } from "@/modules/auth/session";
 import { unreadCount } from "@/modules/notify/service";
 import { recentNodes, treeOutline } from "@/modules/knowledge/service";
 import { listReviewQueue } from "@/modules/storage/curation";
-import { shellCopy, type ShellLocale } from "@/lib/shell-locale";
+import { shellCopy } from "@/lib/shell-locale";
 import { LogoutButton } from "./components/logout-button";
 import { ShellRail } from "./components/shell-rail";
 import { ShellSidebar } from "./components/shell-sidebar";
 import { CommandPalette } from "./components/command-palette";
 import { ValidationMessages } from "./components/validation-messages";
-import { LanguageToggle } from "./components/language-toggle";
-import { ShellLocaleProvider } from "./components/shell-locale-provider";
 
 export const metadata: Metadata = {
   // A template, so every screen's own title reads "<screen> · WisdomTree" and
@@ -37,20 +34,13 @@ const themeScript = `try{var t=localStorage.getItem("wt-theme");if(!t&&matchMedi
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
-  const requestedLocale = (await cookies()).get("wt-locale")?.value;
-  const locale: ShellLocale =
-    requestedLocale === "en" || requestedLocale === "vi"
-      ? requestedLocale
-      : user?.locale === "en"
-        ? "en"
-        : "vi";
-  const S = shellCopy(locale);
+  const S = shellCopy();
   const roleLabel =
     user?.role === "admin_op" ? S.roleAdmin : user?.role === "editor" ? S.roleEditor : S.roleUser;
 
   if (!user) {
     return (
-      <html lang={locale} suppressHydrationWarning>
+      <html lang="vi" suppressHydrationWarning>
         {/* See the note on the signed-in <body> below. */}
         <body suppressHydrationWarning>
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -63,7 +53,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </span>
                 {S.appName}
               </Link>
-              <LanguageToggle locale={locale} />
             </header>
             {children}
           </div>
@@ -99,7 +88,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const personalBranches = Array.isArray(outline) ? [] : (outline?.personal ?? []);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       {/* suppressHydrationWarning reaches one level only, so <body> needs its
           own: browser extensions (Grammarly and friends) stamp attributes on
           <body> before React hydrates, and that is not our mismatch to fix. */}
@@ -108,55 +97,52 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {S.skipNavigation}
         </a>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <ShellLocaleProvider locale={locale}>
-          <div className="shell">
-            <ShellRail
-              role={user.role}
-              capabilities={user.capabilities}
-              displayName={user.displayName}
-              avatarUrl={
-                user.avatarKey
-                  ? `/api/avatar/${user.id}?v=${encodeURIComponent(user.avatarKey)}`
-                  : null
-              }
-              unread={unread}
-              reviewOpen={reviewOpen}
-            />
-            <ShellSidebar
-              teamBranches={teamBranches}
-              personalBranches={personalBranches}
-              recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
-              role={user.role}
-              capabilities={user.capabilities}
-              spaceCount={user.spaceIds.length}
-            />
-            {/* ponytail: tabIndex 0, not -1. The skip link only needs a
+        <div className="shell">
+          <ShellRail
+            role={user.role}
+            capabilities={user.capabilities}
+            displayName={user.displayName}
+            avatarUrl={
+              user.avatarKey
+                ? `/api/avatar/${user.id}?v=${encodeURIComponent(user.avatarKey)}`
+                : null
+            }
+            unread={unread}
+            reviewOpen={reviewOpen}
+          />
+          <ShellSidebar
+            teamBranches={teamBranches}
+            personalBranches={personalBranches}
+            recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
+            role={user.role}
+            capabilities={user.capabilities}
+            spaceCount={user.spaceIds.length}
+          />
+          {/* ponytail: tabIndex 0, not -1. The skip link only needs a
               focusable target (either value would do), but .main-area is also
               the app's scroll container (overflow-y: auto), and a scroll
               container is keyboard-scrollable only when it is in the tab
               order — -1 would land the skip link and leave the reader unable
               to page through the content they just skipped to. One attribute,
               both jobs. */}
-            <div className="main-area" id="main" tabIndex={0}>
-              {children}
-            </div>
-            <footer className="statusbar">
-              <Link href="/account" className="sb-item sb-me">
-                {user.displayName} · {roleLabel}
-              </Link>
-              <span className="sb-item">
-                {user.spaceIds.length} {S.yourSpaces}
-              </span>
-              <span className="grow" />
-              <Link href="/notifications" className="sb-item">
-                {S.notificationCenter}: {unread} {S.unread.toLowerCase()}
-              </Link>
-              <LanguageToggle locale={locale} />
-              <LogoutButton />
-            </footer>
+          <div className="main-area" id="main" tabIndex={0}>
+            {children}
           </div>
-          <CommandPalette role={user.role} capabilities={user.capabilities} />
-        </ShellLocaleProvider>
+          <footer className="statusbar">
+            <Link href="/account" className="sb-item sb-me">
+              {user.displayName} · {roleLabel}
+            </Link>
+            <span className="sb-item">
+              {user.spaceIds.length} {S.yourSpaces}
+            </span>
+            <span className="grow" />
+            <Link href="/notifications" className="sb-item">
+              {S.notificationCenter}: {unread} {S.unread.toLowerCase()}
+            </Link>
+            <LogoutButton />
+          </footer>
+        </div>
+        <CommandPalette role={user.role} capabilities={user.capabilities} />
         {/* One listener, every form: the browser refuses in Vietnamese now. */}
         <ValidationMessages />
       </body>
