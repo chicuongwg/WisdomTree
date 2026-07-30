@@ -39,6 +39,9 @@ services:
   ollama:
     profiles: ["deploy"]
     image: ollama/ollama:latest
+    ports:
+      # Host-run Next.js reaches the container without exposing Ollama on the LAN.
+      - "127.0.0.1:${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollamadata:/root/.ollama
     healthcheck:

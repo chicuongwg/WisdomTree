@@ -27,25 +27,23 @@ npm run demo   # docker compose up db → migrate → seed → build → start
 run `npm run setup:system` once. Deployments built from the included
 `Dockerfile` already contain these tools and need no host setup.
 
-The deploy Compose profile also starts Ollama and pulls `OLLAMA_MODEL`
-(default `qwen2.5:7b`) on first install. The model stays in the `ollamadata`
-volume, so later deploys do not download it again.
-
-When running the app directly on the host, start Ollama separately before
-using AI Librarian:
+Dev, demo, and direct host production start PostgreSQL and Ollama in Docker
+before opening the server. The first run pulls `OLLAMA_MODEL` (default
+`qwen2.5:7b`); the model stays in the `ollamadata` volume, so later starts do
+not download it again. To start only these dependencies:
 
 ```sh
-ollama serve
-ollama pull "${OLLAMA_MODEL:-qwen2.5:7b}"
+npm run runtime:up
 ```
 
-Set `OLLAMA_URL` when Ollama is not listening at the default
-`http://127.0.0.1:11434`.
+Ollama is bound to host loopback at `127.0.0.1:11434`, not exposed to the LAN.
+The deploy Compose profile uses the same container and reaches it over the
+internal Docker network.
 
 Or step by step:
 
 ```sh
-docker compose up -d db   # PostgreSQL 16 on :5432
+npm run runtime:up        # PostgreSQL 16 + Ollama + configured model
 npm run db:migrate        # applies drizzle/*.sql (forward-only, tracked)
 ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed   # see the warning below
 npm run build && npm run start   # http://localhost:3000
