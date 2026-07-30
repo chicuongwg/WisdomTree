@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import { eq, isNull, and } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "./schema";
+import { userCapabilities, users } from "./schema";
 import { spaceMembers } from "../storage/schema";
+import { vaultGrants } from "../knowledge/schema";
 import { signSession, verifySession } from "@/lib/sign";
 import type { Principal } from "./dev-auth";
 
@@ -25,15 +26,27 @@ export async function resolvePrincipal(): Promise<Principal | null> {
     .where(and(eq(users.id, userId), isNull(users.disabledAt)));
   if (!user) return null;
 
-  const memberships = await db
-    .select({ spaceId: spaceMembers.spaceId })
-    .from(spaceMembers)
-    .where(eq(spaceMembers.userId, user.id));
+  const [memberships, capabilities, grants] = await Promise.all([
+    db
+      .select({ spaceId: spaceMembers.spaceId })
+      .from(spaceMembers)
+      .where(eq(spaceMembers.userId, user.id)),
+    db
+      .select({ capability: userCapabilities.capability })
+      .from(userCapabilities)
+      .where(eq(userCapabilities.userId, user.id)),
+    db
+      .select({ vaultId: vaultGrants.vaultId })
+      .from(vaultGrants)
+      .where(eq(vaultGrants.userId, user.id)),
+  ]);
 
   return {
     userId: user.id,
     role: user.role,
     spaceIds: memberships.map((m) => m.spaceId),
+    capabilities: capabilities.map((c) => c.capability),
+    vaultIds: grants.map((g) => g.vaultId),
   };
 }
 
@@ -41,7 +54,14 @@ export async function currentUser() {
   const principal = await resolvePrincipal();
   if (!principal) return null;
   const [user] = await db.select().from(users).where(eq(users.id, principal.userId));
-  return user ? { ...user, spaceIds: principal.spaceIds } : null;
+  return user
+    ? {
+        ...user,
+        spaceIds: principal.spaceIds,
+        capabilities: principal.capabilities ?? [],
+        vaultIds: principal.vaultIds ?? [],
+      }
+    : null;
 }
 
 export function issueSessionToken(userId: string): string {

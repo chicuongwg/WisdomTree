@@ -84,6 +84,14 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
 
 export type PermissionKey = keyof typeof CATALOG;
 
+const REQUIRED_CAPABILITY: Partial<Record<PermissionKey, string>> = {
+  "circulation.loan.manage": "circulation.manage",
+  "catalog.item.manage": "catalog.manage",
+  "knowledge.publish": "shared.publish",
+  "admin.users.manage": "users.manage",
+  "admin.audit.read": "audit.read",
+};
+
 export type ResourceRef = {
   /** For space scope: the resource's space_id. */
   spaceId?: string;
@@ -108,6 +116,10 @@ export function authorize(
   const denial = resource.kind === "read" ? notFound() : forbidden();
 
   if (!entry.roles.includes(actor.role)) throw denial;
+  const capability = REQUIRED_CAPABILITY[permission];
+  // Undefined preserves compatibility for callers that construct the old
+  // Principal shape; resolved sessions always carry the explicit list.
+  if (capability && actor.capabilities && !actor.capabilities.includes(capability)) throw denial;
   if (actor.role === "admin_op") return actor; // global scope everywhere
 
   switch (entry.scope) {

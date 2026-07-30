@@ -66,29 +66,27 @@ async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promis
 
 /**
  * Knowledge scope & visibility rules:
- * - Admin (`admin_op`) can view all non-archived branches (team + all personal).
- * - Individuals can view team branches (`scope='team'`) and their OWN personal branch (`scope='personal' && ownerUserId = actor.userId`).
+ * - Shared branches are visible to every member.
+ * - Personal branches require an explicit vault grant, including for admins.
  */
 export function canViewBranch(
   actor: Principal,
-  branch: { scope: string; ownerUserId: string | null },
+  branch: { scope: string; vaultId: string },
 ): boolean {
-  if (actor.role === "admin_op") return true;
   if (branch.scope === "team") return true;
-  if (branch.scope === "personal" && branch.ownerUserId === actor.userId) return true;
+  if (branch.scope === "personal" && actor.vaultIds?.includes(branch.vaultId)) return true;
   return false;
 }
 
 export function branchVisibilityCondition(actor: Principal) {
-  const isAdmin = actor.role === "admin_op";
-  if (isAdmin) {
-    return sql`${branches.archivedAt} IS NULL`;
-  }
+  const accessibleVaults = actor.vaultIds ?? [];
   return and(
     sql`${branches.archivedAt} IS NULL`,
     or(
       eq(branches.scope, "team"),
-      and(eq(branches.scope, "personal"), eq(branches.ownerUserId, actor.userId)),
+      accessibleVaults.length
+        ? and(eq(branches.scope, "personal"), inArray(branches.vaultId, accessibleVaults))
+        : sql`false`,
     ),
   );
 }
@@ -118,7 +116,7 @@ export async function listBranches(actor: Principal) {
 /**
  * Shell sidebar: live branches split into two groups.
  *   team     → scope='team' branches, visible to all members
- *   personal → scope='personal' branches owned by this actor only (admin sees all)
+ *   personal → scope='personal' branches granted to this actor
  * Each branch carries its non-archived node list (two queries total).
  */
 export async function treeOutline(actor: Principal) {
@@ -150,10 +148,7 @@ export async function treeOutline(actor: Principal) {
   }));
   return {
     team: withNodes.filter((b) => b.scope === "team"),
-    personal: withNodes.filter(
-      (b) =>
-        b.scope === "personal" && (actor.role === "admin_op" || b.ownerUserId === actor.userId),
-    ),
+    personal: withNodes.filter((b) => b.scope === "personal"),
   };
 }
 
@@ -534,7 +529,7 @@ export async function personalKnowledgeGraph(actor: Principal): Promise<Knowledg
       .where(
         and(
           eq(branches.scope, "personal"),
-          actor.role === "admin_op" ? sql`1=1` : eq(branches.ownerUserId, actor.userId),
+          actor.vaultIds?.length ? inArray(branches.vaultId, actor.vaultIds) : sql`false`,
           sql`${branches.archivedAt} IS NULL`,
         ),
       ),

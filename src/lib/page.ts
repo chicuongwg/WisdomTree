@@ -13,7 +13,13 @@ export async function requireUser(): Promise<PageUser> {
 }
 
 export function toPrincipal(user: PageUser): Principal {
-  return { userId: user.id, role: user.role, spaceIds: user.spaceIds };
+  return {
+    userId: user.id,
+    role: user.role,
+    spaceIds: user.spaceIds,
+    capabilities: user.capabilities,
+    vaultIds: user.vaultIds,
+  };
 }
 
 /** Map service-layer 404s to the framework's notFound page. */
