@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   // Trace the server bundle and its dependencies into .next/standalone, so the
   // runtime image carries neither the source tree nor devDependencies.
   output: "standalone",
+  transpilePackages: [
+    "@wisdomtree/graph-obsidian",
+    "@wisdomtree/identity",
+    "@wisdomtree/index-librarian",
+  ],
 };
 
 export default nextConfig;
