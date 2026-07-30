@@ -171,7 +171,7 @@ the stub dispatcher produced in-app notifications.
 | `src/modules/<module>/` | Module boundaries per `docs/platform/module-map.md`: `auth`, `storage`, `catalog`, `circulation`, `notify`, `audit` |
 | `src/modules/*/schema.ts` | Drizzle table definitions owned by that module |
 | `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1 |
-| `src/modules/storage/extraction.ts` | Dev substitution interface: in-process stub worker |
+| `src/modules/storage/extraction.ts` | Dev substitution: in-process stub worker |
 | `src/modules/auth/dev-auth.ts` | Dev substitution interface: user-picker sessions, OIDC in V1 |
 | `src/db/` | Drizzle client, aggregated schema, cross-cutting outbox table |
 | `scripts/db/` | Migration runner and seed script |

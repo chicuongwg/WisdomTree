@@ -1,13 +1,8 @@
 // Dev-mode substitution boundary (docs/roadmap/demo-brief.md): the demo runs
 // an in-process stub that flips extraction_status after a delay; V1 swaps in
-// the real worker (parser-first, OCR fallback) behind the same interface.
+// the real worker (parser-first, OCR fallback) behind the same module.
 // Store-first guarantee: extraction NEVER gates availability — the item is
 // already `stored` and downloadable while this runs (session-summary.md).
-
-export interface ExtractionWorker {
-  /** Queue extraction for a stored source version; resolves immediately. */
-  enqueue(sourceVersionId: string): void;
-}
 
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -33,7 +28,7 @@ const EXTRACTABLE = new Set([
  * emits the matching integration-contracts event. Never touches
  * storage_state — extraction must not gate availability.
  */
-class StubExtractionWorker implements ExtractionWorker {
+class StubExtractionWorker {
   enqueue(sourceVersionId: string): void {
     setTimeout(() => {
       void this.process(sourceVersionId).catch((err) =>
@@ -99,4 +94,4 @@ class StubExtractionWorker implements ExtractionWorker {
   }
 }
 
-export const extractionWorker: ExtractionWorker = new StubExtractionWorker();
+export const extractionWorker = new StubExtractionWorker();
