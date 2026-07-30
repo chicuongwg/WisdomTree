@@ -108,8 +108,10 @@ function SidebarContent({
     if (scopeParam === "personal") return "personal";
     if (
       path.startsWith("/board") ||
+      path.startsWith("/librarian") ||
       path.startsWith("/source/intake") ||
-      path.startsWith("/source/mine")
+      path.startsWith("/source/mine") ||
+      path.startsWith("/vault/review")
     ) {
       return "personal";
     }
