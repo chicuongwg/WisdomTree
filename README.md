@@ -174,7 +174,6 @@ the stub dispatcher produced in-app notifications.
 | `src/modules/storage/extraction.ts` | Dev substitution interface: in-process stub worker |
 | `src/modules/auth/dev-auth.ts` | Dev substitution interface: user-picker sessions, OIDC in V1 |
 | `src/db/` | Drizzle client, aggregated schema, cross-cutting outbox table |
-| `src/lib/api-types.ts` | Generated from `docs/design/openapi.yaml` — regenerate with `npm run gen:api`, never edit |
 | `scripts/db/` | Migration runner and seed script |
 
 ## Demo schema subset
@@ -240,7 +239,6 @@ deployment obligation.
 ## Development
 
 - `npm run typecheck` — TypeScript over app + scripts.
-- `npm run gen:api` — regenerate API types after any `openapi.yaml` change.
 - Every mutable table carries `version` for optimistic locking; every mutation
   path must write `audit_events` and `outbox_events` in the same transaction
   (see `docs/design/database-schema.md` conventions) — enforced in step 2
