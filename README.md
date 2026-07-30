@@ -27,6 +27,10 @@ npm run demo   # docker compose up db → migrate → seed → build → start
 run `npm run setup:system` once. Deployments built from the included
 `Dockerfile` already contain these tools and need no host setup.
 
+The deploy Compose profile also starts Ollama and pulls `OLLAMA_MODEL`
+(default `qwen2.5:7b`) on first install. The model stays in the `ollamadata`
+volume, so later deploys do not download it again.
+
 Or step by step:
 
 ```sh
