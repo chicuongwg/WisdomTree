@@ -106,7 +106,14 @@
 - Required backup assets:
   - PostgreSQL logical backup
   - object storage snapshot or replication
-  - private content repo remote mirror
+  - static vault Git mirrors from `VAULT_GIT_DIR`
+
+The static vault is a verified projection, not the transaction authority. It
+contains active topic metadata, canonical non-archived node Markdown, tags, and
+graph links. It does not contain identities, grants, source files, provenance,
+audit history, sessions, candidates, or other operational state. Keep the
+PostgreSQL and object-storage backups even when every static vault Git mirror is
+healthy.
 
 ## Recovery Procedure: Worker Unavailable
 1. Confirm the failure from queue latency, failed jobs, or worker reachability.
@@ -126,7 +133,7 @@
 1. Declare a change freeze for publish, merge, archive, and export actions.
 2. Restore the latest valid PostgreSQL backup.
 3. Restore object storage from snapshot or replication.
-4. Verify the content repo mirror and export runner access.
+4. Restore `VAULT_GIT_DIR`, then verify the static vault Git mirrors and export runner access.
 5. Run smoke checks for auth, node detail, source detail, Review Queue, Publish Review, and backup status visibility.
 6. Reopen write operations only after the audit tail and the most recent successful publish reconcile correctly.
 
@@ -136,6 +143,31 @@
 3. Restore related object storage artifacts and confirm their object references.
 4. Rerun affected search or export projections.
 5. Verify audit and provenance links before closing the incident.
+
+## Recovery Procedure: Single Vault Content
+Use this procedure only for topic, canonical node, tag, and graph-link recovery.
+Use the full database and object-storage backups when identity, source,
+provenance, audit, or operational state is also required.
+
+1. Keep the target vault row, but confirm it has no branches or nodes.
+2. Verify the selected Git snapshot before touching PostgreSQL:
+   `npm run vault:verify -- --repo <bare-or-working-repo>`.
+3. Preview the rebuild and confirm the reported vault ID and counts:
+   `npm run vault:rebuild -- --repo <repo> --vault-id <uuid>`.
+4. Apply the rebuild:
+   `npm run vault:rebuild -- --repo <repo> --vault-id <uuid> --apply`.
+5. Verify topic hierarchy, node content, tags, graph links, scoped search, and
+   the next Git mirror run.
+
+The apply step is one PostgreSQL transaction. A checksum error, missing
+`createdBy` user, non-empty target vault, duplicate, or database conflict aborts
+the whole rebuild. Stable topic/node/tag IDs and the current node revision are
+retained; prior revision rows are supplied by Git history rather than duplicated
+in the snapshot.
+
+Static vault format v1 has `schemaVersion="1"` and no volatile generation
+timestamp. Its bytes and meaning must not be changed in place; a future format
+change requires a versioned migrator.
 
 ## Post-Incident Review
 - Record incident class, impact, root cause, recovery time, and unresolved follow-up work.

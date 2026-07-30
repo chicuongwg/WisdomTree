@@ -1,7 +1,6 @@
 #!/bin/sh
-# Nightly backup: the database and the uploaded objects, which are two
-# different things and are useless without each other — a source row whose file
-# is gone is not a restorable source.
+# Nightly backup: the database, uploaded objects, and static vault Git mirrors.
+# They cover different recovery surfaces and must be retained together.
 #
 #   ./scripts/backup.sh [destination-dir]
 #
@@ -18,6 +17,7 @@ KEEP_DAYS="${BACKUP_KEEP_DAYS:-14}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 DB_URL="${DATABASE_URL:-postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree}"
 OBJECTS="${FILE_STORAGE_DIR:-./data/objects}"
+VAULT_GIT="${VAULT_GIT_DIR:-./data/vault-repos}"
 
 mkdir -p "$DEST"
 
@@ -32,10 +32,19 @@ else
   echo "!! object store not found at $OBJECTS — database dumped WITHOUT its files" >&2
 fi
 
+if [ -d "$VAULT_GIT" ]; then
+  echo "==> static vaults → $DEST/vault-git-$STAMP.tar.gz"
+  tar -czf "$DEST/vault-git-$STAMP.tar.gz" -C "$(dirname "$VAULT_GIT")" "$(basename "$VAULT_GIT")"
+  tar -tzf "$DEST/vault-git-$STAMP.tar.gz" > /dev/null
+else
+  echo "!! static vault Git directory not found at $VAULT_GIT" >&2
+fi
+
 # Verify the dump is readable rather than trusting that pg_dump exited 0.
 pg_restore --list "$DEST/db-$STAMP.dump" > /dev/null
 echo "==> verified $DEST/db-$STAMP.dump is readable"
 
 find "$DEST" -name 'db-*.dump' -mtime "+$KEEP_DAYS" -delete
 find "$DEST" -name 'objects-*.tar.gz' -mtime "+$KEEP_DAYS" -delete
+find "$DEST" -name 'vault-git-*.tar.gz' -mtime "+$KEEP_DAYS" -delete
 echo "==> done; keeping $KEEP_DAYS days"
