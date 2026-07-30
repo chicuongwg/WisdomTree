@@ -44,7 +44,8 @@ async function main() {
     await client.query(
       `TRUNCATE loan_tickets, catalog_items,
                 promotions, tree_node_versions, node_links, node_tags, tags,
-                tree_nodes, branches, review_tasks, conflicts,
+                tree_nodes, branches, vault_grants, vaults, user_capabilities,
+                review_tasks, conflicts,
                 curations, corrected_texts, markdown_drafts,
                 text_chunks, source_versions, sources,
                 branch_gap_requests, comments, notification_deliveries,
@@ -69,6 +70,44 @@ async function main() {
       );
     }
     const [lan, minh, huong, duc] = users;
+
+    // --- One personal vault per member + the shared knowledge vault ---
+    const personalVaults = new Map<string, string>();
+    for (const u of users) {
+      const vaultId = randomUUID();
+      personalVaults.set(u.id, vaultId);
+      await client.query(
+        `INSERT INTO vaults (id, kind, owner_user_id, name, git_repo_key)
+         VALUES ($1,'personal',$2,$3,$4)`,
+        [vaultId, u.id, u.name, `personal/${u.id}`],
+      );
+      await client.query(
+        `INSERT INTO vault_grants (vault_id, user_id, grant_name, granted_by)
+         VALUES ($1,$2,'owner',$2)`,
+        [vaultId, u.id],
+      );
+    }
+    const sharedVault = randomUUID();
+    await client.query(
+      `INSERT INTO vaults (id, kind, name, git_repo_key)
+       VALUES ($1,'shared','Tri thức chung','shared/main')`,
+      [sharedVault],
+    );
+    for (const capability of [
+      "users.manage",
+      "audit.read",
+      "catalog.manage",
+      "circulation.manage",
+      "shared.publish",
+      "index.operate",
+      "vault.break_glass",
+    ]) {
+      await client.query(
+        `INSERT INTO user_capabilities (user_id, capability, granted_by)
+         VALUES ($1,$2,$1)`,
+        [huong.id, capability],
+      );
+    }
 
     // --- 2 team spaces + 1 personal space each ---
     // The community library is a team space (database-schema.md); it doubles
@@ -203,18 +242,18 @@ async function main() {
     const branchFolk = randomUUID();
     const branchHistory = randomUUID();
     await client.query(
-      `INSERT INTO branches (id, name, description, scope, created_by) VALUES
-         ($1,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.','team',$3),
-         ($2,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.','team',$3)`,
-      [branchFolk, branchHistory, minh.id],
+      `INSERT INTO branches (id, vault_id, name, description, scope, created_by) VALUES
+         ($1,$3,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.','team',$4),
+         ($2,$3,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.','team',$4)`,
+      [branchFolk, branchHistory, sharedVault, minh.id],
     );
 
     // Personal branches — one per user, empty by default (user fills them in).
     for (const u of users) {
       await client.query(
-        `INSERT INTO branches (name, scope, owner_user_id, created_by)
-         VALUES ($1,'personal',$2,$2)`,
-        [`Ghi chú cá nhân — ${u.name}`, u.id],
+        `INSERT INTO branches (vault_id, name, scope, owner_user_id, created_by)
+         VALUES ($1,$2,'personal',$3,$3)`,
+        [personalVaults.get(u.id), `Ghi chú cá nhân — ${u.name}`, u.id],
       );
     }
 

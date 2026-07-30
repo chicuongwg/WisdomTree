@@ -17,6 +17,7 @@ import { users, type Role } from "./schema";
 import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
 import { invitedSentinel } from "./oidc";
+import { vaultGrants, vaults } from "../knowledge/schema";
 
 /**
  * Invite: create the row a first Google sign-in will claim (oidc.ts binds the
@@ -44,6 +45,18 @@ export async function inviteUser(
       .insert(users)
       .values({ googleSub: invitedSentinel(), email, displayName, role })
       .returning({ id: users.id });
+    const [vault] = await tx
+      .insert(vaults)
+      .values({
+        kind: "personal",
+        ownerUserId: created.id,
+        name: displayName,
+        gitRepoKey: `personal/${created.id}`,
+      })
+      .returning({ id: vaults.id });
+    await tx
+      .insert(vaultGrants)
+      .values({ vaultId: vault.id, userId: created.id, grant: "owner", grantedBy: actor.userId });
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "user.invite",

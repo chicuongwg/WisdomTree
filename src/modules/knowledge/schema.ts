@@ -19,8 +19,40 @@ import { sourceVersions } from "../storage/schema";
 // and the append-only triggers (tree_node_versions, promotions) live only in
 // the SQL migration.
 
+export const vaults = pgTable("vaults", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  kind: text("kind", { enum: ["personal", "shared"] }).notNull(),
+  ownerUserId: uuid("owner_user_id").references(() => users.id),
+  name: text("name").notNull(),
+  gitRepoKey: text("git_repo_key").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const vaultGrants = pgTable(
+  "vault_grants",
+  {
+    vaultId: uuid("vault_id")
+      .notNull()
+      .references(() => vaults.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    grant: text("grant_name", { enum: ["owner", "editor", "reviewer", "viewer"] }).notNull(),
+    grantedBy: uuid("granted_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.vaultId, t.userId] })],
+);
+
 export const branches = pgTable("branches", {
   id: uuid("id").primaryKey().defaultRandom(),
+  vaultId: uuid("vault_id")
+    .notNull()
+    .references(() => vaults.id),
+  parentId: uuid("parent_id"),
   name: text("name").notNull().unique(),
   description: text("description"),
   // scope: 'team' = shared project knowledge (all members); 'personal' = private

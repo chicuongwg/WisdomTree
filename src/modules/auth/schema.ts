@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Module: auth — owns role assignment and session state (module-map.md).
 // Column definitions transcribed from docs/design/database-schema.md § users.
@@ -19,3 +19,18 @@ export const users = pgTable("users", {
 });
 
 export type Role = (typeof users.$inferSelect)["role"];
+
+export const userCapabilities = pgTable(
+  "user_capabilities",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    capability: text("capability").notNull(),
+    grantedBy: uuid("granted_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.capability] })],
+);

@@ -22,6 +22,7 @@ import {
   tags,
   treeNodes,
   treeNodeVersions,
+  vaults,
 } from "./schema";
 
 // Module: knowledge — branches and tree nodes (curation→publish lives in
@@ -184,9 +185,19 @@ export async function createBranch(
     authorize(actor, "knowledge.branch.create", { kind: "write" });
   }
   return db.transaction(async (tx) => {
+    const [vault] = await tx
+      .select({ id: vaults.id })
+      .from(vaults)
+      .where(
+        isPersonalScope
+          ? and(eq(vaults.kind, "personal"), eq(vaults.ownerUserId, actor.userId))
+          : eq(vaults.kind, "shared"),
+      );
+    if (!vault) throw new ApiError(409, "vault_missing", "Không tìm thấy kho tri thức.");
     const [created] = await tx
       .insert(branches)
       .values({
+        vaultId: vault.id,
         name: input.name,
         description: input.description ?? null,
         scope: isPersonalScope ? "personal" : "team",
