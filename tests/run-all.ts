@@ -1,6 +1,5 @@
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 const root = path.resolve(process.cwd());
 const target = process.argv[2];
