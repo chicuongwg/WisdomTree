@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { T } from "@/lib/vi";
 import { listAllMembers, listMemberSpaces } from "@/modules/storage/service";
-import { listAuditEvents, listUsers } from "@/modules/auth/admin";
+import { listAuditEvents, listReviewerVaults, listUsers } from "@/modules/auth/admin";
 import { SpaceAdmin } from "@/app/components/space-admin";
 import { UserAdmin } from "@/app/components/user-admin";
 import { AuditLog, type AuditRow } from "@/app/components/audit-log";
@@ -16,15 +16,19 @@ export const metadata = { title: T.adminConsole };
 // ponytail: tabs when the page outgrows scrolling.
 export default async function AdminPage() {
   const user = await requireUser();
-  if (user.role !== "admin_op") notFound();
+  const canManageSpaces = user.capabilities.includes("spaces.manage");
+  const canManageUsers =
+    user.capabilities.includes("users.manage") && user.capabilities.includes("capabilities.manage");
+  const canReadAudit = user.capabilities.includes("audit.read");
+  if (!canManageSpaces && !canManageUsers && !canReadAudit) notFound();
 
   const actor = toPrincipal(user);
-  // listMemberSpaces: Admin/Op is unscoped, so this is every space.
-  const [spaces, allMembers, accounts, audit] = await Promise.all([
-    listMemberSpaces(actor),
-    listAllMembers(actor),
-    listUsers(actor),
-    listAuditEvents(actor, { limit: 50 }),
+  const [spaces, allMembers, accounts, audit, reviewerVaults] = await Promise.all([
+    canManageSpaces ? listMemberSpaces(actor) : Promise.resolve([]),
+    canManageSpaces ? listAllMembers(actor) : Promise.resolve([]),
+    canManageUsers ? listUsers(actor) : Promise.resolve([]),
+    canReadAudit ? listAuditEvents(actor, { limit: 50 }) : Promise.resolve([]),
+    canManageUsers ? listReviewerVaults(actor) : Promise.resolve([]),
   ]);
 
   const auditRows: AuditRow[] = audit.map((r) => ({
@@ -36,38 +40,47 @@ export default async function AdminPage() {
   return (
     <main className="page">
       <h1>{T.adminConsole}</h1>
-      <SpaceAdmin spaces={spaces} allMembers={allMembers} />
+      {canManageSpaces && <SpaceAdmin spaces={spaces} allMembers={allMembers} />}
 
-      <section className="panel">
-        <h2>{T.membersHeading}</h2>
-        <UserAdmin
-          users={accounts.map((u) => ({
-            id: u.id,
-            email: u.email,
-            displayName: u.displayName,
-            role: u.role,
-            disabled: u.disabledAt !== null,
-            invited: u.invited,
-            capabilities: u.capabilities,
-          }))}
-        />
-      </section>
+      {canManageUsers && (
+        <section className="panel">
+          <h2>{T.membersHeading}</h2>
+          <UserAdmin
+            users={accounts.map((u) => ({
+              id: u.id,
+              email: u.email,
+              displayName: u.displayName,
+              role: u.role,
+              disabled: u.disabledAt !== null,
+              invited: u.invited,
+              capabilities: u.capabilities,
+              accessTitle: u.accessTitle,
+              reviewerVaultIds: u.reviewerVaultIds,
+            }))}
+            reviewerVaults={reviewerVaults}
+          />
+        </section>
+      )}
 
-      <section className="panel">
-        <h2>{T.auditHeading}</h2>
-        <AuditLog initial={auditRows} />
-      </section>
+      {canReadAudit && (
+        <section className="panel">
+          <h2>{T.auditHeading}</h2>
+          <AuditLog initial={auditRows} />
+        </section>
+      )}
 
       {/* Health moved to a page of its own (`/admin/health`), laid out as a
           dashboard. The console keeps the doorway so the section is still
           found where readers learned to look for it. */}
-      <section className="panel">
-        <h2>{T.healthHeading}</h2>
-        <p className="muted">{T.healthPageIntro}</p>
-        <p>
-          <Link href="/admin/health">{T.healthOpen}</Link>
-        </p>
-      </section>
+      {user.capabilities.includes("system.operate") && (
+        <section className="panel">
+          <h2>{T.healthHeading}</h2>
+          <p className="muted">{T.healthPageIntro}</p>
+          <p>
+            <Link href="/admin/health">{T.healthOpen}</Link>
+          </p>
+        </section>
+      )}
     </main>
   );
 }

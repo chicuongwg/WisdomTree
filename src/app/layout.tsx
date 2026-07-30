@@ -112,6 +112,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <div className="shell">
             <ShellRail
               role={user.role}
+              capabilities={user.capabilities}
               displayName={user.displayName}
               avatarUrl={
                 user.avatarKey
@@ -126,6 +127,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               personalBranches={personalBranches}
               recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
               role={user.role}
+              capabilities={user.capabilities}
               spaceCount={user.spaceIds.length}
             />
             {/* ponytail: tabIndex 0, not -1. The skip link only needs a
@@ -153,7 +155,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <LogoutButton />
             </footer>
           </div>
-          <CommandPalette role={user.role} />
+          <CommandPalette role={user.role} capabilities={user.capabilities} />
         </ShellLocaleProvider>
         {/* One listener, every form: the browser refuses in Vietnamese now. */}
         <ValidationMessages />

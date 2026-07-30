@@ -13,7 +13,7 @@ export const metadata = { title: T.librarianDesk };
 // circulation.loan.manage regardless (authorization-design.md).
 export default async function LibrarianDeskPage() {
   const user = await requireUser();
-  if (user.role !== "admin_op") {
+  if (!user.capabilities.includes("catalog.manage")) {
     return (
       // Refused, with a way out. A red sentence on a page whose only other
       // element is its own title leaves the reader with the browser's back

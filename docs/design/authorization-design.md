@@ -50,6 +50,26 @@ A request principal is resolved once per request from the session:
 
 `admin_op` has no scope bypass. Content review is an independently assigned capability.
 
+### Chức danh quản trị
+
+Admin Console không yêu cầu người vận hành ghép `role` và capability bằng tay.
+Một chức danh là preset hiển thị, được áp dụng nguyên tử thành global role và
+các capability tương ứng:
+
+| Chức danh | Global role | Capability |
+| --- | --- | --- |
+| Thành viên | `user` | — |
+| Biên tập viên | `editor` | — |
+| Người thẩm định | `user` | `content.review` |
+| Thủ thư | `user` | `catalog.manage`, `circulation.manage` |
+| Quản lý không gian | `user` | `spaces.manage` |
+| Vận hành hệ thống | `admin_op` | `system.operate` |
+| Quản trị hệ thống | `admin_op` | toàn bộ managed capabilities |
+
+Chức danh không thay thế scope grant. Riêng Người thẩm định phải được chọn từng
+shared vault; hệ thống cấp grant `reviewer` chỉ cho vault mà người thao tác đang
+là `owner`. Grant tại các space và vault khác vẫn được quản lý độc lập.
+
 Two principals bypass parts of the pipeline by design:
 
 - The ICS feed authenticates by `calendar_tokens` token, not session; it resolves to the token's user and reuses the same deadline-visibility scoping.

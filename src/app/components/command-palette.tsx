@@ -35,7 +35,13 @@ type SearchHit = {
 
 type Entry = { key: string; label: string; hint: string; href: string };
 
-export function CommandPalette({ role }: { role: string }) {
+export function CommandPalette({
+  role,
+  capabilities = [],
+}: {
+  role: string;
+  capabilities?: string[];
+}) {
   const T = useShellCopy();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -92,14 +98,34 @@ export function CommandPalette({ role }: { role: string }) {
       href: "/tree/branch/new",
     });
   }
-  if (role === "admin_op") {
+  if (capabilities.includes("content.review")) {
     screens.push(
       { key: "review", label: T.reviewQueue, hint: T.paletteHintGo, href: "/review" },
       { key: "inbox", label: T.sourceInbox, hint: T.paletteHintGo, href: "/source/inbox" },
-      { key: "desk", label: T.librarianDesk, hint: T.paletteHintGo, href: "/catalog/admin" },
-      { key: "admin", label: T.adminConsole, hint: T.paletteHintGo, href: "/admin" },
-      { key: "health", label: T.healthPageTitle, hint: T.paletteHintGo, href: "/admin/health" },
     );
+  }
+  if (capabilities.includes("catalog.manage")) {
+    screens.push({
+      key: "desk",
+      label: T.librarianDesk,
+      hint: T.paletteHintGo,
+      href: "/catalog/admin",
+    });
+  }
+  if (
+    capabilities.includes("users.manage") ||
+    capabilities.includes("spaces.manage") ||
+    capabilities.includes("audit.read")
+  ) {
+    screens.push({ key: "admin", label: T.adminConsole, hint: T.paletteHintGo, href: "/admin" });
+  }
+  if (capabilities.includes("system.operate")) {
+    screens.push({
+      key: "health",
+      label: T.healthPageTitle,
+      hint: T.paletteHintGo,
+      href: "/admin/health",
+    });
   }
 
   const q = query.trim().toLowerCase();

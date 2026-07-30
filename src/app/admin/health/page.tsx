@@ -70,13 +70,13 @@ function uptimeWords(seconds: number): string {
 
 export default async function HealthPage() {
   const user = await requireUser();
-  if (user.role !== "admin_op") notFound();
+  if (!user.capabilities.includes("system.operate")) notFound();
 
   const actor = toPrincipal(user);
   const [health, dbOk, reviewQueue] = await Promise.all([
     healthReport(actor),
     databaseReachable(),
-    listReviewQueue(actor, {}),
+    user.capabilities.includes("content.review") ? listReviewQueue(actor, {}) : Promise.resolve([]),
   ]);
 
   const waiting = reviewQueue.filter((t) =>

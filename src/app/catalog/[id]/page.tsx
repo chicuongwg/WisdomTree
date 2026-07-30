@@ -74,7 +74,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
         <div className="catalog-detail-head">
           <div>
             <CatalogCover itemId={item.id} title={item.title} coverPhotoKey={item.coverPhotoKey} />
-            {user.role === "admin_op" && <CatalogCoverForm itemId={item.id} />}
+            {user.capabilities.includes("catalog.manage") && <CatalogCoverForm itemId={item.id} />}
           </div>
           <div className="record-scroll">
             <table className="list">
@@ -126,7 +126,7 @@ export default async function CatalogItemDetail({ params }: { params: Promise<{ 
             item.status === "lost" || item.status === "repair" || item.availableCopies === 0
           }
         />
-        {user.role === "admin_op" && (
+        {user.capabilities.includes("catalog.manage") && (
           <>
             <CatalogCopiesForm itemId={item.id} copies={item.copies} />
             <CatalogArchiveButton itemId={item.id} />

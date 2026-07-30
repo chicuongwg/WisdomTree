@@ -19,6 +19,7 @@ import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
 import { invitedSentinel } from "./oidc";
 import { vaultGrants, vaults } from "../knowledge/schema";
+import { accessTitle, inferAccessTitle, type AccessTitle } from "./access-titles";
 
 export const MANAGED_CAPABILITIES = [
   "capabilities.manage",
@@ -38,12 +39,23 @@ export const MANAGED_CAPABILITIES = [
  */
 export async function inviteUser(
   actor: Principal,
-  input: { email?: string; displayName?: string; role?: Role },
+  input: {
+    email?: string;
+    displayName?: string;
+    accessTitle?: AccessTitle;
+    reviewerVaultIds?: string[];
+  },
 ) {
   authorize(actor, "admin.users.manage", { kind: "write" });
+  authorize(actor, "admin.capabilities.manage", { kind: "write" });
   const email = input.email?.trim().toLowerCase();
   const displayName = input.displayName?.trim();
-  const role: Role = input.role ?? "user";
+  const title = accessTitle(input.accessTitle ?? "member");
+  if (!title) throw new ApiError(400, "invalid_access_title", "Chức danh không hợp lệ.");
+  const reviewerVaultIds = await validateReviewerVaults(
+    actor,
+    title.key === "reviewer" ? (input.reviewerVaultIds ?? []) : [],
+  );
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new ApiError(400, "invalid_email", "Vui lòng nhập địa chỉ email hợp lệ.");
   }
@@ -55,7 +67,7 @@ export async function inviteUser(
   return db.transaction(async (tx) => {
     const [created] = await tx
       .insert(users)
-      .values({ googleSub: invitedSentinel(), email, displayName, role })
+      .values({ googleSub: invitedSentinel(), email, displayName, role: title.role })
       .returning({ id: users.id });
     const [vault] = await tx
       .insert(vaults)
@@ -78,7 +90,20 @@ export async function inviteUser(
         sharedVaults.map((shared) => ({
           vaultId: shared.id,
           userId: created.id,
-          grant: role === "editor" ? ("editor" as const) : ("viewer" as const),
+          grant: reviewerVaultIds.includes(shared.id)
+            ? ("reviewer" as const)
+            : title.role === "editor"
+              ? ("editor" as const)
+              : ("viewer" as const),
+          grantedBy: actor.userId,
+        })),
+      );
+    }
+    if (title.capabilities.length) {
+      await tx.insert(userCapabilities).values(
+        title.capabilities.map((capability) => ({
+          userId: created.id,
+          capability,
           grantedBy: actor.userId,
         })),
       );
@@ -88,7 +113,7 @@ export async function inviteUser(
       action: "user.invite",
       targetType: "user",
       targetId: created.id,
-      details: { email, role },
+      details: { email, accessTitle: title.key, reviewerVaultIds },
     });
     return created;
   });
@@ -96,6 +121,9 @@ export async function inviteUser(
 
 export async function listUsers(actor: Principal) {
   authorize(actor, "admin.users.manage", { kind: "read" });
+  const ownedVaultIds = new Set(
+    actor.vaultGrants?.filter((grant) => grant.grant === "owner").map((grant) => grant.vaultId),
+  );
   const rows = await db
     .select({
       id: users.id,
@@ -110,14 +138,169 @@ export async function listUsers(actor: Principal) {
     })
     .from(users)
     .orderBy(users.displayName);
-  const capabilities = await db.select().from(userCapabilities);
+  const [capabilities, reviewerGrants] = await Promise.all([
+    db.select().from(userCapabilities),
+    db
+      .select({ userId: vaultGrants.userId, vaultId: vaultGrants.vaultId })
+      .from(vaultGrants)
+      .innerJoin(vaults, eq(vaults.id, vaultGrants.vaultId))
+      .where(and(eq(vaults.kind, "shared"), eq(vaultGrants.grant, "reviewer"))),
+  ]);
   return rows.map((user) => ({
     ...user,
     capabilities: capabilities
       .filter((capability) => capability.userId === user.id)
       .map((capability) => capability.capability)
       .sort(),
+    accessTitle: inferAccessTitle(
+      user.role,
+      capabilities
+        .filter((capability) => capability.userId === user.id)
+        .map((capability) => capability.capability),
+    ),
+    reviewerVaultIds: reviewerGrants
+      .filter((grant) => grant.userId === user.id && ownedVaultIds.has(grant.vaultId))
+      .map((grant) => grant.vaultId),
   }));
+}
+
+export async function listReviewerVaults(actor: Principal) {
+  authorize(actor, "admin.capabilities.manage", { kind: "read" });
+  const owned = new Set(
+    actor.vaultGrants?.filter((grant) => grant.grant === "owner").map((grant) => grant.vaultId),
+  );
+  const rows = await db
+    .select({ id: vaults.id, name: vaults.name })
+    .from(vaults)
+    .where(eq(vaults.kind, "shared"))
+    .orderBy(vaults.name);
+  return rows.filter((vault) => owned.has(vault.id));
+}
+
+async function validateReviewerVaults(actor: Principal, requested: string[]) {
+  const vaultIds = [...new Set(requested)];
+  const allowed = new Set((await listReviewerVaults(actor)).map((vault) => vault.id));
+  if (vaultIds.some((vaultId) => !allowed.has(vaultId))) {
+    throw new ApiError(
+      403,
+      "vault_owner_required",
+      "Chỉ chủ vault mới có thể cấp quyền thẩm định.",
+    );
+  }
+  return vaultIds;
+}
+
+export async function applyUserAccessTitle(
+  actor: Principal,
+  userId: string,
+  requestedTitle: AccessTitle,
+  requestedReviewerVaultIds: string[],
+) {
+  authorize(actor, "admin.users.manage", { kind: "write" });
+  authorize(actor, "admin.capabilities.manage", { kind: "write" });
+  const title = accessTitle(requestedTitle);
+  if (!title) throw new ApiError(400, "invalid_access_title", "Chức danh không hợp lệ.");
+  const reviewerVaultIds = await validateReviewerVaults(
+    actor,
+    title.key === "reviewer" ? requestedReviewerVaultIds : [],
+  );
+  const [target] = await db.select().from(users).where(eq(users.id, userId));
+  if (!target) throw notFound();
+  const targetVaultGrants = await db
+    .select({ vaultId: vaultGrants.vaultId, grant: vaultGrants.grant })
+    .from(vaultGrants)
+    .where(eq(vaultGrants.userId, userId));
+  if (
+    targetVaultGrants.some(
+      (grant) => reviewerVaultIds.includes(grant.vaultId) && grant.grant === "owner",
+    )
+  ) {
+    throw new ApiError(
+      409,
+      "vault_owner_preserved",
+      "Không thể thay quyền chủ vault bằng quyền thẩm định.",
+    );
+  }
+  if (
+    target.role === "admin_op" &&
+    title.role !== "admin_op" &&
+    (await otherEnabledAdmins(userId)) === 0
+  ) {
+    throw new ApiError(409, "last_admin", "Không thể hạ vai trò quản trị viên cuối cùng.");
+  }
+  if (
+    userId === actor.userId &&
+    actor.capabilities.includes("capabilities.manage") &&
+    !([...title.capabilities] as string[]).includes("capabilities.manage")
+  ) {
+    throw new ApiError(409, "self_lockout", "Không thể tự thu hồi quyền quản lý capability.");
+  }
+
+  await db.transaction(async (tx) => {
+    const [beforeCapabilities, currentReviewerGrants] = await Promise.all([
+      tx
+        .select({ capability: userCapabilities.capability })
+        .from(userCapabilities)
+        .where(eq(userCapabilities.userId, userId)),
+      tx
+        .select({ vaultId: vaultGrants.vaultId })
+        .from(vaultGrants)
+        .innerJoin(vaults, eq(vaults.id, vaultGrants.vaultId))
+        .where(
+          and(
+            eq(vaultGrants.userId, userId),
+            eq(vaultGrants.grant, "reviewer"),
+            eq(vaults.kind, "shared"),
+          ),
+        ),
+    ]);
+    await tx
+      .update(users)
+      .set({ role: title.role, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+    await tx.delete(userCapabilities).where(eq(userCapabilities.userId, userId));
+    if (title.capabilities.length) {
+      await tx
+        .insert(userCapabilities)
+        .values(
+          title.capabilities.map((capability) => ({ userId, capability, grantedBy: actor.userId })),
+        );
+    }
+    for (const { vaultId } of currentReviewerGrants) {
+      const actorOwnsVault = actor.vaultGrants?.some(
+        (grant) => grant.vaultId === vaultId && grant.grant === "owner",
+      );
+      if (actorOwnsVault && !reviewerVaultIds.includes(vaultId)) {
+        await tx
+          .update(vaultGrants)
+          .set({ grant: "viewer", grantedBy: actor.userId })
+          .where(and(eq(vaultGrants.vaultId, vaultId), eq(vaultGrants.userId, userId)));
+      }
+    }
+    for (const vaultId of reviewerVaultIds) {
+      await tx
+        .insert(vaultGrants)
+        .values({ vaultId, userId, grant: "reviewer", grantedBy: actor.userId })
+        .onConflictDoUpdate({
+          target: [vaultGrants.vaultId, vaultGrants.userId],
+          set: { grant: "reviewer", grantedBy: actor.userId },
+        });
+    }
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "user.access_title.change",
+      targetType: "user",
+      targetId: userId,
+      details: {
+        from: {
+          role: target.role,
+          capabilities: beforeCapabilities.map((item) => item.capability).sort(),
+          reviewerVaultIds: currentReviewerGrants.map((item) => item.vaultId).sort(),
+        },
+        to: { accessTitle: title.key, reviewerVaultIds: reviewerVaultIds.sort() },
+      },
+    });
+  });
 }
 
 export async function setUserCapabilities(

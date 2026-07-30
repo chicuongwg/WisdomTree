@@ -19,9 +19,9 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "storage.search": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
   "catalog.browse": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
   "circulation.loan.request": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
-  "circulation.loan.manage": { roles: ["admin_op"], scope: "global" },
-  "catalog.item.manage": { roles: ["admin_op"], scope: "global" },
-  "storage.space.manage": { roles: ["admin_op"], scope: "global" },
+  "circulation.loan.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "catalog.item.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "storage.space.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "storage.space.members.manage": {
     roles: ["user", "editor", "admin_op"],
     scope: "space",

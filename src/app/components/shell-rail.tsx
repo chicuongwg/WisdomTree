@@ -146,12 +146,14 @@ function writeSidebar(collapsed: boolean): void {
 
 export function ShellRail({
   role,
+  capabilities,
   displayName,
   avatarUrl,
   unread,
   reviewOpen,
 }: {
   role: string;
+  capabilities: string[];
   displayName: string;
   /** Cache-busted /api/avatar URL, or null for the initials fallback. */
   avatarUrl: string | null;
@@ -213,7 +215,7 @@ export function ShellRail({
     { href: "/deadlines", label: T.deadline, icon: icons.deadlines, group: T.navProjects },
   ];
   const roleItems: RailItem[] = [];
-  if (role === "admin_op") {
+  if (capabilities.includes("content.review")) {
     roleItems.push({
       href: "/review",
       label: T.reviewQueue,
@@ -221,6 +223,12 @@ export function ShellRail({
       pip: reviewOpen,
       pipNoun: T.pipOpenTasks,
     });
+  }
+  if (
+    capabilities.includes("users.manage") ||
+    capabilities.includes("spaces.manage") ||
+    capabilities.includes("audit.read")
+  ) {
     roleItems.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
   }
   const notificationItem: RailItem = {

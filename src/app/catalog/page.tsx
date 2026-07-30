@@ -88,7 +88,7 @@ export default async function CatalogPage({
           <Empty
             title={T.catalogEmptyHint}
             action={
-              user.role === "admin_op"
+              user.capabilities.includes("catalog.manage")
                 ? { label: T.addCatalogItem, href: "/catalog/admin" }
                 : undefined
             }

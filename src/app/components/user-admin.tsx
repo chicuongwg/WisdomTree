@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { T, userRoleLabel } from "@/lib/vi";
+import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 import { ConfirmButton } from "./confirm-button";
+import { ACCESS_TITLES, type AccessTitle } from "@/modules/auth/access-titles";
 
 // Admin Console, System section: every account and the two levers an
 // Admin/Op has over one — role and enabled/disabled. The guards worth
@@ -20,32 +21,30 @@ type AdminUser = {
   /** True until the person's first Google sign-in claims the row. */
   invited: boolean;
   capabilities: string[];
+  accessTitle: AccessTitle | null;
+  reviewerVaultIds: string[];
 };
 
-const ROLES = ["user", "editor", "admin_op"] as const;
-const CAPABILITIES = [
-  "capabilities.manage",
-  "users.manage",
-  "audit.read",
-  "catalog.manage",
-  "circulation.manage",
-  "spaces.manage",
-  "content.review",
-  "system.operate",
-] as const;
+type ReviewerVault = { id: string; name: string };
 
-export function UserAdmin({ users }: { users: AdminUser[] }) {
+export function UserAdmin({
+  users,
+  reviewerVaults,
+}: {
+  users: AdminUser[];
+  reviewerVaults: ReviewerVault[];
+}) {
   const change = useMutation();
-  // Each row's pending role pick, only while it differs from the record.
-  const [picks, setPicks] = useState<Record<string, string>>({});
-  const [capabilityPicks, setCapabilityPicks] = useState<Record<string, string[]>>({});
+  const [picks, setPicks] = useState<Record<string, AccessTitle>>({});
+  const [reviewerPicks, setReviewerPicks] = useState<Record<string, string[]>>({});
 
   // The invite form's own round trip, kept apart from the table's so its
   // message reads next to the form that caused it.
   const invite = useMutation();
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
-  const [inviteRole, setInviteRole] = useState<string>("user");
+  const [inviteTitle, setInviteTitle] = useState<AccessTitle>("member");
+  const [inviteReviewerVaultIds, setInviteReviewerVaultIds] = useState<string[]>([]);
 
   return (
     <>
@@ -62,14 +61,20 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
           e.preventDefault();
           void invite
             .run("/api/admin/users/invite", {
-              body: { email: inviteEmail, displayName: inviteName, role: inviteRole },
+              body: {
+                email: inviteEmail,
+                displayName: inviteName,
+                accessTitle: inviteTitle,
+                reviewerVaultIds: inviteReviewerVaultIds,
+              },
               ok: T.inviteSent,
             })
             .then((done) => {
               if (done) {
                 setInviteEmail("");
                 setInviteName("");
-                setInviteRole("user");
+                setInviteTitle("member");
+                setInviteReviewerVaultIds([]);
               }
             });
         }}
@@ -97,20 +102,28 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
           />
         </div>
         <div className="field">
-          <label htmlFor="invite-role">{T.roleColumn}</label>
+          <label htmlFor="invite-role">Chức danh</label>
           <select
             id="invite-role"
-            value={inviteRole}
+            value={inviteTitle}
             disabled={invite.busy}
-            onChange={(e) => setInviteRole(e.target.value)}
+            onChange={(e) => setInviteTitle(e.target.value as AccessTitle)}
           >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {userRoleLabel(r)}
+            {ACCESS_TITLES.map((title) => (
+              <option key={title.key} value={title.key}>
+                {title.label}
               </option>
             ))}
           </select>
         </div>
+        {inviteTitle === "reviewer" && (
+          <ReviewerVaultPicker
+            id="invite-reviewer-vaults"
+            vaults={reviewerVaults}
+            value={inviteReviewerVaultIds}
+            onChange={setInviteReviewerVaultIds}
+          />
+        )}
         <button type="submit" disabled={invite.busy}>
           {invite.busy ? T.loading : T.inviteMember}
         </button>
@@ -123,8 +136,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
             <tr>
               <th scope="col">{T.membersHeading}</th>
               <th scope="col">{T.email}</th>
-              <th scope="col">{T.roleColumn}</th>
-              <th scope="col">Capabilities</th>
+              <th scope="col">Chức danh</th>
               <th scope="col">{T.state}</th>
               <th scope="col">
                 <span className="muted">{T.actionsColumn}</span>
@@ -133,7 +145,8 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
           </thead>
           <tbody>
             {users.map((u) => {
-              const pick = picks[u.id] ?? u.role;
+              const pick = picks[u.id] ?? u.accessTitle ?? "";
+              const selectedReviewerVaults = reviewerPicks[u.id] ?? u.reviewerVaultIds;
               return (
                 <tr key={u.id} className={u.disabled ? "muted" : undefined}>
                   <td>{u.displayName}</td>
@@ -144,23 +157,51 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                         aria-label={`${T.roleOfPrefix} ${u.displayName}`}
                         value={pick}
                         disabled={change.busy}
-                        onChange={(e) => setPicks((p) => ({ ...p, [u.id]: e.target.value }))}
+                        onChange={(e) =>
+                          setPicks((p) => ({
+                            ...p,
+                            [u.id]: e.target.value as AccessTitle,
+                          }))
+                        }
                       >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {userRoleLabel(r)}
+                        {u.accessTitle === null && (
+                          <option value="" disabled>
+                            Cấu hình cũ — chọn chức danh mới
+                          </option>
+                        )}
+                        {ACCESS_TITLES.map((title) => (
+                          <option key={title.key} value={title.key}>
+                            {title.label}
                           </option>
                         ))}
                       </select>
+                      {pick === "reviewer" && (
+                        <ReviewerVaultPicker
+                          id={`reviewer-vaults-${u.id}`}
+                          vaults={reviewerVaults}
+                          value={selectedReviewerVaults}
+                          onChange={(value) =>
+                            setReviewerPicks((current) => ({ ...current, [u.id]: value }))
+                          }
+                        />
+                      )}
                       <button
                         type="button"
                         className="secondary"
-                        disabled={change.busy || pick === u.role}
+                        disabled={
+                          change.busy ||
+                          !pick ||
+                          (pick === u.accessTitle &&
+                            selectedReviewerVaults.join() === u.reviewerVaultIds.join())
+                        }
                         onClick={() => {
                           void change
-                            .run(`/api/admin/users/${u.id}`, {
+                            .run(`/api/admin/users/${u.id}/access-title`, {
                               method: "PATCH",
-                              body: { role: pick },
+                              body: {
+                                accessTitle: pick,
+                                reviewerVaultIds: pick === "reviewer" ? selectedReviewerVaults : [],
+                              },
                               ok: T.roleChanged,
                             })
                             .then((done) => {
@@ -168,55 +209,14 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                               // pick, so drop the local override either way it
                               // resolves — on failure the select snaps back to
                               // the truth instead of lying next to the error.
-                              if (done) setPicks(({ [u.id]: _, ...rest }) => rest);
+                              if (done) {
+                                setPicks(({ [u.id]: _, ...rest }) => rest);
+                                setReviewerPicks(({ [u.id]: _, ...rest }) => rest);
+                              }
                             });
                         }}
                       >
-                        {T.changeRole}
-                      </button>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="button-row">
-                      <select
-                        multiple
-                        aria-label={`Capabilities · ${u.displayName}`}
-                        value={capabilityPicks[u.id] ?? u.capabilities}
-                        disabled={change.busy}
-                        onChange={(event) =>
-                          setCapabilityPicks((current) => ({
-                            ...current,
-                            [u.id]: Array.from(event.currentTarget.selectedOptions).map(
-                              (option) => option.value,
-                            ),
-                          }))
-                        }
-                      >
-                        {CAPABILITIES.map((capability) => (
-                          <option key={capability} value={capability}>
-                            {capability}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={change.busy || capabilityPicks[u.id] === undefined}
-                        onClick={() => {
-                          void change
-                            .run(`/api/admin/users/${u.id}/capabilities`, {
-                              method: "PATCH",
-                              body: { capabilities: capabilityPicks[u.id] ?? u.capabilities },
-                              ok: T.save,
-                            })
-                            .then(
-                              (done) =>
-                                done &&
-                                setCapabilityPicks(({ [u.id]: _, ...rest }) => rest),
-                            );
-                        }}
-                      >
-                        {T.save}
+                        Áp dụng
                       </button>
                     </div>
                   </td>
@@ -269,5 +269,43 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
         </table>
       </div>
     </>
+  );
+}
+
+function ReviewerVaultPicker({
+  id,
+  vaults,
+  value,
+  onChange,
+}: {
+  id: string;
+  vaults: ReviewerVault[];
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  return (
+    <fieldset id={id}>
+      <legend>Kho dùng chung được thẩm định</legend>
+      {vaults.length === 0 ? (
+        <span className="muted">Bạn chưa sở hữu kho dùng chung nào.</span>
+      ) : (
+        vaults.map((vault) => (
+          <label key={vault.id}>
+            <input
+              type="checkbox"
+              checked={value.includes(vault.id)}
+              onChange={(event) =>
+                onChange(
+                  event.currentTarget.checked
+                    ? [...value, vault.id]
+                    : value.filter((id) => id !== vault.id),
+                )
+              }
+            />
+            {vault.name}
+          </label>
+        ))
+      )}
+    </fieldset>
   );
 }

@@ -83,12 +83,14 @@ function SidebarContent({
   personalBranches = [],
   recent = [],
   role = "user",
+  capabilities = [],
   spaceCount = 0,
 }: {
   teamBranches?: OutlineBranch[];
   personalBranches?: OutlineBranch[];
   recent?: RecentNode[];
   role?: string;
+  capabilities?: string[];
   spaceCount?: number;
 }) {
   const T = useShellCopy();
@@ -135,14 +137,14 @@ function SidebarContent({
     { href: "/deadlines", label: T.deadline },
     { href: "/catalog", label: T.catalog },
   ];
-  if (role === "admin_op" || role === "editor") {
+  if (capabilities.includes("catalog.manage")) {
     teamProjects.push({ href: "/catalog/admin", label: T.librarianDesk });
   }
-  if (role === "admin_op") {
-    teamProjects.push(
-      { href: "/source/inbox", label: T.sourceInbox },
-      { href: "/admin/health", label: T.healthPageTitle },
-    );
+  if (capabilities.includes("content.review")) {
+    teamProjects.push({ href: "/source/inbox", label: T.sourceInbox });
+  }
+  if (capabilities.includes("system.operate")) {
+    teamProjects.push({ href: "/admin/health", label: T.healthPageTitle });
   }
 
   const personalWork: { href: string; label: string }[] = [
@@ -348,6 +350,7 @@ export function ShellSidebar(props: {
   personalBranches?: OutlineBranch[];
   recent?: RecentNode[];
   role?: string;
+  capabilities?: string[];
   spaceCount?: number;
 }) {
   const T = useShellCopy();
