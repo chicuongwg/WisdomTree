@@ -559,14 +559,6 @@ export async function personalKnowledgeGraph(actor: Principal): Promise<Knowledg
   );
 }
 
-/**
- * @deprecated Use teamKnowledgeGraph() or personalKnowledgeGraph().
- * Kept for any call sites not yet migrated.
- */
-export async function knowledgeGraph(actor: Principal): Promise<KnowledgeGraph> {
-  return teamKnowledgeGraph(actor);
-}
-
 // ---------------------------------------------------------------------------
 // Node mutations
 // ---------------------------------------------------------------------------
