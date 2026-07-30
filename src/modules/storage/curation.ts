@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { T } from "@/lib/vi";
@@ -16,6 +17,7 @@ import {
 } from "../knowledge/schema";
 import {
   branchGapRequests,
+  contentReviews,
   correctedTexts,
   curations,
   markdownDrafts,
@@ -23,6 +25,9 @@ import {
   sourceVersions,
   textChunks,
 } from "./schema";
+
+const contentSha256 = (content: string) =>
+  createHash("sha256").update(Buffer.from(content, "utf8")).digest("hex");
 
 // Curation → review → publish (sequence-diagrams.md Flow 2): the optional
 // overlay on storage that produces tree knowledge with promotion provenance.
@@ -75,7 +80,7 @@ export async function assignCuration(
   const ctx = await loadVersion(sourceId, versionId);
   const [assignee] = await db.select().from(users).where(eq(users.id, assigneeId));
   if (!assignee) throw notFound();
-  if (ctx.curation && ["promoted", "rejected"].includes(ctx.curation.state)) {
+  if (ctx.curation?.state !== "under_correction") {
     throw new ApiError(409, "invalid_state", "Việc hiệu đính của tư liệu này đã kết thúc.");
   }
 
@@ -290,6 +295,7 @@ export async function saveDraft(
         .update(markdownDrafts)
         .set({
           contentMd: input.contentMd,
+          updatedBy: actor.userId,
           ...(input.suggestedBranchId !== undefined
             ? { suggestedBranchId: input.suggestedBranchId }
             : {}),
@@ -308,6 +314,7 @@ export async function saveDraft(
           contentMd: input.contentMd,
           suggestedBranchId: input.suggestedBranchId ?? null,
           createdBy: actor.userId,
+          updatedBy: actor.userId,
         })
         .returning();
     }
@@ -333,8 +340,25 @@ export async function markReadyForReview(actor: Principal, sourceId: string, ver
   if (ctx.curation.state !== "under_correction") {
     throw new ApiError(409, "invalid_state", "Tư liệu không ở trạng thái đang hiệu đính.");
   }
+  const [draft] = await db
+    .select()
+    .from(markdownDrafts)
+    .where(eq(markdownDrafts.sourceVersionId, versionId));
+  if (!draft) throw new ApiError(409, "missing_draft", "Chưa có bản thảo để gửi duyệt.");
 
   const result = await db.transaction(async (tx) => {
+    const [review] = await tx
+      .insert(contentReviews)
+      .values({
+        targetType: "source_draft",
+        sourceVersionId: versionId,
+        contentSha256: contentSha256(draft.contentMd),
+        originatorId: ctx.source.submittedBy,
+        lastEditorId: draft.updatedBy,
+        submittedBy: actor.userId,
+        targetBranchId: draft.suggestedBranchId,
+      })
+      .returning();
     const [updated] = await tx
       .update(curations)
       .set({ state: "ready_for_review", updatedAt: new Date(), version: ctx.curation!.version + 1 })
@@ -364,7 +388,7 @@ export async function markReadyForReview(actor: Principal, sourceId: string, ver
       action: "curation.ready_for_review",
       targetType: "source_version",
       targetId: versionId,
-      details: { sourceId },
+      details: { sourceId, reviewId: review.id, contentSha256: review.contentSha256 },
     });
     await emitOutbox(tx, "source.ready_for_review", {
       sourceId,
@@ -381,12 +405,36 @@ export async function markReadyForReview(actor: Principal, sourceId: string, ver
 export async function rejectCuration(actor: Principal, sourceId: string, versionId: string) {
   authorize(actor, "review.corrected.approve", { kind: "write" });
   const ctx = await loadVersion(sourceId, versionId);
+  if (!actor.spaceIds.includes(ctx.source.spaceId)) throw notFound();
   if (!ctx.curation) throw notFound();
   if (ctx.curation.state === "promoted") {
     throw new ApiError(409, "invalid_state", "Tư liệu đã được xuất bản, không thể từ chối.");
   }
+  const [review] = await db
+    .select()
+    .from(contentReviews)
+    .where(
+      and(
+        eq(contentReviews.sourceVersionId, versionId),
+        eq(contentReviews.state, "pending"),
+      ),
+    );
+  if (!review) throw new ApiError(409, "missing_review", "Không có revision đang chờ duyệt.");
+  if ([review.originatorId, review.lastEditorId, review.submittedBy].includes(actor.userId)) {
+    throw new ApiError(403, "separation_of_duties", "Người tạo hoặc sửa không được tự duyệt.");
+  }
 
   return db.transaction(async (tx) => {
+    await tx
+      .update(contentReviews)
+      .set({
+        state: "rejected",
+        reviewedBy: actor.userId,
+        reviewedAt: new Date(),
+        updatedAt: new Date(),
+        version: review.version + 1,
+      })
+      .where(and(eq(contentReviews.id, review.id), eq(contentReviews.version, review.version)));
     const [updated] = await tx
       .update(curations)
       .set({ state: "rejected", updatedAt: new Date(), version: ctx.curation!.version + 1 })
@@ -413,45 +461,8 @@ export async function rejectCuration(actor: Principal, sourceId: string, version
   });
 }
 
-/** Admin/Op approves corrected text + draft ahead of the publish decision. */
-export async function approveCuration(actor: Principal, sourceId: string, versionId: string) {
-  authorize(actor, "review.draft.approve", { kind: "write" });
-  const ctx = await loadVersion(sourceId, versionId);
-  if (!ctx.curation || ctx.curation.state !== "ready_for_review") {
-    throw new ApiError(409, "invalid_state", "Tư liệu chưa sẵn sàng để duyệt.");
-  }
-
-  const result = await db.transaction(async (tx) => {
-    await tx
-      .update(reviewTasks)
-      .set({ state: "in_review", assignedTo: actor.userId, updatedAt: new Date() })
-      .where(
-        and(
-          eq(reviewTasks.targetId, versionId),
-          eq(reviewTasks.taskType, "publish"),
-          inArray(reviewTasks.state, ["queued", "assigned"]),
-        ),
-      );
-    await recordAudit(tx, actor, {
-      accountability: "approver_publisher",
-      action: "curation.approve",
-      targetType: "source_version",
-      targetId: versionId,
-      details: { sourceId },
-    });
-    await emitOutbox(tx, "source.approved", {
-      sourceId,
-      sourceVersionId: versionId,
-      uploaderId: ctx.source.submittedBy,
-    });
-    return { ok: true };
-  });
-  kickDispatch();
-  return result;
-}
-
 // ---------------------------------------------------------------------------
-// Publish (Admin/Op; idempotent; promotion provenance)
+// Publish (independent reviewer; idempotent; promotion provenance)
 // ---------------------------------------------------------------------------
 
 export async function publishFromSource(
@@ -467,6 +478,7 @@ export async function publishFromSource(
 ) {
   authorize(actor, "knowledge.publish", { kind: "write" });
   const ctx = await loadVersion(sourceId, versionId);
+  if (!actor.spaceIds.includes(ctx.source.spaceId)) throw notFound();
   if (!ctx.curation) throw notFound();
 
   // Idempotency (Flow 2 note): a re-run after `promoted` finds the existing
@@ -494,8 +506,26 @@ export async function publishFromSource(
   if (!draft) {
     throw new ApiError(409, "missing_draft", "Chưa có bản thảo để xuất bản.");
   }
+  const [review] = await db
+    .select()
+    .from(contentReviews)
+    .where(
+      and(
+        eq(contentReviews.sourceVersionId, versionId),
+        eq(contentReviews.state, "pending"),
+      ),
+    );
+  if (!review) throw new ApiError(409, "missing_review", "Không có revision đang chờ duyệt.");
+  if (contentSha256(draft.contentMd) !== review.contentSha256 || draft.updatedBy !== review.lastEditorId) {
+    throw new ApiError(409, "review_stale", "Bản thảo đã thay đổi sau khi gửi duyệt.");
+  }
+  if ([review.originatorId, review.lastEditorId, review.submittedBy].includes(actor.userId)) {
+    throw new ApiError(403, "separation_of_duties", "Người tạo hoặc sửa không được tự duyệt.");
+  }
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (!branch || branch.archivedAt) throw notFound();
+  const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === branch.vaultId)?.grant;
+  if (vaultGrant !== "reviewer" && vaultGrant !== "owner") throw notFound();
 
   if (input.excerptChunkIds?.length) {
     const found = await db
@@ -547,7 +577,7 @@ export async function publishFromSource(
           slug,
           contentMd: draft.contentMd,
           verification: input.verification,
-          createdBy: actor.userId,
+          createdBy: ctx.source.submittedBy,
         })
         .returning();
       seq = 1;
@@ -560,8 +590,9 @@ export async function publishFromSource(
         seq,
         contentMd: draft.contentMd,
         verification: input.verification,
-        createdBy: actor.userId,
+        createdBy: draft.updatedBy,
         changeSummary: `Xuất bản từ tư liệu "${ctx.source.title}"`,
+        reviewStatus: "approved",
       })
       .returning();
 
@@ -575,6 +606,30 @@ export async function publishFromSource(
         excerptChunkIds: input.excerptChunkIds?.length ? input.excerptChunkIds : null,
       })
       .returning();
+
+    const [approvedReview] = await tx
+      .update(contentReviews)
+      .set({
+        state: "approved",
+        reviewedBy: actor.userId,
+        reviewedAt: new Date(),
+        targetBranchId: input.branchId,
+        targetNodeId: node.id,
+        verification: input.verification,
+        excerptChunkIds: input.excerptChunkIds?.length ? input.excerptChunkIds : null,
+        approvedNodeVersionId: nodeVersion.id,
+        updatedAt: new Date(),
+        version: review.version + 1,
+      })
+      .where(
+        and(
+          eq(contentReviews.id, review.id),
+          eq(contentReviews.version, review.version),
+          eq(contentReviews.state, "pending"),
+        ),
+      )
+      .returning();
+    if (!approvedReview) throw versionConflict();
 
     const [promoted] = await tx
       .update(curations)
@@ -603,6 +658,7 @@ export async function publishFromSource(
         sourceId,
         sourceVersionId: versionId,
         promotionId: promotion.id,
+        reviewId: approvedReview.id,
         verification: input.verification,
         excerptChunkIds: input.excerptChunkIds ?? [],
       },

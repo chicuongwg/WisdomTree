@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, inArray, ne, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import {
@@ -11,10 +12,11 @@ import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { sources, sourceVersions } from "../storage/schema";
+import { contentReviews, sources, sourceVersions } from "../storage/schema";
 import { kickDispatch } from "../notify/dispatcher";
 import {
   branches,
+  nodeChangeProposals,
   nodeLinks,
   nodeTags,
   promotions,
@@ -33,6 +35,21 @@ import {
 const PAGE_SIZE = 20;
 
 export type Verification = (typeof treeNodes.$inferSelect)["verification"];
+
+function proposalSha256(value: unknown): string {
+  const canonical = (item: unknown): unknown => {
+    if (Array.isArray(item)) return item.map(canonical);
+    if (item && typeof item === "object") {
+      return Object.fromEntries(
+        Object.entries(item as Record<string, unknown>)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([key, child]) => [key, canonical(child)]),
+      );
+    }
+    return item;
+  };
+  return createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex");
+}
 
 /** Stable export/publish path: Vietnamese-safe slug, unique via numeric suffix. */
 async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promise<string> {
@@ -65,28 +82,20 @@ async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promis
 
 /**
  * Knowledge scope & visibility rules:
- * - Shared branches are visible to every member.
- * - Personal branches require an explicit vault grant, including for admins.
+ * - Every branch requires an explicit vault grant, including for admins.
  */
 export function canViewBranch(
   actor: Principal,
   branch: { scope: string; vaultId: string },
 ): boolean {
-  if (branch.scope === "team") return true;
-  if (branch.scope === "personal" && actor.vaultIds?.includes(branch.vaultId)) return true;
-  return false;
+  return actor.vaultIds?.includes(branch.vaultId) ?? false;
 }
 
 export function branchVisibilityCondition(actor: Principal) {
   const accessibleVaults = actor.vaultIds ?? [];
   return and(
     sql`${branches.archivedAt} IS NULL`,
-    or(
-      eq(branches.scope, "team"),
-      accessibleVaults.length
-        ? and(eq(branches.scope, "personal"), inArray(branches.vaultId, accessibleVaults))
-        : sql`false`,
-    ),
+    accessibleVaults.length ? inArray(branches.vaultId, accessibleVaults) : sql`false`,
   );
 }
 
@@ -175,8 +184,8 @@ export async function createBranch(
   input: { name: string; description?: string; scope?: string },
 ) {
   const isPersonalScope = input.scope === "personal";
-  if (!isPersonalScope) {
-    authorize(actor, "knowledge.branch.create", { kind: "write" });
+  if (!isPersonalScope || actor.role !== "user") {
+    throw new ApiError(403, "submission_required", "Chuyên đề chung phải bắt đầu từ đề xuất của user.");
   }
   return db.transaction(async (tx) => {
     const [vault] = await tx
@@ -534,8 +543,8 @@ export async function createNode(
   const isOwnPersonalBranch =
     branch.scope === "personal" &&
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
-  if (!isOwnPersonalBranch) {
-    authorize(actor, "knowledge.node.create", { kind: "write" });
+  if (!isOwnPersonalBranch || actor.role !== "user") {
+    throw new ApiError(403, "submission_required", "Nội dung chung phải đi qua maker-checker review.");
   }
 
   return db.transaction(async (tx) => {
@@ -602,6 +611,63 @@ export async function updateNode(
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
   if (!isOwnPersonalBranch) {
     authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
+    if (!branch) throw notFound();
+    const grant = actor.vaultGrants?.find((item) => item.vaultId === branch.vaultId)?.grant;
+    if (grant !== "editor" && grant !== "owner") throw notFound();
+    if (patch.verification !== undefined || patch.publish !== undefined) {
+      throw new ApiError(403, "review_required", "Mức thẩm định chỉ thay đổi qua review.");
+    }
+    const [currentTags, currentLinks] = await Promise.all([
+      db
+        .select({ name: tags.name })
+        .from(nodeTags)
+        .innerJoin(tags, eq(nodeTags.tagId, tags.id))
+        .where(eq(nodeTags.nodeId, nodeId)),
+      db
+        .select({ toNodeId: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
+        .from(nodeLinks)
+        .where(eq(nodeLinks.fromNodeId, nodeId)),
+    ]);
+    const snapshot = {
+      title: patch.title ?? node.title,
+      contentMd: patch.contentMd ?? node.contentMd,
+      tags: [...(patch.tags ?? currentTags.map((tag) => tag.name))].sort(),
+      links: [...(patch.links ?? currentLinks)].sort(
+        (a, b) => a.toNodeId.localeCompare(b.toNodeId) || a.linkType.localeCompare(b.linkType),
+      ),
+    };
+    return db.transaction(async (tx) => {
+      const [proposal] = await tx
+        .insert(nodeChangeProposals)
+        .values({
+          nodeId,
+          baseVersion: patch.expectedVersion ?? node.version,
+          ...snapshot,
+          contentSha256: proposalSha256(snapshot),
+          createdBy: actor.userId,
+        })
+        .returning();
+      const [review] = await tx
+        .insert(contentReviews)
+        .values({
+          targetType: "node_proposal",
+          proposalId: proposal.id,
+          contentSha256: proposal.contentSha256,
+          originatorId: node.createdBy,
+          lastEditorId: actor.userId,
+          submittedBy: actor.userId,
+          targetNodeId: nodeId,
+        })
+        .returning();
+      await recordAudit(tx, actor, {
+        accountability: "editor_updater",
+        action: "node.change.propose",
+        targetType: "node_change_proposal",
+        targetId: proposal.id,
+        details: { nodeId, reviewId: review.id, baseVersion: proposal.baseVersion },
+      });
+      return { proposalId: proposal.id, reviewId: review.id, state: proposal.state };
+    });
   }
 
   if (patch.verification !== undefined || patch.publish !== undefined) {
@@ -698,6 +764,151 @@ export async function updateNode(
     });
   }
   return result;
+}
+
+export async function reviewNodeProposal(
+  actor: Principal,
+  nodeId: string,
+  proposalId: string,
+  input: {
+    decision: "approved" | "rejected" | "changes_requested";
+    verification?: "unverified" | "verified";
+    expectedReviewVersion: number;
+  },
+) {
+  authorize(actor, "knowledge.publish", { kind: "write" });
+  const [row] = await db
+    .select({
+      proposal: nodeChangeProposals,
+      review: contentReviews,
+      node: treeNodes,
+      vaultId: branches.vaultId,
+    })
+    .from(nodeChangeProposals)
+    .innerJoin(contentReviews, eq(contentReviews.proposalId, nodeChangeProposals.id))
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeChangeProposals.nodeId))
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(
+      and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.nodeId, nodeId)),
+    );
+  if (!row || row.review.state !== "pending" || row.proposal.state !== "pending") throw notFound();
+  const grant = actor.vaultGrants?.find((item) => item.vaultId === row.vaultId)?.grant;
+  if (grant !== "reviewer" && grant !== "owner") throw notFound();
+  if (
+    [row.review.originatorId, row.review.lastEditorId, row.review.submittedBy].includes(actor.userId)
+  ) {
+    throw new ApiError(403, "separation_of_duties", "Người tạo hoặc sửa không được tự duyệt.");
+  }
+  if (proposalSha256({
+    title: row.proposal.title,
+    contentMd: row.proposal.contentMd,
+    tags: row.proposal.tags,
+    links: row.proposal.links,
+  }) !== row.review.contentSha256) {
+    throw new ApiError(409, "review_stale", "Proposal không còn khớp review snapshot.");
+  }
+
+  return db.transaction(async (tx) => {
+    if (input.decision !== "approved") {
+      await tx
+        .update(nodeChangeProposals)
+        .set({ state: input.decision })
+        .where(eq(nodeChangeProposals.id, proposalId));
+      const [review] = await tx
+        .update(contentReviews)
+        .set({
+          state: input.decision,
+          reviewedBy: actor.userId,
+          reviewedAt: new Date(),
+          updatedAt: new Date(),
+          version: row.review.version + 1,
+        })
+        .where(
+          and(
+            eq(contentReviews.id, row.review.id),
+            eq(contentReviews.version, input.expectedReviewVersion),
+          ),
+        )
+        .returning();
+      if (!review) throw versionConflict();
+      return { state: review.state };
+    }
+    if (!input.verification) throw new ApiError(400, "missing_verification", "Thiếu mức thẩm định.");
+    const [node] = await tx
+      .update(treeNodes)
+      .set({
+        title: row.proposal.title,
+        contentMd: row.proposal.contentMd,
+        verification: input.verification,
+        publish: input.verification === "verified",
+        updatedAt: new Date(),
+        version: row.node.version + 1,
+      })
+      .where(
+        and(
+          eq(treeNodes.id, nodeId),
+          eq(treeNodes.version, row.proposal.baseVersion),
+          eq(treeNodes.version, row.node.version),
+        ),
+      )
+      .returning();
+    if (!node) throw versionConflict();
+    const [{ maxSeq }] = await tx
+      .select({ maxSeq: sql<number>`coalesce(max(${treeNodeVersions.seq}), 0)::int` })
+      .from(treeNodeVersions)
+      .where(eq(treeNodeVersions.nodeId, nodeId));
+    const [version] = await tx
+      .insert(treeNodeVersions)
+      .values({
+        nodeId,
+        seq: maxSeq + 1,
+        contentMd: node.contentMd,
+        verification: input.verification,
+        createdBy: row.proposal.createdBy,
+        changeSummary: "Approved maker-checker proposal",
+        reviewStatus: "approved",
+      })
+      .returning();
+    await syncTags(tx, actor, nodeId, row.proposal.tags as string[]);
+    await syncLinks(
+      tx,
+      nodeId,
+      row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
+    );
+    await syncDerivedLinks(tx, nodeId, node.title, node.contentMd);
+    await tx
+      .update(nodeChangeProposals)
+      .set({ state: "approved" })
+      .where(eq(nodeChangeProposals.id, proposalId));
+    const [review] = await tx
+      .update(contentReviews)
+      .set({
+        state: "approved",
+        reviewedBy: actor.userId,
+        reviewedAt: new Date(),
+        verification: input.verification,
+        approvedNodeVersionId: version.id,
+        updatedAt: new Date(),
+        version: row.review.version + 1,
+      })
+      .where(
+        and(
+          eq(contentReviews.id, row.review.id),
+          eq(contentReviews.version, input.expectedReviewVersion),
+          eq(contentReviews.state, "pending"),
+        ),
+      )
+      .returning();
+    if (!review) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "approver_publisher",
+      action: "node.change.approve",
+      targetType: "tree_node",
+      targetId: nodeId,
+      details: { proposalId, reviewId: review.id, nodeVersionId: version.id },
+    });
+    return node;
+  });
 }
 
 export async function archiveNode(actor: Principal, nodeId: string) {

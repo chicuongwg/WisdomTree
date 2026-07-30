@@ -108,10 +108,37 @@ export const treeNodeVersions = pgTable(
       .notNull()
       .references(() => users.id),
     changeSummary: text("change_summary"),
+    reviewStatus: text("review_status", {
+      enum: ["legacy_accepted", "pending", "approved"],
+    })
+      .notNull()
+      .default("pending"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.nodeId, t.seq)],
 );
+
+export const nodeChangeProposals = pgTable("node_change_proposals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  nodeId: uuid("node_id")
+    .notNull()
+    .references(() => treeNodes.id),
+  baseVersion: integer("base_version").notNull(),
+  title: text("title").notNull(),
+  contentMd: text("content_md").notNull(),
+  tags: jsonb("tags").notNull().default([]),
+  links: jsonb("links").notNull().default([]),
+  contentSha256: text("content_sha256").notNull(),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
+  state: text("state", {
+    enum: ["pending", "approved", "rejected", "changes_requested"],
+  })
+    .notNull()
+    .default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const vaultGitJobs = pgTable("vault_git_jobs", {
   id: uuid("id").primaryKey().defaultRandom(),

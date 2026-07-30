@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx --env-file-if-exists=.env scripts/db/migrate.ts",
     "db:bootstrap": "tsx --env-file-if-exists=.env scripts/db/bootstrap.ts",
+    "db:audit-legacy-content": "tsx --env-file-if-exists=.env scripts/db/audit-legacy-content.ts",
     "db:seed": "npm run db:seed:demo",
     "db:seed:demo": "tsx --env-file-if-exists=.env scripts/db/seed.ts",
     "db:up": "docker compose up -d db",

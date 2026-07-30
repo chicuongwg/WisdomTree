@@ -218,9 +218,44 @@ export const markdownDrafts = pgTable("markdown_drafts", {
   createdBy: uuid("created_by")
     .notNull()
     .references(() => users.id),
+  updatedBy: uuid("updated_by")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
+});
+
+export const contentReviews = pgTable("content_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  targetType: text("target_type", { enum: ["source_draft", "node_proposal"] }).notNull(),
+  sourceVersionId: uuid("source_version_id").references(() => sourceVersions.id),
+  proposalId: uuid("proposal_id"),
+  contentSha256: text("content_sha256").notNull(),
+  originatorId: uuid("originator_id")
+    .notNull()
+    .references(() => users.id),
+  lastEditorId: uuid("last_editor_id")
+    .notNull()
+    .references(() => users.id),
+  submittedBy: uuid("submitted_by")
+    .notNull()
+    .references(() => users.id),
+  state: text("state", {
+    enum: ["pending", "approved", "rejected", "changes_requested"],
+  })
+    .notNull()
+    .default("pending"),
+  reviewedBy: uuid("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  targetBranchId: uuid("target_branch_id"),
+  targetNodeId: uuid("target_node_id"),
+  verification: text("verification", { enum: ["unverified", "verified"] }),
+  excerptChunkIds: uuid("excerpt_chunk_ids").array(),
+  approvedNodeVersionId: uuid("approved_node_version_id"),
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const branchGapRequests = pgTable("branch_gap_requests", {

@@ -98,14 +98,27 @@ async function main() {
        VALUES ($1,'shared','Tri thức chung','shared/main')`,
       [sharedVault],
     );
+    for (const user of users) {
+      await client.query(
+        `INSERT INTO vault_grants (vault_id, user_id, grant_name, granted_by)
+         VALUES ($1,$2,$3,$4)`,
+        [
+          sharedVault,
+          user.id,
+          user.role === "admin_op" ? "owner" : user.role === "editor" ? "editor" : "viewer",
+          huong.id,
+        ],
+      );
+    }
     for (const capability of [
+      "capabilities.manage",
       "users.manage",
       "audit.read",
       "catalog.manage",
       "circulation.manage",
-      "shared.publish",
-      "index.operate",
-      "vault.break_glass",
+      "spaces.manage",
+      "system.operate",
+      "content.review",
     ]) {
       await client.query(
         `INSERT INTO user_capabilities (user_id, capability, granted_by)
@@ -138,7 +151,8 @@ async function main() {
         [personal[u.id], `Không gian cá nhân — ${u.name}`, u.id],
       );
       await client.query(
-        `INSERT INTO space_members (space_id, user_id, added_by) VALUES ($1,$2,$2)`,
+        `INSERT INTO space_members (space_id, user_id, member_role, added_by)
+         VALUES ($1,$2,'manager',$2)`,
         [personal[u.id], u.id],
       );
     }
@@ -152,8 +166,9 @@ async function main() {
     ];
     for (const [spaceId, userId] of memberships) {
       await client.query(
-        `INSERT INTO space_members (space_id, user_id, added_by) VALUES ($1,$2,$3)`,
-        [spaceId, userId, huong.id],
+        `INSERT INTO space_members (space_id, user_id, member_role, added_by)
+         VALUES ($1,$2,$3,$4)`,
+        [spaceId, userId, userId === huong.id ? "manager" : "contributor", huong.id],
       );
     }
 
@@ -323,8 +338,9 @@ async function main() {
         [nodeId, def.branch, def.title, def.slug, def.contentMd, def.verification, def.publish, minh.id],
       );
       const { rows: nodeVersion } = await client.query(
-        `INSERT INTO tree_node_versions (node_id, seq, content_md, verification, created_by, change_summary)
-         VALUES ($1,1,$2,$3,$4,$5) RETURNING id`,
+        `INSERT INTO tree_node_versions
+           (node_id, seq, content_md, verification, created_by, change_summary, review_status)
+         VALUES ($1,1,$2,$3,$4,$5,'legacy_accepted') RETURNING id`,
         [
           nodeId,
           def.contentMd,
@@ -370,6 +386,8 @@ async function main() {
     // 1 curation mid-flow: ready_for_review with corrected text + draft, and
     // the matching review task queue entries (Flow 2), so /review has work.
     const midFlow = sourceByTitle["Danh mục tài liệu tham khảo"];
+    const midFlowDraft =
+      "# Danh mục tài liệu tham khảo\n\nDanh mục nguồn nền tảng cho các chuyên đề lịch sử địa phương.\n\n- Địa chí vùng\n- Hồi ký người cao tuổi\n- Bản đồ cổ";
     await client.query(
       `INSERT INTO curations (source_version_id, state, assigned_to, nominated_by)
        VALUES ($1,'ready_for_review',$2,$3)`,
@@ -389,13 +407,26 @@ async function main() {
       ],
     );
     await client.query(
-      `INSERT INTO markdown_drafts (source_version_id, content_md, suggested_branch_id, created_by)
-       VALUES ($1,$2,$3,$4)`,
+      `INSERT INTO markdown_drafts
+         (source_version_id, content_md, suggested_branch_id, created_by, updated_by)
+       VALUES ($1,$2,$3,$4,$4)`,
       [
         midFlow.versionId,
-        "# Danh mục tài liệu tham khảo\n\nDanh mục nguồn nền tảng cho các chuyên đề lịch sử địa phương.\n\n- Địa chí vùng\n- Hồi ký người cao tuổi\n- Bản đồ cổ",
+        midFlowDraft,
         branchHistory,
         minh.id,
+      ],
+    );
+    await client.query(
+      `INSERT INTO content_reviews
+         (target_type, source_version_id, content_sha256, originator_id,
+          last_editor_id, submitted_by, target_branch_id)
+       VALUES ('source_draft',$1,$2,$3,$3,$3,$4)`,
+      [
+        midFlow.versionId,
+        createHash("sha256").update(Buffer.from(midFlowDraft, "utf8")).digest("hex"),
+        minh.id,
+        branchHistory,
       ],
     );
     await client.query(
