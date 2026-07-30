@@ -66,9 +66,36 @@ const SPACE_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"; // non-member space
 const OTHER = "cccccccc-cccc-4ccc-8ccc-cccccccccccc"; // unrelated user id
 
 const principals: Record<string, Principal> = {
-  user: { userId: "11111111-1111-4111-8111-111111111111", role: "user", spaceIds: [SPACE_A] },
-  editor: { userId: "22222222-2222-4222-8222-222222222222", role: "editor", spaceIds: [SPACE_A] },
-  admin_op: { userId: "33333333-3333-4333-8333-333333333333", role: "admin_op", spaceIds: [] },
+  user: {
+    userId: "11111111-1111-4111-8111-111111111111",
+    role: "user",
+    spaceIds: [SPACE_A],
+    spaceMemberships: [{ spaceId: SPACE_A, role: "contributor" }],
+    capabilities: [],
+  },
+  editor: {
+    userId: "22222222-2222-4222-8222-222222222222",
+    role: "editor",
+    spaceIds: [SPACE_A],
+    spaceMemberships: [{ spaceId: SPACE_A, role: "contributor" }],
+    capabilities: [],
+  },
+  admin_op: {
+    userId: "33333333-3333-4333-8333-333333333333",
+    role: "admin_op",
+    spaceIds: [SPACE_A],
+    spaceMemberships: [{ spaceId: SPACE_A, role: "manager" }],
+    capabilities: [
+      "capabilities.manage",
+      "users.manage",
+      "audit.read",
+      "catalog.manage",
+      "circulation.manage",
+      "spaces.manage",
+      "system.operate",
+      "content.review",
+    ],
+  },
 };
 
 const allowed = (p: Principal, key: PermissionKey, res: Parameters<typeof authorize>[2]) => {

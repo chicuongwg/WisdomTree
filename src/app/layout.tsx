@@ -58,12 +58,22 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     );
   }
 
-  const principal = { userId: user.id, role: user.role, spaceIds: user.spaceIds };
+  const principal = {
+    userId: user.id,
+    role: user.role,
+    spaceIds: user.spaceIds,
+    spaceMemberships: user.spaceMemberships,
+    capabilities: user.capabilities,
+    vaultIds: user.vaultIds,
+    vaultGrants: user.vaultGrants,
+  };
   const [unread, outline, recent, reviewTasks] = await Promise.all([
     unreadCount(principal),
     treeOutline(principal),
     recentNodes(principal, 6),
-    user.role === "admin_op" ? listReviewQueue(principal, {}) : Promise.resolve([]),
+    user.capabilities.includes("content.review")
+      ? listReviewQueue(principal, {})
+      : Promise.resolve([]),
   ]);
   const reviewOpen = reviewTasks.filter((t) =>
     ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),

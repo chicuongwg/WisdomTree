@@ -19,14 +19,26 @@ type AdminUser = {
   disabled: boolean;
   /** True until the person's first Google sign-in claims the row. */
   invited: boolean;
+  capabilities: string[];
 };
 
 const ROLES = ["user", "editor", "admin_op"] as const;
+const CAPABILITIES = [
+  "capabilities.manage",
+  "users.manage",
+  "audit.read",
+  "catalog.manage",
+  "circulation.manage",
+  "spaces.manage",
+  "content.review",
+  "system.operate",
+] as const;
 
 export function UserAdmin({ users }: { users: AdminUser[] }) {
   const change = useMutation();
   // Each row's pending role pick, only while it differs from the record.
   const [picks, setPicks] = useState<Record<string, string>>({});
+  const [capabilityPicks, setCapabilityPicks] = useState<Record<string, string[]>>({});
 
   // The invite form's own round trip, kept apart from the table's so its
   // message reads next to the form that caused it.
@@ -112,6 +124,7 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
               <th scope="col">{T.membersHeading}</th>
               <th scope="col">{T.email}</th>
               <th scope="col">{T.roleColumn}</th>
+              <th scope="col">Capabilities</th>
               <th scope="col">{T.state}</th>
               <th scope="col">
                 <span className="muted">{T.actionsColumn}</span>
@@ -160,6 +173,50 @@ export function UserAdmin({ users }: { users: AdminUser[] }) {
                         }}
                       >
                         {T.changeRole}
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="button-row">
+                      <select
+                        multiple
+                        aria-label={`Capabilities · ${u.displayName}`}
+                        value={capabilityPicks[u.id] ?? u.capabilities}
+                        disabled={change.busy}
+                        onChange={(event) =>
+                          setCapabilityPicks((current) => ({
+                            ...current,
+                            [u.id]: Array.from(event.currentTarget.selectedOptions).map(
+                              (option) => option.value,
+                            ),
+                          }))
+                        }
+                      >
+                        {CAPABILITIES.map((capability) => (
+                          <option key={capability} value={capability}>
+                            {capability}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={change.busy || capabilityPicks[u.id] === undefined}
+                        onClick={() => {
+                          void change
+                            .run(`/api/admin/users/${u.id}/capabilities`, {
+                              method: "PATCH",
+                              body: { capabilities: capabilityPicks[u.id] ?? u.capabilities },
+                              ok: T.save,
+                            })
+                            .then(
+                              (done) =>
+                                done &&
+                                setCapabilityPicks(({ [u.id]: _, ...rest }) => rest),
+                            );
+                        }}
+                      >
+                        {T.save}
                       </button>
                     </div>
                   </td>

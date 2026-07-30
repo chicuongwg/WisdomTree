@@ -13,7 +13,12 @@ import { Empty } from "./empty";
 
 type Space = { id: string; name: string; type: string };
 type Member = { id: string; displayName: string; role: string };
-type SpaceMember = { userId: string; displayName: string; role: string };
+type SpaceMember = {
+  userId: string;
+  displayName: string;
+  role: string;
+  memberRole: "viewer" | "contributor" | "manager";
+};
 
 export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers: Member[] }) {
   const create = useMutation();
@@ -153,6 +158,7 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                     <tr>
                       <th scope="col">{T.memberColumn}</th>
                       <th scope="col">{T.roleColumn}</th>
+                      <th scope="col">Space role</th>
                       <th scope="col">
                         <span className="muted">{T.actionsColumn}</span>
                       </th>
@@ -163,6 +169,26 @@ export function SpaceAdmin({ spaces, allMembers }: { spaces: Space[]; allMembers
                       <tr key={m.userId}>
                         <td>{m.displayName}</td>
                         <td>{userRoleLabel(m.role)}</td>
+                        <td>
+                          <select
+                            aria-label={`Space role · ${m.displayName}`}
+                            value={m.memberRole}
+                            disabled={change.busy}
+                            onChange={(event) => {
+                              void change
+                                .run(`/api/spaces/${spaceId}/members/${m.userId}`, {
+                                  method: "PATCH",
+                                  body: { memberRole: event.target.value },
+                                  ok: T.save,
+                                })
+                                .then((done) => done && setTick((tick) => tick + 1));
+                            }}
+                          >
+                            <option value="viewer">viewer</option>
+                            <option value="contributor">contributor</option>
+                            <option value="manager">manager</option>
+                          </select>
+                        </td>
                         <td>
                           <ConfirmButton
                             label={T.removeFromSpace}

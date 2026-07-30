@@ -45,9 +45,10 @@
 A request principal is resolved once per request from the session:
 
 - `userId`, `role` (`user` | `editor` | `admin_op`), `disabled` check.
-- `spaceIds`: the actor's memberships from `space_members` (cached per request, never per check).
+- space memberships with `viewer`, `contributor`, or `manager` role.
+- explicit operational capabilities and vault grants.
 
-`admin_op` implies global scope everywhere. `editor` implies every `user` permission. Role is stored on `users.role` and changed only by Admin/Op (audited as a permission-sensitive change).
+`admin_op` has no scope bypass. Content review is an independently assigned capability.
 
 Two principals bypass parts of the pipeline by design:
 
@@ -60,8 +61,8 @@ Order for every request:
 
 1. **Session middleware** — resolve principal or `401`.
 2. **Route guard** — declared `permission` key per route (from the catalog); calls `authorize(actor, permission, resource)`.
-3. **`authorize`** — role check, then scope-qualifier check (`space`: resource's `space_id` ∈ actor's `spaceIds`; `owned-or-assigned`: `created_by`/`submitted_by` = actor or an active assignment; `self`: record's user id = actor).
-4. **Query scoping** — list endpoints call `scopedToSpaces(query, actor)`, the one helper that appends the membership filter (no-op for `admin_op`).
+3. **`authorize`** — role/capability check, then space role, vault grant, self, or owned/assigned scope.
+4. **Query scoping** — list endpoints always append the membership filter.
 5. **Audit** — the mutation service writes `audit_events` in the mutation transaction; a denial at step 3 writes `outcome=denied` for permission-sensitive actions.
 
 ## Permission Catalog
@@ -75,26 +76,26 @@ Permission keys are `module.action`. "Roles" lists the minimum roles allowed; sc
 | `knowledge.search` | Search tree | all | global |
 | `storage.search` | Search source repo items | all | space (editor also owned-or-assigned outside member spaces) |
 | `knowledge.graph.read` | Open dedicated graph surface | all | global |
-| `storage.intake.open` | Open source intake | all | global |
+| `storage.intake.open` | Open source intake | user | global |
 | `storage.library.browse` | Browse Library of stored items | all | space |
 | `storage.gap.create` | Create branch-gap request | all | global |
-| `knowledge.branch.create` | Create branch | editor | global |
-| `knowledge.branch.edit` | Edit branch metadata | editor | owned-or-assigned (admin_op global) |
-| `knowledge.node.create` | Create manual node | editor | global |
-| `knowledge.node.edit` | Edit manual node | editor | owned-or-assigned (admin_op global) |
+| `knowledge.branch.create` | Create branch | none directly | personal/gap workflow |
+| `knowledge.branch.edit` | Edit branch metadata | editor | owned-or-assigned |
+| `knowledge.node.create` | Create manual node | none directly | personal/submission workflow |
+| `knowledge.node.edit` | Edit manual node | editor | owned-or-assigned proposal |
 | `audit.node.read` | View node audit summary | editor | owned-or-assigned (admin_op global) |
-| `storage.upload` | Upload source file | all | space (target space membership) |
+| `storage.upload` | Upload source file | user | contributor space |
 | `storage.submissions.read` | View own submissions | all | self |
-| `storage.source.read_all` | View source items across all spaces | admin_op | global |
+| `storage.source.read_all` | View source items across all spaces | reviewer capability | scoped evidence read |
 | `storage.download` | Download original source file | all | space |
 | `storage.corrected.edit` | Edit corrected text when owned or assigned | editor | owned-or-assigned |
 | `storage.draft.edit` | Edit Markdown draft when owned or assigned | editor | owned-or-assigned |
-| `review.corrected.approve` | Approve corrected text | admin_op | global |
+| `review.corrected.approve` | Approve corrected text | reviewer capability | maker-checker |
 | `storage.trust.change` | Change source trust status | admin_op | global |
-| `review.draft.approve` | Approve Markdown draft for publication | admin_op | global |
-| `knowledge.publish` | Publish to tree | admin_op | global |
-| `knowledge.node.merge` | Merge duplicate nodes | admin_op | global |
-| `knowledge.archive` | Archive node or source | admin_op | global |
+| `review.draft.approve` | Approve Markdown draft for publication | reviewer capability | maker-checker |
+| `knowledge.publish` | Publish to tree | reviewer capability | maker-checker + vault grant |
+| `knowledge.node.merge` | Merge duplicate nodes | editor | vault |
+| `knowledge.archive` | Archive node or source | editor | vault |
 | `knowledge.taxonomy.manage` | Manage tags and taxonomy | admin_op (editor: suggest only) | global |
 | `pm.board.manage` | Manage operational board | admin_op (user, editor: owned-or-assigned task updates) | global |
 | `export.document` | Export node Markdown to docx or pdf | all | global |
@@ -126,6 +127,8 @@ Addendum (2026-07-20, found during the knowledge-module build — capabilities i
 | `pm.task.archive` | Archive a finished or mistaken task off the board | admin_op (user, editor: own tasks) | owned-or-assigned |
 | `admin.users.manage` | Change a member's role or disable/re-enable an account, always audited with old and new values | admin_op | global |
 | `admin.audit.read` | Read the audit trail in the Admin Console | admin_op | global |
+| `admin.capabilities.manage` | Grant or revoke operational capabilities | admin_op | global |
+| `storage.space.members.manage` | Manage roles within a space | all | manager space role |
 | (ruling) | Log an achievement stays under `pm.board.manage` (editor owned-or-assigned, admin_op global); baseline users do not log achievements | | |
 
 Notes:

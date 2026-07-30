@@ -20,7 +20,7 @@ export const metadata = { title: T.sourceInbox };
 // surface over all intake items: file-backed sources and gap requests.
 export default async function SourceInboxPage() {
   const user = await requireUser();
-  if (user.role !== "admin_op") notFound();
+  if (user.role !== "editor" && !user.capabilities.includes("content.review")) notFound();
   const { sources, gapRequests } = await listInbox(toPrincipal(user));
 
   const unassigned = sources.filter((s) => !s.source.assignedTo).length;

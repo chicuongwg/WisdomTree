@@ -5,13 +5,13 @@ import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 
 const CAPABILITIES = [
+  "capabilities.manage",
   "users.manage",
   "audit.read",
   "catalog.manage",
   "circulation.manage",
-  "shared.publish",
-  "index.operate",
-  "vault.break_glass",
+  "spaces.manage",
+  "system.operate",
 ];
 
 function argument(flag: string, envName: string): string {

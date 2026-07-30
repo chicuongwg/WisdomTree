@@ -8,34 +8,40 @@ import type { Role } from "./schema";
 // qualifiers are verbatim from the catalog table.
 
 type Scope = "global" | "space" | "self" | "owned-or-assigned";
+type SpaceRole = "viewer" | "contributor" | "manager";
 
-const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
-  "storage.intake.open": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "storage.library.browse": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  "storage.upload": { roles: ["user", "editor", "admin_op"], scope: "space" },
+const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRole }> = {
+  "storage.intake.open": { roles: ["user"], scope: "global" },
+  "storage.library.browse": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "storage.upload": { roles: ["user"], scope: "space", spaceRole: "contributor" },
   "storage.submissions.read": { roles: ["user", "editor", "admin_op"], scope: "self" },
-  "storage.download": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  "storage.search": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  "catalog.browse": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  "circulation.loan.request": { roles: ["user", "editor", "admin_op"], scope: "space" },
+  "storage.download": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "storage.search": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "catalog.browse": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "circulation.loan.request": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
   "circulation.loan.manage": { roles: ["admin_op"], scope: "global" },
   "catalog.item.manage": { roles: ["admin_op"], scope: "global" },
   "storage.space.manage": { roles: ["admin_op"], scope: "global" },
+  "storage.space.members.manage": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "manager",
+  },
   // --- Knowledge module (authorization-design.md § Permission Catalog) ---
   "knowledge.node.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "knowledge.search": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "knowledge.branch.create": { roles: ["editor", "admin_op"], scope: "global" },
-  "knowledge.branch.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
-  "knowledge.node.create": { roles: ["editor", "admin_op"], scope: "global" },
-  "knowledge.node.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
-  "knowledge.publish": { roles: ["admin_op"], scope: "global" },
-  "knowledge.node.merge": { roles: ["admin_op"], scope: "global" },
-  "knowledge.archive": { roles: ["admin_op"], scope: "global" },
-  "storage.corrected.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
-  "storage.draft.edit": { roles: ["editor", "admin_op"], scope: "owned-or-assigned" },
-  "review.corrected.approve": { roles: ["admin_op"], scope: "global" },
-  "review.draft.approve": { roles: ["admin_op"], scope: "global" },
-  "storage.source.read_all": { roles: ["admin_op"], scope: "global" },
+  "knowledge.branch.create": { roles: [], scope: "global" },
+  "knowledge.branch.edit": { roles: ["editor"], scope: "owned-or-assigned" },
+  "knowledge.node.create": { roles: [], scope: "global" },
+  "knowledge.node.edit": { roles: ["editor"], scope: "owned-or-assigned" },
+  "knowledge.publish": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "knowledge.node.merge": { roles: ["editor"], scope: "global" },
+  "knowledge.archive": { roles: ["editor"], scope: "global" },
+  "storage.corrected.edit": { roles: ["editor"], scope: "owned-or-assigned" },
+  "storage.draft.edit": { roles: ["editor"], scope: "owned-or-assigned" },
+  "review.corrected.approve": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "review.draft.approve": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "storage.source.read_all": { roles: ["user", "editor", "admin_op"], scope: "global" },
   // Correcting your own upload: rename it, or withdraw it before anyone has
   // built on it. Owned-or-assigned so a submitter can fix their own mistake
   // without an admin, which is the difference between this and a spreadsheet.
@@ -43,8 +49,8 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   // Not in the catalog table verbatim: curation assignment and gap triage are
   // Admin/Op flows (sequence-diagrams.md Flow 2, admin-op-flows.md); keyed
   // here as module.action pending a catalog addendum — flagged in the report.
-  "storage.curation.assign": { roles: ["admin_op"], scope: "global" },
-  "storage.gap.triage": { roles: ["admin_op"], scope: "global" },
+  "storage.curation.assign": { roles: ["editor"], scope: "global" },
+  "storage.gap.triage": { roles: ["editor"], scope: "global" },
   // --- Export module (authorization-design.md § Permission Catalog) ---
   "export.document": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "export.tree.trigger": { roles: ["admin_op"], scope: "global" },
@@ -57,6 +63,7 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   // required by that doc (:151) to audit old and new values — the service
   // enforces it, this key only gates who may try.
   "admin.users.manage": { roles: ["admin_op"], scope: "global" },
+  "admin.capabilities.manage": { roles: ["admin_op"], scope: "global" },
   "admin.audit.read": { roles: ["admin_op"], scope: "global" },
   // --- Notify + PM modules (authorization-design.md § Permission Catalog) ---
   // notify.comment.create's catalog scope is "anchor (delegates to the
@@ -65,8 +72,8 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope }> = {
   // anchor object's own read authorize (404 on non-visible anchors).
   "notify.comment.create": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "notify.preferences.manage": { roles: ["user", "editor", "admin_op"], scope: "self" },
-  "pm.deadline.read": { roles: ["user", "editor", "admin_op"], scope: "space" },
-  "pm.deadline.edit": { roles: ["user", "editor", "admin_op"], scope: "space" },
+  "pm.deadline.read": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "pm.deadline.edit": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "contributor" },
   // pm.board.manage: owned-or-assigned task updates for every member,
   // admin_op bypasses on role. The guild-board model (owner decision
   // 2026-07-21): whoever holds a task works it, whatever their role.
@@ -87,8 +94,15 @@ export type PermissionKey = keyof typeof CATALOG;
 const REQUIRED_CAPABILITY: Partial<Record<PermissionKey, string>> = {
   "circulation.loan.manage": "circulation.manage",
   "catalog.item.manage": "catalog.manage",
-  "knowledge.publish": "shared.publish",
+  "storage.space.manage": "spaces.manage",
+  "knowledge.publish": "content.review",
+  "review.corrected.approve": "content.review",
+  "review.draft.approve": "content.review",
+  "storage.source.read_all": "content.review",
+  "export.tree.trigger": "system.operate",
+  "admin.health.read": "system.operate",
   "admin.users.manage": "users.manage",
+  "admin.capabilities.manage": "capabilities.manage",
   "admin.audit.read": "audit.read",
 };
 
@@ -119,15 +133,23 @@ export function authorize(
   const capability = REQUIRED_CAPABILITY[permission];
   // Undefined preserves compatibility for callers that construct the old
   // Principal shape; resolved sessions always carry the explicit list.
-  if (capability && actor.capabilities && !actor.capabilities.includes(capability)) throw denial;
-  if (actor.role === "admin_op") return actor; // global scope everywhere
+  if (capability && !actor.capabilities.includes(capability)) throw denial;
 
   switch (entry.scope) {
     case "global":
       return actor;
-    case "space":
-      if (!resource.spaceId || !actor.spaceIds.includes(resource.spaceId)) throw denial;
+    case "space": {
+      if (!resource.spaceId) throw denial;
+      const membership = actor.spaceMemberships.find((item) => item.spaceId === resource.spaceId);
+      if (!membership) throw denial;
+      if (
+        entry.spaceRole &&
+        ["viewer", "contributor", "manager"].indexOf(membership.role) <
+          ["viewer", "contributor", "manager"].indexOf(entry.spaceRole)
+      )
+        throw denial;
       return actor;
+    }
     case "self":
       if (resource.userId !== actor.userId) throw denial;
       return actor;
@@ -142,6 +164,6 @@ export function authorize(
  * per-endpoint ad hoc filtering): returns the space ids a list query may see,
  * or null for admin_op (no filter).
  */
-export function scopedToSpaces(actor: Principal): string[] | null {
-  return actor.role === "admin_op" ? null : actor.spaceIds;
+export function scopedToSpaces(actor: Principal): string[] {
+  return actor.spaceIds;
 }

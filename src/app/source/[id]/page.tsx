@@ -38,7 +38,7 @@ export default async function AdminSourceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
-  if (user.role !== "admin_op") notFound();
+  if (user.role !== "editor" && !user.capabilities.includes("content.review")) notFound();
   const actor = toPrincipal(user);
   const { id } = await params;
 

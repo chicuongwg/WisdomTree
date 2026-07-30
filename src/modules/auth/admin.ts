@@ -13,12 +13,23 @@ import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "./dev-auth";
 import { authorize } from "./authorize";
-import { users, type Role } from "./schema";
+import { userCapabilities, users, type Role } from "./schema";
 import { revokeUserSessions } from "./session";
 import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
 import { invitedSentinel } from "./oidc";
 import { vaultGrants, vaults } from "../knowledge/schema";
+
+export const MANAGED_CAPABILITIES = [
+  "capabilities.manage",
+  "users.manage",
+  "audit.read",
+  "catalog.manage",
+  "circulation.manage",
+  "spaces.manage",
+  "content.review",
+  "system.operate",
+] as const;
 
 /**
  * Invite: create the row a first Google sign-in will claim (oidc.ts binds the
@@ -58,6 +69,20 @@ export async function inviteUser(
     await tx
       .insert(vaultGrants)
       .values({ vaultId: vault.id, userId: created.id, grant: "owner", grantedBy: actor.userId });
+    const sharedVaults = await tx
+      .select({ id: vaults.id })
+      .from(vaults)
+      .where(eq(vaults.kind, "shared"));
+    if (sharedVaults.length) {
+      await tx.insert(vaultGrants).values(
+        sharedVaults.map((shared) => ({
+          vaultId: shared.id,
+          userId: created.id,
+          grant: role === "editor" ? ("editor" as const) : ("viewer" as const),
+          grantedBy: actor.userId,
+        })),
+      );
+    }
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "user.invite",
@@ -71,7 +96,7 @@ export async function inviteUser(
 
 export async function listUsers(actor: Principal) {
   authorize(actor, "admin.users.manage", { kind: "read" });
-  return db
+  const rows = await db
     .select({
       id: users.id,
       email: users.email,
@@ -85,6 +110,110 @@ export async function listUsers(actor: Principal) {
     })
     .from(users)
     .orderBy(users.displayName);
+  const capabilities = await db.select().from(userCapabilities);
+  return rows.map((user) => ({
+    ...user,
+    capabilities: capabilities
+      .filter((capability) => capability.userId === user.id)
+      .map((capability) => capability.capability)
+      .sort(),
+  }));
+}
+
+export async function setUserCapabilities(
+  actor: Principal,
+  userId: string,
+  requested: string[],
+): Promise<void> {
+  authorize(actor, "admin.capabilities.manage", { kind: "write" });
+  const capabilities = [...new Set(requested)].sort();
+  if (capabilities.some((capability) => !MANAGED_CAPABILITIES.includes(capability as never))) {
+    throw new ApiError(400, "invalid_capability", "Capability không hợp lệ.");
+  }
+  if (
+    userId === actor.userId &&
+    actor.capabilities.includes("capabilities.manage") &&
+    !capabilities.includes("capabilities.manage")
+  ) {
+    throw new ApiError(409, "self_lockout", "Không thể tự thu hồi quyền quản lý capability.");
+  }
+  const [target] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId));
+  if (!target) throw notFound();
+  await db.transaction(async (tx) => {
+    const before = await tx
+      .select({ capability: userCapabilities.capability })
+      .from(userCapabilities)
+      .where(eq(userCapabilities.userId, userId));
+    await tx.delete(userCapabilities).where(eq(userCapabilities.userId, userId));
+    if (capabilities.length) {
+      await tx.insert(userCapabilities).values(
+        capabilities.map((capability) => ({
+          userId,
+          capability,
+          grantedBy: actor.userId,
+        })),
+      );
+    }
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "user.capabilities.change",
+      targetType: "user",
+      targetId: userId,
+      details: { from: before.map((item) => item.capability).sort(), to: capabilities },
+    });
+  });
+}
+
+export async function listVaultGrants(actor: Principal, vaultId: string) {
+  if (actor.vaultGrants?.find((grant) => grant.vaultId === vaultId)?.grant !== "owner") {
+    throw notFound();
+  }
+  return db
+    .select({
+      userId: users.id,
+      displayName: users.displayName,
+      grant: vaultGrants.grant,
+    })
+    .from(vaultGrants)
+    .innerJoin(users, eq(users.id, vaultGrants.userId))
+    .where(eq(vaultGrants.vaultId, vaultId))
+    .orderBy(users.displayName);
+}
+
+export async function setVaultGrant(
+  actor: Principal,
+  vaultId: string,
+  userId: string,
+  grant: "viewer" | "editor" | "reviewer" | "owner",
+) {
+  if (actor.vaultGrants?.find((item) => item.vaultId === vaultId)?.grant !== "owner") {
+    throw notFound();
+  }
+  if (actor.userId === userId && grant !== "owner") {
+    throw new ApiError(409, "self_lockout", "Vault owner không thể tự hạ quyền.");
+  }
+  const [target] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId));
+  if (!target) throw notFound();
+  await db.transaction(async (tx) => {
+    const [before] = await tx
+      .select({ grant: vaultGrants.grant })
+      .from(vaultGrants)
+      .where(and(eq(vaultGrants.vaultId, vaultId), eq(vaultGrants.userId, userId)));
+    await tx
+      .insert(vaultGrants)
+      .values({ vaultId, userId, grant, grantedBy: actor.userId })
+      .onConflictDoUpdate({
+        target: [vaultGrants.vaultId, vaultGrants.userId],
+        set: { grant, grantedBy: actor.userId },
+      });
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "vault.grant.change",
+      targetType: "vault",
+      targetId: vaultId,
+      details: { userId, from: before?.grant ?? null, to: grant },
+    });
+  });
 }
 
 /** How many enabled admins besides this one — the lockout guard's question. */

@@ -76,7 +76,7 @@ export async function findOrBindUser(claims: GoogleClaims): Promise<{ id: string
       tx,
       // The person is authenticating; there is no principal yet. The actor of
       // the bind is the user themself.
-      { userId: invited.id, role: "user", spaceIds: [] },
+      { userId: invited.id, role: "user", spaceIds: [], spaceMemberships: [], capabilities: [] },
       {
         accountability: "member",
         action: "user.oidc.bind",

@@ -17,8 +17,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ spa
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { spaceId } = await params;
-    const body = (await request.json().catch(() => ({}))) as { userId?: string };
-    await addSpaceMember(actor, spaceId, body.userId ?? "");
+    const body = (await request.json().catch(() => ({}))) as {
+      userId?: string;
+      memberRole?: "viewer" | "contributor" | "manager";
+    };
+    await addSpaceMember(actor, spaceId, body.userId ?? "", body.memberRole);
     return new NextResponse(null, { status: 201 });
   });
 }

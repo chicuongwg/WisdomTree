@@ -608,7 +608,12 @@ export async function createSpace(actor: Principal, input: { name?: string }) {
       .returning({ id: spaces.id, name: spaces.name, type: spaces.type });
     await tx
       .insert(spaceMembers)
-      .values({ spaceId: space.id, userId: actor.userId, addedBy: actor.userId });
+      .values({
+        spaceId: space.id,
+        userId: actor.userId,
+        memberRole: "manager",
+        addedBy: actor.userId,
+      });
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "space.create",
@@ -639,17 +644,27 @@ export async function listMemberSpaces(actor: Principal) {
 
 /** Members of one space, with names — the admin membership panel's read. */
 export async function listSpaceMembers(actor: Principal, spaceId: string) {
-  authorize(actor, "storage.space.manage", { kind: "read" });
+  authorize(actor, "storage.space.members.manage", { spaceId, kind: "read" });
   return db
-    .select({ userId: users.id, displayName: users.displayName, role: users.role })
+    .select({
+      userId: users.id,
+      displayName: users.displayName,
+      role: users.role,
+      memberRole: spaceMembers.memberRole,
+    })
     .from(spaceMembers)
     .innerJoin(users, eq(spaceMembers.userId, users.id))
     .where(eq(spaceMembers.spaceId, spaceId))
     .orderBy(asc(users.displayName));
 }
 
-export async function addSpaceMember(actor: Principal, spaceId: string, userId: string) {
-  authorize(actor, "storage.space.manage", { kind: "write" });
+export async function addSpaceMember(
+  actor: Principal,
+  spaceId: string,
+  userId: string,
+  memberRole: "viewer" | "contributor" | "manager" = "contributor",
+) {
+  authorize(actor, "storage.space.members.manage", { spaceId, kind: "write" });
   const [space] = await db.select({ id: spaces.id }).from(spaces).where(eq(spaces.id, spaceId));
   if (!space) throw notFound();
   const [user] = await db
@@ -662,20 +677,20 @@ export async function addSpaceMember(actor: Principal, spaceId: string, userId: 
     // ("this person is in the space") is already true.
     await tx
       .insert(spaceMembers)
-      .values({ spaceId, userId, addedBy: actor.userId })
+      .values({ spaceId, userId, memberRole, addedBy: actor.userId })
       .onConflictDoNothing();
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "space.member.add",
       targetType: "space",
       targetId: spaceId,
-      details: { userId },
+      details: { userId, memberRole },
     });
   });
 }
 
 export async function removeSpaceMember(actor: Principal, spaceId: string, userId: string) {
-  authorize(actor, "storage.space.manage", { kind: "write" });
+  authorize(actor, "storage.space.members.manage", { spaceId, kind: "write" });
   await db.transaction(async (tx) => {
     await tx
       .delete(spaceMembers)
@@ -686,6 +701,30 @@ export async function removeSpaceMember(actor: Principal, spaceId: string, userI
       targetType: "space",
       targetId: spaceId,
       details: { userId },
+    });
+  });
+}
+
+export async function setSpaceMemberRole(
+  actor: Principal,
+  spaceId: string,
+  userId: string,
+  memberRole: "viewer" | "contributor" | "manager",
+) {
+  authorize(actor, "storage.space.members.manage", { spaceId, kind: "write" });
+  await db.transaction(async (tx) => {
+    const [membership] = await tx
+      .update(spaceMembers)
+      .set({ memberRole })
+      .where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.userId, userId)))
+      .returning();
+    if (!membership) throw notFound();
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "space.member.role.change",
+      targetType: "space",
+      targetId: spaceId,
+      details: { userId, memberRole },
     });
   });
 }

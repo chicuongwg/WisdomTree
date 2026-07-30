@@ -1,5 +1,12 @@
 # 🔥 Nhận xét Chi tiết về Phân quyền & Thiết kế Cơ sở dữ liệu WisdomTree 🔥
 
+> **Trạng thái:** Đây là baseline review trước migrations 0015–0017. Các nhận xét về
+> session không thể thu hồi, admin bypass, thiếu capability/vault grant, thiếu
+> maker–checker, foreign-key index và view `intake_items` đã được xử lý. Thiết kế
+> hiện hành nằm ở `docs/design/authorization-design.md` và
+> `docs/requirements/permissions-matrix.md`; các nhận xét còn lại trong tài liệu
+> này là backlog, không phải mô tả chính xác của schema hiện tại.
+
 ---
 
 ## Phần 1: Hệ thống Phân quyền (Role System)

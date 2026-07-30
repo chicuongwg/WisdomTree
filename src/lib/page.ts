@@ -17,6 +17,7 @@ export function toPrincipal(user: PageUser): Principal {
     userId: user.id,
     role: user.role,
     spaceIds: user.spaceIds,
+    spaceMemberships: user.spaceMemberships,
     capabilities: user.capabilities,
     vaultIds: user.vaultIds,
     vaultGrants: user.vaultGrants,

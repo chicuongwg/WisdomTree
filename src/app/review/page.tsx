@@ -24,7 +24,7 @@ export default async function ReviewQueuePage({
   searchParams: Promise<{ taskType?: string; state?: string }>;
 }) {
   const user = await requireUser();
-  if (user.role !== "admin_op") notFound();
+  if (!user.capabilities.includes("content.review")) notFound();
   const { taskType, state } = await searchParams;
   const tasks = await listReviewQueue(toPrincipal(user), {
     taskType: taskType || undefined,

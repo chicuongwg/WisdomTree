@@ -210,6 +210,10 @@ export const postgresIndexProvider: Pick<IndexProvider, "search" | "health"> = {
         userId: access.identityId,
         role: "user",
         spaceIds: access.spaceIds,
+        spaceMemberships: access.spaceIds.map((spaceId) => ({
+          spaceId,
+          role: "viewer" as const,
+        })),
         capabilities: access.systemCapabilities,
         vaultIds: access.vaultGrants.map((grant) => grant.vaultId),
         vaultGrants: access.vaultGrants,
@@ -230,6 +234,10 @@ export const ollamaLibrarianProvider: LibrarianProvider = {
         userId: access.identityId,
         role: "user",
         spaceIds: access.spaceIds,
+        spaceMemberships: access.spaceIds.map((spaceId) => ({
+          spaceId,
+          role: "viewer" as const,
+        })),
         capabilities: access.systemCapabilities,
         vaultIds: access.vaultGrants.map((grant) => grant.vaultId),
         vaultGrants: access.vaultGrants,

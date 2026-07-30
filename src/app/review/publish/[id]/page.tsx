@@ -27,7 +27,7 @@ export const metadata = { title: T.publishReview };
 // and the final publish decision.
 export default async function PublishReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
-  if (user.role !== "admin_op") notFound();
+  if (!user.capabilities.includes("content.review")) notFound();
   const actor = toPrincipal(user);
   const { id } = await params;
   const review = await orNotFound(() => getPublishReview(actor, id));
