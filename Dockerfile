@@ -36,6 +36,7 @@ ENV HOSTNAME=0.0.0.0
 # Both default to paths under /app/data, which is a volume — see compose.
 ENV FILE_STORAGE_DIR=/app/data/objects
 ENV EXPORT_REPO_DIR=/app/data/content-repo.git
+ENV VAULT_GIT_DIR=/app/data/vault-repos
 
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
@@ -45,7 +46,7 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/scripts/db/migrate.ts ./scripts/db/migrate.ts
 
-RUN mkdir -p /app/data/objects && chown -R node:node /app/data
+RUN mkdir -p /app/data/objects /app/data/vault-repos && chown -R node:node /app/data
 USER node
 
 EXPOSE 3000

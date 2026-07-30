@@ -37,7 +37,7 @@ const exec = promisify(execFile);
 
 const AUTHOR = ["-c", "user.name=WisdomTree Export", "-c", "user.email=export@wisdomtree.local"];
 
-class LocalGitExportTarget implements ExportTarget {
+export class LocalGitExportTarget implements ExportTarget {
   constructor(private readonly repoDir: string) {}
 
   private git(cwd: string, ...args: string[]) {
