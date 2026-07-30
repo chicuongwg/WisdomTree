@@ -75,13 +75,15 @@ services:
       # who has not exported it. The app's own boot check is the one gate —
       # src/lib/sign.ts refuses to sign in production without it.
       SESSION_SECRET: ${SESSION_SECRET:-}
+      CRON_SECRET: ${CRON_SECRET:-}
+      TRUST_PROXY: ${TRUST_PROXY:-}
       # The user picker is impersonation with no credential. Opt in knowingly,
       # per deployment, until OIDC replaces it — see README.
       ENABLE_DEV_LOGIN: ${ENABLE_DEV_LOGIN:-}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
     volumes:
       # Uploaded originals and the export repo. Without this, every redeploy
       # deletes every file a user has ever uploaded.

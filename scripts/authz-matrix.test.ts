@@ -17,7 +17,6 @@ const MAPPING_DOC = "docs/design/authorization-design.md";
 // Silent skips are forbidden — every entry carries its reason.
 const ALLOWLIST: Record<string, string> = {
   "auth.signin": "session creation happens before authorize() (dev-login / OIDC callback)",
-  "knowledge.graph.read": "dedicated graph surface not built in the demo",
   "storage.gap.create": "gap-request creation rides storage.intake.open in the demo routes",
   "audit.node.read": "node audit-summary surface not built in the demo",
   "storage.trust.change": "no trust-mutation endpoint in the demo",

@@ -216,6 +216,7 @@ export async function dispatchOutbox(): Promise<void> {
           } else {
             // V1 email/zalo adapters: console.log the outbound message, then
             // mark sent (integration-contracts.md provider stubs).
+            // eslint-disable-next-line no-console -- console output is the documented V1 adapter
             console.log(
               `[notify:${channel}] → user ${userId}: ${event.eventType} ${JSON.stringify(payload)}`,
             );

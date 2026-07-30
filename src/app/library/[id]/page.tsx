@@ -105,7 +105,6 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
         {/* Preview in place for what the browser can render; the token URL is
             the same authorized 302 the download uses — never a public path. */}
         {v && stored && v.mimeType.startsWith("image/") && (
-          // eslint-disable-next-line @next/next/no-img-element
           <img className="preview-image" src={downloadUrl} alt={source.title} />
         )}
         {v && stored && v.mimeType === "application/pdf" && (

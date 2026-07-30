@@ -5,7 +5,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — AUTHORIZATION ENFORCEMENT PIPELINE — request authentication, route guard, authorize() check, query scoping, and audit (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — AUTHORIZATION ENFORCEMENT PIPELINE — request authentication, route guard, authorize() check, query scoping, and audit (2026-07-30)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
           <mxGeometry x="40" y="10" width="1670" height="30" as="geometry" />
         </mxCell>
         <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; left to right; green edges = happy path, red/gray edges = denial / exception path; checks are performed in the service layer before any DB action.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">

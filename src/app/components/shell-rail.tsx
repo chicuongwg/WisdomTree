@@ -337,8 +337,7 @@ export function ShellRail({
         aria-label={T.account}
         aria-current={pathname.startsWith("/account") ? "page" : undefined}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- session-guarded
-            same-origin route; next/image cannot add anything at 1.85rem */}
+        {/* Session-guarded same-origin route; next/image adds nothing at 1.85rem. */}
         {avatarUrl ? <img src={avatarUrl} alt="" /> : initials}
       </Link>
     </nav>

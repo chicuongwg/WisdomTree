@@ -40,8 +40,7 @@ export default async function AccountPage() {
         <h2>{T.profileHeading}</h2>
         <div className="account-head">
           {profile.avatarKey ? (
-            /* eslint-disable-next-line @next/next/no-img-element -- served by
-               our own session-guarded route; next/image cannot add anything */
+            /* Served by our own session-guarded route; next/image cannot add anything. */
             <img
               className="account-avatar"
               src={`/api/avatar/${profile.id}?v=${encodeURIComponent(profile.avatarKey)}`}

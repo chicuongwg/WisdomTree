@@ -12,13 +12,25 @@ type SpaceRole = "viewer" | "contributor" | "manager";
 
 const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRole }> = {
   "storage.intake.open": { roles: ["user"], scope: "global" },
-  "storage.library.browse": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "storage.library.browse": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "viewer",
+  },
   "storage.upload": { roles: ["user"], scope: "space", spaceRole: "contributor" },
   "storage.submissions.read": { roles: ["user", "editor", "admin_op"], scope: "self" },
-  "storage.download": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "storage.download": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "viewer",
+  },
   "storage.search": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
   "catalog.browse": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
-  "circulation.loan.request": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
+  "circulation.loan.request": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "viewer",
+  },
   "circulation.loan.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "catalog.item.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "storage.space.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
@@ -30,6 +42,7 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   // --- Knowledge module (authorization-design.md § Permission Catalog) ---
   "knowledge.node.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "knowledge.search": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  "knowledge.graph.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "knowledge.branch.create": { roles: [], scope: "global" },
   "knowledge.branch.edit": { roles: ["editor"], scope: "owned-or-assigned" },
   "knowledge.node.create": { roles: [], scope: "global" },
@@ -72,8 +85,16 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   // anchor object's own read authorize (404 on non-visible anchors).
   "notify.comment.create": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "notify.preferences.manage": { roles: ["user", "editor", "admin_op"], scope: "self" },
-  "pm.deadline.read": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
-  "pm.deadline.edit": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "contributor" },
+  "pm.deadline.read": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "viewer",
+  },
+  "pm.deadline.edit": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "contributor",
+  },
   // pm.board.manage: owned-or-assigned task updates for every member,
   // admin_op bypasses on role. The guild-board model (owner decision
   // 2026-07-21): whoever holds a task works it, whatever their role.

@@ -91,7 +91,10 @@ export async function run() {
           "vault.xml",
           files
             .get("vault.xml")!
-            .replace("  </nodes>", `    ${files.get("vault.xml")!.match(/<node .*<\/node>/s)![0]}\n  </nodes>`),
+            .replace(
+              "  </nodes>",
+              `    ${files.get("vault.xml")!.match(/<node .*<\/node>/s)![0]}\n  </nodes>`,
+            ),
         ),
       /duplicate node id/,
     ],
@@ -102,7 +105,10 @@ export async function run() {
           "links.xml",
           files
             .get("links.xml")!
-            .replace("</links>", `  <link from="${vault.nodes[0].id}" to="missing" type="related"/>\n</links>`),
+            .replace(
+              "</links>",
+              `  <link from="${vault.nodes[0].id}" to="missing" type="related"/>\n</links>`,
+            ),
         ),
       /dangling link/,
     ],

@@ -6,13 +6,13 @@ const BADGE = label => `<span style="background-color: #ffffff; padding: 2px 6px
 
 // Repo theme (existing WisdomTree diagram colour language — kept per skill precedence)
 const C = {
-  app:   { fill: '#FAF5FF', stroke: '#A855F7' }, // platform / app modules
-  data:  { fill: '#FEF3C7', stroke: '#D97706' }, // datastores
-  work:  { fill: '#ECFDF5', stroke: '#10B981' }, // worker / async processing
+  app: { fill: '#FAF5FF', stroke: '#A855F7' }, // platform / app modules
+  data: { fill: '#FEF3C7', stroke: '#D97706' }, // datastores
+  work: { fill: '#ECFDF5', stroke: '#10B981' }, // worker / async processing
   actor: { fill: '#EFF6FF', stroke: '#3B82F6' }, // people
-  ext:   { fill: '#F8FAFC', stroke: '#64748B' }, // external systems / neutral
+  ext: { fill: '#F8FAFC', stroke: '#64748B' }, // external systems / neutral
   state: { fill: '#F8FAFC', stroke: '#475569' },
-  term:  { fill: '#F1F5F9', stroke: '#94A3B8' },
+  term: { fill: '#F1F5F9', stroke: '#94A3B8' },
 };
 
 const EDGE_BASE = 'edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;';
@@ -31,8 +31,17 @@ const ENTITY = 'rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;sp
 const LIFELINE = 'endArrow=none;dashed=1;html=1;strokeColor=#CBD5E1;strokeWidth=1;fontColor=#000000;';
 
 class D {
-  constructor(w = 1600, h = 1200) { this.cells = []; this.n = 1; this.w = w; this.h = h; this.geo = {}; this.fan = {}; }
-  id() { return 'c' + (++this.n); }
+  constructor(w = 1600, h = 1200) {
+    this.cells = [];
+    this.n = 1;
+    this.w = w;
+    this.h = h;
+    this.geo = {};
+    this.fan = {};
+  }
+  id() {
+    return 'c' + ++this.n;
+  }
   v(value, style, x, y, w, h) {
     const id = this.id();
     const match = /strokeColor=([^;]+)/.exec(style);
@@ -42,10 +51,15 @@ class D {
   }
   // auto-pin edge endpoints from relative geometry; spread fan-in along the border
   pins(src, tgt) {
-    const a = this.geo[src], b = this.geo[tgt];
+    const a = this.geo[src],
+      b = this.geo[tgt];
     if (!a || !b) return '';
-    const acx = a.x + a.w / 2, acy = a.y + a.h / 2, bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
-    const dx = bcx - acx, dy = bcy - acy;
+    const acx = a.x + a.w / 2,
+      acy = a.y + a.h / 2,
+      bcx = b.x + b.w / 2,
+      bcy = b.y + b.h / 2;
+    const dx = bcx - acx,
+      dy = bcy - acy;
     const spread = key => {
       const seq = [0.5, 0.3, 0.7, 0.15, 0.85];
       this.fan[key] = (this.fan[key] ?? -1) + 1;
@@ -54,24 +68,16 @@ class D {
     if (Math.abs(dx) >= Math.abs(dy)) {
       const exY = spread('x' + src + (dx > 0 ? 'r' : 'l'));
       const enY = spread('e' + tgt + (dx > 0 ? 'l' : 'r'));
-      return dx > 0
-        ? `exitX=1;exitY=${exY};entryX=0;entryY=${enY};`
-        : `exitX=0;exitY=${exY};entryX=1;entryY=${enY};`;
+      return dx > 0 ? `exitX=1;exitY=${exY};entryX=0;entryY=${enY};` : `exitX=0;exitY=${exY};entryX=1;entryY=${enY};`;
     }
     const exX = spread('x' + src + (dy > 0 ? 'b' : 't'));
     const enX = spread('e' + tgt + (dy > 0 ? 't' : 'b'));
-    return dy > 0
-      ? `exitX=${exX};exitY=1;entryX=${enX};entryY=0;`
-      : `exitX=${exX};exitY=0;entryX=${enX};entryY=1;`;
+    return dy > 0 ? `exitX=${exX};exitY=1;entryX=${enX};entryY=0;` : `exitX=${exX};exitY=0;entryX=${enX};entryY=1;`;
   }
   e(src, tgt, label = '', { dashed = false, color = null, width = 1.2, pin = true, pinStr = null, points = null, lift = false } = {}) {
     const id = this.id();
     const stroke = color || this.geo[src]?.strokeColor || '#999999';
-    const style = EDGE_BASE
-      + `strokeColor=${stroke};strokeWidth=${width};`
-      + (dashed ? 'dashed=1;' : '')
-      + (lift ? 'verticalAlign=bottom;spacingBottom=6;' : '')
-      + (pinStr ?? (pin ? this.pins(src, tgt) : ''));
+    const style = EDGE_BASE + `strokeColor=${stroke};strokeWidth=${width};` + (dashed ? 'dashed=1;' : '') + (lift ? 'verticalAlign=bottom;spacingBottom=6;' : '') + (pinStr ?? (pin ? this.pins(src, tgt) : ''));
     const val = label ? BADGE(label) : '';
     const pts = points ? `<Array as="points">${points.map(p => `<mxPoint x="${p[0]}" y="${p[1]}" />`).join('')}</Array>` : '';
     this.cells.push(`        <mxCell id="${id}" value="${ESC(val)}" style="${style}" edge="1" parent="1" source="${src}" target="${tgt}">\n          <mxGeometry relative="1" as="geometry">${pts}</mxGeometry>\n        </mxCell>`);
@@ -85,15 +91,33 @@ class D {
     const style = EDGE_BASE + `strokeColor=${color};` + (dashed ? 'dashed=1;' : '') + 'verticalAlign=bottom;spacingBottom=4;';
     this.cells.push(`        <mxCell id="${id}" value="${ESC(BADGE(label))}" style="${style}" edge="1" parent="1">\n          <mxGeometry relative="1" as="geometry"><mxPoint x="${x1}" y="${y}" as="sourcePoint" /><mxPoint x="${x2}" y="${y}" as="targetPoint" /></mxGeometry>\n        </mxCell>`);
   }
-  title(text, date = new Date().toISOString().slice(0, 10)) { this.v(`<b>WISDOMTREE</b> — ${text} (${date})`, TITLE, 40, 10, this.w - 80, 30); }
-  guide(text) { this.v(`<i><b>How to read:</b> ${text}</i>`, GUIDE, 40, 44, this.w - 80, 20); }
-  section(text, x, y, w = 420) { return this.v(text, SECTION, x, y, w, 26); }
-  state(label, x, y, w = 110, h = 40, style = STATE) { return this.v(label, style, x, y, w, h); }
-  dot(x, y) { return this.v('', DOT, x, y, 18, 18); }
-  note(text, x, y, w, h = 40) { return this.v(`<i>${text}</i>`, FOOTNOTE, x, y, w, h); }
-  message(text, y) { this.v(`<b>Message:</b> ${text}`, MSGBAR, 40, y, this.w - 80, 34); }
-  legend(text, y) { this.v(text, LEGEND, 40, y, this.w - 80, 24); }
-  ghost(titleText, x, y, w, h) { return this.v(titleText, GHOST, x, y, w, h); }
+  title(text, date = new Date().toISOString().slice(0, 10)) {
+    this.v(`<b>WISDOMTREE</b> — ${text} (${date})`, TITLE, 40, 10, this.w - 80, 30);
+  }
+  guide(text) {
+    this.v(`<i><b>How to read:</b> ${text}</i>`, GUIDE, 40, 44, this.w - 80, 20);
+  }
+  section(text, x, y, w = 420) {
+    return this.v(text, SECTION, x, y, w, 26);
+  }
+  state(label, x, y, w = 110, h = 40, style = STATE) {
+    return this.v(label, style, x, y, w, h);
+  }
+  dot(x, y) {
+    return this.v('', DOT, x, y, 18, 18);
+  }
+  note(text, x, y, w, h = 40) {
+    return this.v(`<i>${text}</i>`, FOOTNOTE, x, y, w, h);
+  }
+  message(text, y) {
+    this.v(`<b>Message:</b> ${text}`, MSGBAR, 40, y, this.w - 80, 34);
+  }
+  legend(text, y) {
+    this.v(text, LEGEND, 40, y, this.w - 80, 24);
+  }
+  ghost(titleText, x, y, w, h) {
+    return this.v(titleText, GHOST, x, y, w, h);
+  }
   out(file, pageName) {
     const xml = `<?xml version="1.0" encoding="utf-8"?>\n<mxfile host="Electron" modified="2026-07-20T00:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">\n  <diagram id="diagram_id" name="${ESC(pageName)}">\n    <mxGraphModel dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="${this.w}" pageHeight="${this.h}" background="#ffffff" math="0" shadow="0">\n      <root>\n        <mxCell id="0" />\n        <mxCell id="1" parent="0" />\n${this.cells.join('\n')}\n      </root>\n    </mxGraphModel>\n  </diagram>\n</mxfile>\n`;
     writeFileSync(OUT + file, xml);
@@ -113,7 +137,9 @@ class D {
   let up = d.state('uploaded', 120, 120);
   let st = d.state('stored', 320, 120);
   let ar = d.state('archived', 540, 120, 110, 40, TERMINAL);
-  d.e(s0, up); d.e(up, st, 'file persisted', { lift: true }); d.e(st, ar, 'retire', { lift: true });
+  d.e(s0, up);
+  d.e(up, st, 'file persisted', { lift: true });
+  d.e(st, ar, 'retire', { lift: true });
   d.note('stored = findable and downloadable in Library by space members; extraction and curation never remove availability.', 700, 108, 280, 62);
 
   // 2 Extraction
@@ -122,7 +148,9 @@ class D {
   let pe = d.state('pending', 120, 260);
   let pr = d.state('processed', 320, 260);
   let un = d.state('unprocessable', 320, 335, 125, 40, TERMINAL);
-  d.e(e0, pe); d.e(pe, pr, 'parser / OCR ok', { lift: true }); d.e(pe, un, 'failed');
+  d.e(e0, pe);
+  d.e(pe, pr, 'parser / OCR ok', { lift: true });
+  d.e(pe, un, 'failed');
   d.note('unprocessable is a visible end state; the stored file stays in Library.', 700, 258, 280, 44);
 
   // 3 Curation
@@ -132,8 +160,10 @@ class D {
   let rr = d.state('ready_for_review', 345, 460, 135, 40);
   let pm = d.state('promoted', 660, 435, 110, 40, TERMINAL);
   let rj = d.state('rejected', 660, 505, 110, 40, TERMINAL);
-  d.e(c0, uc, 'nominate + assign', { lift: true }); d.e(uc, rr, 'text + draft ready', { lift: true });
-  d.e(rr, pm, 'published', { lift: true }); d.e(rr, rj, 'not suitable');
+  d.e(c0, uc, 'nominate + assign', { lift: true });
+  d.e(uc, rr, 'text + draft ready', { lift: true });
+  d.e(rr, pm, 'published', { lift: true });
+  d.e(rr, rj, 'not suitable');
   d.note('rejected closes curation only — the item stays stored in its space.', 120, 565, 480, 30);
 
   // 4 Branch-gap
@@ -144,9 +174,18 @@ class D {
   let cv = d.state('converted_to_branch', 520, 625, 160, 40);
   let gr = d.state('rejected', 520, 695, 110, 40);
   let ga = d.state('archived', 780, 670, 110, 40, TERMINAL);
-  d.e(g0, sb); d.e(sb, tr, 'Admin/Op triage', { lift: true }); d.e(tr, cv); d.e(tr, gr);
-  d.e(tr, ga, 'direct archive', { points: [[440, 765], [835, 765]] });
-  d.e(cv, ga); d.e(gr, ga);
+  d.e(g0, sb);
+  d.e(sb, tr, 'Admin/Op triage', { lift: true });
+  d.e(tr, cv);
+  d.e(tr, gr);
+  d.e(tr, ga, 'direct archive', {
+    points: [
+      [440, 765],
+      [835, 765],
+    ],
+  });
+  d.e(cv, ga);
+  d.e(gr, ga);
 
   // 5 Review
   d.section('5 · Review Lifecycle', 50, 800);
@@ -157,8 +196,15 @@ class D {
   let cr = d.state('changes_requested', 260, 930, 155, 40);
   let ap = d.state('approved', 660, 815, 100, 40, TERMINAL);
   let rr2 = d.state('rejected', 660, 885, 100, 40, TERMINAL);
-  d.e(r0, qd); d.e(qd, ag); d.e(ag, ir); d.e(ir, ap); d.e(ir, rr2);
-  d.e(ir, cr, 'needs work', { pinStr: 'exitX=0.5;exitY=1;entryX=1;entryY=0.5;', points: [[507, 950]] });
+  d.e(r0, qd);
+  d.e(qd, ag);
+  d.e(ag, ir);
+  d.e(ir, ap);
+  d.e(ir, rr2);
+  d.e(ir, cr, 'needs work', {
+    pinStr: 'exitX=0.5;exitY=1;entryX=1;entryY=0.5;',
+    points: [[507, 950]],
+  });
   d.e(cr, ag, 'rework', { pinStr: 'exitX=0.3;exitY=0;entryX=0.3;entryY=1;' });
 
   // 6 Conflict
@@ -169,7 +215,11 @@ class D {
   let rs = d.state('resolving', 455, 1070, 95, 40);
   let rv = d.state('resolved', 660, 1045, 100, 40, TERMINAL);
   let ac2 = d.state('archived_conflict', 660, 1115, 135, 40, TERMINAL);
-  d.e(f0, de, 'stale save rejected', { lift: true }); d.e(de, lk); d.e(lk, rs, 'Admin/Op', { lift: true }); d.e(rs, rv); d.e(rs, ac2);
+  d.e(f0, de, 'stale save rejected', { lift: true });
+  d.e(de, lk);
+  d.e(lk, rs, 'Admin/Op', { lift: true });
+  d.e(rs, rv);
+  d.e(rs, ac2);
   d.note('Both competing versions are preserved until Admin/Op resolves; no auto-merge in V1.', 120, 1180, 480, 30);
 
   // Right column
@@ -181,11 +231,25 @@ class D {
   let bw = d.state('borrowed', X + 310, 120);
   let rp = d.state('repair', X + 70, 240, 110, 40);
   let ls = d.state('lost', X + 310, 240, 110, 40, TERMINAL);
-  d.e(k0, av); d.e(av, bw, 'loan borrows', { lift: true });
-  d.e(bw, av, 'loan returns', { pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=1;', points: [[X + 365, 205], [X + 125, 205]] });
+  d.e(k0, av);
+  d.e(av, bw, 'loan borrows', { lift: true });
+  d.e(bw, av, 'loan returns', {
+    pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=1;',
+    points: [
+      [X + 365, 205],
+      [X + 125, 205],
+    ],
+  });
   d.e(av, rp, 'withdraw', { pinStr: 'exitX=0.3;exitY=1;entryX=0.3;entryY=0;' });
-  d.e(rp, av, 'repaired', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[X + 40, 260], [X + 40, 140]] });
-  d.e(av, ls); d.e(bw, ls, 'not returned');
+  d.e(rp, av, 'repaired', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;',
+    points: [
+      [X + 40, 260],
+      [X + 40, 140],
+    ],
+  });
+  d.e(av, ls);
+  d.e(bw, ls, 'not returned');
   d.note('available &#8596; borrowed is driven by the loan lifecycle; other transitions are librarian actions.', X + 480, 125, 250, 70);
 
   // 8 Loan Ticket
@@ -197,8 +261,13 @@ class D {
   let bo = d.state('borrowed', X + 450, 380);
   let ov = d.state('overdue', X + 450, 465, 110, 40);
   let rt = d.state('returned', X + 640, 380, 105, 40, TERMINAL);
-  d.e(l0, rq, 'member asks', { lift: true }); d.e(rq, apv, 'librarian', { lift: true }); d.e(rq, dc);
-  d.e(apv, bo, 'handover', { lift: true }); d.e(bo, rt); d.e(bo, ov, 'past due_at'); d.e(ov, rt);
+  d.e(l0, rq, 'member asks', { lift: true });
+  d.e(rq, apv, 'librarian', { lift: true });
+  d.e(rq, dc);
+  d.e(apv, bo, 'handover', { lift: true });
+  d.e(bo, rt);
+  d.e(bo, ov, 'past due_at');
+  d.e(ov, rt);
 
   // 9 Node Verification
   d.section('9 · Node Verification Lifecycle', X, 560);
@@ -212,8 +281,17 @@ class D {
   d.e(n0, vf, 'publish verified');
   d.e(ns, uv, 'evidence linked');
   d.e(uv, vf, 'Admin/Op verify');
-  d.e(vf, uv, 'downgrade (audited)', { dashed: true, pinStr: 'exitX=1;exitY=0.5;entryX=1;entryY=0.7;', points: [[X + 330, 830], [X + 330, 738]] });
-  d.e(ns, na); d.e(uv, na); d.e(vf, na);
+  d.e(vf, uv, 'downgrade (audited)', {
+    dashed: true,
+    pinStr: 'exitX=1;exitY=0.5;entryX=1;entryY=0.7;',
+    points: [
+      [X + 330, 830],
+      [X + 330, 738],
+    ],
+  });
+  d.e(ns, na);
+  d.e(uv, na);
+  d.e(vf, na);
   d.note('Source-driven publishes enter directly at unverified or verified per the Admin/Op publish decision; verified &#8594; unverified requires an auditable Admin/Op action.', X + 380, 800, 370, 56);
 
   d.message('Storage, extraction, and curation are three independent machines — a processing or review outcome can never take a stored item away from its space members.', 1290);
@@ -228,7 +306,7 @@ class D {
   d.guide('one ghost frame per owning module; white cards = tables (name + key columns); gray edges = FK, purple = provenance spine; italic dashed card = SQL view.');
 
   // wrap-aware card height: ~6.2px/char at fontSize 10, 15px per rendered line
-  const lc = (t, w) => Math.max(1, Math.ceil(String(t).replace(/&[#a-zA-Z0-9]+;/g, 'x').length * 6.2 / (w - 20)));
+  const lc = (t, w) => Math.max(1, Math.ceil((String(t).replace(/&[#a-zA-Z0-9]+;/g, 'x').length * 6.2) / (w - 20)));
   const cardH = (fields, w) => 42 + fields.reduce((a, f) => a + lc(f, w), 0) * 15;
   const colH = (defs, w, gap = 28) => defs.reduce((a, f) => a + cardH(f.f, w) + gap, 0);
   const ids = {};
@@ -243,58 +321,171 @@ class D {
   };
 
   // ---- card definitions ----
-  const AUTH = [{ k: 'users', n: 'users', f: ['id PK', 'google_sub, email', 'role user|editor|admin_op', 'zalo_user_id?'] }];
+  const AUTH = [
+    {
+      k: 'users',
+      n: 'users',
+      f: ['id PK', 'google_sub, email', 'role user|editor|admin_op', 'zalo_user_id?'],
+    },
+  ];
   const STO_A = [
-    { k: 'spaces', n: 'spaces', f: ['id PK', 'name', 'type team|personal', 'owner_user_id? (personal)'] },
+    {
+      k: 'spaces',
+      n: 'spaces',
+      f: ['id PK', 'name', 'type team|personal', 'owner_user_id? (personal)'],
+    },
     { k: 'members', n: 'space_members', f: ['space_id PK FK', 'user_id PK FK', 'added_by FK'] },
-    { k: 'gaps', n: 'branch_gap_requests', f: ['id PK', 'title, state', 'submitted_by FK', 'triaged_by? FK'] },
+    {
+      k: 'gaps',
+      n: 'branch_gap_requests',
+      f: ['id PK', 'title, state', 'submitted_by FK', 'triaged_by? FK'],
+    },
   ];
   const STO_B = [
-    { k: 'sources', n: 'sources', f: ['id PK', 'space_id FK', 'title, trust_status', 'submitted_by FK, assigned_to? FK'] },
-    { k: 'versions', n: 'source_versions', f: ['id PK', 'source_id FK, seq', 'original_object_key', 'storage_state uploaded | stored | quarantined | archived', 'extraction_status pending | processed | unprocessable', 'uploaded_by FK'], s: '#D97706' },
-    { k: 'chunks', n: 'text_chunks · immutable', f: ['source_version_id FK', 'position, ref_type, ref_label', 'content, tsv', 'embedding? (pgvector 1.5)'], s: '#D97706' },
-    { k: 'corrected', n: 'corrected_texts · append-only', f: ['source_version_id FK, seq', 'content', 'edited_by FK'] },
-    { k: 'curations', n: 'curations', f: ['source_version_id FK UQ', 'state under_correction | ready_for_review | promoted | rejected', 'assigned_to? FK'] },
+    {
+      k: 'sources',
+      n: 'sources',
+      f: ['id PK', 'space_id FK', 'title, trust_status', 'submitted_by FK, assigned_to? FK'],
+    },
+    {
+      k: 'versions',
+      n: 'source_versions',
+      f: ['id PK', 'source_id FK, seq', 'original_object_key', 'storage_state uploaded | stored | quarantined | archived', 'extraction_status pending | processed | unprocessable', 'uploaded_by FK'],
+      s: '#D97706',
+    },
+    {
+      k: 'chunks',
+      n: 'text_chunks · immutable',
+      f: ['source_version_id FK', 'position, ref_type, ref_label', 'content, tsv', 'embedding? (pgvector 1.5)'],
+      s: '#D97706',
+    },
+    {
+      k: 'corrected',
+      n: 'corrected_texts · append-only',
+      f: ['source_version_id FK, seq', 'content', 'edited_by FK'],
+    },
+    {
+      k: 'curations',
+      n: 'curations',
+      f: ['source_version_id FK UQ', 'state under_correction | ready_for_review | promoted | rejected', 'assigned_to? FK'],
+    },
   ];
   const KN_A = [
     { k: 'branches', n: 'branches', f: ['id PK', 'name UQ', 'created_by FK'] },
     { k: 'links', n: 'node_links', f: ['from/to_node_id FK', 'link_type'] },
     { k: 'tags', n: 'tags · node_tags', f: ['tag: id, name UQ', 'node_tags(node_id, tag_id)'] },
-    { k: 'drafts', n: 'markdown_drafts', f: ['source_version_id FK UQ', 'content_md', 'suggested_branch_id?'] },
-    { k: 'promotions', n: 'promotions · provenance', f: ['source_version_id FK', 'node_version_id FK', 'approved_by FK', 'excerpt_chunk_ids[]'], s: '#A855F7' },
+    {
+      k: 'drafts',
+      n: 'markdown_drafts',
+      f: ['source_version_id FK UQ', 'content_md', 'suggested_branch_id?'],
+    },
+    {
+      k: 'promotions',
+      n: 'promotions · provenance',
+      f: ['source_version_id FK', 'node_version_id FK', 'approved_by FK', 'excerpt_chunk_ids[]'],
+      s: '#A855F7',
+    },
     { k: 'reviews', n: 'review_tasks', f: ['task_type, target_type/id', 'state, assigned_to? FK'] },
   ];
   const KN_B = [
-    { k: 'nodes', n: 'tree_nodes', f: ['id PK', 'branch_id FK', 'title, slug UQ', 'content_md, tsv', 'verification no_source | unverified | verified | archived', 'publish bool (Quartz)', 'canonical_node_id? (merge)', 'created_by FK'], s: '#A855F7' },
-    { k: 'nodeVers', n: 'tree_node_versions · append-only', f: ['node_id FK, seq', 'content_md, verification', 'created_by FK'], s: '#A855F7' },
-    { k: 'conflicts', n: 'conflicts', f: ['target_type/id, state', 'base_version', 'attempted_payload, attempted_by FK'] },
+    {
+      k: 'nodes',
+      n: 'tree_nodes',
+      f: ['id PK', 'branch_id FK', 'title, slug UQ', 'content_md, tsv', 'verification no_source | unverified | verified | archived', 'publish bool (Quartz)', 'canonical_node_id? (merge)', 'created_by FK'],
+      s: '#A855F7',
+    },
+    {
+      k: 'nodeVers',
+      n: 'tree_node_versions · append-only',
+      f: ['node_id FK, seq', 'content_md, verification', 'created_by FK'],
+      s: '#A855F7',
+    },
+    {
+      k: 'conflicts',
+      n: 'conflicts',
+      f: ['target_type/id, state', 'base_version', 'attempted_payload, attempted_by FK'],
+    },
   ];
   const NOTI = [
-    { k: 'comments', n: 'comments · append-only', f: ['anchor_type source | tree_node | deadline', 'anchor_id, parent_comment_id?', 'author_id FK, mentions[]'] },
+    {
+      k: 'comments',
+      n: 'comments · append-only',
+      f: ['anchor_type source | tree_node | deadline', 'anchor_id, parent_comment_id?', 'author_id FK, mentions[]'],
+    },
     { k: 'notifs', n: 'notifications', f: ['user_id FK', 'event_type, payload', 'read_at?'] },
-    { k: 'delivs', n: 'notification_deliveries', f: ['notification_id FK', 'channel in_app | email | zalo', 'state, attempts'] },
+    {
+      k: 'delivs',
+      n: 'notification_deliveries',
+      f: ['notification_id FK', 'channel in_app | email | zalo', 'state, attempts'],
+    },
     { k: 'prefs', n: 'notification_preferences', f: ['user_id + event_type PK', 'channels[]'] },
   ];
   const BRID = [
-    { k: 'imports', n: 'bridge_imports', f: ['kind drive | sheet_catalog | sheet_metrics | forms', 'config, state, watermark?'] },
-    { k: 'importItems', n: 'bridge_import_items', f: ['import_id + external_id PK', '&#8594; idempotent re-runs', 'target_type/id, status'] },
+    {
+      k: 'imports',
+      n: 'bridge_imports',
+      f: ['kind drive | sheet_catalog | sheet_metrics | forms', 'config, state, watermark?'],
+    },
+    {
+      k: 'importItems',
+      n: 'bridge_import_items',
+      f: ['import_id + external_id PK', '&#8594; idempotent re-runs', 'target_type/id, status'],
+    },
     { k: 'exports', n: 'export_jobs', f: ['scope, state', 'manifest, triggered_by FK'] },
   ];
-  const CAT_A = [{ k: 'items', n: 'catalog_items', f: ['id PK, item_code UQ (label)', 'title, author, location', 'status available | borrowed | lost | repair', 'space_id FK', 'linked_source_id? FK &#8594; sources (digitized copy)'] }];
-  const CAT_B = [{ k: 'loans', n: 'loan_tickets', f: ['id PK, item_id FK', 'borrower_id FK', 'state requested | approved | declined | borrowed | overdue | returned', 'due_at, handled_by? FK', 'UQ: one active loan / item'] }];
+  const CAT_A = [
+    {
+      k: 'items',
+      n: 'catalog_items',
+      f: ['id PK, item_code UQ (label)', 'title, author, location', 'status available | borrowed | lost | repair', 'space_id FK', 'linked_source_id? FK &#8594; sources (digitized copy)'],
+    },
+  ];
+  const CAT_B = [
+    {
+      k: 'loans',
+      n: 'loan_tickets',
+      f: ['id PK, item_id FK', 'borrower_id FK', 'state requested | approved | declined | borrowed | overdue | returned', 'due_at, handled_by? FK', 'UQ: one active loan / item'],
+    },
+  ];
   const PM_A = [
-    { k: 'deadlines', n: 'deadlines', f: ['id PK, space_id FK', 'type conference | funding | report | milestone', 'due_at, reminder_offsets[]'] },
+    {
+      k: 'deadlines',
+      n: 'deadlines',
+      f: ['id PK, space_id FK', 'type conference | funding | report | milestone', 'due_at, reminder_offsets[]'],
+    },
     { k: 'drem', n: 'deadline_reminders', f: ['deadline_id + offset PK', 'sent_at'] },
     { k: 'dlinks', n: 'deadline_links', f: ['deadline_id FK', 'target_type, target_id'] },
   ];
   const PM_B = [
-    { k: 'caltok', n: 'calendar_tokens', f: ['token PK (unguessable)', 'user_id FK, space_id?', 'revoked_at?'] },
-    { k: 'tasks', n: 'tasks', f: ['id PK, title', 'state todo | doing | done | archived', 'assigned_to? FK, target_type/id?'] },
-    { k: 'achiev', n: 'achievements', f: ['id PK, title, branch_id?', 'logged_by FK, achieved_at'] },
+    {
+      k: 'caltok',
+      n: 'calendar_tokens',
+      f: ['token PK (unguessable)', 'user_id FK, space_id?', 'revoked_at?'],
+    },
+    {
+      k: 'tasks',
+      n: 'tasks',
+      f: ['id PK, title', 'state todo | doing | done | archived', 'assigned_to? FK, target_type/id?'],
+    },
+    {
+      k: 'achiev',
+      n: 'achievements',
+      f: ['id PK, title, branch_id?', 'logged_by FK, achieved_at'],
+    },
   ];
   const CROSS = [
-    { k: 'audit', n: 'audit_events · append-only', f: ['actor_id FK, actor_role', 'accountability uploader | editor_updater | approver_publisher | operator', 'action, target_type/id, outcome'], s: '#D97706' },
-    { k: 'outbox', n: 'outbox_events · append-only', f: ['id bigint (dispatch order)', 'event_type, payload', 'dispatched_at?'], s: '#D97706' },
+    {
+      k: 'audit',
+      n: 'audit_events · append-only',
+      f: ['actor_id FK, actor_role', 'accountability uploader | editor_updater | approver_publisher | operator', 'action, target_type/id, outcome'],
+      s: '#D97706',
+    },
+    {
+      k: 'outbox',
+      n: 'outbox_events · append-only',
+      f: ['id bigint (dispatch order)', 'event_type, payload', 'dispatched_at?'],
+      s: '#D97706',
+    },
     { k: 'jobs', n: 'jobs', f: ['job_type, payload', 'idempotency_key UQ', 'state, attempts'] },
   ];
 
@@ -344,15 +535,34 @@ class D {
   // ---- edges: adjacent FKs unlabeled; long relations ride the inter-frame corridors ----
   const midY = k => d.geo[ids[k]].y + d.geo[ids[k]].h / 2;
   d.e(ids.members, ids.spaces);
-  d.e(ids.members, ids.users, '', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[26, midY('members')], [26, midY('users')]] });
+  d.e(ids.members, ids.users, '', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;',
+    points: [
+      [26, midY('members')],
+      [26, midY('users')],
+    ],
+  });
   d.e(ids.sources, ids.spaces);
   d.e(ids.versions, ids.sources);
-  d.e(ids.chunks, ids.versions); d.e(ids.corrected, ids.versions); d.e(ids.curations, ids.versions);
+  d.e(ids.chunks, ids.versions);
+  d.e(ids.corrected, ids.versions);
+  d.e(ids.curations, ids.versions);
   d.e(ids.loans, ids.items);
-  d.e(ids.nodes, ids.branches); d.e(ids.nodeVers, ids.nodes); d.e(ids.links, ids.nodes); d.e(ids.tags, ids.nodes);
+  d.e(ids.nodes, ids.branches);
+  d.e(ids.nodeVers, ids.nodes);
+  d.e(ids.links, ids.nodes);
+  d.e(ids.tags, ids.nodes);
   d.e(ids.drafts, ids.versions, '', { pinStr: 'exitX=0;exitY=0.5;entryX=1;entryY=0.3;' });
-  d.e(ids.promotions, ids.versions, 'evidence', { color: '#A855F7', width: 1.5, pinStr: 'exitX=0;exitY=0.5;entryX=1;entryY=0.7;' });
-  d.e(ids.promotions, ids.nodeVers, '', { color: '#A855F7', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+  d.e(ids.promotions, ids.versions, 'evidence', {
+    color: '#A855F7',
+    width: 1.5,
+    pinStr: 'exitX=0;exitY=0.5;entryX=1;entryY=0.7;',
+  });
+  d.e(ids.promotions, ids.nodeVers, '', {
+    color: '#A855F7',
+    width: 1.5,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  });
   d.e(ids.deadlines, ids.dlinks);
   d.e(ids.notifs, ids.delivs);
   d.e(ids.imports, ids.importItems);
@@ -391,9 +601,26 @@ class D {
   d.e(worker, s3, 'fetch originals', { color: C.work.stroke });
   d.e(app, email, 'notifications', { color: C.app.stroke });
   d.e(app, zalo, 'notifications', { color: C.app.stroke });
-  d.e(worker, gsuite, 'import / poll (one-way in)', { color: C.work.stroke, pinStr: 'exitX=0;exitY=0.8;entryX=0.85;entryY=0;', points: [[955, 396], [955, 610], [815, 610]] });
+  d.e(worker, gsuite, 'import / poll (one-way in)', {
+    color: C.work.stroke,
+    pinStr: 'exitX=0;exitY=0.8;entryX=0.85;entryY=0;',
+    points: [
+      [955, 396],
+      [955, 610],
+      [815, 610],
+    ],
+  });
   d.e(app, gcal, 'ICS feed (outbound)', { color: C.app.stroke });
-  d.e(app, repo, 'export commits (one-way)', { color: C.app.stroke, pinStr: 'exitX=1;exitY=0.9;entryX=0;entryY=0.3;', points: [[970, 421], [970, 440], [1230, 440], [1230, 488]] });
+  d.e(app, repo, 'export commits (one-way)', {
+    color: C.app.stroke,
+    pinStr: 'exitX=1;exitY=0.9;entryX=0;entryY=0.3;',
+    points: [
+      [970, 421],
+      [970, 440],
+      [1230, 440],
+      [1230, 488],
+    ],
+  });
   d.e(repo, ci, 'push triggers', { dashed: true, color: '#404040' });
 
   d.message('Every external link is one-way in or outbound-only — a Google, Zalo, or email outage degrades a single channel and can never block storage, catalog, or knowledge workflows.', 790);
@@ -422,9 +649,27 @@ class D {
   const exportB = d.v('<b>Export layer</b> (one-way)<br>tree &#8594; content Git repo<br>backup, validation, snapshots', box(C.ext), 740, 540, 240, 75);
   const quartzB = d.v('<b>Quartz static site</b> (Phase 1.5)<br>selective read-only publish of verified<br>nodes flagged publish:true', box(C.ext), 1050, 540, 260, 75);
 
-  d.e(spacesB, libB); d.e(libB, extB, 'async', { dashed: true, color: C.work.stroke }); d.e(extB, curB, 'nominate');
-  d.e(curB, provB, 'publish (promotion)', { color: C.app.stroke, width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.7;', points: [[695, 492], [695, 369]] });
-  d.e(nodesB, exportB, 'export commits', { color: C.app.stroke, pinStr: 'exitX=1;exitY=0.5;entryX=0.5;entryY=1;', points: [[1330, 157.5], [1330, 640], [860, 640]] });
+  d.e(spacesB, libB);
+  d.e(libB, extB, 'async', { dashed: true, color: C.work.stroke });
+  d.e(extB, curB, 'nominate');
+  d.e(curB, provB, 'publish (promotion)', {
+    color: C.app.stroke,
+    width: 1.5,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.7;',
+    points: [
+      [695, 492],
+      [695, 369],
+    ],
+  });
+  d.e(nodesB, exportB, 'export commits', {
+    color: C.app.stroke,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0.5;entryY=1;',
+    points: [
+      [1330, 157.5],
+      [1330, 640],
+      [860, 640],
+    ],
+  });
   d.e(exportB, quartzB, 'CI build', { dashed: true, color: '#404040', lift: true });
 
   d.message('The Source Repo is the product core, not a feeder pipeline: members live in Library at &quot;stored&quot;; promotion into the tree is optional and one-way, and the content repo is derived, never the source of truth.', 680);
@@ -451,8 +696,12 @@ class D {
 
   d.e(up, stq, 'file persisted', { color: C.app.stroke, width: 1.5, lift: true });
   d.e(stq, ext, '', { dashed: true, color: C.work.stroke });
-  d.e(ext, cor); d.e(cor, dr); d.e(dr, rv); d.e(rv, pb, 'approve', { lift: true });
-  d.e(pb, nd); d.e(nd, mg);
+  d.e(ext, cor);
+  d.e(cor, dr);
+  d.e(dr, rv);
+  d.e(rv, pb, 'approve', { lift: true });
+  d.e(pb, nd);
+  d.e(nd, mg);
   d.note('Members browse and download here directly (Happy Path 0) — extraction and curation never gate availability.', 240, 245, 340, 55);
   d.message('Store-first: the product guarantee ends at &quot;Stored in Space Library&quot; — the seven boxes to its right are an optional curation overlay that can fail or reject without touching storage.', 460);
   d.legend('<b>Colour roles</b> (repo theme, fixed): <font color="#A855F7">&#9632; guaranteed storage / canonical tree</font> · <font color="#10B981">&#9632; async worker step</font> · <font color="#64748B">&#9632; curation stage</font> · dashed = async hand-off. Source of truth: docs/system/data-model-lifecycle.md.', 510);
@@ -462,44 +711,37 @@ class D {
 /* ============ 6. deployment-topology.drawio ============ */
 {
   const d = new D(1500, 900);
-  d.title('DEPLOYMENT TOPOLOGY — primary VPS + worker host + external services');
-  d.guide('two runtime frames; external services sit on the bottom row and right, edges route around the frames, never through them; dashed = queue / auth / trigger.');
+  d.title('DEPLOYMENT TOPOLOGY — current Compose deployable and target adapters');
+  d.guide('solid boxes are current runtime components; dashed target adapters are not deployment dependencies today.');
 
-  // PRIMARY VPS: app at the bottom so external edges leave without crossing siblings
-  d.ghost('PRIMARY VPS', 40, 100, 470, 480);
-  const proxy = d.v('<b>Reverse proxy</b> (TLS)', box(C.ext), 70, 140, 180, 45);
-  const redis = d.v('<b>Redis</b><br>queue signal + sessions', `shape=datastore;whiteSpace=wrap;html=1;fillColor=${C.data.fill};strokeColor=${C.data.stroke};strokeWidth=2;fontColor=#000000;fontSize=11;align=center;`, 270, 220, 190, 60);
-  const pg = d.v('<b>PostgreSQL</b><br>canonical data + FTS<br>(+ pgvector 1.5)', `shape=datastore;whiteSpace=wrap;html=1;fillColor=${C.data.fill};strokeColor=${C.data.stroke};strokeWidth=2;fontColor=#000000;fontSize=11;align=center;`, 270, 320, 190, 80);
-  const web = d.v('<b>App</b> — TypeScript modular monolith<br>all modules + outbox dispatcher', box(C.app, 'strokeWidth=2;'), 70, 440, 330, 70);
+  const client = d.v('<b>Browser / cron caller</b>', box(C.actor), 50, 130, 220, 55);
+  const proxy = d.v('<b>Operator reverse proxy</b><br>TLS + trusted forwarding headers', box(C.ext), 340, 130, 260, 55);
 
-  // WORKER HOST: bridge at the bottom so its Google edge drops straight down
-  d.ghost('WORKER HOST (local-only AI)', 640, 100, 400, 480);
-  const parser = d.v('<b>Extraction worker</b> (Python)<br>parser-first + OCR fallback', box(C.work), 670, 140, 340, 55);
-  const ollama = d.v('<b>Ollama</b><br>OCR support, embeddings (1.5)', box(C.work, 'strokeWidth=2;'), 670, 235, 340, 55);
-  const render = d.v('<b>Document render</b><br>Pandoc-class: md &#8594; docx / pdf', box(C.work), 670, 325, 340, 55);
-  const bridge = d.v('<b>Bridge jobs</b><br>Drive / Sheets import, Forms polling', box(C.work), 670, 415, 340, 55);
+  d.ghost('CURRENT DOCKER COMPOSE DEPLOY PROFILE', 660, 90, 760, 440);
+  const migrate = d.v('<b>migrate</b><br>one-shot, forward-only SQL', box(C.work), 700, 140, 210, 65);
+  const web = d.v('<b>Next.js standalone app</b><br>UI + API + modules + jobs + outbox', box(C.app, 'strokeWidth=2;'), 980, 140, 350, 65);
+  const pg = d.v('<b>PostgreSQL 16</b><br>canonical state + full-text search', `shape=datastore;whiteSpace=wrap;html=1;fillColor=${C.data.fill};strokeColor=${C.data.stroke};strokeWidth=2;fontColor=#000000;fontSize=11;align=center;`, 700, 290, 240, 70);
+  const appdata = d.v('<b>appdata volume</b><br>uploads + local content repo', `shape=datastore;whiteSpace=wrap;html=1;fillColor=${C.data.fill};strokeColor=${C.data.stroke};strokeWidth=2;fontColor=#000000;fontSize=11;align=center;`, 980, 290, 240, 70);
+  const ollama = d.v('<b>Ollama</b><br>local model runtime', box(C.work), 1260, 290, 130, 70);
 
-  // externals: S3 on the right of the worker frame, the rest on a bottom row
-  const s3 = d.v('<b>S3-compatible Object Storage</b><br>originals + evidence artifacts', `shape=datastore;whiteSpace=wrap;html=1;fillColor=${C.data.fill};strokeColor=${C.data.stroke};strokeWidth=2;fontColor=#000000;fontSize=11;align=center;`, 1140, 140, 260, 60);
-  const oidc = d.v('<b>Google OIDC</b>', box(C.ext), 70, 660, 200, 55);
-  const mail = d.v('<b>Email provider + Zalo OA</b><br>outbound notifications', box(C.ext), 310, 660, 240, 55);
-  const gh = d.v('<b>GitHub content repo + Actions</b><br>export validate + Quartz build', box(C.ext), 590, 660, 260, 55);
-  const goog = d.v('<b>Google Drive / Sheets / Forms APIs</b><br>read-only, Op credential', box(C.ext), 890, 660, 280, 55);
+  d.ghost('TARGET ADAPTERS — NOT CURRENT DEPENDENCIES', 50, 590, 1370, 140);
+  const target = d.v('<b>Redis queue · S3-compatible storage · separate Python worker · email/Zalo · remote content repo</b><br>replace local adapters through module contracts; canonical ownership stays unchanged', ENTITY + 'strokeColor=#64748B;dashed=1;', 100, 630, 1270, 60);
 
+  d.e(client, proxy, 'HTTPS');
   d.e(proxy, web);
-  d.e(web, pg, '', { color: C.app.stroke });
-  d.e(web, redis, '', { color: C.app.stroke, pinStr: 'exitX=1;exitY=0.3;entryX=1;entryY=0.5;', points: [[487, 461], [487, 250]] });
-  d.e(redis, parser, 'jobs', { dashed: true, color: '#404040', pinStr: 'exitX=0.5;exitY=0;entryX=0;entryY=0.5;', points: [[365, 168], [575, 168]] });
-  d.e(parser, ollama, 'local inference', { dashed: true, color: C.work.stroke });
-  d.e(parser, s3, 'fetch originals', { color: C.work.stroke, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;', lift: true });
-  d.e(web, s3, 'signed URLs', { color: C.app.stroke, pinStr: 'exitX=0.95;exitY=1;entryX=1;entryY=0.5;', points: [[384, 624], [1440, 624], [1440, 170]] });
-  d.e(web, oidc, 'auth', { dashed: true, color: '#404040', pinStr: 'exitX=0.15;exitY=1;entryX=0.5;entryY=0;', points: [[120, 600], [170, 600]] });
-  d.e(web, mail, 'alerts', { color: C.app.stroke, pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;', points: [[235, 608], [430, 608]] });
-  d.e(web, gh, 'export push', { color: C.app.stroke, pinStr: 'exitX=0.85;exitY=1;entryX=0.5;entryY=0;', points: [[350, 616], [720, 616]] });
-  d.e(bridge, goog, 'one-way import', { color: C.work.stroke, pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;', points: [[840, 628], [1030, 628]] });
+  d.e(migrate, pg, 'migrations');
+  d.e(web, pg, 'queries + transactions');
+  d.e(web, appdata, 'files + exports');
+  d.e(web, ollama, 'local inference');
+  d.e(web, target, 'future adapter swap', {
+    dashed: true,
+    color: C.ext.stroke,
+    pinStr: 'exitX=0.5;exitY=1;entryX=0.7;entryY=0;',
+    points: [[1155, 555]],
+  });
 
-  d.message('Daily backups (pg_dump + object-storage snapshot + content-repo mirror) meet RPO 24h; a worker or Ollama outage is a visible degraded mode — storage, catalog, knowledge, and full-text search keep working.', 750);
-  d.legend('<b>Colour roles</b> (repo theme, fixed): <font color="#A855F7">&#9632; app</font> · <font color="#10B981">&#9632; worker / local AI</font> · <font color="#D97706">&#9632; datastore</font> · <font color="#64748B">&#9632; external service</font> · dashed = queue / auth / trigger. Source of truth: docs/system/deployment-topology.md.', 800);
+  d.message('Back up PostgreSQL and appdata together. The app and Ollama ports bind to loopback; POST /api/cron/dispatch requires a bearer CRON_SECRET.', 760);
+  d.legend('<b>Colour roles</b>: <font color="#A855F7">&#9632; app</font> · <font color="#10B981">&#9632; lifecycle / local AI</font> · <font color="#D97706">&#9632; persistent data</font> · <font color="#64748B">&#9632; operator or target adapter</font>. Source of truth: docs/system/deployment-topology.md and docker-compose.yml.', 810);
   d.out('deployment-topology.drawio', 'Deployment Topology');
 }
 
@@ -510,8 +752,14 @@ class D {
   d.guide('sequence: lifelines top to bottom in time; solid = request / data, dashed = async fan-out; the store-first guarantee lands at step 4.');
 
   const lanes = [
-    ['User', 90, C.actor], ['App', 330, C.app], ['Object Storage', 570, C.data], ['PostgreSQL', 790, C.data],
-    ['Queue (Redis)', 990, C.data], ['Worker', 1180, C.work], ['Search', 1380, C.ext], ['Export / Git', 1570, C.ext],
+    ['User', 90, C.actor],
+    ['App', 330, C.app],
+    ['Object Storage', 570, C.data],
+    ['PostgreSQL', 790, C.data],
+    ['Queue (Redis)', 990, C.data],
+    ['Worker', 1180, C.work],
+    ['Search', 1380, C.ext],
+    ['Export / Git', 1570, C.ext],
   ];
   const XS = {};
   for (const [name, x, c] of lanes) {
@@ -519,26 +767,71 @@ class D {
     d.line(x, 120, x, 1090);
     XS[name.split(' ')[0]] = x;
   }
-  const U = XS['User'], A = XS['App'], S = XS['Object'], P = XS['PostgreSQL'], Q = XS['Queue'], W = XS['Worker'], SE = XS['Search'], E = XS['Export'];
+  const U = XS['User'],
+    A = XS['App'],
+    S = XS['Object'],
+    P = XS['PostgreSQL'],
+    Q = XS['Queue'],
+    W = XS['Worker'],
+    SE = XS['Search'],
+    E = XS['Export'];
 
   let y = 170;
-  d.msg(U, A, y, '1 &#183; POST /source/upload (space, file)', { color: C.actor.stroke }); y += 60;
-  d.msg(A, S, y, '2 &#183; put original object', { color: C.app.stroke }); y += 60;
-  d.msg(A, P, y, '3 &#183; TX: version stored + audit + outbox(source.stored)', { color: C.app.stroke }); y += 60;
-  d.msg(A, U, y, '4 &#183; 201 — visible in Library NOW', { color: C.app.stroke }); y += 60;
-  d.msg(A, Q, y, '5 &#183; enqueue extraction (idempotency key)', { dashed: true, color: C.app.stroke }); y += 55;
-  d.msg(Q, W, y, '6 &#183; dequeue', { dashed: true, color: '#404040' }); y += 55;
-  d.msg(W, S, y, '7 &#183; fetch original; parse, OCR fallback (Ollama)', { color: C.work.stroke }); y += 60;
-  d.msg(W, P, y, '8 &#183; TX: text_chunks + processed | unprocessable + outbox', { color: C.work.stroke }); y += 60;
-  d.msg(P, SE, y, '9 &#183; outbox &#8594; reindex (full text &#8804; 5 min)', { dashed: true, color: C.data.stroke }); y += 75;
+  d.msg(U, A, y, '1 &#183; POST /source/upload (space, file)', { color: C.actor.stroke });
+  y += 60;
+  d.msg(A, S, y, '2 &#183; put original object', { color: C.app.stroke });
+  y += 60;
+  d.msg(A, P, y, '3 &#183; TX: version stored + audit + outbox(source.stored)', {
+    color: C.app.stroke,
+  });
+  y += 60;
+  d.msg(A, U, y, '4 &#183; 201 — visible in Library NOW', { color: C.app.stroke });
+  y += 60;
+  d.msg(A, Q, y, '5 &#183; enqueue extraction (idempotency key)', {
+    dashed: true,
+    color: C.app.stroke,
+  });
+  y += 55;
+  d.msg(Q, W, y, '6 &#183; dequeue', { dashed: true, color: '#404040' });
+  y += 55;
+  d.msg(W, S, y, '7 &#183; fetch original; parse, OCR fallback (Ollama)', { color: C.work.stroke });
+  y += 60;
+  d.msg(W, P, y, '8 &#183; TX: text_chunks + processed | unprocessable + outbox', {
+    color: C.work.stroke,
+  });
+  y += 60;
+  d.msg(P, SE, y, '9 &#183; outbox &#8594; reindex (full text &#8804; 5 min)', {
+    dashed: true,
+    color: C.data.stroke,
+  });
+  y += 75;
 
   d.v('<i>— optional curation on top of storage —</i>', GUIDE, A - 60, y - 32, 420, 20);
-  d.msg(U, A, y + 8, '10 &#183; corrected text + md draft (owned / assigned)', { color: C.actor.stroke }); y += 68;
-  d.msg(A, P, y, '11 &#183; TX: curation ready_for_review + review task + outbox', { color: C.app.stroke }); y += 60;
-  d.msg(U, A, y, '12 &#183; Admin/Op publish (branch, verification, excerpts)', { color: C.actor.stroke }); y += 60;
-  d.msg(A, P, y, '13 &#183; TX: node + version + promotion + audit + outbox', { color: C.app.stroke }); y += 60;
-  d.msg(P, E, y, '14 &#183; export trigger &#8594; one-way commit', { dashed: true, color: C.data.stroke }); y += 55;
-  d.msg(P, SE, y, '15 &#183; reindex publish (&#8804; 5 min)', { dashed: true, color: C.data.stroke });
+  d.msg(U, A, y + 8, '10 &#183; corrected text + md draft (owned / assigned)', {
+    color: C.actor.stroke,
+  });
+  y += 68;
+  d.msg(A, P, y, '11 &#183; TX: curation ready_for_review + review task + outbox', {
+    color: C.app.stroke,
+  });
+  y += 60;
+  d.msg(U, A, y, '12 &#183; Admin/Op publish (branch, verification, excerpts)', {
+    color: C.actor.stroke,
+  });
+  y += 60;
+  d.msg(A, P, y, '13 &#183; TX: node + version + promotion + audit + outbox', {
+    color: C.app.stroke,
+  });
+  y += 60;
+  d.msg(P, E, y, '14 &#183; export trigger &#8594; one-way commit', {
+    dashed: true,
+    color: C.data.stroke,
+  });
+  y += 55;
+  d.msg(P, SE, y, '15 &#183; reindex publish (&#8804; 5 min)', {
+    dashed: true,
+    color: C.data.stroke,
+  });
 
   d.message('One transaction per mutation (state + audit + outbox together): the user is safe at step 4, and everything after is asynchronous, idempotent, and unable to take the stored item away.', 1120);
   d.legend('<b>Colour roles</b> (repo theme, fixed): <font color="#3B82F6">&#9632; user request</font> · <font color="#A855F7">&#9632; app action</font> · <font color="#10B981">&#9632; worker</font> · <font color="#D97706">&#9632; data / event fan-out</font> · dashed = async. Source of truth: docs/design/sequence-diagrams.md.', 1170);
@@ -553,26 +846,20 @@ class D {
 
   const chain = (label, y, steps, hero = false) => {
     d.section(label, 40, y - 46, 700);
-    let prev = null, x = 40;
+    let prev = null,
+      x = 40;
     for (const s of steps) {
       const b = d.v(s, box(C.ext, hero ? 'strokeWidth=2;' : ''), x, y, 180, 55);
       if (prev) d.e(prev, b);
-      prev = b; x += 240;
+      prev = b;
+      x += 240;
     }
   };
 
-  chain('Path 0 — Store &amp; Retrieve (the daily core)', 140, [
-    '<b>Open app</b><br>Google sign-in', '<b>Open Library</b><br>Kho t&#432; li&#7879;u', '<b>Search / browse</b><br>member space', '<b>Open stored item</b><br>preview + metadata', '<b>Download original</b>',
-  ], true);
-  chain('Path 1 — Learn from the tree', 310, [
-    '<b>Search the tree</b>', '<b>Open node</b><br>trust state visible', '<b>Follow links</b><br>mini-graph', '<b>Open branch hub</b>', '<b>Continue or contribute</b><br>new source item',
-  ]);
-  chain('Path 2 — Contribute', 480, [
-    '<b>Open Source Intake</b>', '<b>Upload file</b><br>or gap request', '<b>Item stored</b><br>in space Library', '<b>Track</b><br>My Submissions', '<b>Notified on changes</b><br>Zalo / in-app',
-  ]);
-  chain('Path 3 — Borrow a book (Th&#432; vi&#7879;n)', 650, [
-    '<b>Browse Catalog</b>', '<b>Request loan</b>', '<b>Notified: approved</b><br>Zalo', '<b>Pick up</b><br>librarian marks borrowed', '<b>Return</b><br>reminder if overdue',
-  ]);
+  chain('Path 0 — Store &amp; Retrieve (the daily core)', 140, ['<b>Open app</b><br>Google sign-in', '<b>Open Library</b><br>Kho t&#432; li&#7879;u', '<b>Search / browse</b><br>member space', '<b>Open stored item</b><br>preview + metadata', '<b>Download original</b>'], true);
+  chain('Path 1 — Learn from the tree', 310, ['<b>Search the tree</b>', '<b>Open node</b><br>trust state visible', '<b>Follow links</b><br>mini-graph', '<b>Open branch hub</b>', '<b>Continue or contribute</b><br>new source item']);
+  chain('Path 2 — Contribute', 480, ['<b>Open Source Intake</b>', '<b>Upload file</b><br>or gap request', '<b>Item stored</b><br>in space Library', '<b>Track</b><br>My Submissions', '<b>Notified on changes</b><br>Zalo / in-app']);
+  chain('Path 3 — Borrow a book (Th&#432; vi&#7879;n)', 650, ['<b>Browse Catalog</b>', '<b>Request loan</b>', '<b>Notified: approved</b><br>Zalo', '<b>Pick up</b><br>librarian marks borrowed', '<b>Return</b><br>reminder if overdue']);
 
   d.message('Path 0 must work perfectly before curation features matter — it replaces Excel/Docs for a non-technical team and is the adoption lever; all paths run on the Vietnamese-default UI.', 780);
   d.legend('<b>Node grammar</b> (repo theme, fixed): heavier border = the hero journey · unlabeled solid edges = sequential steps. Sources of truth: docs/flows/user-flows.md, docs/ui/screen-inventory.md.', 830);
@@ -624,10 +911,42 @@ class D {
   d.e(src, cur, 'source_id');
   d.e(cur, prom, 'curation_id');
   d.e(prom, node, 'tree_node_id');
-  d.e(sp, cat, 'space_id', { dashed: true, pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=0;', points: [[25, 272.5], [25, 46], [1190, 46]] });
-  d.e(sp, pm, 'space_id', { dashed: true, pinStr: 'exitX=0;exitY=0.3;entryX=0;entryY=0.5;', points: [[15, 251.5], [15, 36], [1030, 36], [1030, 442.5]] });
-  d.e(brd, src, 'imports into', { pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=0;', points: [[25, 442.5], [25, 56], [500, 56]] });
-  d.e(node, exp, 'exports tree', { pinStr: 'exitX=1;exitY=0.8;entryX=1;entryY=0.5;', points: [[1030, 194], [1030, 505], [1380, 505], [1380, 582.5]] });
+  d.e(sp, cat, 'space_id', {
+    dashed: true,
+    pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=0;',
+    points: [
+      [25, 272.5],
+      [25, 46],
+      [1190, 46],
+    ],
+  });
+  d.e(sp, pm, 'space_id', {
+    dashed: true,
+    pinStr: 'exitX=0;exitY=0.3;entryX=0;entryY=0.5;',
+    points: [
+      [15, 251.5],
+      [15, 36],
+      [1030, 36],
+      [1030, 442.5],
+    ],
+  });
+  d.e(brd, src, 'imports into', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=0;',
+    points: [
+      [25, 442.5],
+      [25, 56],
+      [500, 56],
+    ],
+  });
+  d.e(node, exp, 'exports tree', {
+    pinStr: 'exitX=1;exitY=0.8;entryX=1;entryY=0.5;',
+    points: [
+      [1030, 194],
+      [1030, 505],
+      [1380, 505],
+      [1380, 582.5],
+    ],
+  });
   d.e(cat, loan, 'item_id');
   d.e(obx, notif, 'dispatches');
 
@@ -647,13 +966,16 @@ class D {
 
   d.section('2 · Dispatch Triggers (Serverless Safe)', 510, 100);
   const afterTrigger = d.v('<b>Next.js 15 after() / kickDispatch()</b><hr>Executes background task without blocking<br>HTTP 201 response to caller', ENTITY + 'strokeColor=#A855F7;', 510, 140, 320, 100);
-  const cronTrigger = d.v('<b>Safety Cron: GET /api/cron/dispatch</b><hr>Periodic worker sweeping outbox_events<br>where dispatched_at IS NULL', ENTITY + 'strokeColor=#10B981;', 510, 270, 320, 100);
+  const cronTrigger = d.v('<b>Safety Cron: POST /api/cron/dispatch</b><hr>Bearer-authenticated worker sweeping outbox_events<br>where dispatched_at IS NULL', ENTITY + 'strokeColor=#10B981;', 510, 270, 320, 100);
 
   d.section('3 · Dispatcher Processing', 900, 100);
   const disp = d.v('<b>dispatchOutbox()</b><hr>1. resolveRecipients (matrix / @mention)<br>2. channelsFor(user, eventType)<br>3. INSERT notifications + notification_deliveries<br>4. UPDATE outbox_events SET dispatched_at = NOW()', ENTITY + 'strokeColor=#3B82F6;', 900, 140, 360, 140);
 
   d.e(txBox, afterTrigger, 'immediate kick');
-  d.e(txBox, cronTrigger, 'fallback drain', { pinStr: 'exitX=0.5;exitY=1;entryX=0;entryY=0.5;', points: [[240, 320]] });
+  d.e(txBox, cronTrigger, 'fallback drain', {
+    pinStr: 'exitX=0.5;exitY=1;entryX=0;entryY=0.5;',
+    points: [[240, 320]],
+  });
   d.e(afterTrigger, disp, 'run');
   d.e(cronTrigger, disp, 'run');
 
@@ -685,7 +1007,13 @@ class D {
   const node = d.v('<b>tree_nodes</b><hr>id, branch_id, title, slug<br>verification, updatedAt DESC', ENTITY + 'strokeColor=#A855F7;', 1060, 260, 260, 90);
   const nv = d.v('<b>tree_node_versions</b><hr>id, tree_node_id, content<br>versionId, commit_msg', ENTITY + 'strokeColor=#A855F7;', 1060, 390, 260, 90);
 
-  d.e(u, sm, 'member of', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[-40, 175], [-40, 435]] });
+  d.e(u, sm, 'member of', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;',
+    points: [
+      [-40, 175],
+      [-40, 435],
+    ],
+  });
   d.e(sp, sm, 'grants access');
   d.e(sp, src, 'stores evidence');
   d.e(src, sv, 'versions');
@@ -722,13 +1050,26 @@ class D {
   const cur = d.v('<b>curations</b><hr>id, source_version_id, state<br>reviewer_id, ready_at', ENTITY + 'strokeColor=#D97706;', 1080, 270, 280, 90);
 
   d.e(sp, sm, 'authorizes members');
-  d.e(sp, gap, 'gap req', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[15, 175], [15, 455]] });
+  d.e(sp, gap, 'gap req', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;',
+    points: [
+      [15, 175],
+      [15, 455],
+    ],
+  });
   d.e(sp, src, 'space-scoped');
   d.e(src, sv, 'immutable uploads');
   d.e(sv, chunk, 'parsed chunks / OCR');
   d.e(sv, cor, 'human corrections');
   d.e(sv, drf, 'drafting area');
-  d.e(sv, cur, 'curation status', { pinStr: 'exitX=1;exitY=0.25;entryX=0.5;entryY=0;', points: [[695, 292.5], [695, 68], [1220, 68]] });
+  d.e(sv, cur, 'curation status', {
+    pinStr: 'exitX=1;exitY=0.25;entryX=0.5;entryY=0;',
+    points: [
+      [695, 292.5],
+      [695, 68],
+      [1220, 68],
+    ],
+  });
 
   d.message('Every upload creates an immutable SHA-256 source_version; extraction chunks, human corrections, and drafts are layered on top without overwriting.', 540);
   d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; Spaces / Hierarchy</font> · <font color="#D97706">&#9632; Sources &amp; Curation</font> · <font color="#10B981">&#9632; Extracted &amp; Corrected Text</font>. Authoritative docs: docs/design/database-erds.md.', 590);
@@ -754,7 +1095,13 @@ class D {
 
   d.e(br, node, 'contains articles');
   d.e(node, nv, 'immutable snapshots');
-  d.e(node, prom, 'provenance', { pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;', points: [[340, 175], [340, 475]] });
+  d.e(node, prom, 'provenance', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0;entryY=0.5;',
+    points: [
+      [340, 175],
+      [340, 475],
+    ],
+  });
   d.e(node, link, 'source link (from)');
   d.e(node, link, 'target link (to)');
   d.e(node, ntag, 'has tag');
@@ -816,7 +1163,14 @@ class D {
   d.e(cmt, cmtidx, 'anchored to');
   d.e(obx, notif, 'dispatches via outbox runner');
   d.e(notif, deliv, 'per channel delivery');
-  d.e(u, pref, 'sets preferences', { pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=1;', points: [[20, 175], [20, 560], [870, 560]] });
+  d.e(u, pref, 'sets preferences', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=1;',
+    points: [
+      [20, 175],
+      [20, 560],
+      [870, 560],
+    ],
+  });
 
   d.message('outbox_events is inserted in the same PostgreSQL transaction as domain mutations; after() and /api/cron/dispatch drain pending deliveries.', 600);
   d.legend('<b>Colour roles</b>: <font color="#64748B">&#9632; Outbox, Notify &amp; Audit</font> · <font color="#3B82F6">&#9632; Users &amp; Comments</font>. Authoritative docs: docs/design/database-erds.md.', 650);
@@ -845,9 +1199,26 @@ class D {
 
   d.e(sp, dln, 'scoped deadline');
   d.e(dln, lnk, 'attached evidence / node');
-  d.e(dln, rem, 'sent alerts', { pinStr: 'exitX=0.5;exitY=1;entryX=0;entryY=0.5;', points: [[520, 300]] });
-  d.e(u, tasks, 'assigned task', { pinStr: 'exitX=1;exitY=0;entryX=0.5;entryY=0;', points: [[345, 255], [345, 238], [520, 238]] });
-  d.e(u, achiev, 'logged milestone', { pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=1;', points: [[20, 300], [20, 550], [870, 550]] });
+  d.e(dln, rem, 'sent alerts', {
+    pinStr: 'exitX=0.5;exitY=1;entryX=0;entryY=0.5;',
+    points: [[520, 300]],
+  });
+  d.e(u, tasks, 'assigned task', {
+    pinStr: 'exitX=1;exitY=0;entryX=0.5;entryY=0;',
+    points: [
+      [345, 255],
+      [345, 238],
+      [520, 238],
+    ],
+  });
+  d.e(u, achiev, 'logged milestone', {
+    pinStr: 'exitX=0;exitY=0.5;entryX=0.5;entryY=1;',
+    points: [
+      [20, 300],
+      [20, 550],
+      [870, 550],
+    ],
+  });
   d.e(u, caltok, 'subscribed user');
 
   d.message('Deadlines can link directly to evidence in sources or notes in tree_nodes; tasks and achievements track team collaboration milestones.', 600);
@@ -888,7 +1259,11 @@ console.log('done');
   // Denials
   d.e(session, err401, 'invalid session', { dashed: true, color: '#C00000' });
   d.e(authz, err404, 'read forbidden\n(hide existence)', { dashed: true, color: '#C00000' });
-  d.e(authz, err403, 'write forbidden', { dashed: true, color: '#C00000', pinStr: 'exitX=0.7;exitY=1;entryX=0.5;entryY=0;' });
+  d.e(authz, err403, 'write forbidden', {
+    dashed: true,
+    color: '#C00000',
+    pinStr: 'exitX=0.7;exitY=1;entryX=0.5;entryY=0;',
+  });
   d.e(err403, auditDeny, 'records denial');
 
   d.message('Read denials return 404 (Not Found) instead of 403 (Forbidden) to prevent leaking resource existence across space boundaries.', 470);
@@ -929,8 +1304,18 @@ console.log('done');
   d.v('<b>Approve/decline loans &amp; System health &amp; Export</b><br>Qualifier: global (unrestricted global access)', ENTITY + 'strokeColor=#A855F7;', 1040, 420, 400, 50);
 
   // Role inheritance arrows (going from frame to frame)
-  d.e(userFrame, editorFrame, 'inherits', { dashed: true, color: '#3B82F6', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
-  d.e(editorFrame, adminFrame, 'extends', { dashed: true, color: '#10B981', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+  d.e(userFrame, editorFrame, 'inherits', {
+    dashed: true,
+    color: '#3B82F6',
+    width: 1.5,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  });
+  d.e(editorFrame, adminFrame, 'extends', {
+    dashed: true,
+    color: '#10B981',
+    width: 1.5,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  });
 
   d.message('Editor inherits all User baseline permissions; Admin/Op acts as a superuser with global scope qualifier across all modules.', 590);
   d.legend('<b>Colour roles</b>: <font color="#3B82F6">&#9632; User role (blue)</font> · <font color="#10B981">&#9632; Editor role (green)</font> · <font color="#A855F7">&#9632; Admin/Op role (purple)</font>. Authoritative matrix: docs/requirements/permissions-matrix.md.', 640);
@@ -965,14 +1350,39 @@ console.log('done');
   const aPublish = d.v('<b>Publish to Tree</b><br>Commit version snapshot &amp;<br>create Promotion provenance', ENTITY + 'strokeColor=#A855F7;', 1040, 570, 400, 55);
 
   // Edge Flows
-  d.e(uUpload, aTriage, '1 · submits file', { color: '#3B82F6', width: 1.5, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
-  d.e(aTriage, eReceive, '2 · assigns curation', { dashed: true, color: '#A855F7', width: 1.2, pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;', points: [[1240, 210], [750, 210]] });
+  d.e(uUpload, aTriage, '1 · submits file', {
+    color: '#3B82F6',
+    width: 1.5,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  });
+  d.e(aTriage, eReceive, '2 · assigns curation', {
+    dashed: true,
+    color: '#A855F7',
+    width: 1.2,
+    pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;',
+    points: [
+      [1240, 210],
+      [750, 210],
+    ],
+  });
   d.e(eReceive, eEdit, '3 · prepare text');
   d.e(eEdit, eDraft, '4 · write draft');
   d.e(eDraft, eSubmit, '5 · request review');
-  d.e(eSubmit, aReview, '6 · review draft', { color: '#10B981', width: 1.2, pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' });
+  d.e(eSubmit, aReview, '6 · review draft', {
+    color: '#10B981',
+    width: 1.2,
+    pinStr: 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  });
   d.e(aReview, aPublish, '7 · approves');
-  d.e(aPublish, uRead, '8 · makes available', { color: '#A855F7', width: 1.5, pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=1;', points: [[1240, 650], [260, 650]] });
+  d.e(aPublish, uRead, '8 · makes available', {
+    color: '#A855F7',
+    width: 1.5,
+    pinStr: 'exitX=0.5;exitY=1;entryX=0.5;entryY=1;',
+    points: [
+      [1240, 650],
+      [260, 650],
+    ],
+  });
 
   // Self loop
   d.e(uUpload, uSubmissions, 'track');
@@ -982,6 +1392,41 @@ console.log('done');
   d.out('content-lifecycle-by-role.drawio', 'Content Lifecycle by Role');
 }
 
+/* ============ 20. code-and-test-architecture.drawio ============ */
+{
+  const d = new D(1600, 980);
+  d.title('CODE & TEST ARCHITECTURE — current modular-monolith slices and release gate');
+  d.guide('top row follows runtime dependency direction; bottom row follows the test:all gate from cheap checks to browser validation.');
 
+  d.section('Runtime code', 50, 80);
+  const delivery = d.v('<b>Delivery</b><hr>src/app pages, routes, components<br>no database or schema imports', ENTITY + 'strokeColor=#3B82F6;', 50, 130, 300, 100);
+  const facades = d.v('<b>Stable facades</b><hr>knowledge/service.ts · storage/curation.ts<br>knowledge-map.tsx · lib/vi.ts', ENTITY + 'strokeColor=#A855F7;', 430, 130, 330, 100);
+  const slices = d.v('<b>Cohesive implementation slices</b><hr>core · queries · mutations/workflows<br>model · media · copy · states', ENTITY + 'strokeColor=#A855F7;', 840, 130, 330, 100);
+  const data = d.v('<b>Data ownership</b><hr>src/db + module schema.ts<br>PostgreSQL + migrations', ENTITY + 'strokeColor=#D97706;', 1250, 130, 280, 100);
+  d.e(delivery, facades, 'calls');
+  d.e(facades, slices, 're-exports');
+  d.e(slices, data, 'owned queries');
 
+  d.note('The facade split preserves existing imports; it does not create services or change module ownership.', 430, 270, 740, 48);
 
+  d.section('npm run test:all', 50, 360);
+  const fast = d.v('<b>Fast gate</b><hr>lint + typecheck<br>6 unit files', ENTITY + 'strokeColor=#3B82F6;', 50, 420, 240, 100);
+  const modules = d.v('<b>Structure + policy</b><hr>206 delivery files<br>172 auth assertions / 42 rows', ENTITY + 'strokeColor=#A855F7;', 340, 420, 270, 100);
+  const contracts = d.v('<b>Contracts + UI audits</b><hr>tokens · 4 timezones<br>contrast · 19 diagrams', ENTITY + 'strokeColor=#64748B;', 660, 420, 270, 100);
+  const integration = d.v('<b>PostgreSQL integration</b><hr>6 files<br>migrated + seeded test DB', ENTITY + 'strokeColor=#D97706;', 980, 420, 260, 100);
+  const build = d.v('<b>Production build</b><hr>Next.js standalone output', ENTITY + 'strokeColor=#10B981;', 1290, 420, 240, 100);
+  const e2e = d.v('<b>Playwright E2E</b><hr>3 smoke paths<br>scripts/start-e2e.mjs', ENTITY + 'strokeColor=#10B981;', 650, 650, 300, 100);
+
+  d.e(fast, modules, 'then');
+  d.e(modules, contracts, 'then');
+  d.e(contracts, integration, 'then');
+  d.e(integration, build, 'then');
+  d.e(build, e2e, 'serve + browse', {
+    pinStr: 'exitX=0.5;exitY=1;entryX=1;entryY=0.5;',
+    points: [[1410, 700]],
+  });
+
+  d.message('CI uses the same layers on Node 22 with PostgreSQL 16 and an installed Playwright Chromium browser.', 820);
+  d.legend('<b>Source of truth:</b> docs/platform/module-map.md · tests/README.md · package.json · .github/workflows/ci.yml.', 870);
+  d.out('code-and-test-architecture.drawio', 'Code and Test Architecture');
+}

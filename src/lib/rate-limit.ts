@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { ApiError } from "./errors";
 
 type Entry = { count: number; resetAt: number };
@@ -38,11 +39,11 @@ export function enforceRateLimit(
   }
 }
 
-/** Best available address at the trusted reverse-proxy boundary. */
+/** Best available address at an explicitly trusted reverse-proxy boundary. */
 export function requestAddress(request: Request): string {
-  return (
+  if (process.env.TRUST_PROXY !== "1") return "local";
+  const candidate =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip")?.trim() ||
-    "local"
-  );
+    request.headers.get("x-real-ip")?.trim();
+  return candidate && isIP(candidate) ? candidate : "local";
 }

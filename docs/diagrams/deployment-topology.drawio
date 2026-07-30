@@ -5,95 +5,68 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — DEPLOYMENT TOPOLOGY — primary VPS + worker host + external services (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — DEPLOYMENT TOPOLOGY — current Compose deployable and target adapters (2026-07-30)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
           <mxGeometry x="40" y="10" width="1420" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; two runtime frames; external services sit on the bottom row and right, edges route around the frames, never through them; dashed = queue / auth / trigger.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+        <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; solid boxes are current runtime components; dashed target adapters are not deployment dependencies today.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
           <mxGeometry x="40" y="44" width="1420" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="c4" value="PRIMARY VPS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
-          <mxGeometry x="40" y="100" width="470" height="480" as="geometry" />
+        <mxCell id="c4" value="&lt;b&gt;Browser / cron caller&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="130" width="220" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="c5" value="&lt;b&gt;Reverse proxy&lt;/b&gt; (TLS)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="70" y="140" width="180" height="45" as="geometry" />
+        <mxCell id="c5" value="&lt;b&gt;Operator reverse proxy&lt;/b&gt;&lt;br&gt;TLS + trusted forwarding headers" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="340" y="130" width="260" height="55" as="geometry" />
         </mxCell>
-        <mxCell id="c6" value="&lt;b&gt;Redis&lt;/b&gt;&lt;br&gt;queue signal + sessions" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="270" y="220" width="190" height="60" as="geometry" />
+        <mxCell id="c6" value="CURRENT DOCKER COMPOSE DEPLOY PROFILE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="660" y="90" width="760" height="440" as="geometry" />
         </mxCell>
-        <mxCell id="c7" value="&lt;b&gt;PostgreSQL&lt;/b&gt;&lt;br&gt;canonical data + FTS&lt;br&gt;(+ pgvector 1.5)" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="270" y="320" width="190" height="80" as="geometry" />
+        <mxCell id="c7" value="&lt;b&gt;migrate&lt;/b&gt;&lt;br&gt;one-shot, forward-only SQL" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="700" y="140" width="210" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="c8" value="&lt;b&gt;App&lt;/b&gt; — TypeScript modular monolith&lt;br&gt;all modules + outbox dispatcher" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="70" y="440" width="330" height="70" as="geometry" />
+        <mxCell id="c8" value="&lt;b&gt;Next.js standalone app&lt;/b&gt;&lt;br&gt;UI + API + modules + jobs + outbox" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#A855F7;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="980" y="140" width="350" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="c9" value="WORKER HOST (local-only AI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
-          <mxGeometry x="640" y="100" width="400" height="480" as="geometry" />
+        <mxCell id="c9" value="&lt;b&gt;PostgreSQL 16&lt;/b&gt;&lt;br&gt;canonical state + full-text search" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="700" y="290" width="240" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="c10" value="&lt;b&gt;Extraction worker&lt;/b&gt; (Python)&lt;br&gt;parser-first + OCR fallback" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="670" y="140" width="340" height="55" as="geometry" />
+        <mxCell id="c10" value="&lt;b&gt;appdata volume&lt;/b&gt;&lt;br&gt;uploads + local content repo" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="980" y="290" width="240" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="c11" value="&lt;b&gt;Ollama&lt;/b&gt;&lt;br&gt;OCR support, embeddings (1.5)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="670" y="235" width="340" height="55" as="geometry" />
+        <mxCell id="c11" value="&lt;b&gt;Ollama&lt;/b&gt;&lt;br&gt;local model runtime" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="290" width="130" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="c12" value="&lt;b&gt;Document render&lt;/b&gt;&lt;br&gt;Pandoc-class: md &amp;#8594; docx / pdf" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="670" y="325" width="340" height="55" as="geometry" />
+        <mxCell id="c12" value="TARGET ADAPTERS — NOT CURRENT DEPENDENCIES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#969696;dashed=1;verticalAlign=top;align=left;spacing=8;fontSize=10;fontStyle=1;fontColor=#969696;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="50" y="590" width="1370" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="c13" value="&lt;b&gt;Bridge jobs&lt;/b&gt;&lt;br&gt;Drive / Sheets import, Forms polling" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="670" y="415" width="340" height="55" as="geometry" />
+        <mxCell id="c13" value="&lt;b&gt;Redis queue · S3-compatible storage · separate Python worker · email/Zalo · remote content repo&lt;/b&gt;&lt;br&gt;replace local adapters through module contracts; canonical ownership stays unchanged" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#64748B;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="630" width="1270" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="c14" value="&lt;b&gt;S3-compatible Object Storage&lt;/b&gt;&lt;br&gt;originals + evidence artifacts" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="1140" y="140" width="260" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="c15" value="&lt;b&gt;Google OIDC&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="70" y="660" width="200" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="c16" value="&lt;b&gt;Email provider + Zalo OA&lt;/b&gt;&lt;br&gt;outbound notifications" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="310" y="660" width="240" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="c17" value="&lt;b&gt;GitHub content repo + Actions&lt;/b&gt;&lt;br&gt;export validate + Quartz build" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="590" y="660" width="260" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="c18" value="&lt;b&gt;Google Drive / Sheets / Forms APIs&lt;/b&gt;&lt;br&gt;read-only, Op credential" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=2;fontColor=#000000;fontSize=11;align=center;" vertex="1" parent="1">
-          <mxGeometry x="890" y="660" width="280" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="c19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#64748B;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c5" target="c8">
+        <mxCell id="c14" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;HTTPS&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#3B82F6;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c4" target="c5">
           <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="c20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c8" target="c7">
+        <mxCell id="c15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#64748B;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c5" target="c8">
           <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="c21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=1;exitY=0.3;entryX=1;entryY=0.5;" edge="1" parent="1" source="c8" target="c6">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="487" y="461" /><mxPoint x="487" y="250" /></Array></mxGeometry>
-        </mxCell>
-        <mxCell id="c22" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;jobs&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#404040;strokeWidth=1.2;dashed=1;exitX=0.5;exitY=0;entryX=0;entryY=0.5;" edge="1" parent="1" source="c6" target="c10">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="365" y="168" /><mxPoint x="575" y="168" /></Array></mxGeometry>
-        </mxCell>
-        <mxCell id="c23" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;local inference&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.2;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c10" target="c11">
+        <mxCell id="c16" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;migrations&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c7" target="c9">
           <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="c24" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;fetch originals&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.2;verticalAlign=bottom;spacingBottom=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c10" target="c14">
+        <mxCell id="c17" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;queries + transactions&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="c8" target="c9">
           <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="c25" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;signed URLs&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=0.95;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="c8" target="c14">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="384" y="624" /><mxPoint x="1440" y="624" /><mxPoint x="1440" y="170" /></Array></mxGeometry>
+        <mxCell id="c18" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;files + exports&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c8" target="c10">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="c26" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;auth&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#404040;strokeWidth=1.2;dashed=1;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c8" target="c15">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="120" y="600" /><mxPoint x="170" y="600" /></Array></mxGeometry>
+        <mxCell id="c19" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;local inference&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="c8" target="c11">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
         </mxCell>
-        <mxCell id="c27" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;alerts&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c8" target="c16">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="235" y="608" /><mxPoint x="430" y="608" /></Array></mxGeometry>
+        <mxCell id="c20" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;future adapter swap&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#64748B;strokeWidth=1.2;dashed=1;exitX=0.5;exitY=1;entryX=0.7;entryY=0;" edge="1" parent="1" source="c8" target="c13">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1155" y="555" /></Array></mxGeometry>
         </mxCell>
-        <mxCell id="c28" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;export push&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#A855F7;strokeWidth=1.2;exitX=0.85;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c8" target="c17">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="350" y="616" /><mxPoint x="720" y="616" /></Array></mxGeometry>
+        <mxCell id="c21" value="&lt;b&gt;Message:&lt;/b&gt; Back up PostgreSQL and appdata together. The app and Ollama ports bind to loopback; POST /api/cron/dispatch requires a bearer CRON_SECRET." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="760" width="1420" height="34" as="geometry" />
         </mxCell>
-        <mxCell id="c29" value="&lt;span style=&quot;background-color: #ffffff; padding: 2px 6px; border: 1px solid #d3d3d3; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);&quot;&gt;one-way import&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontColor=#000000;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=6;endArrow=blockThin;endFill=1;strokeWidth=1.2;strokeColor=#10B981;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="c13" target="c18">
-          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="840" y="628" /><mxPoint x="1030" y="628" /></Array></mxGeometry>
-        </mxCell>
-        <mxCell id="c30" value="&lt;b&gt;Message:&lt;/b&gt; Daily backups (pg_dump + object-storage snapshot + content-repo mirror) meet RPO 24h; a worker or Ollama outage is a visible degraded mode — storage, catalog, knowledge, and full-text search keep working." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#404040;fontColor=#000000;fontSize=11;arcSize=8;align=left;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="40" y="750" width="1420" height="34" as="geometry" />
-        </mxCell>
-        <mxCell id="c31" value="&lt;b&gt;Colour roles&lt;/b&gt; (repo theme, fixed): &lt;font color=&quot;#A855F7&quot;&gt;&amp;#9632; app&lt;/font&gt; · &lt;font color=&quot;#10B981&quot;&gt;&amp;#9632; worker / local AI&lt;/font&gt; · &lt;font color=&quot;#D97706&quot;&gt;&amp;#9632; datastore&lt;/font&gt; · &lt;font color=&quot;#64748B&quot;&gt;&amp;#9632; external service&lt;/font&gt; · dashed = queue / auth / trigger. Source of truth: docs/system/deployment-topology.md." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="40" y="800" width="1420" height="24" as="geometry" />
+        <mxCell id="c22" value="&lt;b&gt;Colour roles&lt;/b&gt;: &lt;font color=&quot;#A855F7&quot;&gt;&amp;#9632; app&lt;/font&gt; · &lt;font color=&quot;#10B981&quot;&gt;&amp;#9632; lifecycle / local AI&lt;/font&gt; · &lt;font color=&quot;#D97706&quot;&gt;&amp;#9632; persistent data&lt;/font&gt; · &lt;font color=&quot;#64748B&quot;&gt;&amp;#9632; operator or target adapter&lt;/font&gt;. Source of truth: docs/system/deployment-topology.md and docker-compose.yml." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="810" width="1420" height="24" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

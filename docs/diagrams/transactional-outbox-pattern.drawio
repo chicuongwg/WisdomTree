@@ -5,7 +5,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — TRANSACTIONAL OUTBOX PATTERN — reliable notification dispatching on serverless / edge runtime (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — TRANSACTIONAL OUTBOX PATTERN — reliable notification dispatching on serverless / edge runtime (2026-07-30)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
           <mxGeometry x="40" y="10" width="1520" height="30" as="geometry" />
         </mxCell>
         <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; flow diagram of how ACID database transactions and after() / cron workers prevent notification loss.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
@@ -23,7 +23,7 @@
         <mxCell id="c7" value="&lt;b&gt;Next.js 15 after() / kickDispatch()&lt;/b&gt;&lt;hr&gt;Executes background task without blocking&lt;br&gt;HTTP 201 response to caller" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#A855F7;" vertex="1" parent="1">
           <mxGeometry x="510" y="140" width="320" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="c8" value="&lt;b&gt;Safety Cron: GET /api/cron/dispatch&lt;/b&gt;&lt;hr&gt;Periodic worker sweeping outbox_events&lt;br&gt;where dispatched_at IS NULL" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
+        <mxCell id="c8" value="&lt;b&gt;Safety Cron: POST /api/cron/dispatch&lt;/b&gt;&lt;hr&gt;Bearer-authenticated worker sweeping outbox_events&lt;br&gt;where dispatched_at IS NULL" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;fontColor=#000000;fontSize=10;arcSize=8;strokeColor=#10B981;" vertex="1" parent="1">
           <mxGeometry x="510" y="270" width="320" height="100" as="geometry" />
         </mxCell>
         <mxCell id="c9" value="3 · Dispatcher Processing" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#000000;" vertex="1" parent="1">

@@ -5,7 +5,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — ENTITY-RELATIONSHIP MAP — tables and key FKs by owning module · authoritative detail: docs/design/database-schema.md (2026-07-29)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
+        <mxCell id="c2" value="&lt;b&gt;WISDOMTREE&lt;/b&gt; — ENTITY-RELATIONSHIP MAP — tables and key FKs by owning module · authoritative detail: docs/design/database-schema.md (2026-07-30)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#000000;" vertex="1" parent="1">
           <mxGeometry x="40" y="10" width="1910" height="30" as="geometry" />
         </mxCell>
         <mxCell id="c3" value="&lt;i&gt;&lt;b&gt;How to read:&lt;/b&gt; one ghost frame per owning module; white cards = tables (name + key columns); gray edges = FK, purple = provenance spine; italic dashed card = SQL view.&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">

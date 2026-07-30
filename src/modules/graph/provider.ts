@@ -16,7 +16,7 @@ import { branches, nodeLinks, nodeTags, tags, treeNodes } from "../knowledge/sch
 export function createGraphProvider(actor: Principal): GraphDataProvider {
   return {
     async loadGraph(query: GraphQuery): Promise<GraphData> {
-      authorize(actor, "knowledge.node.read", { kind: "read" });
+      authorize(actor, "knowledge.graph.read", { kind: "read" });
       if (
         query.scope === "personal" &&
         (!query.vaultId || !actor.vaultIds?.includes(query.vaultId))
@@ -80,7 +80,8 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
           ),
       ]);
       const tagged = new Map<string, string[]>();
-      for (const tag of tagRows) tagged.set(tag.nodeId, [...(tagged.get(tag.nodeId) ?? []), tag.name]);
+      for (const tag of tagRows)
+        tagged.set(tag.nodeId, [...(tagged.get(tag.nodeId) ?? []), tag.name]);
       return {
         nodes: rows.map((row) => ({
           id: row.id,
@@ -99,7 +100,7 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
     },
 
     async loadPreview(nodeId: string): Promise<NodePreview | null> {
-      authorize(actor, "knowledge.node.read", { kind: "read" });
+      authorize(actor, "knowledge.graph.read", { kind: "read" });
       const [node] = await db
         .select({
           id: treeNodes.id,

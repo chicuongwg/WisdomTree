@@ -10,11 +10,7 @@ import {
   treeNodeVersions,
   vaultGrants,
 } from "../../src/modules/knowledge/schema";
-import {
-  createNode,
-  reviewNodeProposal,
-  updateNode,
-} from "../../src/modules/knowledge/service";
+import { createNode, reviewNodeProposal, updateNode } from "../../src/modules/knowledge/service";
 import {
   contentReviews,
   curations,
@@ -109,12 +105,10 @@ export async function run() {
     .from(branches)
     .where(eq(branches.vaultId, sharedNode.vaultId))
     .limit(1);
-  const published = await publishFromSource(
-    reviewer,
-    ready.source.id,
-    ready.version.id,
-    { branchId: targetBranch.id, verification: "verified" },
-  );
+  const published = await publishFromSource(reviewer, ready.source.id, ready.version.id, {
+    branchId: targetBranch.id,
+    verification: "verified",
+  });
   assert.equal(published.createdBy, ready.source.submittedBy);
 
   const user = await principal("lan@wisdomtree.local");

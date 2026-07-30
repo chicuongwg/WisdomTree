@@ -57,7 +57,7 @@
 
 ## Phase 1 Implemented Enhancements (Beyond Initial Design)
 During Phase 1 implementation and production hardening, several capabilities were developed beyond the original specification to improve reliability, UX, and multi-user collaboration:
-- **Serverless-Reliable Notification Dispatcher (`after()` + Safety Cron)**: Replaced in-memory background promise dispatching with Next.js 15 `after()` runtime lifecycle management and added a safety net Cron route (`GET /api/cron/dispatch`) so Transactional Outbox deliveries are never dropped on serverless/edge containers.
+- **Serverless-Reliable Notification Dispatcher (`after()` + Safety Cron)**: Replaced in-memory background promise dispatching with Next.js 15 `after()` runtime lifecycle management and added a bearer-authenticated safety net Cron route (`POST /api/cron/dispatch`) so Transactional Outbox deliveries are never dropped on serverless/edge containers.
 - **Live Markdown & Wiki-links Preview**: Integrated real-time Markdown preview directly into `NodeEditor` and `NodeCreateForm`, allowing users to see formatted content, internal `[[Wiki-links]]`, and resolved/unresolved backlink states before saving.
 - **Diacritic-Insensitive Mention Resolution**: Implemented a Vietnamese diacritic normalizer (`foldName` in `src/lib/mention-fold.ts`) so @mentions with or without accents (`@Lan Anh`, `@Pham Thu Huong`) reliably resolve target users while enforcing Space Scoping rules.
 - **Unified Timestamp Sorting (`updatedAt DESC`)**: Switched sidebar tree nodes and branch listings from alphabetical `title ASC` to `updatedAt DESC` so newly edited or created notes always bubble to the top across both navigation and main views.

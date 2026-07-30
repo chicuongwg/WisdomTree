@@ -139,7 +139,7 @@ erDiagram
 
 ### Notification & Audit Entity Highlights
 
-- **`outbox_events`**: Created inside the same ACID PostgreSQL transaction as domain mutations (`dispatched_at IS NULL`). Drained by `after()` and `/api/cron/dispatch`.
+- **`outbox_events`**: Created inside the same ACID PostgreSQL transaction as domain mutations (`dispatched_at IS NULL`). Drained by `after()` and authenticated `POST /api/cron/dispatch`.
 - **`notifications` & `notification_deliveries`**: Separate records tracking in-app alerts vs. outbound Zalo OA / email delivery status.
 - **`audit_events`**: Append-only compliance log recording who changed what, when, and from which IP/session.
 

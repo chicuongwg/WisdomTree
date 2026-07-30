@@ -12,27 +12,32 @@ if (!target) {
 const base = path.resolve(root, target);
 
 function walk(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return walk(full);
-    return full.endsWith(".test.ts") || full.endsWith(".test.tsx") ? [full] : [];
-  });
+  return readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      return full.endsWith(".test.ts") || full.endsWith(".test.tsx") ? [full] : [];
+    })
+    .sort();
 }
 
 const files = walk(base);
 if (!files.length) {
-  console.log(`No test files found in ${target}`);
-  process.exit(0);
+  throw new Error(`No test files found in ${target}`);
 }
 
 async function runTests() {
+  let passed = 0;
   for (const file of files) {
     console.log(`Running ${path.relative(root, file)}`);
     const mod = await import(file);
-    if (typeof mod.run === "function") {
-      await mod.run();
+    if (typeof mod.run !== "function") {
+      throw new Error(`${path.relative(root, file)} must export a run() function`);
     }
+    await mod.run();
+    passed += 1;
   }
+  console.log(`Passed ${passed} test file${passed === 1 ? "" : "s"}.`);
 }
 
 runTests().catch((err) => {

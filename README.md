@@ -123,11 +123,11 @@ to sign with the published development secret. Generate the latter with
 
 One deployable, three layers, enforced rather than described:
 
-| Layer | Path | May do | May not do |
-| --- | --- | --- | --- |
-| Delivery (FE + routes) | `src/app/**` | Render, read query params, call a service | Touch the database — no `@/db`, no `*/schema`, no `drizzle-orm` |
-| Business logic | `src/modules/<module>/service.ts` | Authorize, query, transact, audit, emit | Reach into another module's tables |
-| Data | `src/db/**`, `src/modules/*/schema.ts` | Connection, table definitions, migrations | Contain business rules |
+| Layer                  | Path                                   | May do                                    | May not do                                                      |
+| ---------------------- | -------------------------------------- | ----------------------------------------- | --------------------------------------------------------------- |
+| Delivery (FE + routes) | `src/app/**`                           | Render, read query params, call a service | Touch the database — no `@/db`, no `*/schema`, no `drizzle-orm` |
+| Business logic         | `src/modules/<module>/*.ts`            | Authorize, query, transact, audit, emit   | Reach into another module's tables                              |
+| Data                   | `src/db/**`, `src/modules/*/schema.ts` | Connection, table definitions, migrations | Contain business rules                                          |
 
 ```sh
 npm run test:boundaries   # fails the build if delivery code queries the database
@@ -140,12 +140,31 @@ next to the `authorize()` call and the space scoping that belong with it.
 
 Server components calling a service directly is intended — that is the App
 Router's own model, and the service is still the only thing that talks to
-Postgres. The rule is about *who owns the query*, not about inserting an HTTP
+Postgres. The rule is about _who owns the query_, not about inserting an HTTP
 hop between a page and its data.
 
 ```sh
-npm test   # typecheck + boundaries + authz matrix + token suite
+npm test   # fast checks: lint, typecheck, unit, boundaries, authz, tokens, UI audits
 ```
+
+The full gate additionally needs a migrated, demo-seeded test database. It
+builds the production app and runs the integration and Playwright suites:
+
+```sh
+npm run test:all
+```
+
+Large public entry points remain compatibility facades while cohesive code is
+split behind them:
+
+- `knowledge/service.ts` re-exports the core, query, and mutation slices.
+- `storage/curation.ts` re-exports curation core, query, and workflow slices.
+- `components/knowledge-map.tsx` and `lib/vi.ts` preserve existing imports while
+  their implementations live in same-named directories.
+
+See [docs/platform/module-map.md](docs/platform/module-map.md) for the current
+module/file map and [tests/README.md](tests/README.md) for the verification
+layers.
 
 ## Deploying
 
@@ -154,21 +173,28 @@ app starts, and never seed.
 
 ```sh
 export SESSION_SECRET=$(openssl rand -base64 32)   # required, no default
+export CRON_SECRET=$(openssl rand -base64 32)      # outbox safety cron
+export TRUST_PROXY=1                               # only behind a trusted proxy
 export ENABLE_DEV_LOGIN=1                          # until OIDC lands; see above
 docker compose --profile deploy up -d --build
 ```
+
+The app port is bound to host loopback. The reverse proxy must remove incoming
+forwarding headers and write its own before `TRUST_PROXY=1` is enabled. The
+outbox safety cron calls `POST /api/cron/dispatch` with
+`Authorization: Bearer <CRON_SECRET>`.
 
 `--profile deploy` is what separates this from `docker compose up -d db`, which
 stays the database-only path the npm scripts use. Compose refuses to start
 without `SESSION_SECRET` rather than letting the published dev default sign
 real sessions.
 
-| Concern | Where it is handled |
-| --- | --- |
+| Concern               | Where it is handled                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------ |
 | Uploads + export repo | `appdata` volume on `/app/data` — without it, a redeploy deletes every uploaded file |
-| Migrations | `migrate` service, runs to completion before `app` starts |
-| Health | `GET /api/health` (unauthenticated, `SELECT 1`), wired to the container healthcheck |
-| Backups | `scripts/backup.sh` — `pg_dump` plus a tarball of the object store, on cron |
+| Migrations            | `migrate` service, runs to completion before `app` starts                            |
+| Health                | `GET /api/health` (unauthenticated, `SELECT 1`), wired to the container healthcheck  |
+| Backups               | `scripts/backup.sh` — `pg_dump` plus a tarball of the object store, on cron          |
 
 The image carries `git`, `pandoc`, Poppler, and Tesseract with Vietnamese
 language data. There is no TeX engine, so PDF export degrades to the HTML
@@ -200,17 +226,20 @@ the stub dispatcher produced in-app notifications.
 
 ## Layout
 
-| Path | What it is |
-| --- | --- |
-| `docs/` | Canonical planning + design baseline (read `docs/roadmap/demo-brief.md` first) |
-| `drizzle/0000_init.sql` | First migration, transcribed from `docs/design/database-schema.md` (demo subset) |
-| `src/modules/<module>/` | Module boundaries per `docs/platform/module-map.md`: `auth`, `storage`, `catalog`, `circulation`, `notify`, `audit` |
-| `src/modules/*/schema.ts` | Drizzle table definitions owned by that module |
-| `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1 |
-| `src/modules/storage/extraction.ts` | Dev substitution: in-process stub worker |
-| `src/modules/auth/dev-auth.ts` | Dev substitution interface: user-picker sessions, OIDC in V1 |
-| `src/db/` | Drizzle client, aggregated schema, cross-cutting outbox table |
-| `scripts/db/` | Migration runner and seed script |
+| Path                                  | What it is                                                                                                              |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `docs/`                               | Canonical planning + design baseline (read `docs/roadmap/demo-brief.md` first)                                          |
+| `drizzle/0000_init.sql`               | First migration, transcribed from `docs/design/database-schema.md` (demo subset)                                        |
+| `src/modules/<module>/`               | Module boundaries per `docs/platform/module-map.md`; large services may use a thin facade plus cohesive internal slices |
+| `src/modules/*/schema.ts`             | Drizzle table definitions owned by that module                                                                          |
+| `src/app/components/knowledge-map/`   | Graph renderer model, responsive media hook, and component implementation                                               |
+| `src/lib/vi/`                         | Vietnamese copy and state-label implementation behind the `src/lib/vi.ts` facade                                        |
+| `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1                                                                                |
+| `src/modules/storage/extraction.ts`   | Dev substitution: in-process stub worker                                                                                |
+| `src/modules/auth/dev-auth.ts`        | Dev substitution interface: user-picker sessions, OIDC in V1                                                            |
+| `src/db/`                             | Drizzle client, aggregated schema, cross-cutting outbox table                                                           |
+| `scripts/db/`                         | Migration runner and seed script                                                                                        |
+| `tests/`                              | Unit, integration, and Playwright suites; module, contract, and UI audits are wired through package scripts             |
 
 ## Demo schema subset
 
@@ -257,7 +286,7 @@ deployment obligation.
   `/library`, `/library/:id`, `/source/intake`, `/source/mine`, `/catalog`,
   `/catalog/:id`, `/catalog/admin`, plus the dev-only `/login` picker.
 - **Dev-only routes** (substitutions, not in openapi.yaml): `POST
-  /api/auth/dev-login` (user picker) and `GET /api/blob/{token}` — the latter
+/api/auth/dev-login` (user picker) and `GET /api/blob/{token}` — the latter
   stands in for the object-storage host: downloads still 302 through the
   authorized endpoint to a short-lived signed URL, never a public path.
 - **New Vietnamese UI terms** not yet in `docs/ui/vocabulary-vi.md`, pending
