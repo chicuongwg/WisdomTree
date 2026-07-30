@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { LocalGitExportTarget } from "../../src/modules/export/target";
 import {
   buildStaticVaultFiles,
   renderMarkdown,
@@ -60,4 +64,22 @@ export async function run() {
   );
   const markdown = buildStaticVaultFiles(vault).find((file) => file.path.endsWith(".md"));
   assert.equal(markdown && sha256(markdown.content), vault.nodes[0].sha256);
+
+  const temp = await mkdtemp(path.join(tmpdir(), "wt-static-vault-test-"));
+  try {
+    const target = new LocalGitExportTarget(path.join(temp, "vault.git"));
+    const first = await target.publish(buildStaticVaultFiles(vault), "first");
+    const second = await target.publish(buildStaticVaultFiles(vault), "second");
+    assert.equal(first.changed, true);
+    assert.deepEqual(second, { commitSha: first.commitSha, changed: false });
+
+    vault.nodes[0].contentMd = "# Changed";
+    const rendered = renderMarkdown(vault.nodes[0]);
+    vault.nodes[0].sha256 = sha256(rendered);
+    const third = await target.publish(buildStaticVaultFiles(vault), "third");
+    assert.equal(third.changed, true);
+    assert.notEqual(third.commitSha, first.commitSha);
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
 }
