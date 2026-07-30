@@ -3,11 +3,13 @@ import { ApiError, handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { uploadSource } from "@/modules/storage/service";
 import type { ExtractionMethod } from "@/modules/storage/extraction";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 // POST /api/source/upload — multipart; store-first, returns once stored (201)
 export async function POST(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
+    enforceRateLimit("source.upload", actor.userId, 20, 60 * 60_000);
     const form = await request.formData();
     const file = form.get("file");
     const spaceId = form.get("spaceId");

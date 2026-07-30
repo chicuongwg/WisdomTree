@@ -3,6 +3,7 @@ import { ApiError, handleApi } from "@/lib/errors";
 import { devLoginEnabled, findSignInCandidate } from "@/modules/auth/dev-auth";
 import { issueSessionToken, SESSION_COOKIE } from "@/modules/auth/session";
 import { SESSION_TTL_MS } from "@/lib/sign";
+import { enforceRateLimit, requestAddress } from "@/lib/rate-limit";
 
 // POST /api/auth/dev-login — DEV-ONLY route, not part of openapi.yaml.
 // This is the demo's auth substitution (demo-brief.md): a user picker over
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
     // Impersonation with no credential: 404 rather than 403, so a deployment
     // that has not opted in does not advertise that the endpoint exists.
     if (!devLoginEnabled()) throw new ApiError(404, "not_found", "Không tìm thấy nội dung này.");
+    enforceRateLimit("auth.dev-login", requestAddress(request), 10, 10 * 60_000);
 
     const { userId } = (await request.json()) as { userId?: string };
     if (!userId) throw new ApiError(400, "missing_user", "Vui lòng chọn người dùng.");
