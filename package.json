@@ -41,6 +41,7 @@
     "@wisdomtree/identity": "*",
     "@wisdomtree/index-librarian": "*",
     "drizzle-orm": "^0.44.2",
+    "fast-xml-parser": "5.10.1",
     "next": "^15.3.4",
     "pg": "^8.16.0",
     "react": "^19.1.0",
