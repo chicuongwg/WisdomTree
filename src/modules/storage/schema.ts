@@ -138,6 +138,29 @@ export const textChunks = pgTable(
   (t) => [unique().on(t.sourceVersionId, t.position)],
 );
 
+export const extractionCandidates = pgTable("extraction_candidates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sourceVersionId: uuid("source_version_id")
+    .notNull()
+    .unique()
+    .references(() => sourceVersions.id),
+  // FK lives in the migration to keep storage and knowledge schemas acyclic.
+  vaultId: uuid("vault_id").notNull(),
+  contentMd: text("content_md").notNull(),
+  contentSha256: text("content_sha256").notNull(),
+  method: text("method", { enum: ["text", "pandoc", "ocr"] }).notNull(),
+  state: text("state", { enum: ["pending_review", "evolved", "rejected"] })
+    .notNull()
+    .default("pending_review"),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
+  reviewedBy: uuid("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  evolvedNodeId: uuid("evolved_node_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Each save appends a new row (the corrected text version chain); the latest
 // seq is current. No updates, so no version column.
 export const correctedTexts = pgTable(

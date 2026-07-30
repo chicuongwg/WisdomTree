@@ -44,7 +44,8 @@ async function main() {
     await client.query(
       `TRUNCATE loan_tickets, catalog_items,
                 promotions, tree_node_versions, node_links, node_tags, tags,
-                tree_nodes, branches, vault_grants, vaults, user_capabilities,
+                tree_nodes, extraction_candidates, branches, vault_grants,
+                vaults, user_capabilities,
                 review_tasks, conflicts,
                 curations, corrected_texts, markdown_drafts,
                 text_chunks, source_versions, sources,
