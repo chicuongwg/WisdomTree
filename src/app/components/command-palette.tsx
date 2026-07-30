@@ -56,6 +56,8 @@ export function CommandPalette({ role }: { role: string }) {
     { key: "catalog", label: T.catalog, hint: T.paletteHintGo, href: "/catalog" },
     { key: "intake", label: T.sourceIntake, hint: T.paletteHintGo, href: "/source/intake" },
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
+    { key: "candidate-review", label: "Kho tạm chờ duyệt", hint: T.navPersonalSpace, href: "/vault/review" },
+    { key: "ai-librarian", label: "Thủ thư AI", hint: T.navPersonalSpace, href: "/librarian" },
     // These two say which space they belong to instead of the generic "đi
     // tới": the board and the deadline calendar are the pair readers mix up,
     // and the palette is often how they are reached.

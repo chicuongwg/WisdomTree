@@ -144,6 +144,8 @@ function SidebarContent({
   }
 
   const personalWork: { href: string; label: string }[] = [
+    { href: "/vault/review", label: "Kho tạm chờ duyệt" },
+    { href: "/librarian", label: "Thủ thư AI" },
     { href: "/board", label: T.board },
     { href: "/source/intake", label: T.sourceIntake },
     { href: "/source/mine", label: T.mySubmissions },
