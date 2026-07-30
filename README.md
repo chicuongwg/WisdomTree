@@ -31,6 +31,17 @@ The deploy Compose profile also starts Ollama and pulls `OLLAMA_MODEL`
 (default `qwen2.5:7b`) on first install. The model stays in the `ollamadata`
 volume, so later deploys do not download it again.
 
+When running the app directly on the host, start Ollama separately before
+using AI Librarian:
+
+```sh
+ollama serve
+ollama pull "${OLLAMA_MODEL:-qwen2.5:7b}"
+```
+
+Set `OLLAMA_URL` when Ollama is not listening at the default
+`http://127.0.0.1:11434`.
+
 Or step by step:
 
 ```sh

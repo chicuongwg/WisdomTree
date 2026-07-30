@@ -10,6 +10,7 @@ import {
 } from "@wisdomtree/index-librarian";
 import { and, desc, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
+import { ApiError } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { branchVisibilityCondition } from "../knowledge/service";
@@ -178,23 +179,39 @@ export async function askLibrarian(
         `[${index + 1}] ${item.title}${item.refLabel ? ` — ${item.refLabel}` : ""}\n${item.excerpt}`,
     )
     .join("\n\n");
-  const response = await fetch(`${process.env.OLLAMA_URL ?? "http://127.0.0.1:11434"}/api/chat`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Bạn là thủ thư. Chỉ trả lời từ ngữ cảnh được cung cấp. Dẫn nguồn bằng [1], [2]. Nếu thiếu bằng chứng, nói rõ là không đủ dữ liệu.",
-        },
-        { role: "user", content: `Câu hỏi: ${question}\n\nNgữ cảnh:\n${context}` },
-      ],
-    }),
-  });
-  if (!response.ok) throw new Error(`Ollama trả về HTTP ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(`${process.env.OLLAMA_URL ?? "http://127.0.0.1:11434"}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal: AbortSignal.timeout(60_000),
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Bạn là thủ thư. Chỉ trả lời từ ngữ cảnh được cung cấp. Dẫn nguồn bằng [1], [2]. Nếu thiếu bằng chứng, nói rõ là không đủ dữ liệu.",
+          },
+          { role: "user", content: `Câu hỏi: ${question}\n\nNgữ cảnh:\n${context}` },
+        ],
+      }),
+    });
+  } catch {
+    throw new ApiError(
+      503,
+      "librarian_unavailable",
+      "Thủ thư AI chưa sẵn sàng. Vui lòng khởi động Ollama rồi thử lại.",
+    );
+  }
+  if (!response.ok) {
+    throw new ApiError(
+      503,
+      "librarian_unavailable",
+      `Thủ thư AI chưa sẵn sàng với model ${model}.`,
+    );
+  }
   const payload = (await response.json()) as { message?: { content?: string } };
   return {
     answer: payload.message?.content?.trim() || "Ollama không trả về nội dung.",
