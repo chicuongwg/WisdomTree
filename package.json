@@ -21,6 +21,8 @@
     "demo:dev": "docker compose up -d db && npm run db:migrate && ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed && next dev --turbopack",
     "start:prod": "npm run db:migrate && next start",
     "proofs": "tsx scripts/proofs.ts",
+    "vault:verify": "tsx scripts/vault-verify.ts",
+    "vault:rebuild": "tsx --env-file-if-exists=.env scripts/vault-rebuild.ts",
     "test:authz": "tsx scripts/authz-matrix.test.ts",
     "test:sign": "tsx scripts/sign.test.ts",
     "test:boundaries": "tsx scripts/boundaries.test.ts",

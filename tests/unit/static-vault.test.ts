@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { readStaticVaultRepo } from "../../scripts/static-vault-repo";
 import { LocalGitExportTarget } from "../../src/modules/export/target";
 import {
   buildStaticVaultFiles,
   renderMarkdown,
   renderVaultXml,
   sha256,
+  verifyStaticVaultFiles,
   type StaticVault,
 } from "../../src/modules/knowledge/static-vault";
 
@@ -64,11 +66,60 @@ export async function run() {
   );
   const markdown = buildStaticVaultFiles(vault).find((file) => file.path.endsWith(".md"));
   assert.equal(markdown && sha256(markdown.content), vault.nodes[0].sha256);
+  const validFiles = new Map(buildStaticVaultFiles(vault).map((file) => [file.path, file.content]));
+  assert.equal(verifyStaticVaultFiles(validFiles).id, vault.id);
+
+  for (const [name, mutate, expected] of [
+    [
+      "checksum",
+      (files: Map<string, string>) => files.set(vault.nodes[0].markdownPath, "changed"),
+      /checksum mismatch/,
+    ],
+    [
+      "path traversal",
+      (files: Map<string, string>) =>
+        files.set(
+          "vault.xml",
+          files.get("vault.xml")!.replace(vault.nodes[0].markdownPath, "../outside.md"),
+        ),
+      /missing Markdown file|invalid Markdown path/,
+    ],
+    [
+      "duplicate id",
+      (files: Map<string, string>) =>
+        files.set(
+          "vault.xml",
+          files
+            .get("vault.xml")!
+            .replace("  </nodes>", `    ${files.get("vault.xml")!.match(/<node .*<\/node>/s)![0]}\n  </nodes>`),
+        ),
+      /duplicate node id/,
+    ],
+    [
+      "dangling link",
+      (files: Map<string, string>) =>
+        files.set(
+          "links.xml",
+          files
+            .get("links.xml")!
+            .replace("</links>", `  <link from="${vault.nodes[0].id}" to="missing" type="related"/>\n</links>`),
+        ),
+      /dangling link/,
+    ],
+  ] as const) {
+    const files = new Map(validFiles);
+    mutate(files);
+    assert.throws(() => verifyStaticVaultFiles(files), expected, name);
+  }
 
   const temp = await mkdtemp(path.join(tmpdir(), "wt-static-vault-test-"));
   try {
     const target = new LocalGitExportTarget(path.join(temp, "vault.git"));
     const first = await target.publish(buildStaticVaultFiles(vault), "first");
+    assert.equal(
+      verifyStaticVaultFiles(await readStaticVaultRepo(path.join(temp, "vault.git"))).id,
+      vault.id,
+    );
     const second = await target.publish(buildStaticVaultFiles(vault), "second");
     assert.equal(first.changed, true);
     assert.deepEqual(second, { commitSha: first.commitSha, changed: false });

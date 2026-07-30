@@ -220,10 +220,23 @@ export function verifyStaticVaultFiles(files: Map<string, string>): VerifiedStat
     if (content === undefined) throw new Error(`missing Markdown file: ${markdownPath}`);
     const checksum = required(node.sha256, "node sha256");
     if (sha256(content) !== checksum) throw new Error(`checksum mismatch: ${markdownPath}`);
+    const parsedMarkdown = parseMarkdown(content);
+    const id = required(node.id, "node id");
+    const topicId = required(node.topicId, "node topicId");
+    const title = required(node.title, "node title");
+    if (
+      parsedMarkdown.id !== id ||
+      parsedMarkdown.title !== title ||
+      parsedMarkdown.topicId !== topicId ||
+      parsedMarkdown.revision !== revision ||
+      parsedMarkdown.verification !== verification
+    ) {
+      throw new Error(`Markdown frontmatter does not match manifest: ${markdownPath}`);
+    }
     return {
-      id: required(node.id, "node id"),
-      topicId: required(node.topicId, "node topicId"),
-      title: required(node.title, "node title"),
+      id,
+      topicId,
+      title,
       slug: required(node.slug, "node slug"),
       revision,
       verification: verification as StaticVaultNode["verification"],
@@ -237,7 +250,7 @@ export function verifyStaticVaultFiles(files: Map<string, string>): VerifiedStat
       ),
       markdownPath,
       sha256: checksum,
-      contentMd: parseMarkdownContent(content),
+      contentMd: parsedMarkdown.contentMd,
     };
   });
   const links: StaticVaultLink[] = array<Record<string, unknown>>(rawLinks.link).map((link) => {
@@ -257,12 +270,17 @@ export function verifyStaticVaultFiles(files: Map<string, string>): VerifiedStat
   assertUnique(nodes.map((node) => node.id), "node id");
   assertUnique(nodes.map((node) => node.markdownPath), "Markdown path");
   for (const topic of topics) {
-    if (!safeRepoPath(topic.path)) throw new Error(`invalid topic path: ${topic.path}`);
+    if (!safeRepoPath(topic.path) || !topic.path.startsWith("topics/"))
+      throw new Error(`invalid topic path: ${topic.path}`);
     if (topic.parentId && !topics.some((candidate) => candidate.id === topic.parentId))
       throw new Error(`dangling topic parent: ${topic.id}`);
   }
   for (const node of nodes) {
-    if (!safeRepoPath(node.markdownPath) || !node.markdownPath.startsWith("topics/"))
+    if (
+      !safeRepoPath(node.markdownPath) ||
+      !node.markdownPath.endsWith(".md") ||
+      !node.markdownPath.startsWith("topics/")
+    )
       throw new Error(`invalid Markdown path: ${node.markdownPath}`);
     if (!topics.some((topic) => topic.id === node.topicId))
       throw new Error(`dangling node topic: ${node.id}`);
@@ -289,8 +307,35 @@ function assertUnique(values: string[], label: string): void {
   if (new Set(values).size !== values.length) throw new Error(`duplicate ${label}`);
 }
 
-function parseMarkdownContent(content: string): string {
-  const match = content.match(/^---\n[\s\S]*?\n---\n\n([\s\S]*)\n$/);
+function parseMarkdown(content: string): {
+  id: string;
+  title: string;
+  topicId: string;
+  revision: number;
+  verification: string;
+  contentMd: string;
+} {
+  const match = content.match(/^---\n([\s\S]*?)\n---\n\n([\s\S]*)\n$/);
   if (!match) throw new Error("invalid Markdown frontmatter");
-  return match[1];
+  const lines = match[1].split("\n");
+  if (lines.length !== 5) throw new Error("invalid Markdown frontmatter");
+  const values = new Map(
+    lines.map((line) => {
+      const separator = line.indexOf(": ");
+      if (separator < 1) throw new Error("invalid Markdown frontmatter");
+      return [line.slice(0, separator), line.slice(separator + 2)];
+    }),
+  );
+  try {
+    return {
+      id: JSON.parse(required(values.get("id"), "frontmatter id")),
+      title: JSON.parse(required(values.get("title"), "frontmatter title")),
+      topicId: JSON.parse(required(values.get("topicId"), "frontmatter topicId")),
+      revision: Number(required(values.get("revision"), "frontmatter revision")),
+      verification: required(values.get("verification"), "frontmatter verification"),
+      contentMd: match[2],
+    };
+  } catch {
+    throw new Error("invalid Markdown frontmatter");
+  }
 }
