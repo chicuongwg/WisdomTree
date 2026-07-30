@@ -47,6 +47,26 @@ npm run build && npm run start   # http://localhost:3000
 > that reason. **To restart a deployment without touching its data, use
 > `npm run start:prod`** (migrate, then start).
 
+### Fresh database without demo data
+
+For a real installation, migrate an empty PostgreSQL database and run the
+non-destructive bootstrap once. Do not run the demo seed.
+
+```sh
+npm run db:migrate
+npm run db:bootstrap -- \
+  --admin-email admin@example.org \
+  --admin-name "Initial Administrator" \
+  --shared-vault-name "Team Knowledge"
+```
+
+The names and email are operator input, not application fixtures. Bootstrap
+creates only the initial `admin_op` invitation, that user's personal vault,
+one shared vault, required capabilities, and an audit event. It refuses to run
+when the database already contains a user or vault and never deletes data.
+Configure Google OIDC, then sign in with the invited email; subsequent users,
+spaces, branches, and content are created through the application.
+
 **Use the built app, not `next dev`, for anything but editing code.** Every
 page is dynamic, so a dev server compiles each route the first time it is
 opened: measured on this repo, first paint runs 0.6–3.0 s per route and stays
@@ -82,14 +102,13 @@ away as not invited.
 The picker is an impersonation endpoint — it trades a user id for that user's
 session with no credential — so it is **off in production** unless
 `ENABLE_DEV_LOGIN=1` is set, and with it off `/login` does not enumerate users
-either. Until OIDC lands, a production deployment must either set that flag
-knowingly (internal network only) or have no sign-in at all.
+either. A real deployment should leave it off and configure Google OIDC.
 
-`SESSION_SECRET` is **required in production**: the app throws at boot without
-it, because the fallback used in development is published in this repo and
-would let anyone forge an `admin_op` session or a download token for any
-stored file. Generate one with `openssl rand -base64 32`. Both settings are
-documented in [.env.example](.env.example).
+`DATABASE_URL` and `SESSION_SECRET` are **required in production**. The app
+refuses to use its local development database default at runtime, and refuses
+to sign with the published development secret. Generate the latter with
+`openssl rand -base64 32`. Configuration is documented in
+[.env.example](.env.example).
 
 ## Layers
 

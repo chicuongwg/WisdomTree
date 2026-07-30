@@ -19,6 +19,10 @@ const now = () => new Date();
 const daysFromNow = (d: number) => new Date(Date.now() + d * 86_400_000);
 
 async function main() {
+  if (process.env.NODE_ENV === "production") {
+    console.error("Refusing to load demo fixtures with NODE_ENV=production.");
+    process.exit(1);
+  }
   // This script TRUNCATEs every table below before inserting. NODE_ENV is not
   // a usable guard here — a bare `tsx scripts/db/seed.ts` on a server inherits
   // no environment — so the destructive intent has to be stated at the call

@@ -45,6 +45,7 @@ COPY --from=build /app/.next/static ./.next/static
 # node's own type stripping runs it — no tsx in the runtime image.
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/scripts/db/migrate.ts ./scripts/db/migrate.ts
+COPY --from=build /app/scripts/db/bootstrap.ts ./scripts/db/bootstrap.ts
 
 RUN mkdir -p /app/data/objects /app/data/vault-repos && chown -R node:node /app/data
 USER node

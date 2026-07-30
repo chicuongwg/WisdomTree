@@ -2,15 +2,20 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
 
-// The localhost default stays: `next build` imports this module to collect
-// page data, so anything that throws here makes the database a *build*-time
-// requirement. Unlike SESSION_SECRET there is no silent-success failure mode
-// to guard against — a missing DATABASE_URL cannot quietly work, it refuses
-// to connect — and scripts/db/migrate.ts, which is never imported by the
-// build, does require it explicitly.
+// Local development keeps the localhost default. `next build` imports this
+// module while collecting page data, so the build phase is allowed to proceed
+// without a runtime URL; the deployed server is not.
+const configuredDatabaseUrl = process.env.DATABASE_URL;
+if (
+  !configuredDatabaseUrl &&
+  process.env.NODE_ENV === "production" &&
+  process.env.NEXT_PHASE !== "phase-production-build"
+) {
+  throw new Error("DATABASE_URL is required in production.");
+}
 const pool = new Pool({
   connectionString:
-    process.env.DATABASE_URL ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",
+    configuredDatabaseUrl ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",
 });
 
 // An idle client erroring (a database restart, a dropped connection) emits on
