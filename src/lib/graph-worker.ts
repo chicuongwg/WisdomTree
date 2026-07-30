@@ -45,7 +45,7 @@ self.onmessage = (event: MessageEvent<Message>) => {
   if (!simulation) return;
   if (message.type === "tuning") {
     simulation.setTuning(message.tuning);
-    simulation.reheat(0.5);
+    simulation.reheat(1);
     schedule();
   } else if (message.type === "reheat") {
     simulation.reheat(message.alpha);

@@ -13,7 +13,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
-import { SIM_NODE_CAP } from "@/lib/graph-force";
+import { createSimulation, SIM_NODE_CAP, type Simulation } from "@/lib/graph-force";
 import {
   DEFAULT_SETTINGS,
   LINK_TYPES,
@@ -464,6 +464,8 @@ export function KnowledgeMap({
   const workerRef = useRef<Worker | null>(null);
   const workerGeneration = useRef(0);
   const workerOrder = useRef<string[]>([]);
+  const localSimulation = useRef<Simulation | null>(null);
+  const localFrame = useRef(0);
   const viewT = useRef<ViewTransform>({ k: 1, tx: 0, ty: 0 });
   // The two zoom thresholds the labels step at, held in a ref rather than read
   // from `settings` inside `paint`. `paint` is a dependency of the effect that
@@ -578,6 +580,21 @@ export function KnowledgeMap({
   const settle = useCallback(() => {
     paint();
   }, [paint]);
+  const runLocalSimulation = useCallback(() => {
+    if (localFrame.current) return;
+    const step = () => {
+      localFrame.current = 0;
+      const simulation = localSimulation.current;
+      if (!simulation) return;
+      const alive = simulation.tick();
+      for (const node of simulation.nodes) {
+        posRef.current.set(node.id, { x: node.x, y: node.y });
+      }
+      settle();
+      if (alive) localFrame.current = requestAnimationFrame(step);
+    };
+    localFrame.current = requestAnimationFrame(step);
+  }, [settle]);
 
   // ---- the display sliders ------------------------------------------------
   // Labels: a ref write, then one repaint. No React work per frame, and no
@@ -792,20 +809,37 @@ export function KnowledgeMap({
   // absorb the new force silently and show nothing.
   useEffect(() => {
     workerRef.current?.postMessage({ type: "tuning", tuning });
-  }, [tuning]);
+    if (localSimulation.current) {
+      localSimulation.current.setTuning(tuning);
+      localSimulation.current.reheat(1);
+      runLocalSimulation();
+    }
+  }, [runLocalSimulation, tuning]);
 
-  /** Run the layout again from where it stands without moving the camera. */
+  const [simulationEpoch, setSimulationEpoch] = useState(0);
+  /** Start again from the deterministic layout without moving the camera. */
   const replay = useCallback(() => {
-    workerRef.current?.postMessage({ type: "reheat", alpha: 1 });
-  }, []);
+    const reset = new Map<string, XY>();
+    for (const node of view.visible) {
+      const position = view.seed[node.id];
+      if (position) reset.set(node.id, { x: position.x, y: position.y });
+    }
+    posRef.current = reset;
+    paint();
+    setSimulationEpoch((value) => value + 1);
+  }, [paint, view]);
 
   // Build (or rebuild) the simulation whenever the drawn set of nodes/edges
   // changes. Surviving nodes keep the position they already had, so changing a
   // filter nudges the map instead of reshuffling it.
   useEffect(() => {
+    let disposed = false;
     const generation = ++workerGeneration.current;
     workerRef.current?.terminate();
     workerRef.current = null;
+    localSimulation.current = null;
+    cancelAnimationFrame(localFrame.current);
+    localFrame.current = 0;
 
     if (!animating) {
       // Reduced motion, or too large to simulate: keep the deterministic
@@ -845,9 +879,18 @@ export function KnowledgeMap({
     }
 
     workerOrder.current = seed.map((node) => node.id);
+    const startLocal = () => {
+      if (disposed || generation !== workerGeneration.current || localSimulation.current) return;
+      if (workerRef.current) workerRef.current.onerror = null;
+      workerRef.current?.terminate();
+      workerRef.current = null;
+      localSimulation.current = createSimulation(seed, view.links, tuningRef.current);
+      runLocalSimulation();
+    };
     try {
       const worker = new Worker(new URL("../../lib/graph-worker.ts", import.meta.url));
       workerRef.current = worker;
+      worker.onerror = () => startLocal();
       worker.onmessage = (
         event: MessageEvent<{ type: string; generation: number; positions: ArrayBuffer }>,
       ) => {
@@ -870,14 +913,17 @@ export function KnowledgeMap({
         tuning: tuningRef.current,
       });
     } catch {
-      workerRef.current = null;
-      settle();
+      startLocal();
     }
     return () => {
+      disposed = true;
       workerRef.current?.terminate();
       workerRef.current = null;
+      localSimulation.current = null;
+      cancelAnimationFrame(localFrame.current);
+      localFrame.current = 0;
     };
-  }, [view, animating, centerId, radii, fitToView, settle]);
+  }, [view, animating, centerId, radii, fitToView, runLocalSimulation, settle, simulationEpoch]);
 
   // After a re-render that rebuilt the marks, put the DOM back on the
   // simulated positions — the JSX carries the deterministic seed transform,
@@ -1025,6 +1071,14 @@ export function KnowledgeMap({
       // the map is about, and letting it drift would make the view meaningless.
       if (!on && id === centerId) return;
       workerRef.current?.postMessage({ type: "pin", id, pinned: on });
+      const local = localSimulation.current?.nodes.find((node) => node.id === id);
+      if (local) {
+        local.pinned = on;
+        if (!on) {
+          localSimulation.current?.reheat(0.5);
+          runLocalSimulation();
+        }
+      }
       setPinned((current) => {
         const next = new Set(current);
         if (on) next.add(id);
@@ -1032,7 +1086,7 @@ export function KnowledgeMap({
         return next;
       });
     },
-    [centerId],
+    [centerId, runLocalSimulation],
   );
 
   const open = useCallback((id: string) => router.push(`/tree/node/${id}`), [router]);
@@ -1095,10 +1149,20 @@ export function KnowledgeMap({
         y: p.y,
         pinned: true,
       });
+      const local = localSimulation.current?.nodes.find((node) => node.id === d.id);
+      if (local) {
+        local.x = p.x;
+        local.y = p.y;
+        local.vx = 0;
+        local.vy = 0;
+        local.pinned = true;
+        localSimulation.current?.reheat(0.35);
+        runLocalSimulation();
+      }
       posRef.current.set(d.id, p);
       paint();
     },
-    [paint, toLocal],
+    [paint, runLocalSimulation, toLocal],
   );
 
   const onNodePointerUp = useCallback(
@@ -1297,6 +1361,16 @@ export function KnowledgeMap({
         y: point.y,
         pinned: true,
       });
+      const local = localSimulation.current?.nodes.find((node) => node.id === moving.id);
+      if (local) {
+        local.x = point.x;
+        local.y = point.y;
+        local.vx = 0;
+        local.vy = 0;
+        local.pinned = true;
+        localSimulation.current?.reheat(0.35);
+        runLocalSimulation();
+      }
       paint();
       return;
     }
