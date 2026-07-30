@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       displayName: user.displayName,
       role: user.role,
     });
-    response.cookies.set(SESSION_COOKIE, issueSessionToken(user.id), {
+    response.cookies.set(SESSION_COOKIE, await issueSessionToken(user.id), {
       httpOnly: true,
       sameSite: "lax",
       // Plain HTTP is a local-dev affordance; anywhere real this cookie is a

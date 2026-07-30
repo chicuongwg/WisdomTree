@@ -24,6 +24,10 @@ export interface Principal {
   role: Role;
   /** Memberships from space_members, resolved once per request. */
   spaceIds: string[];
+  spaceMemberships?: Array<{
+    spaceId: string;
+    role: "viewer" | "contributor" | "manager";
+  }>;
   /** Host-owned operational capabilities. */
   capabilities?: string[];
   /** Vaults explicitly granted to this principal. */

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const response = new NextResponse(null, { status: 302, headers: { Location: "/" } });
     response.cookies.delete("oidc_nonce");
-    response.cookies.set(SESSION_COOKIE, issueSessionToken(user.id), {
+    response.cookies.set(SESSION_COOKIE, await issueSessionToken(user.id), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

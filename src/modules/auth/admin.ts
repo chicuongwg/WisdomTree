@@ -14,6 +14,7 @@ import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "./dev-auth";
 import { authorize } from "./authorize";
 import { users, type Role } from "./schema";
+import { revokeUserSessions } from "./session";
 import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
 import { invitedSentinel } from "./oidc";
@@ -133,6 +134,7 @@ export async function setUserDisabled(actor: Principal, userId: string, disabled
       .update(users)
       .set({ disabledAt: disabled ? new Date() : null, updatedAt: new Date() })
       .where(eq(users.id, userId));
+    if (disabled) await revokeUserSessions(tx, userId);
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: disabled ? "user.disable" : "user.enable",

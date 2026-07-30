@@ -42,6 +42,11 @@ export const spaceMembers = pgTable(
     addedBy: uuid("added_by")
       .notNull()
       .references(() => users.id),
+    memberRole: text("member_role", {
+      enum: ["viewer", "contributor", "manager"],
+    })
+      .notNull()
+      .default("contributor"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.spaceId, t.userId] })],
