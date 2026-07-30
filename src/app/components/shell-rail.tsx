@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { T, userRoleLabel } from "@/lib/vi";
+import { useShellCopy } from "./shell-locale-provider";
 import { ThemeToggle } from "./theme-toggle";
 
 // Activity bar (VS Code / Discord): one icon per module, vermilion pip for
@@ -159,6 +159,9 @@ export function ShellRail({
   unread: number;
   reviewOpen: number;
 }) {
+  const T = useShellCopy();
+  const roleLabel =
+    role === "admin_op" ? T.roleAdmin : role === "editor" ? T.roleEditor : T.roleUser;
   const pathname = usePathname();
   /**
    * Whether the panel is folded, read from the one place that already knows:
@@ -312,7 +315,7 @@ export function ShellRail({
       <Link
         href="/account"
         className="rail-avatar"
-        title={`${displayName} · ${userRoleLabel(role)}`}
+        title={`${displayName} · ${roleLabel}`}
         aria-label={T.account}
         aria-current={pathname.startsWith("/account") ? "page" : undefined}
       >

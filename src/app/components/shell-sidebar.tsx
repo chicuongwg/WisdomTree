@@ -3,9 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { T } from "@/lib/vi";
 import { useShortcutKey } from "@/lib/platform";
 import { NodeLink } from "./node-link";
+import { useShellCopy } from "./shell-locale-provider";
 
 // Contextual sidebar redesigned with a segmented controller:
 //   - VIỆC CHUNG: team knowledge, team branches, team projects & deadlines
@@ -20,6 +20,7 @@ export type OutlineBranch = {
 export type RecentNode = { id: string; title: string; branchName: string };
 
 function BranchSection({ branch, pathname }: { branch?: OutlineBranch; pathname: string }) {
+  const T = useShellCopy();
   const nodes = branch?.nodes ?? [];
   const currentBranch = Boolean(
     branch &&
@@ -90,6 +91,7 @@ function SidebarContent({
   role?: string;
   spaceCount?: number;
 }) {
+  const T = useShellCopy();
   const pathname = usePathname() ?? "";
   const searchParams = useSearchParams();
   const shortcut = useShortcutKey();
@@ -144,8 +146,8 @@ function SidebarContent({
   }
 
   const personalWork: { href: string; label: string }[] = [
-    { href: "/vault/review", label: "Kho tạm chờ duyệt" },
-    { href: "/librarian", label: "Thủ thư AI" },
+    { href: "/vault/review", label: T.candidateReview },
+    { href: "/librarian", label: T.aiLibrarian },
     { href: "/board", label: T.board },
     { href: "/source/intake", label: T.sourceIntake },
     { href: "/source/mine", label: T.mySubmissions },
@@ -173,7 +175,7 @@ function SidebarContent({
         {T.quickSearch}…<kbd>{shortcut} K</kbd>
       </button>
 
-      <div className="side-switcher" role="tablist" aria-label="Phân loại không gian làm việc">
+      <div className="side-switcher" role="tablist" aria-label={T.workspaceKind}>
         <button
           type="button"
           role="tab"
@@ -348,6 +350,7 @@ export function ShellSidebar(props: {
   role?: string;
   spaceCount?: number;
 }) {
+  const T = useShellCopy();
   return (
     <Suspense fallback={<aside className="sidebar" aria-label={T.navPanel} />}>
       <SidebarContent {...props} />

@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { T, verificationStateLabel } from "@/lib/vi";
+import { verificationStateLabel } from "@/lib/vi";
 import { cardPosition, loadPreview, NodePreviewCard, type NodePreview } from "./node-link";
+import { useShellCopy } from "./shell-locale-provider";
 
 // Command palette (VS Code / Obsidian, Ctrl+K): full-text search over tree
 // nodes via GET /api/tree/search, plus quick-open entries for every screen
@@ -29,6 +30,7 @@ type SearchHit = {
 type Entry = { key: string; label: string; hint: string; href: string };
 
 export function CommandPalette({ role }: { role: string }) {
+  const T = useShellCopy();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -56,8 +58,13 @@ export function CommandPalette({ role }: { role: string }) {
     { key: "catalog", label: T.catalog, hint: T.paletteHintGo, href: "/catalog" },
     { key: "intake", label: T.sourceIntake, hint: T.paletteHintGo, href: "/source/intake" },
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
-    { key: "candidate-review", label: "Kho tạm chờ duyệt", hint: T.navPersonalSpace, href: "/vault/review" },
-    { key: "ai-librarian", label: "Thủ thư AI", hint: T.navPersonalSpace, href: "/librarian" },
+    {
+      key: "candidate-review",
+      label: T.candidateReview,
+      hint: T.navPersonalSpace,
+      href: "/vault/review",
+    },
+    { key: "ai-librarian", label: T.aiLibrarian, hint: T.navPersonalSpace, href: "/librarian" },
     // These two say which space they belong to instead of the generic "đi
     // tới": the board and the deadline calendar are the pair readers mix up,
     // and the palette is often how they are reached.
