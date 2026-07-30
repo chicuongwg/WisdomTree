@@ -1,15 +1,8 @@
 // Dev-mode substitution boundary (docs/roadmap/demo-brief.md): the demo uses
-// the local filesystem behind this interface; V1 swaps in real S3 without
+// the local filesystem behind this module; V1 can swap in real S3 without
 // touching callers. Downloads always go through the authorized endpoint
 // (docs/design/authorization-design.md § Object Storage Delivery) — object
 // keys are opaque and never public paths.
-
-export interface ObjectStore {
-  /** Store a file body under an opaque key. */
-  put(key: string, body: Buffer, contentType: string): Promise<void>;
-  /** Read a stored object; throws if the key does not exist. */
-  get(key: string): Promise<{ body: Buffer; contentType: string }>;
-}
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -19,7 +12,7 @@ import path from "node:path";
  * `${sourceId}/${versionId}` keys. Content type rides in a sidecar file so
  * the store stays a dumb byte bucket like S3.
  */
-class LocalFsObjectStore implements ObjectStore {
+class LocalFsObjectStore {
   constructor(private readonly root: string) {}
 
   private resolve(key: string): string {
@@ -45,6 +38,6 @@ class LocalFsObjectStore implements ObjectStore {
   }
 }
 
-export const objectStore: ObjectStore = new LocalFsObjectStore(
+export const objectStore = new LocalFsObjectStore(
   process.env.FILE_STORAGE_DIR ?? "./data/objects",
 );

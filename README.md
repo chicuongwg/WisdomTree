@@ -170,7 +170,7 @@ the stub dispatcher produced in-app notifications.
 | `drizzle/0000_init.sql` | First migration, transcribed from `docs/design/database-schema.md` (demo subset) |
 | `src/modules/<module>/` | Module boundaries per `docs/platform/module-map.md`: `auth`, `storage`, `catalog`, `circulation`, `notify`, `audit` |
 | `src/modules/*/schema.ts` | Drizzle table definitions owned by that module |
-| `src/modules/storage/object-store.ts` | Dev substitution interface: local FS now, S3 in V1 |
+| `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1 |
 | `src/modules/storage/extraction.ts` | Dev substitution interface: in-process stub worker |
 | `src/modules/auth/dev-auth.ts` | Dev substitution interface: user-picker sessions, OIDC in V1 |
 | `src/db/` | Drizzle client, aggregated schema, cross-cutting outbox table |
