@@ -113,6 +113,25 @@ export const treeNodeVersions = pgTable(
   (t) => [unique().on(t.nodeId, t.seq)],
 );
 
+export const vaultGitJobs = pgTable("vault_git_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  vaultId: uuid("vault_id")
+    .notNull()
+    .references(() => vaults.id),
+  nodeVersionId: uuid("node_version_id")
+    .notNull()
+    .unique()
+    .references(() => treeNodeVersions.id),
+  state: text("state", { enum: ["pending", "running", "done", "failed"] })
+    .notNull()
+    .default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  commitSha: text("commit_sha"),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const nodeLinks = pgTable(
   "node_links",
   {

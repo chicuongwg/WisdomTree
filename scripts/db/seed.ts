@@ -43,7 +43,7 @@ async function main() {
     await client.query("BEGIN");
     await client.query(
       `TRUNCATE loan_tickets, catalog_items,
-                promotions, tree_node_versions, node_links, node_tags, tags,
+                promotions, vault_git_jobs, tree_node_versions, node_links, node_tags, tags,
                 tree_nodes, extraction_candidates, branches, vault_grants,
                 vaults, user_capabilities,
                 review_tasks, conflicts,
