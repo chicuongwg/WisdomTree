@@ -169,7 +169,7 @@ export async function syncDerivedLinks(
   return targetIds;
 }
 
-/** Manual node creation (Editor): enters `no_source` (state-machines.md). */
+/** Manual personal-node creation: enters `no_source` (state-machines.md). */
 export async function createNode(
   actor: Principal,
   input: {
@@ -185,7 +185,7 @@ export async function createNode(
   const isOwnPersonalBranch =
     branch.scope === "personal" &&
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
-  if (!isOwnPersonalBranch || actor.role !== "user") {
+  if (!isOwnPersonalBranch) {
     throw new ApiError(
       403,
       "submission_required",
@@ -556,8 +556,15 @@ export async function reviewNodeProposal(
 
 export async function archiveNode(actor: Principal, nodeId: string) {
   authorize(actor, "knowledge.archive", { kind: "write" });
-  const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
-  if (!node) throw notFound();
+  const [row] = await db
+    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(eq(treeNodes.id, nodeId));
+  if (!row) throw notFound();
+  const grant = actor.vaultGrants?.find((item) => item.vaultId === row.vaultId)?.grant;
+  if (grant !== "editor" && grant !== "owner") throw notFound();
+  const node = row.node;
   if (node.verification === "archived") return node;
 
   const result = await db.transaction(async (tx) => {
@@ -602,6 +609,8 @@ export async function archiveBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.archive", { kind: "write" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
   if (!branch) throw notFound();
+  const grant = actor.vaultGrants?.find((item) => item.vaultId === branch.vaultId)?.grant;
+  if (grant !== "editor" && grant !== "owner") throw notFound();
   if (branch.archivedAt) return branch;
 
   return db.transaction(async (tx) => {
@@ -628,9 +637,21 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
   if (nodeId === canonicalNodeId) {
     throw new ApiError(400, "invalid_merge", "Không thể gộp một trang vào chính nó.");
   }
-  const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
-  const [canonical] = await db.select().from(treeNodes).where(eq(treeNodes.id, canonicalNodeId));
-  if (!node || !canonical) throw notFound();
+  const [nodeRow] = await db
+    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(eq(treeNodes.id, nodeId));
+  const [canonicalRow] = await db
+    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(eq(treeNodes.id, canonicalNodeId));
+  if (!nodeRow || !canonicalRow || nodeRow.vaultId !== canonicalRow.vaultId) throw notFound();
+  const grant = actor.vaultGrants?.find((item) => item.vaultId === nodeRow.vaultId)?.grant;
+  if (grant !== "editor" && grant !== "owner") throw notFound();
+  const node = nodeRow.node;
+  const canonical = canonicalRow.node;
   if (canonical.verification === "archived") {
     throw new ApiError(409, "invalid_state", "Trang chuẩn không được ở trạng thái lưu trữ.");
   }

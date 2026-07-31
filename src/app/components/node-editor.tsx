@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { T, verificationStateLabel } from "@/lib/vi";
+import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { Markdown, type WikiIndex } from "@/lib/markdown";
 import { SayMutation } from "./say";
@@ -11,8 +11,6 @@ type NodeInput = {
   id: string;
   title: string;
   contentMd: string;
-  verification: string;
-  publish: boolean;
   version: number;
   tags: string[];
 };
@@ -20,16 +18,14 @@ type NodeInput = {
 /**
  * Edit Node editor: Markdown source with optimistic locking. The PATCH sends
  * expectedVersion captured at load; a concurrent save surfaces the contract
- * 409 message and offers a reload. The verification select (Admin/Op only)
- * exposes the state-machine transitions, incl. verified→unverified downgrade.
+ * 409 message and offers a reload. Verification and publication decisions
+ * stay on the independent review surfaces.
  */
 export function NodeEditor({
   node,
-  isAdmin,
   wikiIndex = {},
 }: {
   node: NodeInput;
-  isAdmin: boolean;
   wikiIndex?: WikiIndex;
 }) {
   const router = useRouter();
@@ -38,15 +34,6 @@ export function NodeEditor({
   const [title, setTitle] = useState(node.title);
   const [contentMd, setContentMd] = useState(node.contentMd);
   const [tagsText, setTagsText] = useState(node.tags.join(", "));
-  const [verification, setVerification] = useState(node.verification);
-  const [publish, setPublish] = useState(node.publish);
-
-  const verificationOptions: Record<string, string[]> = {
-    no_source: ["no_source", "unverified", "archived"],
-    unverified: ["unverified", "verified", "archived"],
-    verified: ["verified", "unverified", "archived"],
-    archived: ["archived"],
-  };
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +48,6 @@ export function NodeEditor({
           .map((t) => t.trim())
           .filter(Boolean),
         expectedVersion: node.version,
-        ...(isAdmin ? { verification, publish } : {}),
       },
       onError: (res, body) => setConflict(res.status === 409 && body?.code === "version_conflict"),
     });
@@ -103,36 +89,6 @@ export function NodeEditor({
         <label htmlFor="node-tags">{T.tags} (phân cách bằng dấu phẩy)</label>
         <input id="node-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
       </div>
-      {isAdmin && (
-        <>
-          <div className="field">
-            <label htmlFor="node-verification">{T.verificationLabelTitle}</label>
-            <select
-              id="node-verification"
-              value={verification}
-              onChange={(e) => setVerification(e.target.value)}
-            >
-              {verificationOptions[node.verification].map((v) => (
-                <option key={v} value={v}>
-                  {verificationStateLabel(v)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="checkbox-row">
-            <input
-              id="node-publish"
-              type="checkbox"
-              checked={publish}
-              disabled={verification !== "verified"}
-              onChange={(e) => setPublish(e.target.checked)}
-            />
-            <label htmlFor="node-publish">
-              {T.publish} công khai (chỉ áp dụng cho trang Đã thẩm định)
-            </label>
-          </div>
-        </>
-      )}
       {/* The answer sits with the button, not only at the top of a form whose
           middle is a full-height editor. The one above stays: a version
           conflict is read on the way back UP to the reload button. */}

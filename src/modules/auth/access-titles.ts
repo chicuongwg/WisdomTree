@@ -55,6 +55,10 @@ export function accessTitle(key: string) {
   return ACCESS_TITLES.find((title) => title.key === key);
 }
 
+export function titleCanReview(key: string): boolean {
+  return Boolean((accessTitle(key)?.capabilities as readonly string[] | undefined)?.includes("content.review"));
+}
+
 export function inferAccessTitle(role: Role, capabilities: string[]): AccessTitle | null {
   const normalized = [...capabilities].sort();
   return (

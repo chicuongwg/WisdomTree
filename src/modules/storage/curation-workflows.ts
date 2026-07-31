@@ -5,7 +5,7 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { T } from "@/lib/vi";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
-import { assertIndependentReviewer } from "../auth/maker-checker";
+import { assertReviewScope } from "../auth/maker-checker";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { kickDispatch } from "../notify/dispatcher";
@@ -236,8 +236,8 @@ export async function appendCorrectedText(
 ) {
   const ctx = await loadVersion(sourceId, versionId);
   authorizeCurationWork(actor, "storage.corrected.edit", ctx);
-  if (ctx.curation && ["promoted", "rejected"].includes(ctx.curation.state)) {
-    throw new ApiError(409, "invalid_state", "Việc hiệu đính của tư liệu này đã kết thúc.");
+  if (ctx.curation?.state !== "under_correction") {
+    throw new ApiError(409, "invalid_state", "Tư liệu không ở trạng thái đang hiệu đính.");
   }
 
   return db.transaction(async (tx) => {
@@ -272,15 +272,21 @@ export async function saveDraft(
 ) {
   const ctx = await loadVersion(sourceId, versionId);
   authorizeCurationWork(actor, "storage.draft.edit", ctx);
-  if (ctx.curation && ["promoted", "rejected"].includes(ctx.curation.state)) {
-    throw new ApiError(409, "invalid_state", "Việc hiệu đính của tư liệu này đã kết thúc.");
+  if (ctx.curation?.state !== "under_correction") {
+    throw new ApiError(409, "invalid_state", "Tư liệu không ở trạng thái đang hiệu đính.");
   }
   if (input.suggestedBranchId) {
     const [branch] = await db
       .select()
       .from(branches)
       .where(eq(branches.id, input.suggestedBranchId));
-    if (!branch) throw notFound();
+    if (
+      !branch ||
+      branch.archivedAt ||
+      branch.scope !== "team" ||
+      !actor.vaultIds?.includes(branch.vaultId)
+    )
+      throw notFound();
   }
 
   return db.transaction(async (tx) => {
@@ -345,6 +351,13 @@ export async function markReadyForReview(actor: Principal, sourceId: string, ver
     .from(markdownDrafts)
     .where(eq(markdownDrafts.sourceVersionId, versionId));
   if (!draft) throw new ApiError(409, "missing_draft", "Chưa có bản thảo để gửi duyệt.");
+  if (!draft.suggestedBranchId) {
+    throw new ApiError(
+      409,
+      "missing_target_branch",
+      "Hãy chọn chuyên đề chung đích trước khi gửi duyệt.",
+    );
+  }
 
   const result = await db.transaction(async (tx) => {
     const [review] = await tx
@@ -405,7 +418,6 @@ export async function markReadyForReview(actor: Principal, sourceId: string, ver
 export async function rejectCuration(actor: Principal, sourceId: string, versionId: string) {
   authorize(actor, "review.corrected.approve", { kind: "write" });
   const ctx = await loadVersion(sourceId, versionId);
-  if (!actor.spaceIds.includes(ctx.source.spaceId)) throw notFound();
   if (!ctx.curation) throw notFound();
   if (ctx.curation.state === "promoted") {
     throw new ApiError(409, "invalid_state", "Tư liệu đã được xuất bản, không thể từ chối.");
@@ -415,7 +427,29 @@ export async function rejectCuration(actor: Principal, sourceId: string, version
     .from(contentReviews)
     .where(and(eq(contentReviews.sourceVersionId, versionId), eq(contentReviews.state, "pending")));
   if (!review) throw new ApiError(409, "missing_review", "Không có revision đang chờ duyệt.");
-  assertIndependentReviewer(actor.userId, review);
+  if (!review.targetBranchId) {
+    throw new ApiError(409, "missing_target_branch", "Revision chưa có chuyên đề chung đích.");
+  }
+  const [targetBranch] = await db
+    .select({ vaultId: branches.vaultId })
+    .from(branches)
+    .where(eq(branches.id, review.targetBranchId));
+  if (!targetBranch) throw notFound();
+  const [reviewTask] = await db
+    .select({ assignedTo: reviewTasks.assignedTo })
+    .from(reviewTasks)
+    .where(
+      and(
+        eq(reviewTasks.targetId, versionId),
+        eq(reviewTasks.taskType, "publish"),
+        inArray(reviewTasks.state, ["queued", "assigned", "in_review"]),
+      ),
+    );
+  assertReviewScope(actor, {
+    vaultId: targetBranch.vaultId,
+    assignedTo: reviewTask?.assignedTo,
+    review,
+  });
 
   return db.transaction(async (tx) => {
     await tx
@@ -471,12 +505,28 @@ export async function publishFromSource(
 ) {
   authorize(actor, "knowledge.publish", { kind: "write" });
   const ctx = await loadVersion(sourceId, versionId);
-  if (!actor.spaceIds.includes(ctx.source.spaceId)) throw notFound();
   if (!ctx.curation) throw notFound();
 
   // Idempotency (Flow 2 note): a re-run after `promoted` finds the existing
   // promotion and returns its node instead of double-publishing.
   if (ctx.curation.state === "promoted") {
+    const [approvedScope] = await db
+      .select({ review: contentReviews, vaultId: branches.vaultId })
+      .from(contentReviews)
+      .innerJoin(branches, eq(branches.id, contentReviews.targetBranchId))
+      .where(
+        and(
+          eq(contentReviews.sourceVersionId, versionId),
+          eq(contentReviews.state, "approved"),
+        ),
+      )
+      .orderBy(desc(contentReviews.reviewedAt))
+      .limit(1);
+    if (!approvedScope) throw notFound();
+    assertReviewScope(actor, {
+      vaultId: approvedScope.vaultId,
+      review: approvedScope.review,
+    });
     const [existing] = await db
       .select({ node: treeNodes })
       .from(promotions)
@@ -510,11 +560,26 @@ export async function publishFromSource(
   ) {
     throw new ApiError(409, "review_stale", "Bản thảo đã thay đổi sau khi gửi duyệt.");
   }
-  assertIndependentReviewer(actor.userId, review);
-  const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
+  if (!review.targetBranchId || input.branchId !== review.targetBranchId) {
+    throw new ApiError(409, "target_branch_changed", "Chuyên đề đích không khớp revision đã duyệt.");
+  }
+  const [branch] = await db.select().from(branches).where(eq(branches.id, review.targetBranchId));
   if (!branch || branch.archivedAt) throw notFound();
-  const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === branch.vaultId)?.grant;
-  if (vaultGrant !== "reviewer" && vaultGrant !== "owner") throw notFound();
+  const [reviewTask] = await db
+    .select({ assignedTo: reviewTasks.assignedTo })
+    .from(reviewTasks)
+    .where(
+      and(
+        eq(reviewTasks.targetId, versionId),
+        eq(reviewTasks.taskType, "publish"),
+        inArray(reviewTasks.state, ["queued", "assigned", "in_review"]),
+      ),
+    );
+  assertReviewScope(actor, {
+    vaultId: branch.vaultId,
+    assignedTo: reviewTask?.assignedTo,
+    review,
+  });
 
   if (input.excerptChunkIds?.length) {
     const found = await db

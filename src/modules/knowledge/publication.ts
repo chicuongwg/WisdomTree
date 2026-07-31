@@ -4,7 +4,7 @@ import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
-import { assertIndependentReviewer } from "../auth/maker-checker";
+import { assertReviewScope, canReviewVault } from "../auth/maker-checker";
 import { users } from "../auth/schema";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { kickDispatch } from "../notify/dispatcher";
@@ -117,7 +117,6 @@ export async function submitNodePublication(
   nodeId: string,
   targetBranchId: string,
 ) {
-  if (actor.role !== "user") throw notFound();
   const [row] = await db
     .select({ node: treeNodes, branch: branches })
     .from(treeNodes)
@@ -269,8 +268,7 @@ export async function getNodePublicationReview(actor: Principal, taskId: string)
       and(eq(reviewTasks.id, taskId), eq(reviewTasks.targetType, "node_publication_proposal")),
     );
   if (!row) throw notFound();
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === row.targetVaultId)?.grant;
-  if (grant !== "reviewer" && grant !== "owner") throw notFound();
+  if (!canReviewVault(actor, row.targetVaultId)) throw notFound();
   const independent = ![
     row.review.originatorId,
     row.review.lastEditorId,
@@ -329,9 +327,7 @@ export async function decideNodePublication(
       ),
     );
   if (!row) throw notFound();
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === row.targetVaultId)?.grant;
-  if (grant !== "reviewer" && grant !== "owner") throw notFound();
-  assertIndependentReviewer(actor.userId, row.review);
+  assertReviewScope(actor, { vaultId: row.targetVaultId, review: row.review });
   const note = input.note?.trim() || null;
   if (input.decision !== "approved" && !note) {
     throw new ApiError(400, "review_note_required", "Vui lòng ghi lý do cho quyết định này.");

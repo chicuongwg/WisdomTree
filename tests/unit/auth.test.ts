@@ -2,8 +2,43 @@ import assert from "node:assert";
 import { devLoginEnabled } from "@/modules/auth/dev-auth";
 import { enforceRateLimit, requestAddress } from "@/lib/rate-limit";
 import { ApiError } from "@/lib/errors";
+import { titleCanReview } from "@/modules/auth/access-titles";
+import {
+  canReviewVault,
+  isIndependentReviewer,
+} from "@/modules/auth/maker-checker";
+import type { Principal } from "@/modules/auth/dev-auth";
 
 export const run = async () => {
+  const reviewer: Principal = {
+    userId: "reviewer",
+    role: "user",
+    spaceIds: [],
+    spaceMemberships: [],
+    capabilities: ["content.review"],
+    vaultGrants: [{ vaultId: "shared", grant: "reviewer" }],
+  };
+  assert.equal(titleCanReview("reviewer"), true);
+  assert.equal(titleCanReview("administrator"), true);
+  assert.equal(titleCanReview("operator"), false);
+  assert.equal(canReviewVault(reviewer, "shared"), true);
+  assert.equal(canReviewVault(reviewer, "other"), false);
+  assert.equal(
+    isIndependentReviewer(reviewer.userId, {
+      originatorId: "author",
+      lastEditorId: "editor",
+      submittedBy: "submitter",
+    }),
+    true,
+  );
+  assert.equal(
+    isIndependentReviewer(reviewer.userId, {
+      originatorId: "author",
+      lastEditorId: reviewer.userId,
+      submittedBy: "submitter",
+    }),
+    false,
+  );
   const previousNodeEnv = process.env.NODE_ENV;
   const previousDevLogin = process.env.ENABLE_DEV_LOGIN;
   const previousTrustProxy = process.env.TRUST_PROXY;

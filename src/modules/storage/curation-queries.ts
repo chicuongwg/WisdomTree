@@ -3,6 +3,11 @@ import { db } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
+import {
+  assertReviewScope,
+  canReviewVault,
+  isIndependentReviewer,
+} from "../auth/maker-checker";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { kickDispatch } from "../notify/dispatcher";
@@ -10,6 +15,7 @@ import { branches, nodePublicationProposals, reviewTasks, treeNodes } from "../k
 import {
   branchGapRequests,
   correctedTexts,
+  contentReviews,
   curations,
   markdownDrafts,
   sources,
@@ -73,16 +79,53 @@ export async function listReviewQueue(
         .where(inArray(nodePublicationProposals.id, proposalIds))
     : [];
   const titleByProposal = new Map(proposalTitles.map((item) => [item.proposalId, item]));
-  const reviewableVaults = new Set(
-    actor.vaultGrants
-      ?.filter((grant) => grant.grant === "reviewer" || grant.grant === "owner")
-      .map((grant) => grant.vaultId) ?? [],
+  const publicationReviews = proposalIds.length
+    ? await db
+        .select()
+        .from(contentReviews)
+        .where(inArray(contentReviews.publicationProposalId, proposalIds))
+    : [];
+  const publicationReviewByProposal = new Map(
+    publicationReviews.map((review) => [review.publicationProposalId, review]),
   );
+  const sourceReviewRows = versionIds.length
+    ? await db
+        .select({ review: contentReviews, vaultId: branches.vaultId })
+        .from(contentReviews)
+        .innerJoin(branches, eq(branches.id, contentReviews.targetBranchId))
+        .where(inArray(contentReviews.sourceVersionId, versionIds))
+        .orderBy(desc(contentReviews.createdAt))
+    : [];
+  const sourceReviewByVersion = new Map<string | null, (typeof sourceReviewRows)[number]>();
+  for (const item of sourceReviewRows) {
+    if (!sourceReviewByVersion.has(item.review.sourceVersionId)) {
+      sourceReviewByVersion.set(item.review.sourceVersionId, item);
+    }
+  }
   return rows
     .filter((row) => {
-      if (row.task.targetType !== "node_publication_proposal") return true;
-      const target = titleByProposal.get(row.task.targetId);
-      return Boolean(target && reviewableVaults.has(target.vaultId));
+      if (row.task.targetType === "node_publication_proposal") {
+        const target = titleByProposal.get(row.task.targetId);
+        const review = publicationReviewByProposal.get(row.task.targetId);
+        return Boolean(
+          target &&
+            review &&
+            (row.task.assignedTo === actor.userId || canReviewVault(actor, target.vaultId)) &&
+            isIndependentReviewer(actor.userId, review),
+        );
+      }
+      if (row.task.targetType === "source_version" && row.task.taskType === "publish") {
+        const item = sourceReviewByVersion.get(row.task.targetId);
+        return Boolean(
+          item &&
+            (row.task.assignedTo === actor.userId || canReviewVault(actor, item.vaultId)) &&
+            isIndependentReviewer(actor.userId, item.review),
+        );
+      }
+      if (row.task.targetType === "source_version") {
+        return row.task.assignedTo === actor.userId;
+      }
+      return true;
     })
     .map((r) => ({
       ...r.task,
@@ -129,6 +172,22 @@ export async function getPublishReview(actor: Principal, reviewId: string) {
     .select()
     .from(markdownDrafts)
     .where(eq(markdownDrafts.sourceVersionId, task.targetId));
+  const [reviewScope] = await db
+    .select({ review: contentReviews, vaultId: branches.vaultId })
+    .from(contentReviews)
+    .innerJoin(branches, eq(branches.id, contentReviews.targetBranchId))
+    .where(
+      and(
+        eq(contentReviews.sourceVersionId, task.targetId),
+        eq(contentReviews.state, "pending"),
+      ),
+    );
+  if (!reviewScope) throw notFound();
+  assertReviewScope(actor, {
+    vaultId: reviewScope.vaultId,
+    assignedTo: task.assignedTo,
+    review: reviewScope.review,
+  });
   const chunks = await db
     .select()
     .from(textChunks)

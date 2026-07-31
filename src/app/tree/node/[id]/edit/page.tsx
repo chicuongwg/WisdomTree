@@ -20,12 +20,15 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
   const actor = toPrincipal(user);
   const { id } = await params;
   const [node, wiki] = await Promise.all([orNotFound(() => getNode(actor, id)), wikiIndex(actor)]);
-  const isAdmin = user.role === "admin_op";
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
+  const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === node.branchVaultId)?.grant;
   const canEdit =
-    isAdmin || (user.role === "editor" && node.createdBy === user.id) || isOwnPersonalNode;
+    isOwnPersonalNode ||
+    (user.role === "editor" &&
+      node.createdBy === user.id &&
+      (vaultGrant === "editor" || vaultGrant === "owner"));
   if (!canEdit || node.verification === "archived") notFound();
 
   return (
@@ -47,12 +50,9 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
           id: node.id,
           title: node.title,
           contentMd: node.contentMd,
-          verification: node.verification,
-          publish: node.publish,
           version: node.version,
           tags: node.tags,
         }}
-        isAdmin={isAdmin}
         wikiIndex={wiki}
       />
     </main>

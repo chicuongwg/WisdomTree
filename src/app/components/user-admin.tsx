@@ -5,7 +5,11 @@ import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 import { ConfirmButton } from "./confirm-button";
-import { ACCESS_TITLES, type AccessTitle } from "@/modules/auth/access-titles";
+import {
+  ACCESS_TITLES,
+  titleCanReview,
+  type AccessTitle,
+} from "@/modules/auth/access-titles";
 
 // Admin Console, System section: every account and the two levers an
 // Admin/Op has over one — role and enabled/disabled. The guards worth
@@ -116,7 +120,7 @@ export function UserAdmin({
             ))}
           </select>
         </div>
-        {inviteTitle === "reviewer" && (
+        {titleCanReview(inviteTitle) && (
           <ReviewerVaultPicker
             id="invite-reviewer-vaults"
             vaults={reviewerVaults}
@@ -175,7 +179,7 @@ export function UserAdmin({
                           </option>
                         ))}
                       </select>
-                      {pick === "reviewer" && (
+                      {titleCanReview(pick) && (
                         <ReviewerVaultPicker
                           id={`reviewer-vaults-${u.id}`}
                           vaults={reviewerVaults}
@@ -200,7 +204,9 @@ export function UserAdmin({
                               method: "PATCH",
                               body: {
                                 accessTitle: pick,
-                                reviewerVaultIds: pick === "reviewer" ? selectedReviewerVaults : [],
+                                reviewerVaultIds: titleCanReview(pick)
+                                  ? selectedReviewerVaults
+                                  : [],
                               },
                               ok: T.roleChanged,
                             })

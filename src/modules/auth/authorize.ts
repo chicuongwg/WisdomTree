@@ -11,13 +11,17 @@ type Scope = "global" | "space" | "self" | "owned-or-assigned";
 type SpaceRole = "viewer" | "contributor" | "manager";
 
 const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRole }> = {
-  "storage.intake.open": { roles: ["user"], scope: "global" },
+  "storage.intake.open": { roles: ["user", "editor", "admin_op"], scope: "global" },
   "storage.library.browse": {
     roles: ["user", "editor", "admin_op"],
     scope: "space",
     spaceRole: "viewer",
   },
-  "storage.upload": { roles: ["user"], scope: "space", spaceRole: "contributor" },
+  "storage.upload": {
+    roles: ["user", "editor", "admin_op"],
+    scope: "space",
+    spaceRole: "contributor",
+  },
   "storage.submissions.read": { roles: ["user", "editor", "admin_op"], scope: "self" },
   "storage.download": {
     roles: ["user", "editor", "admin_op"],

@@ -36,7 +36,7 @@ export function PublishDecision({
   // to publish twice.
   const [leaving, setLeaving] = useState(false);
   const busy = m.busy || leaving;
-  const [branchId, setBranchId] = useState(suggestedBranchId ?? "");
+  const branchId = suggestedBranchId ?? "";
   const [selected, setSelected] = useState<string[]>([]);
 
   function toggle(chunkId: string) {
@@ -75,7 +75,11 @@ export function PublishDecision({
       <SayMutation m={m} />
       <div className="field">
         <label htmlFor="target-branch">{T.branch} đích</label>
-        <select id="target-branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+        <select
+          id="target-branch"
+          value={branchId}
+          disabled
+        >
           <option value="">{T.chooseBranch}</option>
           {branches.map((b) => (
             <option key={b.id} value={b.id}>

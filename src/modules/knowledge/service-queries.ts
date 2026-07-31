@@ -264,6 +264,7 @@ export async function getNode(actor: Principal, nodeId: string) {
       branchName: branches.name,
       branchScope: branches.scope,
       branchOwnerId: branches.ownerUserId,
+      branchVaultId: branches.vaultId,
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
@@ -343,6 +344,7 @@ export async function getNode(actor: Principal, nodeId: string) {
     branchName: row.branchName,
     branchScope: row.branchScope,
     branchOwnerId: row.branchOwnerId,
+    branchVaultId: row.branchVaultId,
     tags: tagRows.map((t) => t.name),
     links: linkRows,
     backlinks: backlinkRows.map((b) => ({

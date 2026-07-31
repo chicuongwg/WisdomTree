@@ -33,14 +33,16 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const actor = toPrincipal(user);
   const { id } = await params;
   const node = await orNotFound(() => getNode(actor, id));
-  const isAdmin = user.role === "admin_op";
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
+  const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === node.branchVaultId)?.grant;
+  const canManageShared =
+    user.role === "editor" && (vaultGrant === "editor" || vaultGrant === "owner");
   const canEdit =
-    isAdmin || (user.role === "editor" && node.createdBy === user.id) || isOwnPersonalNode;
+    isOwnPersonalNode || (canManageShared && node.createdBy === user.id);
   const candidates =
-    isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
+    canManageShared && node.verification !== "archived" ? await listNodeOptions(actor) : [];
   const [publicationTargets, pendingPublication] = isOwnPersonalNode
     ? await Promise.all([
         listPublicationTargets(actor),
@@ -171,7 +173,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
               </Link>
             </p>
           )}
-          {isAdmin && node.verification !== "archived" && (
+          {canManageShared && node.verification !== "archived" && (
             <NodeAdminActions nodeId={node.id} candidates={candidates} />
           )}
           {isOwnPersonalNode && node.verification !== "archived" && (

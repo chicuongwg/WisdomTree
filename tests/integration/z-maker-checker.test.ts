@@ -24,7 +24,7 @@ import {
   sources,
   sourceVersions,
 } from "../../src/modules/storage/schema";
-import { publishFromSource } from "../../src/modules/storage/curation";
+import { listReviewQueue, publishFromSource } from "../../src/modules/storage/curation";
 
 async function principal(email: string): Promise<Principal> {
   const [user] = await db.select().from(users).where(eq(users.email, email));
@@ -219,4 +219,49 @@ export async function run() {
   });
   assert.ok("state" in changes);
   assert.equal(changes.state, "changes_requested");
+
+  for (const author of [editor, reviewer]) {
+    const [authorBranch] = await db
+      .select()
+      .from(branches)
+      .where(and(eq(branches.scope, "personal"), eq(branches.ownerUserId, author.userId)))
+      .limit(1);
+    assert.ok(authorBranch);
+    const node = await createNode(author, {
+      branchId: authorBranch.id,
+      title: `Inherited personal flow ${author.role} ${Date.now()}`,
+      contentMd: "Personal flow remains available after access elevation.",
+    });
+    const submission = await submitNodePublication(author, node.id, targetBranch.id);
+    const [pendingReview] = await db
+      .select()
+      .from(contentReviews)
+      .where(eq(contentReviews.publicationProposalId, submission.proposalId));
+    assert.ok(pendingReview);
+
+    const independent =
+      author.userId === reviewer.userId
+        ? {
+            ...(await principal("duc@wisdomtree.local")),
+            capabilities: ["content.review"],
+            vaultGrants: [{ vaultId: sharedNode.vaultId, grant: "reviewer" as const }],
+          }
+        : reviewer;
+    const selfQueue = await listReviewQueue(
+      {
+        ...author,
+        capabilities: ["content.review"],
+        vaultGrants: [{ vaultId: sharedNode.vaultId, grant: "reviewer" }],
+      },
+      {},
+    );
+    assert.equal(selfQueue.some((task) => task.id === submission.reviewTaskId), false);
+    const reviewerQueue = await listReviewQueue(independent, {});
+    assert.equal(reviewerQueue.some((task) => task.id === submission.reviewTaskId), true);
+    await decideNodePublication(independent, submission.reviewTaskId, {
+      decision: "approved",
+      verification: "unverified",
+      expectedReviewVersion: pendingReview.version,
+    });
+  }
 }

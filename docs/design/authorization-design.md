@@ -66,9 +66,10 @@ các capability tương ứng:
 | Vận hành hệ thống | `admin_op` | `system.operate` |
 | Quản trị hệ thống | `admin_op` | toàn bộ managed capabilities |
 
-Chức danh không thay thế scope grant. Riêng Người thẩm định phải được chọn từng
-shared vault; hệ thống cấp grant `reviewer` chỉ cho vault mà người thao tác đang
-là `owner`. Grant tại các space và vault khác vẫn được quản lý độc lập.
+Chức danh không thay thế scope grant. Mọi chức danh có `content.review` phải
+được chọn từng shared vault; hệ thống cấp grant `reviewer` chỉ cho vault mà
+người thao tác đang là `owner`. Grant tại các space và vault khác vẫn được quản
+lý độc lập.
 
 Two principals bypass parts of the pipeline by design:
 
@@ -96,7 +97,7 @@ Permission keys are `module.action`. "Roles" lists the minimum roles allowed; sc
 | `knowledge.search` | Search tree | all | global |
 | `storage.search` | Search source repo items | all | space (editor also owned-or-assigned outside member spaces) |
 | `knowledge.graph.read` | Open dedicated graph surface | all | global |
-| `storage.intake.open` | Open source intake | user | global |
+| `storage.intake.open` | Open source intake | all | global |
 | `storage.library.browse` | Browse Library of stored items | all | space |
 | `storage.gap.create` | Create branch-gap request | all | global |
 | `knowledge.branch.create` | Create branch | none directly | personal/gap workflow |
@@ -104,7 +105,7 @@ Permission keys are `module.action`. "Roles" lists the minimum roles allowed; sc
 | `knowledge.node.create` | Create manual node | none directly | personal/submission workflow |
 | `knowledge.node.edit` | Edit manual node | editor | owned-or-assigned proposal |
 | `audit.node.read` | View node audit summary | editor | owned-or-assigned (admin_op global) |
-| `storage.upload` | Upload source file | user | contributor space |
+| `storage.upload` | Upload source file | all | contributor space |
 | `storage.submissions.read` | View own submissions | all | self |
 | `storage.source.read_all` | View source items across all spaces | reviewer capability | scoped evidence read |
 | `storage.download` | Download original source file | all | space |

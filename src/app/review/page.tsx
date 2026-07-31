@@ -30,6 +30,9 @@ export default async function ReviewQueuePage({
     taskType: taskType || undefined,
     state: state || undefined,
   });
+  const hasReviewVault = user.vaultGrants.some(
+    (grant) => grant.grant === "reviewer" || grant.grant === "owner",
+  );
 
   const open = tasks.filter((t) =>
     t.targetType === "node_publication_proposal"
@@ -79,8 +82,12 @@ export default async function ReviewQueuePage({
           <Empty title={T.noMatches} action={<Link href="/review">{T.clearFilters}</Link>} />
         ) : (
           <Empty
-            title={T.reviewQueueEmptyTitle}
-            hint={T.reviewQueueEmptyHint}
+            title={hasReviewVault ? T.reviewQueueEmptyTitle : "Chưa có phạm vi thẩm định"}
+            hint={
+              hasReviewVault
+                ? T.reviewQueueEmptyHint
+                : "Bạn cần được cấp quyền Người thẩm định tại ít nhất một kho chung."
+            }
             action={{ label: T.sourceInbox, href: "/source/inbox" }}
           />
         )

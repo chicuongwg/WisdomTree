@@ -19,7 +19,12 @@ import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
 import { invitedSentinel } from "./oidc";
 import { vaultGrants, vaults } from "../knowledge/schema";
-import { accessTitle, inferAccessTitle, type AccessTitle } from "./access-titles";
+import {
+  accessTitle,
+  inferAccessTitle,
+  titleCanReview,
+  type AccessTitle,
+} from "./access-titles";
 
 export const MANAGED_CAPABILITIES = [
   "capabilities.manage",
@@ -54,7 +59,7 @@ export async function inviteUser(
   if (!title) throw new ApiError(400, "invalid_access_title", "Chức danh không hợp lệ.");
   const reviewerVaultIds = await validateReviewerVaults(
     actor,
-    title.key === "reviewer" ? (input.reviewerVaultIds ?? []) : [],
+    titleCanReview(title.key) ? (input.reviewerVaultIds ?? []) : [],
   );
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new ApiError(400, "invalid_email", "Vui lòng nhập địa chỉ email hợp lệ.");
@@ -202,7 +207,7 @@ export async function applyUserAccessTitle(
   if (!title) throw new ApiError(400, "invalid_access_title", "Chức danh không hợp lệ.");
   const reviewerVaultIds = await validateReviewerVaults(
     actor,
-    title.key === "reviewer" ? requestedReviewerVaultIds : [],
+    titleCanReview(title.key) ? requestedReviewerVaultIds : [],
   );
   const [target] = await db.select().from(users).where(eq(users.id, userId));
   if (!target) throw notFound();

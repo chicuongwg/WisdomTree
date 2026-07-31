@@ -56,6 +56,7 @@ export function CurationWorkbench(props: Props) {
     // on first save), so counting locally beats reading the response back. If
     // it ever drifts, the next save 409s rather than overwriting anything.
     if (saved) setDraftVersion((v) => (v ?? 0) + 1);
+    return saved;
   }
 
   // A fragment, not a wrapper <div>: `.with-side > *` already stacks its
@@ -132,11 +133,13 @@ export function CurationWorkbench(props: Props) {
         </button>
         <button
           className="secondary"
-          disabled={m.busy || !active || !draftMd.trim()}
+          disabled={m.busy || !active || !draftMd.trim() || !branchId}
           onClick={() =>
-            void m.run(`${base}/mark-ready-for-review`, {
-              ok: T.sentForReview,
-            })
+            void saveDraft().then((saved) =>
+              saved
+                ? m.run(`${base}/mark-ready-for-review`, { ok: T.sentForReview })
+                : undefined,
+            )
           }
         >
           {m.busy ? T.loading : T.markReady}

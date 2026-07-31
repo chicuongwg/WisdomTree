@@ -40,15 +40,15 @@
 | Search tree | Yes | Yes | Yes |
 | Search source repo items | Within member spaces | Within member spaces plus assigned items | Within member spaces |
 | Open dedicated graph surface | Yes | Yes | Yes |
-| Open source intake | Yes | No | No |
+| Open source intake | Yes | Yes | Yes |
 | Browse Library of stored items | Member spaces only | Member spaces only | Member spaces only |
 | Create branch-gap request | Yes | Yes | Yes |
 | Create branch | No | No | No |
 | Edit branch metadata | No | Owned or assigned only | No |
-| Create manual node | No | No | No |
+| Create manual node | Personal vault only | Personal vault only | Personal vault only |
 | Edit manual node | No | Owned or assigned only | No |
 | View node audit summary | No | Limited to owned or assigned items | Yes |
-| Upload source file | Member spaces only | No | No |
+| Upload source file | Member spaces only | Member spaces only | Member spaces only |
 | View own submissions | Yes | Yes | Yes |
 | View source items across all spaces | No | No | Yes |
 | Download original source file | Member spaces only | Member spaces only | Member spaces only |

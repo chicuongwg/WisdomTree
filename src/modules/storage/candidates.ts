@@ -127,7 +127,6 @@ export async function evolveCandidate(
   candidateId: string,
   input: { branchId: string; title?: string },
 ) {
-  if (actor.role !== "user") throw notFound();
   const [candidate] = await db
     .select({
       candidate: extractionCandidates,

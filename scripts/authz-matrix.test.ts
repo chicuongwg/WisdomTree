@@ -24,6 +24,7 @@ const ALLOWLIST: Record<string, string> = {
   "catalog.item.flag": "lost/repair flags ride catalog.item.manage (PATCH /api/catalog/:id)",
   "catalog.link_source": "digitization link rides catalog.item.manage (PATCH /api/catalog/:id)",
   "storage.personal_space": "personal spaces are ordinary spaces enforced by space scope",
+  "knowledge.node.create": "personal node creation is enforced by branch ownership in the workflow",
   "review.queue.read": "addendum key; demo queue reads authorize via review.draft.approve",
 };
 
