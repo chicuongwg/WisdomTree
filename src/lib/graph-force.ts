@@ -4,7 +4,7 @@
 //
 // Three forces, all scaled by `alpha` so the system cools to a stop:
 //   - repel   : Barnes–Hut approximation over a quadtree
-//   - link    : each edge is a spring that wants to be TUNE.distance long
+//   - link    : typed springs with stable, explicit strengths and lengths
 //   - centre  : a weak pull toward the canvas centre so nothing drifts away
 //
 // The simulation NEVER seeds from random. Callers pass the deterministic
@@ -137,6 +137,8 @@ export type SimNode = {
   r: number;
   /** Dragged nodes and the local-map centre hold their place. */
   pinned: boolean;
+  /** Verified pages are steadier anchors; uncertain pages yield more. */
+  mobility: number;
 };
 
 export type Simulation = {
@@ -152,9 +154,33 @@ export type Simulation = {
 /** What the panel may move. Anything absent keeps its TUNE default. */
 export type Tuning = Partial<typeof TUNE>;
 
+export const LINK_PROFILE = {
+  part_of: { strength: 1.35, distance: 0.72 },
+  supports: { strength: 1.05, distance: 0.9 },
+  related: { strength: 0.78, distance: 1.05 },
+  contrasts: { strength: 0.58, distance: 1.32 },
+} as const;
+
+export function nodeMobility(verification?: string): number {
+  if (verification === "verified") return 0.55;
+  if (verification === "no_source") return 1;
+  return 0.8;
+}
+
+function linkProfile(linkType?: string) {
+  return LINK_PROFILE[linkType as keyof typeof LINK_PROFILE] ?? LINK_PROFILE.related;
+}
+
 export function createSimulation(
-  seed: Array<{ id: string; x: number; y: number; r?: number; pinned?: boolean }>,
-  edges: Array<{ from: string; to: string }>,
+  seed: Array<{
+    id: string;
+    x: number;
+    y: number;
+    r?: number;
+    pinned?: boolean;
+    verification?: string;
+  }>,
+  edges: Array<{ from: string; to: string; linkType?: string }>,
   tuning?: Tuning,
 ): Simulation {
   // Mutated in place by setTuning and read fresh on every tick, so a slider
@@ -168,16 +194,17 @@ export function createSimulation(
     vy: 0,
     r: n.r ?? 8,
     pinned: n.pinned ?? false,
+    mobility: nodeMobility(n.verification),
   }));
   const index = new Map(nodes.map((n, i) => [n.id, i]));
 
-  const links: Array<{ source: number; target: number }> = [];
+  const links: Array<{ source: number; target: number; linkType?: string }> = [];
   const degree = new Array<number>(nodes.length).fill(0);
   for (const e of edges) {
     const source = index.get(e.from);
     const target = index.get(e.to);
     if (source === undefined || target === undefined || source === target) continue;
-    links.push({ source, target });
+    links.push({ source, target, linkType: e.linkType });
     degree[source] += 1;
     degree[target] += 1;
   }
@@ -222,8 +249,8 @@ export function createSimulation(
                 d2 = dx * dx + dy * dy;
               }
               const w = k / d2;
-              a.vx -= dx * w;
-              a.vy -= dy * w;
+              a.vx -= dx * w * a.mobility;
+              a.vy -= dy * w * a.mobility;
             }
             return;
           }
@@ -233,8 +260,8 @@ export function createSimulation(
           const width = quad.x1 - quad.x0;
           if (!contains(quad, a) && width / Math.sqrt(d2) < BARNES_HUT_THETA) {
             const w = (k * quad.mass) / d2;
-            a.vx -= dx * w;
-            a.vy -= dy * w;
+            a.vx -= dx * w * a.mobility;
+            a.vy -= dy * w * a.mobility;
             return;
           }
           quad.children?.forEach(visit);
@@ -243,18 +270,22 @@ export function createSimulation(
       }
     }
 
-    // Springs. Bias by degree so a hub moves less than its leaf, which is what
-    // makes a hub read as a hub instead of being flung around by its own edges.
+    // Typed springs make link semantics visible in the layout. Mobility and
+    // degree keep verified pages and hubs steadier than uncertain leaves.
     for (const l of links) {
       const a = nodes[l.source];
       const b = nodes[l.target];
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-      const pull = ((d - tune.distance) / d) * tune.link * alpha;
-      const total = degree[l.source] + degree[l.target] || 1;
-      const biasA = degree[l.target] / total;
-      const biasB = degree[l.source] / total;
+      const profile = linkProfile(l.linkType);
+      const desired = tune.distance * profile.distance;
+      const pull = ((d - desired) / d) * tune.link * profile.strength * alpha;
+      const moveA = a.mobility / Math.max(1, degree[l.source]);
+      const moveB = b.mobility / Math.max(1, degree[l.target]);
+      const total = moveA + moveB || 1;
+      const biasA = moveA / total;
+      const biasB = moveB / total;
       a.vx += dx * pull * biasA;
       a.vy += dy * pull * biasA;
       b.vx -= dx * pull * biasB;
@@ -290,8 +321,8 @@ export function createSimulation(
       }
       p.x += mx;
       p.y += my;
-      p.vx += (cx - p.x) * c;
-      p.vy += (cy - p.y) * c;
+      p.vx += (cx - p.x) * c * p.mobility;
+      p.vy += (cy - p.y) * c * p.mobility;
       p.vx *= VELOCITY_KEEP;
       p.vy *= VELOCITY_KEEP;
       const speed = Math.hypot(p.vx, p.vy);

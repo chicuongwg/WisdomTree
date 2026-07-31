@@ -69,27 +69,35 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                   <tr>
                     <th scope="row">{T.extractionState}</th>
                     <td>
-                      {(() => {
-                        const ed = extractionDisplay(v.extractionStatus, v.hasText, v.mimeType);
-                        return <span className={badgeToneClass(ed.tone)}>{ed.label}</span>;
-                      })()}{" "}
-                      {v.extractionStatus === "unprocessable" && (
-                        <span className="muted">
-                          {v.extractionMeta?.error ? ` ${v.extractionMeta.error}. ` : " "}
-                          Tệp gốc vẫn được lưu và tải xuống bình thường.
+                      <div className="button-row">
+                        <span>
+                          {(() => {
+                            const ed = extractionDisplay(
+                              v.extractionStatus,
+                              v.hasText,
+                              v.mimeType,
+                            );
+                            return <span className={badgeToneClass(ed.tone)}>{ed.label}</span>;
+                          })()}{" "}
+                          {v.extractionStatus === "unprocessable" && (
+                            <span className="muted">
+                              {v.extractionMeta?.error ? ` ${v.extractionMeta.error}. ` : " "}
+                              Tệp gốc vẫn được lưu và tải xuống bình thường.
+                            </span>
+                          )}
+                          {v.extractionStatus === "processed" && !v.hasText && (
+                            <span className="muted">{T.extractionNoTextDetail}</span>
+                          )}
                         </span>
-                      )}
-                      {v.extractionStatus === "processed" && !v.hasText && (
-                        <span className="muted">{T.extractionNoTextDetail}</span>
-                      )}
-                      <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
-                      {v.extractionStatus === "unprocessable" && canExtract && (
-                        <ExtractionRetryAction
-                          sourceId={source.id}
-                          versionId={v.id}
-                          mimeType={v.mimeType}
-                        />
-                      )}
+                        <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
+                        {v.extractionStatus === "unprocessable" && canExtract && (
+                          <ExtractionRetryAction
+                            sourceId={source.id}
+                            versionId={v.id}
+                            mimeType={v.mimeType}
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 </>

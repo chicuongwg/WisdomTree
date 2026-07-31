@@ -75,6 +75,7 @@ import {
   LINK_DISTANCE_RANGE,
   XY,
   ViewTransform,
+  wheelZoomFactor,
   markRadius,
   nodeId,
   groupFor,
@@ -354,9 +355,22 @@ export function KnowledgeMap({
   // builds the simulation, so letting it change identity on every drag of the
   // fade slider would tear down and rebuild the physics sixty times a second.
   const labelZoom = useRef({ all: LABEL_ZOOM_ALL, hubs: LABEL_ZOOM_HUBS });
-  // Fit once on entry. Physics and filters must not take the camera back from
-  // the reader while the graph is moving.
-  const autoFit = useRef(true);
+  // Fit after the drawn set has settled. Any camera or node gesture cancels
+  // the pending fit so physics can never take the view back from the reader.
+  const pendingAutoFit = useRef(true);
+  const viewIdentity = useMemo(
+    () =>
+      `${centerId ?? ""}|${view.visible.map((node) => node.id).join(",")}|${view.links
+        .map((edge) => `${edge.from}:${edge.to}:${edge.linkType}`)
+        .join(",")}`,
+    [centerId, view],
+  );
+  const previousViewIdentity = useRef(viewIdentity);
+  useEffect(() => {
+    if (previousViewIdentity.current === viewIdentity) return;
+    previousViewIdentity.current = viewIdentity;
+    pendingAutoFit.current = true;
+  }, [viewIdentity]);
 
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
   // The rebuild effect deliberately does not list `pinned` as a dependency
@@ -458,10 +472,18 @@ export function KnowledgeMap({
     [paint],
   );
 
-  /** Paint the current frame without changing the reader's camera. */
-  const settle = useCallback(() => {
-    paint();
-  }, [paint]);
+  /** Paint a physics frame; the final frame owns the one pending automatic fit. */
+  const settle = useCallback(
+    (simulationSettled = false) => {
+      if (simulationSettled && pendingAutoFit.current) {
+        pendingAutoFit.current = false;
+        fitToView(false);
+      } else {
+        paint();
+      }
+    },
+    [fitToView, paint],
+  );
   const runLocalSimulation = useCallback(() => {
     if (localFrame.current) return;
     const step = () => {
@@ -472,7 +494,7 @@ export function KnowledgeMap({
       for (const node of simulation.nodes) {
         posRef.current.set(node.id, { x: node.x, y: node.y });
       }
-      settle();
+      settle(!alive);
       if (alive) localFrame.current = requestAnimationFrame(step);
     };
     localFrame.current = requestAnimationFrame(step);
@@ -732,12 +754,10 @@ export function KnowledgeMap({
         if (p) still.set(n.id, { x: p.x, y: p.y });
       }
       posRef.current = still;
-      if (autoFit.current) {
-        autoFit.current = false;
+      if (pendingAutoFit.current) {
+        pendingAutoFit.current = false;
         fitToView(false);
-      } else {
-        settle();
-      }
+      } else settle();
       return;
     }
 
@@ -750,15 +770,13 @@ export function KnowledgeMap({
         // the drawn size, so collision keeps a hub's own clearance
         r: radii.get(n.id) ?? 8,
         pinned: pinnedRef.current.has(n.id) || n.id === centerId,
+        verification: n.verification,
       };
     });
     const next = new Map<string, XY>();
     for (const s of seed) next.set(s.id, { x: s.x, y: s.y });
     posRef.current = next;
-    if (autoFit.current) {
-      autoFit.current = false;
-      fitToView(false);
-    }
+    settle();
 
     workerOrder.current = seed.map((node) => node.id);
     const startLocal = () => {
@@ -774,7 +792,12 @@ export function KnowledgeMap({
       workerRef.current = worker;
       worker.onerror = () => startLocal();
       worker.onmessage = (
-        event: MessageEvent<{ type: string; generation: number; positions: ArrayBuffer }>,
+        event: MessageEvent<{
+          type: string;
+          generation: number;
+          positions: ArrayBuffer;
+          settled?: boolean;
+        }>,
       ) => {
         if (event.data.type !== "frame" || event.data.generation !== workerGeneration.current)
           return;
@@ -785,7 +808,7 @@ export function KnowledgeMap({
             y: positions[index * 2 + 1],
           });
         });
-        settle();
+        settle(event.data.settled === true);
       };
       worker.postMessage({
         type: "init",
@@ -866,7 +889,7 @@ export function KnowledgeMap({
 
   const zoomAround = useCallback(
     (factor: number, anchor?: XY) => {
-      autoFit.current = false; // the reader owns the view from here on
+      pendingAutoFit.current = false; // the reader owns the view from here on
       const vt = viewT.current;
       const k = Math.max(ZOOM_LIMIT.min, Math.min(ZOOM_LIMIT.max, vt.k * factor));
       const a = anchor ?? { x: CANVAS.width / 2, y: CANVAS.height / 2 };
@@ -890,7 +913,7 @@ export function KnowledgeMap({
       if (!el) return;
       const onWheel = (e: WheelEvent) => {
         e.preventDefault();
-        zoomAround(Math.exp(-e.deltaY * 0.0022), toLocal(el, e.clientX, e.clientY));
+        zoomAround(wheelZoomFactor(e.deltaY, e.deltaMode), toLocal(el, e.clientX, e.clientY));
       };
       el.addEventListener("wheel", onWheel, { passive: false });
       return () => {
@@ -908,7 +931,7 @@ export function KnowledgeMap({
         event.preventDefault();
         const point = canvasToGraph(event.clientX, event.clientY);
         const vt = viewT.current;
-        zoomAround(Math.exp(-event.deltaY * 0.0022), {
+        zoomAround(wheelZoomFactor(event.deltaY, event.deltaMode), {
           x: point.x * vt.k + vt.tx,
           y: point.y * vt.k + vt.ty,
         });
@@ -1115,7 +1138,7 @@ export function KnowledgeMap({
     if (!p || p.pointerId !== e.pointerId) return;
     const svg = svgRef.current;
     if (!svg) return;
-    autoFit.current = false; // the reader owns the view from here on
+    pendingAutoFit.current = false; // the reader owns the view from here on
     // Screen pixels → viewBox units, so the map tracks the pointer exactly.
     const scale = CANVAS.width / (svg.getBoundingClientRect().width || CANVAS.width);
     viewT.current = {
@@ -1140,6 +1163,7 @@ export function KnowledgeMap({
     if (event.pointerType === "touch") {
       touchPoints.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (touchPoints.current.size === 2) {
+        pendingAutoFit.current = false;
         const [a, b] = [...touchPoints.current.values()];
         pinch.current = {
           distance: Math.hypot(b.x - a.x, b.y - a.y),
@@ -1232,6 +1256,7 @@ export function KnowledgeMap({
       )
         return;
       moving.moved = true;
+      pendingAutoFit.current = false;
       if (longPressTimer.current) clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
       const point = canvasToGraph(event.clientX, event.clientY);

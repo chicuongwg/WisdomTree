@@ -2,8 +2,15 @@
 
 import { createSimulation, type Simulation, type Tuning } from "./graph-force";
 
-type Seed = { id: string; x: number; y: number; r?: number; pinned?: boolean };
-type Edge = { from: string; to: string };
+type Seed = {
+  id: string;
+  x: number;
+  y: number;
+  r?: number;
+  pinned?: boolean;
+  verification?: string;
+};
+type Edge = { from: string; to: string; linkType?: string };
 type Message =
   | { type: "init"; generation: number; seed: Seed[]; edges: Edge[]; tuning: Tuning }
   | { type: "tuning"; tuning: Tuning }
@@ -30,7 +37,9 @@ function step() {
     positions[index * 2] = node.x;
     positions[index * 2 + 1] = node.y;
   });
-  self.postMessage({ type: "frame", generation, positions: positions.buffer }, [positions.buffer]);
+  self.postMessage({ type: "frame", generation, positions: positions.buffer, settled: !alive }, [
+    positions.buffer,
+  ]);
   if (alive) schedule();
 }
 

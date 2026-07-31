@@ -1,4 +1,5 @@
 import type { GraphGroup } from "@/lib/graph-settings";
+import { CANVAS } from "@/lib/graph-layout";
 
 export type MapNode = {
   id: string;
@@ -19,6 +20,14 @@ export const SHAPE_LABEL: Record<string, string> = {
 /** Pointer travel before a press becomes a drag rather than a click. */
 export const DRAG_THRESHOLD = 4;
 export const ZOOM_LIMIT = { min: 0.35, max: 4 };
+
+/** Normalize browser wheel units and cap one event so a mouse notch and a
+ * trackpad gesture cannot jump between the zoom limits. */
+export function wheelZoomFactor(deltaY: number, deltaMode: number): number {
+  const pixels = deltaY * (deltaMode === 1 ? 16 : deltaMode === 2 ? CANVAS.height : 1);
+  const bounded = Math.max(-120, Math.min(120, pixels));
+  return Math.exp(-bounded * 0.0018);
+}
 
 /** Label geometry. Pairs with the `.g-label` rule in globals.css, which owns
  *  everything else about a label (font, size, anchor, colour). */

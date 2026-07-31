@@ -87,7 +87,7 @@ export function SourceFileActions({
       <Say error={m.error ?? uploadError} ok={m.ok} />
       <div className="field">
         <label htmlFor="move-folder">{T.moveFolder}</label>
-        <div className="inline">
+        <div className="button-row">
           <select
             id="move-folder"
             value={target}

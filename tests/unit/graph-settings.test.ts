@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { DEFAULT_SETTINGS, LINK_TYPES, parseSettings, scale } from "@/lib/graph-settings";
 import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
+import { wheelZoomFactor } from "@/app/components/knowledge-map/model";
+import { LINK_PROFILE, nodeMobility } from "@/lib/graph-force";
 
 export function run() {
   assert.equal(scale(-1, 10, 20), 10);
@@ -29,6 +31,18 @@ export function run() {
     { id: "g", name: "Group", query: "tag:test", color: "#526fa8" },
   ]);
   assert.deepEqual(Object.keys(parsed.linkTypes), [...LINK_TYPES]);
+  assert.ok(wheelZoomFactor(-100, 0) > 1);
+  assert.ok(wheelZoomFactor(100, 0) < 1);
+  assert.equal(wheelZoomFactor(10_000, 0), wheelZoomFactor(120, 0));
+  assert.equal(wheelZoomFactor(3, 1), wheelZoomFactor(48, 0));
+  assert.ok(LINK_PROFILE.part_of.strength > LINK_PROFILE.supports.strength);
+  assert.ok(LINK_PROFILE.supports.strength > LINK_PROFILE.related.strength);
+  assert.ok(LINK_PROFILE.related.strength > LINK_PROFILE.contrasts.strength);
+  assert.ok(LINK_PROFILE.part_of.distance < LINK_PROFILE.supports.distance);
+  assert.ok(LINK_PROFILE.supports.distance < LINK_PROFILE.related.distance);
+  assert.ok(LINK_PROFILE.related.distance < LINK_PROFILE.contrasts.distance);
+  assert.ok(nodeMobility("verified") < nodeMobility("unverified"));
+  assert.ok(nodeMobility("unverified") < nodeMobility("no_source"));
 
   const nodes = [
     { id: "a", branchId: "one" },
