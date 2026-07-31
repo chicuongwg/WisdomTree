@@ -369,8 +369,8 @@ export const T = {
   graphResetSettings: "Khôi phục mặc định", // NEW
   graphPinnedOne: "Đã ghim tại chỗ", // NEW
   graphUnpinned: "Đã bỏ ghim", // NEW
-  graphHelp: (_key: string) =>
-    "Kéo một chấm để ghim nó vào chỗ mới. Lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.", // NEW
+  graphHelp: (key: string) =>
+    `Kéo một chấm để ghim nó vào chỗ mới. Giữ ${key} và lăn chuột để phóng to. Kéo nền để di chuyển bản đồ.`, // NEW
   // The map is one tab stop; the arrows move between marks inside it. Saying
   // "Tab để đi giữa các trang" was both wrong and a promise of two hundred
   // presses of it.

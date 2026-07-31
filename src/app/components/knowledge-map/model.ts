@@ -83,9 +83,9 @@ export const EDGE_WIDTH_RANGE = [0.4, 2.4] as const;
  * of TUNE.centre) instead of a linear one.
  */
 export const CENTRE_RANGE = [0, 0.007] as const;
-/** Pairwise repulsion. Below ~800 the collision pass alone holds marks apart;
- *  above ~6000 the graph presses against the canvas padding and stops opening. */
-export const REPEL_RANGE = [800, 6000] as const;
+/** Pairwise repulsion. Collision already guarantees distinct marks; this
+ * slider controls the extra air between them without overpowering links. */
+export const REPEL_RANGE = [0, 60] as const;
 /** Spring stiffness. Kept under 1 so a spring can never overshoot its own
  *  rest length and set the map ringing. The odd-looking ends are the widest
  *  pair whose midpoint is EXACTLY 0.42 in floating point — 0.08…0.76 gives

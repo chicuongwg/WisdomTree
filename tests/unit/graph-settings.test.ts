@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { DEFAULT_SETTINGS, LINK_TYPES, parseSettings, scale } from "@/lib/graph-settings";
 import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
 import { wheelZoomFactor } from "@/app/components/knowledge-map/model";
-import { LINK_PROFILE, nodeMobility } from "@/lib/graph-force";
+import { LINK_PROFILE, nodeMobility, TUNE } from "@/lib/graph-force";
+import { CENTRE_RANGE, REPEL_RANGE } from "@/app/components/knowledge-map/model";
 
 export function run() {
   assert.equal(scale(-1, 10, 20), 10);
@@ -43,6 +44,8 @@ export function run() {
   assert.ok(LINK_PROFILE.related.distance < LINK_PROFILE.contrasts.distance);
   assert.ok(nodeMobility("verified") < nodeMobility("unverified"));
   assert.ok(nodeMobility("unverified") < nodeMobility("no_source"));
+  assert.equal(scale(DEFAULT_SETTINGS.centreForce, ...CENTRE_RANGE), TUNE.centre);
+  assert.equal(scale(DEFAULT_SETTINGS.repelForce, ...REPEL_RANGE), TUNE.repel);
 
   const nodes = [
     { id: "a", branchId: "one" },

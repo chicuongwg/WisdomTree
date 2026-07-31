@@ -24,7 +24,6 @@ const ALPHA_DECAY = 0.976;
 const VELOCITY_KEEP = 0.62;
 /** Hard cap on per-tick displacement, so a dense cluster cannot explode. */
 const MAX_SPEED = 28;
-const PAD = 48;
 const BARNES_HUT_THETA = 0.85;
 
 type Quad = {
@@ -90,6 +89,22 @@ function buildQuad(
   return quad;
 }
 
+function buildNodeQuad(nodes: SimNode[]): Quad {
+  const xs = nodes.map((node) => node.x);
+  const ys = nodes.map((node) => node.y);
+  const x0 = Math.min(...xs);
+  const y0 = Math.min(...ys);
+  const size = Math.max(1, Math.max(...xs) - x0, Math.max(...ys) - y0);
+  return buildQuad(
+    nodes,
+    nodes.map((_, index) => index),
+    x0 - 1,
+    y0 - 1,
+    x0 + size + 1,
+    y0 + size + 1,
+  );
+}
+
 function contains(quad: Quad, node: SimNode): boolean {
   return node.x >= quad.x0 && node.x <= quad.x1 && node.y >= quad.y0 && node.y <= quad.y1;
 }
@@ -118,7 +133,7 @@ export const TUNE = {
    */
   centre: 0.0035,
   /** pairwise repulsion */
-  repel: 3400,
+  repel: 30,
   /** spring stiffness per edge */
   link: 0.42,
   /** the length each edge wants to be, in canvas units */
@@ -220,14 +235,7 @@ export function createSimulation(
       alpha = 0;
       return false;
     }
-    const tree = buildQuad(
-      nodes,
-      nodes.map((_, index) => index),
-      0,
-      0,
-      CANVAS.width,
-      CANVAS.height,
-    );
+    const tree = buildNodeQuad(nodes);
 
     // Barnes–Hut repulsion: distant quadrants act as one body, while nearby
     // marks are still evaluated exactly.
@@ -330,8 +338,8 @@ export function createSimulation(
         p.vx = (p.vx / speed) * MAX_SPEED;
         p.vy = (p.vy / speed) * MAX_SPEED;
       }
-      p.x = Math.max(PAD, Math.min(CANVAS.width - PAD, p.x + p.vx));
-      p.y = Math.max(PAD, Math.min(CANVAS.height - PAD, p.y + p.vy));
+      p.x += p.vx;
+      p.y += p.vy;
     }
 
     // Collision, resolved on positions rather than velocity so it cannot be
@@ -339,14 +347,7 @@ export function createSimulation(
     // this: it is a smooth field, so two marks reach an equilibrium wherever
     // the spring pulling them together balances it — which was on top of each
     // other. Two pages are two things and must read as two.
-    const collisionTree = buildQuad(
-      nodes,
-      nodes.map((_, index) => index),
-      0,
-      0,
-      CANVAS.width,
-      CANVAS.height,
-    );
+    const collisionTree = buildNodeQuad(nodes);
     for (let i = 0; i < n; i++) {
       const a = nodes[i];
       const visit = (quad: Quad) => {

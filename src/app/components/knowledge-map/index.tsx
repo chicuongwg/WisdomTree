@@ -484,6 +484,10 @@ export function KnowledgeMap({
     },
     [fitToView, paint],
   );
+  const fitNow = useCallback(() => {
+    pendingAutoFit.current = false;
+    fitToView();
+  }, [fitToView]);
   const runLocalSimulation = useCallback(() => {
     if (localFrame.current) return;
     const step = () => {
@@ -912,6 +916,7 @@ export function KnowledgeMap({
       svgRef.current = el;
       if (!el) return;
       const onWheel = (e: WheelEvent) => {
+        if (!e.ctrlKey && !e.metaKey) return;
         e.preventDefault();
         zoomAround(wheelZoomFactor(e.deltaY, e.deltaMode), toLocal(el, e.clientX, e.clientY));
       };
@@ -928,6 +933,7 @@ export function KnowledgeMap({
       canvasRef.current = element;
       if (!element) return;
       const onWheel = (event: WheelEvent) => {
+        if (!event.ctrlKey && !event.metaKey) return;
         event.preventDefault();
         const point = canvasToGraph(event.clientX, event.clientY);
         const vt = viewT.current;
@@ -1046,6 +1052,7 @@ export function KnowledgeMap({
       if (longPressTimer.current) clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
       d.moved = true;
+      pendingAutoFit.current = false;
       const p = toLocal(viewportRef.current, e.clientX, e.clientY);
       workerRef.current?.postMessage({
         type: "move",
@@ -1130,7 +1137,8 @@ export function KnowledgeMap({
       /* see above */
     }
     const vt = viewT.current;
-    pan.current = { pointerId: e.pointerId, sx: e.clientX, sy: e.clientY, tx: vt.tx, ty: vt.ty };
+    const point = toLocal(svgRef.current, e.clientX, e.clientY);
+    pan.current = { pointerId: e.pointerId, sx: point.x, sy: point.y, tx: vt.tx, ty: vt.ty };
   };
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
@@ -1139,12 +1147,11 @@ export function KnowledgeMap({
     const svg = svgRef.current;
     if (!svg) return;
     pendingAutoFit.current = false; // the reader owns the view from here on
-    // Screen pixels → viewBox units, so the map tracks the pointer exactly.
-    const scale = CANVAS.width / (svg.getBoundingClientRect().width || CANVAS.width);
+    const point = toLocal(svg, e.clientX, e.clientY);
     viewT.current = {
       ...viewT.current,
-      tx: p.tx + (e.clientX - p.sx) * scale,
-      ty: p.ty + (e.clientY - p.sy) * scale,
+      tx: p.tx + point.x - p.sx,
+      ty: p.ty + point.y - p.sy,
     };
     paint();
   };
@@ -1287,6 +1294,7 @@ export function KnowledgeMap({
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const base = Math.min(rect.width / CANVAS.width, rect.height / CANVAS.height);
+      pendingAutoFit.current = false;
       viewT.current = {
         ...viewT.current,
         tx: panning.tx + (event.clientX - panning.sx) / base,
@@ -1423,7 +1431,7 @@ export function KnowledgeMap({
             [
               ["+", T.graphZoomIn, () => zoomAround(1.25)],
               ["−", T.graphZoomOut, () => zoomAround(0.8)],
-              ["⤢", T.graphZoomReset, () => fitToView()],
+              ["⤢", T.graphZoomReset, fitNow],
             ] as const
           ).map(([glyph, label, act]) => (
             <button
