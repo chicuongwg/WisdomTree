@@ -5,6 +5,7 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { buildWikiIndex, normalizeTitle, wikiTargetKeys } from "@/lib/wikilink";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
+import { assertIndependentReviewer } from "../auth/maker-checker";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { contentReviews } from "../storage/schema";
 import { kickDispatch } from "../notify/dispatcher";
@@ -70,7 +71,7 @@ async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promis
 // Node mutations
 // ---------------------------------------------------------------------------
 
-async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: string[]) {
+export async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: string[]) {
   await tx.delete(nodeTags).where(eq(nodeTags.nodeId, nodeId));
   for (const raw of names) {
     const name = raw.trim();
@@ -96,7 +97,7 @@ async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: string[
  * the content on the next save (a hand-declared 'related' link survives only
  * if the content also carries the wiki-link).
  */
-async function syncLinks(
+export async function syncLinks(
   tx: Tx,
   nodeId: string,
   links: Array<{ toNodeId: string; linkType: string }>,
@@ -126,7 +127,12 @@ async function syncLinks(
  * path's immutable_unaccent); unresolved targets and self-links write
  * nothing. Owns link_type 'related' entirely — see syncLinks for the rule.
  */
-async function syncDerivedLinks(tx: Tx, nodeId: string, title: string, contentMd: string) {
+export async function syncDerivedLinks(
+  tx: Tx,
+  nodeId: string,
+  title: string,
+  contentMd: string,
+) {
   const keys = wikiTargetKeys(contentMd);
   let targetIds: string[] = [];
   if (keys.length) {
@@ -432,13 +438,7 @@ export async function reviewNodeProposal(
   if (!row || row.review.state !== "pending" || row.proposal.state !== "pending") throw notFound();
   const grant = actor.vaultGrants?.find((item) => item.vaultId === row.vaultId)?.grant;
   if (grant !== "reviewer" && grant !== "owner") throw notFound();
-  if (
-    [row.review.originatorId, row.review.lastEditorId, row.review.submittedBy].includes(
-      actor.userId,
-    )
-  ) {
-    throw new ApiError(403, "separation_of_duties", "Người tạo hoặc sửa không được tự duyệt.");
-  }
+  assertIndependentReviewer(actor.userId, row.review);
   if (
     proposalSha256({
       title: row.proposal.title,

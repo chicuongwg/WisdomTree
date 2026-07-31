@@ -6,10 +6,11 @@ import type { Principal } from "../auth/dev-auth";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { sources, sourceVersions } from "../storage/schema";
+import { contentReviews, sources, sourceVersions } from "../storage/schema";
 import {
   branches,
   nodeLinks,
+  nodePublicationProposals,
   nodeTags,
   promotions,
   tags,
@@ -269,7 +270,7 @@ export async function getNode(actor: Principal, nodeId: string) {
     .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
   if (!row) throw notFound();
 
-  const [tagRows, linkRows, backlinkRows, provenance] = await Promise.all([
+  const [tagRows, linkRows, backlinkRows, provenance, personalOrigins] = await Promise.all([
     db
       .select({ name: tags.name })
       .from(nodeTags)
@@ -317,6 +318,24 @@ export async function getNode(actor: Principal, nodeId: string) {
       .innerJoin(users, eq(promotions.approvedBy, users.id))
       .where(eq(treeNodeVersions.nodeId, nodeId))
       .orderBy(desc(promotions.createdAt)),
+    db
+      .select({
+        sourceNodeId: nodePublicationProposals.sourceNodeId,
+        sourceTitle: nodePublicationProposals.title,
+        approvedByName: users.displayName,
+        reviewedAt: contentReviews.reviewedAt,
+      })
+      .from(nodePublicationProposals)
+      .innerJoin(
+        treeNodeVersions,
+        eq(nodePublicationProposals.approvedNodeVersionId, treeNodeVersions.id),
+      )
+      .innerJoin(
+        contentReviews,
+        eq(contentReviews.publicationProposalId, nodePublicationProposals.id),
+      )
+      .innerJoin(users, eq(contentReviews.reviewedBy, users.id))
+      .where(eq(treeNodeVersions.nodeId, nodeId)),
   ]);
 
   return {
@@ -336,6 +355,7 @@ export async function getNode(actor: Principal, nodeId: string) {
       context: backlinkContext(b.contentMd, normalizeTitle(row.node.title)),
     })),
     provenance,
+    personalOrigins,
   };
 }
 

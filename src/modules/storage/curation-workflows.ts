@@ -5,6 +5,7 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { T } from "@/lib/vi";
 import type { Principal } from "../auth/dev-auth";
 import { authorize } from "../auth/authorize";
+import { assertIndependentReviewer } from "../auth/maker-checker";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { kickDispatch } from "../notify/dispatcher";
@@ -414,9 +415,7 @@ export async function rejectCuration(actor: Principal, sourceId: string, version
     .from(contentReviews)
     .where(and(eq(contentReviews.sourceVersionId, versionId), eq(contentReviews.state, "pending")));
   if (!review) throw new ApiError(409, "missing_review", "Không có revision đang chờ duyệt.");
-  if ([review.originatorId, review.lastEditorId, review.submittedBy].includes(actor.userId)) {
-    throw new ApiError(403, "separation_of_duties", "Người tạo hoặc sửa không được tự duyệt.");
-  }
+  assertIndependentReviewer(actor.userId, review);
 
   return db.transaction(async (tx) => {
     await tx
@@ -511,9 +510,7 @@ export async function publishFromSource(
   ) {
     throw new ApiError(409, "review_stale", "Bản thảo đã thay đổi sau khi gửi duyệt.");
   }
-  if ([review.originatorId, review.lastEditorId, review.submittedBy].includes(actor.userId)) {
-    throw new ApiError(403, "separation_of_duties", "Người tạo hoặc sửa không được tự duyệt.");
-  }
+  assertIndependentReviewer(actor.userId, review);
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (!branch || branch.archivedAt) throw notFound();
   const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === branch.vaultId)?.grant;

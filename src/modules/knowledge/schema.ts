@@ -140,6 +140,35 @@ export const nodeChangeProposals = pgTable("node_change_proposals", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const nodePublicationProposals = pgTable("node_publication_proposals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sourceNodeId: uuid("source_node_id")
+    .notNull()
+    .references(() => treeNodes.id),
+  sourceNodeVersion: integer("source_node_version").notNull(),
+  sourceVersionId: uuid("source_version_id").references(() => sourceVersions.id),
+  targetBranchId: uuid("target_branch_id")
+    .notNull()
+    .references(() => branches.id),
+  title: text("title").notNull(),
+  contentMd: text("content_md").notNull(),
+  tags: jsonb("tags").notNull().default([]),
+  links: jsonb("links").notNull().default([]),
+  snapshotSha256: text("snapshot_sha256").notNull(),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
+  state: text("state", {
+    enum: ["pending", "approved", "rejected", "changes_requested"],
+  })
+    .notNull()
+    .default("pending"),
+  decisionNote: text("decision_note"),
+  approvedNodeVersionId: uuid("approved_node_version_id").references(() => treeNodeVersions.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const vaultGitJobs = pgTable("vault_git_jobs", {
   id: uuid("id").primaryKey().defaultRandom(),
   vaultId: uuid("vault_id")
@@ -221,7 +250,14 @@ export const reviewTasks = pgTable("review_tasks", {
     enum: ["correction", "gap_triage", "publish", "merge", "archive", "operational"],
   }).notNull(),
   targetType: text("target_type", {
-    enum: ["source_version", "branch_gap_request", "markdown_draft", "tree_node", "conflict"],
+    enum: [
+      "source_version",
+      "branch_gap_request",
+      "markdown_draft",
+      "tree_node",
+      "node_publication_proposal",
+      "conflict",
+    ],
   }).notNull(),
   targetId: uuid("target_id").notNull(),
   state: text("state", {

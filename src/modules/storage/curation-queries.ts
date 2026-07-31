@@ -6,7 +6,7 @@ import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { kickDispatch } from "../notify/dispatcher";
-import { branches, reviewTasks, treeNodes } from "../knowledge/schema";
+import { branches, nodePublicationProposals, reviewTasks, treeNodes } from "../knowledge/schema";
 import {
   branchGapRequests,
   correctedTexts,
@@ -58,11 +58,48 @@ export async function listReviewQueue(
         .where(inArray(sourceVersions.id, versionIds))
     : [];
   const titleByVersion = new Map(titles.map((t) => [t.versionId, t]));
-  return rows.map((r) => ({
-    ...r.task,
-    assigneeName: r.assigneeName,
-    target: titleByVersion.get(r.task.targetId) ?? null,
-  }));
+  const proposalIds = rows
+    .filter((row) => row.task.targetType === "node_publication_proposal")
+    .map((row) => row.task.targetId);
+  const proposalTitles = proposalIds.length
+    ? await db
+        .select({
+          proposalId: nodePublicationProposals.id,
+          title: nodePublicationProposals.title,
+          vaultId: branches.vaultId,
+        })
+        .from(nodePublicationProposals)
+        .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
+        .where(inArray(nodePublicationProposals.id, proposalIds))
+    : [];
+  const titleByProposal = new Map(proposalTitles.map((item) => [item.proposalId, item]));
+  const reviewableVaults = new Set(
+    actor.vaultGrants
+      ?.filter((grant) => grant.grant === "reviewer" || grant.grant === "owner")
+      .map((grant) => grant.vaultId) ?? [],
+  );
+  return rows
+    .filter((row) => {
+      if (row.task.targetType !== "node_publication_proposal") return true;
+      const target = titleByProposal.get(row.task.targetId);
+      return Boolean(target && reviewableVaults.has(target.vaultId));
+    })
+    .map((r) => ({
+      ...r.task,
+      assigneeName: r.assigneeName,
+      target:
+        r.task.targetType === "node_publication_proposal"
+          ? {
+              title: titleByProposal.get(r.task.targetId)?.title ?? "Đề cử trang cá nhân",
+              href: `/review/node-publication/${r.task.id}`,
+            }
+          : titleByVersion.has(r.task.targetId)
+            ? {
+                title: titleByVersion.get(r.task.targetId)!.title,
+                href: `/source/${titleByVersion.get(r.task.targetId)!.sourceId}`,
+              }
+            : null,
+    }));
 }
 
 /** Publish Review workbench: draft, corrected text, chunks, provenance chain. */

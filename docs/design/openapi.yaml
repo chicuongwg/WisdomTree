@@ -305,6 +305,27 @@ paths:
     post:
       summary: Archive a node (Admin/Op)
       responses: {"200": {description: Archived}}
+  /tree/nodes/{nodeId}/publication-proposals:
+    parameters: [{$ref: "#/components/parameters/nodeId"}]
+    post:
+      summary: Nominate an immutable personal-node snapshot for independent review into a team branch
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [targetBranchId], properties: {targetBranchId: {type: string, format: uuid}}}}}
+      responses:
+        "201": {description: Publication proposal queued}
+        "409": {description: A proposal is already pending for this personal node}
+  /review/node-publication/{taskId}/decision:
+    parameters: [{name: taskId, in: path, required: true, schema: {type: string, format: uuid}}]
+    post:
+      summary: Approve, reject, or request changes to a personal-node publication proposal
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [decision, expectedReviewVersion], properties: {decision: {type: string, enum: [approved, rejected, changes_requested]}, verification: {type: string, enum: [unverified, verified]}, expectedReviewVersion: {type: integer}, note: {type: string}}}}}
+      responses:
+        "200": {description: Decision recorded; approval creates a new team node}
+        "403": {description: Maker-checker separation failed}
+        "409": {description: Snapshot is stale or conflicts with current state}
   /tree/nodes/{nodeId}/merge:
     parameters: [{$ref: "#/components/parameters/nodeId"}]
     post:

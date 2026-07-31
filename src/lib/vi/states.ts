@@ -267,6 +267,10 @@ export const auditActionLabel: Record<string, string> = {
   "node.merge": "Gộp trang tri thức", // NEW
   "node.verification.change": "Đổi mức thẩm định của trang", // NEW
   "node.verification.downgrade": "Hạ mức thẩm định của trang", // NEW
+  "node.publication.submit": "Đề cử trang cá nhân lên cây chung",
+  "node.publication.approve": "Duyệt đề cử lên cây chung",
+  "node.publication.rejected": "Từ chối đề cử lên cây chung",
+  "node.publication.changes_requested": "Yêu cầu sửa đề cử lên cây chung",
   // pm
   "task.create": "Tạo công việc", // NEW
   "task.update": "Sửa công việc", // NEW
@@ -297,6 +301,7 @@ export const auditTargetLabel: Record<string, string> = {
   source_version: "Bản tư liệu", // NEW
   markdown_draft: "Bản thảo", // NEW
   tree_node: "Trang tri thức", // NEW
+  node_publication_proposal: "Đề cử trang cá nhân",
   branch: "Nhánh tri thức", // NEW
   branch_gap_request: "Đề xuất bổ sung", // NEW
   task: "Công việc", // NEW

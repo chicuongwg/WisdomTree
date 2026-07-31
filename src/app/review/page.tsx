@@ -32,7 +32,9 @@ export default async function ReviewQueuePage({
   });
 
   const open = tasks.filter((t) =>
-    ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),
+    t.targetType === "node_publication_proposal"
+      ? ["queued", "assigned", "in_review"].includes(t.state)
+      : ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),
   ).length;
 
   return (
@@ -103,7 +105,7 @@ export default async function ReviewQueuePage({
                   <td>{reviewTypeLabel(t.taskType)}</td>
                   <td>
                     {t.target ? (
-                      <Link href={`/source/${t.target.sourceId}`}>{t.target.title}</Link>
+                      <Link href={t.target.href}>{t.target.title}</Link>
                     ) : (
                       <span className="muted">{targetKindLabel(t.targetType)}</span>
                     )}
@@ -116,12 +118,19 @@ export default async function ReviewQueuePage({
                   <td>{t.assigneeName ?? <span className="muted">—</span>}</td>
                   <td>{when(t.updatedAt)}</td>
                   <td>
-                    {t.taskType === "publish" &&
+                    {t.targetType === "node_publication_proposal" &&
+                    ["queued", "assigned", "in_review"].includes(t.state) ? (
+                      <Link className="button" href={`/review/node-publication/${t.id}`}>
+                        {T.publishReview}
+                      </Link>
+                    ) : (
+                      t.taskType === "publish" &&
                       ["queued", "assigned", "in_review"].includes(t.state) && (
                         <Link className="button" href={`/review/publish/${t.id}`}>
                           {T.publishReview}
                         </Link>
-                      )}
+                      )
+                    )}
                   </td>
                 </tr>
               ))}

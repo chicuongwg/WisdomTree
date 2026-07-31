@@ -2,7 +2,7 @@ import { T } from "./vi";
 
 const vi = {
   ...T,
-  candidateReview: "Kho tạm chờ duyệt",
+  candidateReview: "Bản trích xuất cá nhân",
   aiLibrarian: "Thủ thư AI",
   workspaceKind: "Phân loại không gian làm việc",
   skipNavigation: "Bỏ qua điều hướng",

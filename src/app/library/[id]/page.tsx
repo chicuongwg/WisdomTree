@@ -6,6 +6,7 @@ import { extractionDisplay, nextActionFor, nextActionLabel } from "@/lib/source-
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { ExtractionWatcher } from "@/app/components/extraction-watcher";
+import { ExtractionRetryAction } from "@/app/components/extraction-retry-action";
 import { SourceOwnerActions } from "@/app/components/source-owner-actions";
 import { SourceFileActions } from "@/app/components/source-file-actions";
 import { NominateSource } from "@/app/components/nominate-source";
@@ -28,6 +29,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
   const v = source.currentVersion;
   const stored = v?.storageState === "stored";
   const canEdit = source.submittedBy === user.id || user.role === "admin_op";
+  const canExtract = canEdit || source.assignedTo === user.id;
   // The move select needs the space's folders; only fetched when someone who
   // can move is looking at a movable item.
   const folders = canEdit && stored ? await listFolders(actor, source.spaceId) : [];
@@ -73,6 +75,7 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                       })()}{" "}
                       {v.extractionStatus === "unprocessable" && (
                         <span className="muted">
+                          {v.extractionMeta?.error ? ` ${v.extractionMeta.error}. ` : " "}
                           Tệp gốc vẫn được lưu và tải xuống bình thường.
                         </span>
                       )}
@@ -80,6 +83,13 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
                         <span className="muted">{T.extractionNoTextDetail}</span>
                       )}
                       <ExtractionWatcher sourceId={source.id} status={v.extractionStatus} />
+                      {v.extractionStatus === "unprocessable" && canExtract && (
+                        <ExtractionRetryAction
+                          sourceId={source.id}
+                          versionId={v.id}
+                          mimeType={v.mimeType}
+                        />
+                      )}
                     </td>
                   </tr>
                 </>
@@ -173,6 +183,13 @@ export default async function StoredItemDetail({ params }: { params: Promise<{ i
           title={source.title}
           description={source.description}
         />
+      )}
+      {v?.extractionStatus === "processed" && v.hasText && user.role === "user" && (
+        <p>
+          <a className="button secondary" href="/vault/review">
+            Xem Markdown đã trích xuất
+          </a>
+        </p>
       )}
       <CommentsSection
         anchorType="source"

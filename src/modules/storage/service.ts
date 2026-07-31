@@ -253,6 +253,7 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
     description: row.source.description,
     trustStatus: row.source.trustStatus,
     submittedBy: row.source.submittedBy,
+    assignedTo: row.source.assignedTo,
     version: row.source.version,
     curationState: curation?.state ?? null,
     curationAssigned: Boolean(curation?.assignedTo),
@@ -266,6 +267,11 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
           sizeBytes: row.version.sizeBytes,
           storageState: row.version.storageState,
           extractionStatus: row.version.extractionStatus,
+          extractionMeta: row.version.extractionMeta as {
+            engine?: string;
+            error?: string;
+            requestedMethod?: ExtractionMethod;
+          } | null,
           storedAt: row.version.storedAt,
           chunkCount,
           hasText: chunkCount > 0,

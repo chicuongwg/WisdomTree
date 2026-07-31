@@ -228,9 +228,12 @@ export const markdownDrafts = pgTable("markdown_drafts", {
 
 export const contentReviews = pgTable("content_reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
-  targetType: text("target_type", { enum: ["source_draft", "node_proposal"] }).notNull(),
+  targetType: text("target_type", {
+    enum: ["source_draft", "node_proposal", "personal_node_publication"],
+  }).notNull(),
   sourceVersionId: uuid("source_version_id").references(() => sourceVersions.id),
   proposalId: uuid("proposal_id"),
+  publicationProposalId: uuid("publication_proposal_id"),
   contentSha256: text("content_sha256").notNull(),
   originatorId: uuid("originator_id")
     .notNull()

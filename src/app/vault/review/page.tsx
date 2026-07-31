@@ -3,7 +3,7 @@ import { listBranches } from "@/modules/knowledge/service";
 import { listPersonalCandidates } from "@/modules/storage/candidates";
 import { CandidateReviewList } from "@/app/components/candidate-review-list";
 
-export const metadata = { title: "Kho tạm chờ duyệt" };
+export const metadata = { title: "Bản trích xuất chờ đưa vào cây cá nhân" };
 
 export default async function CandidateReviewPage() {
   const user = await requireUser();
@@ -18,10 +18,11 @@ export default async function CandidateReviewPage() {
 
   return (
     <main className="page">
-      <h1>Kho tạm chờ duyệt</h1>
+      <h1>Bản trích xuất chờ đưa vào cây cá nhân</h1>
       <p className="muted">
         Bản trích xuất chỉ để kiểm tra. Nội dung này không thể sửa và chưa xuất hiện trên graph.
-        Khi duyệt và evolve, hệ thống mới tạo bản Markdown chính trong kho cá nhân.
+        Khi chấp nhận, hệ thống tạo một trang chưa thẩm định trong cây cá nhân; đây không phải bước
+        duyệt để xuất bản lên cây chung.
       </p>
       <CandidateReviewList candidates={candidates} branches={personalBranches} />
     </main>

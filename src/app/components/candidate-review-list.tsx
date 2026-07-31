@@ -40,7 +40,8 @@ export function CandidateReviewList({
     setBusy(null);
   }
 
-  if (!candidates.length) return <p className="muted">Không có bản Markdown nào đang chờ duyệt.</p>;
+  if (!candidates.length)
+    return <p className="muted">Không có bản Markdown nào chờ đưa vào cây cá nhân.</p>;
 
   return (
     <>
@@ -52,9 +53,9 @@ export function CandidateReviewList({
             <p className="muted">
               Phương thức: {candidate.method} · SHA-256: {candidate.contentSha256.slice(0, 12)}…
             </p>
-            <details>
+            <details className="candidate-preview">
               <summary>Xem Markdown bất biến</summary>
-              <pre>{candidate.contentMd}</pre>
+              <pre className="candidate-markdown">{candidate.contentMd}</pre>
             </details>
             <div className="field">
               <label htmlFor={`branch-${candidate.id}`}>Chuyên đề cá nhân</label>
@@ -81,7 +82,7 @@ export function CandidateReviewList({
                   else setError("Hãy chọn chuyên đề cá nhân.");
                 }}
               >
-                Duyệt và evolve
+                Đưa vào cây cá nhân
               </button>
               <button
                 type="button"

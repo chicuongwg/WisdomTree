@@ -1,7 +1,13 @@
 import { Crumbs } from "@/app/components/crumbs";
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getNode, listNodeOptions, wikiIndex } from "@/modules/knowledge/service";
+import {
+  getNode,
+  getLatestPublicationForNode,
+  listNodeOptions,
+  listPublicationTargets,
+  wikiIndex,
+} from "@/modules/knowledge/service";
 import { badgeToneClass, day, nodeLinkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { NodeLink } from "@/app/components/node-link";
@@ -11,6 +17,7 @@ import { NodeExportActions } from "@/app/components/node-export-actions";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { PresenceRow } from "@/app/components/presence-row";
+import { NodePublicationAction } from "@/app/components/node-publication-action";
 
 // Static, not generateMetadata: naming the record in the tab would cost a
 // second read of it on every detail view (the getters take a freshly built
@@ -34,6 +41,12 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
     isAdmin || (user.role === "editor" && node.createdBy === user.id) || isOwnPersonalNode;
   const candidates =
     isAdmin && node.verification !== "archived" ? await listNodeOptions(actor) : [];
+  const [publicationTargets, pendingPublication] = isOwnPersonalNode
+    ? await Promise.all([
+        listPublicationTargets(actor),
+        getLatestPublicationForNode(actor, node.id),
+      ])
+    : [[], null];
   const wiki = await wikiIndex(actor);
 
   return (
@@ -84,7 +97,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
         <div>
           <div className="panel">
             <h2>{T.provenance}</h2>
-            {node.provenance.length === 0 ? (
+            {node.provenance.length === 0 && node.personalOrigins.length === 0 ? (
               <p className="muted">
                 {node.verification === "no_source"
                   ? "Trang tạo thủ công, chưa gắn tư liệu dẫn chứng."
@@ -103,6 +116,16 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
                 ))}
               </ul>
             )}
+            {node.personalOrigins.map((origin) => (
+              <p key={origin.sourceNodeId}>
+                Từ trang cá nhân:{" "}
+                <Link href={`/tree/node/${origin.sourceNodeId}`}>{origin.sourceTitle}</Link>
+                <span className="meta">
+                  {" "}
+                  · {T.approvedByLabel}: {origin.approvedByName}
+                </span>
+              </p>
+            ))}
           </div>
           {/* Outgoing: pages this one points at (wiki-links + typed links). */}
           <div className="panel">
@@ -150,6 +173,13 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           )}
           {isAdmin && node.verification !== "archived" && (
             <NodeAdminActions nodeId={node.id} candidates={candidates} />
+          )}
+          {isOwnPersonalNode && node.verification !== "archived" && (
+            <NodePublicationAction
+              nodeId={node.id}
+              branches={publicationTargets}
+              latest={pendingPublication}
+            />
           )}
         </div>
       </div>

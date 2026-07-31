@@ -1005,6 +1005,18 @@ button.danger:disabled:hover {
   align-items: start;
 }
 
+.candidate-preview {
+  min-width: 0;
+}
+.candidate-markdown {
+  width: 100%;
+  max-width: 100%;
+  max-height: 60vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* ============================================================
    Workspace zones. These live inside the shell's main column, so
    they must break on the column's width, not the window's —

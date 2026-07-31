@@ -6,11 +6,18 @@ import type { Principal } from "../../src/modules/auth/dev-auth";
 import {
   branches,
   nodeChangeProposals,
+  nodePublicationProposals,
   treeNodes,
   treeNodeVersions,
   vaultGrants,
 } from "../../src/modules/knowledge/schema";
-import { createNode, reviewNodeProposal, updateNode } from "../../src/modules/knowledge/service";
+import {
+  createNode,
+  decideNodePublication,
+  reviewNodeProposal,
+  submitNodePublication,
+  updateNode,
+} from "../../src/modules/knowledge/service";
 import {
   contentReviews,
   curations,
@@ -97,19 +104,24 @@ export async function run() {
     .innerJoin(sourceVersions, eq(sourceVersions.id, curations.sourceVersionId))
     .innerJoin(sources, eq(sources.id, sourceVersions.sourceId))
     .where(eq(curations.state, "ready_for_review"));
-  assert.ok(ready);
-  reviewer.spaceIds = [ready.source.spaceId];
-  reviewer.spaceMemberships = [{ spaceId: ready.source.spaceId, role: "viewer" }];
   const [targetBranch] = await db
     .select()
     .from(branches)
     .where(eq(branches.vaultId, sharedNode.vaultId))
     .limit(1);
-  const published = await publishFromSource(reviewer, ready.source.id, ready.version.id, {
-    branchId: targetBranch.id,
-    verification: "verified",
-  });
-  assert.equal(published.createdBy, ready.source.submittedBy);
+  assert.ok(targetBranch);
+  // The seeded ready item is consumed by the first successful run. Keep the
+  // integration suite repeatable while still exercising source publication
+  // whenever that fixture is available.
+  if (ready) {
+    reviewer.spaceIds = [ready.source.spaceId];
+    reviewer.spaceMemberships = [{ spaceId: ready.source.spaceId, role: "viewer" }];
+    const published = await publishFromSource(reviewer, ready.source.id, ready.version.id, {
+      branchId: targetBranch.id,
+      verification: "verified",
+    });
+    assert.equal(published.createdBy, ready.source.submittedBy);
+  }
 
   const user = await principal("lan@wisdomtree.local");
   await assert.rejects(
@@ -120,4 +132,91 @@ export async function run() {
     }),
     /Nội dung chung phải đi qua maker-checker review/,
   );
+
+  const [personalBranch] = await db
+    .select()
+    .from(branches)
+    .where(and(eq(branches.scope, "personal"), eq(branches.ownerUserId, user.userId)))
+    .limit(1);
+  assert.ok(personalBranch);
+  const personalNode = await createNode(user, {
+    branchId: personalBranch.id,
+    title: `Personal publication ${Date.now()}`,
+    contentMd: "Personal snapshot for independent review.",
+  });
+  const submitted = await submitNodePublication(user, personalNode.id, targetBranch.id);
+  const [publicationReview] = await db
+    .select()
+    .from(contentReviews)
+    .where(eq(contentReviews.publicationProposalId, submitted.proposalId));
+  assert.ok(publicationReview);
+
+  await assert.rejects(
+    decideNodePublication(
+      {
+        ...user,
+        capabilities: ["content.review"],
+        vaultGrants: [{ vaultId: sharedNode.vaultId, grant: "reviewer" }],
+      },
+      submitted.reviewTaskId,
+      {
+        decision: "approved",
+        verification: "unverified",
+        expectedReviewVersion: publicationReview.version,
+      },
+    ),
+    /Người tạo hoặc sửa không được tự duyệt/,
+  );
+  await assert.rejects(
+    decideNodePublication(reviewer, submitted.reviewTaskId, {
+      decision: "approved",
+      verification: "verified",
+      expectedReviewVersion: publicationReview.version,
+    }),
+    /không có tư liệu nguồn/,
+  );
+  const commonNode = await decideNodePublication(reviewer, submitted.reviewTaskId, {
+    decision: "approved",
+    verification: "unverified",
+    expectedReviewVersion: publicationReview.version,
+  });
+  assert.ok("branchId" in commonNode);
+  assert.equal(commonNode.branchId, targetBranch.id);
+  assert.equal(commonNode.createdBy, user.userId);
+  const [approvedPublication] = await db
+    .select()
+    .from(nodePublicationProposals)
+    .where(eq(nodePublicationProposals.id, submitted.proposalId));
+  assert.equal(approvedPublication?.state, "approved");
+
+  const staleNode = await createNode(user, {
+    branchId: personalBranch.id,
+    title: `Stale publication ${Date.now()}`,
+    contentMd: "First snapshot.",
+  });
+  const staleSubmission = await submitNodePublication(user, staleNode.id, targetBranch.id);
+  const [staleReview] = await db
+    .select()
+    .from(contentReviews)
+    .where(eq(contentReviews.publicationProposalId, staleSubmission.proposalId));
+  assert.ok(staleReview);
+  await updateNode(user, staleNode.id, {
+    contentMd: "Changed after submission.",
+    expectedVersion: staleNode.version,
+  });
+  await assert.rejects(
+    decideNodePublication(reviewer, staleSubmission.reviewTaskId, {
+      decision: "approved",
+      verification: "unverified",
+      expectedReviewVersion: staleReview.version,
+    }),
+    /đã thay đổi sau khi gửi duyệt/,
+  );
+  const changes = await decideNodePublication(reviewer, staleSubmission.reviewTaskId, {
+    decision: "changes_requested",
+    expectedReviewVersion: staleReview.version,
+    note: "Gửi lại snapshot mới.",
+  });
+  assert.ok("state" in changes);
+  assert.equal(changes.state, "changes_requested");
 }
