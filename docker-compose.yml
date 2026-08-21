@@ -36,33 +36,8 @@ services:
         condition: service_healthy
     restart: "no"
 
-  ollama:
-    profiles: ["deploy"]
-    image: ollama/ollama:latest
-    ports:
-      # Host-run Next.js reaches the container without exposing Ollama on the LAN.
-      - "127.0.0.1:${OLLAMA_PORT:-11434}:11434"
-    volumes:
-      - ollamadata:/root/.ollama
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: unless-stopped
-
-  ollama-init:
-    profiles: ["deploy"]
-    image: ollama/ollama:latest
-    command: ["pull", "${OLLAMA_MODEL:-qwen2.5:7b}"]
-    environment:
-      OLLAMA_HOST: http://ollama:11434
-    volumes:
-      - ollamadata:/root/.ollama
-    depends_on:
-      ollama:
-        condition: service_healthy
-    restart: "no"
+  # LLM services removed 2026-08-22 — RAG will be reimplemented against the
+  # host's llama.cpp server (OpenAI-compatible). See docs/RAG_REIMPLEMENTATION.md.
 
   app:
     profiles: ["deploy"]
@@ -80,8 +55,6 @@ services:
       # The user picker is impersonation with no credential. Opt in knowingly,
       # per deployment, until OIDC replaces it — see README.
       ENABLE_DEV_LOGIN: ${ENABLE_DEV_LOGIN:-}
-      OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
     volumes:
@@ -92,8 +65,6 @@ services:
       db:
         condition: service_healthy
       migrate:
-        condition: service_completed_successfully
-      ollama-init:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
@@ -106,4 +77,3 @@ services:
 volumes:
   pgdata:
   appdata:
-  ollamadata:
