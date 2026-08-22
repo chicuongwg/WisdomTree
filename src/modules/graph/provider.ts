@@ -7,8 +7,7 @@ import type {
 } from "@wisdomtree/graph-obsidian";
 import { and, asc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { notFound } from "@/lib/errors";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { branchVisibilityCondition } from "../knowledge/service";
 import { branches, nodeLinks, nodeTags, tags, treeNodes } from "../knowledge/schema";
@@ -17,13 +16,6 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
   return {
     async loadGraph(query: GraphQuery): Promise<GraphData> {
       authorize(actor, "knowledge.graph.read", { kind: "read" });
-      if (
-        query.scope === "personal" &&
-        (!query.vaultId || !actor.vaultIds?.includes(query.vaultId))
-      ) {
-        throw notFound();
-      }
-
       const rows = await db
         .select({
           id: treeNodes.id,
@@ -45,7 +37,7 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
             branchVisibilityCondition(actor),
             query.scope === "shared"
               ? eq(branches.scope, "team")
-              : eq(branches.vaultId, query.vaultId!),
+              : eq(branches.scope, "personal"),
             query.search
               ? or(
                   sql`${treeNodes.title} ILIKE ${`%${query.search}%`}`,

@@ -1,30 +1,12 @@
 import assert from "node:assert";
-import { devLoginEnabled } from "@/modules/auth/dev-auth";
-import { enforceRateLimit, requestAddress } from "@/lib/rate-limit";
+import { enforceRateLimit, enforceUserRateLimit, requestAddress } from "@/lib/rate-limit";
 import { ApiError } from "@/lib/errors";
-import { titleCanReview } from "@/modules/auth/access-titles";
-import {
-  canReviewVault,
-  isIndependentReviewer,
-} from "@/modules/auth/maker-checker";
-import type { Principal } from "@/modules/auth/dev-auth";
+import { isIndependentReviewer } from "@/modules/auth/maker-checker";
 
 export const run = async () => {
-  const reviewer: Principal = {
-    userId: "reviewer",
-    role: "user",
-    spaceIds: [],
-    spaceMemberships: [],
-    capabilities: ["content.review"],
-    vaultGrants: [{ vaultId: "shared", grant: "reviewer" }],
-  };
-  assert.equal(titleCanReview("reviewer"), true);
-  assert.equal(titleCanReview("administrator"), true);
-  assert.equal(titleCanReview("operator"), false);
-  assert.equal(canReviewVault(reviewer, "shared"), true);
-  assert.equal(canReviewVault(reviewer, "other"), false);
+  const reviewerId = "reviewer";
   assert.equal(
-    isIndependentReviewer(reviewer.userId, {
+    isIndependentReviewer(reviewerId, {
       originatorId: "author",
       lastEditorId: "editor",
       submittedBy: "submitter",
@@ -32,26 +14,16 @@ export const run = async () => {
     true,
   );
   assert.equal(
-    isIndependentReviewer(reviewer.userId, {
+    isIndependentReviewer(reviewerId, {
       originatorId: "author",
-      lastEditorId: reviewer.userId,
+      lastEditorId: reviewerId,
       submittedBy: "submitter",
     }),
     false,
   );
-  const previousNodeEnv = process.env.NODE_ENV;
-  const previousDevLogin = process.env.ENABLE_DEV_LOGIN;
+
   const previousTrustProxy = process.env.TRUST_PROXY;
   try {
-    (process.env as Record<string, string>).NODE_ENV = "production";
-    delete process.env.ENABLE_DEV_LOGIN;
-    assert.equal(devLoginEnabled(), false, "production must not expose impersonation by default");
-    process.env.ENABLE_DEV_LOGIN = "1";
-    assert.equal(devLoginEnabled(), true, "production may explicitly opt in to demo login");
-    (process.env as Record<string, string>).NODE_ENV = "development";
-    delete process.env.ENABLE_DEV_LOGIN;
-    assert.equal(devLoginEnabled(), true, "development keeps the demo login available");
-
     delete process.env.TRUST_PROXY;
     assert.equal(
       requestAddress(
@@ -90,11 +62,13 @@ export const run = async () => {
         error.code === "rate_limited" &&
         typeof error.details?.retryAfterSeconds === "number",
     );
+
+    // The account-wide cap (USER_RATE_LIMIT, default 240/min): well under the
+    // limit it must be silent — it runs on every request of every signed-in
+    // user, so a false 429 here would be an outage.
+    const userId = crypto.randomUUID();
+    for (let i = 0; i < 10; i++) enforceUserRateLimit(userId);
   } finally {
-    if (previousNodeEnv === undefined) delete (process.env as Record<string, string>).NODE_ENV;
-    else (process.env as Record<string, string>).NODE_ENV = previousNodeEnv;
-    if (previousDevLogin === undefined) delete process.env.ENABLE_DEV_LOGIN;
-    else process.env.ENABLE_DEV_LOGIN = previousDevLogin;
     if (previousTrustProxy === undefined) delete process.env.TRUST_PROXY;
     else process.env.TRUST_PROXY = previousTrustProxy;
   }

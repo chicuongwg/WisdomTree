@@ -146,14 +146,12 @@ function writeSidebar(collapsed: boolean): void {
 
 export function ShellRail({
   role,
-  capabilities,
   displayName,
   avatarUrl,
   unread,
   reviewOpen,
 }: {
   role: string;
-  capabilities: string[];
   displayName: string;
   /** Cache-busted /api/avatar URL, or null for the initials fallback. */
   avatarUrl: string | null;
@@ -202,7 +200,6 @@ export function ShellRail({
 
   const knowledgeItems: RailItem[] = [
     { href: "/library", label: T.library, icon: icons.library, also: ["/source"] },
-    { href: "/catalog", label: T.catalog, icon: icons.catalog },
     { href: "/tree", label: T.tree, icon: icons.tree },
     { href: "/graph", label: T.graph, icon: icons.graph },
   ];
@@ -215,7 +212,7 @@ export function ShellRail({
     { href: "/deadlines", label: T.deadline, icon: icons.deadlines, group: T.navProjects },
   ];
   const roleItems: RailItem[] = [];
-  if (capabilities.includes("content.review")) {
+  if (role === "editor" || role === "admin_op") {
     roleItems.push({
       href: "/review",
       label: T.reviewQueue,
@@ -224,11 +221,7 @@ export function ShellRail({
       pipNoun: T.pipOpenTasks,
     });
   }
-  if (
-    capabilities.includes("users.manage") ||
-    capabilities.includes("spaces.manage") ||
-    capabilities.includes("audit.read")
-  ) {
+  if (role === "admin_op") {
     roleItems.push({ href: "/admin", label: T.adminConsole, icon: icons.gear });
   }
   const notificationItem: RailItem = {

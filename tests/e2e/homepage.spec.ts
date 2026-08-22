@@ -1,19 +1,18 @@
 import { test, expect } from "@playwright/test";
 
-test("signed-out homepage presents the login picker", async ({ page }) => {
+test("a signed-out visitor lands on the login gate", async ({ browser }) => {
+  // A fresh context without the storageState cookie = signed out.
+  const context = await browser.newContext({ storageState: undefined });
+  const page = await context.newPage();
   await page.goto("/");
   await expect(page).toHaveTitle(/WisdomTree/);
-  await expect(page.locator(".login-person").first()).toBeVisible();
+  await expect(page.locator(".login-page")).toBeVisible();
+  await context.close();
 });
 
-test("demo login opens the graph explorer", async ({ page }) => {
+test("a session cookie opens the app and the graph explorer", async ({ page }) => {
   await page.goto("/");
-  await page.locator(".login-person").first().click();
-  await page.waitForURL("/");
-  const cookies = await page.context().cookies();
-  expect(cookies).toEqual(
-    expect.arrayContaining([expect.objectContaining({ name: "session", httpOnly: true })]),
-  );
+  await expect(page.locator("main h1")).toBeVisible();
 
   await page.goto("/graph");
   await expect(page.locator("main h1")).toBeVisible();

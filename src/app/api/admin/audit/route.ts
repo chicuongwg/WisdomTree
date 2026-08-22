@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
-import { T } from "@/lib/vi";
 import { requirePrincipal } from "@/lib/request";
 import { listAuditEvents } from "@/modules/auth/admin";
 
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     const limitRaw = request.nextUrl.searchParams.get("limit");
     const before = beforeRaw ? new Date(beforeRaw) : undefined;
     if (before && Number.isNaN(before.getTime())) {
-      throw new ApiError(400, "invalid_cursor", T.invalidTimeCursor);
+      throw new ApiError(400, "invalid_cursor", "Invalid time cursor.");
     }
     const rows = await listAuditEvents(actor, {
       before,

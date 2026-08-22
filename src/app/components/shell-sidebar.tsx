@@ -83,14 +83,13 @@ function SidebarContent({
   personalBranches = [],
   recent = [],
   role = "user",
-  capabilities = [],
+
   spaceCount = 0,
 }: {
   teamBranches?: OutlineBranch[];
   personalBranches?: OutlineBranch[];
   recent?: RecentNode[];
   role?: string;
-  capabilities?: string[];
   spaceCount?: number;
 }) {
   const T = useShellCopy();
@@ -108,7 +107,6 @@ function SidebarContent({
     if (scopeParam === "personal") return "personal";
     if (
       path.startsWith("/board") ||
-      path.startsWith("/librarian") ||
       path.startsWith("/source/intake") ||
       path.startsWith("/source/mine") ||
       path.startsWith("/vault/review")
@@ -137,21 +135,19 @@ function SidebarContent({
 
   const teamProjects: { href: string; label: string }[] = [
     { href: "/deadlines", label: T.deadline },
-    { href: "/catalog", label: T.catalog },
   ];
-  if (capabilities.includes("catalog.manage")) {
-    teamProjects.push({ href: "/catalog/admin", label: T.librarianDesk });
+  if (role === "admin_op") {
+    teamProjects.push({ href: "/library/loans", label: T.librarianDesk });
   }
-  if (capabilities.includes("content.review")) {
-    teamProjects.push({ href: "/source/inbox", label: T.sourceInbox });
+  if (role === "editor" || role === "admin_op") {
+    teamProjects.push({ href: "/review", label: T.reviewQueue });
   }
-  if (capabilities.includes("system.operate")) {
+  if (role === "admin_op") {
     teamProjects.push({ href: "/admin/health", label: T.healthPageTitle });
   }
 
   const personalWork: { href: string; label: string }[] = [
     { href: "/vault/review", label: T.candidateReview },
-    { href: "/librarian", label: T.aiLibrarian },
     { href: "/board", label: T.board },
     { href: "/source/intake", label: T.sourceIntake },
     { href: "/source/mine", label: T.mySubmissions },
@@ -352,7 +348,6 @@ export function ShellSidebar(props: {
   personalBranches?: OutlineBranch[];
   recent?: RecentNode[];
   role?: string;
-  capabilities?: string[];
   spaceCount?: number;
 }) {
   const T = useShellCopy();

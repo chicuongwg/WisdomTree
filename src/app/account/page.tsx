@@ -60,7 +60,7 @@ export default async function AccountPage() {
           </div>
         </div>
         <AccountProfile
-          initial={{ displayName: profile.displayName, zaloUserId: profile.zaloUserId }}
+          initial={{ displayName: profile.displayName }}
         />
       </div>
 

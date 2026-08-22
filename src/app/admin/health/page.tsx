@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { T, when, exportJobStateLabel } from "@/lib/vi";
+import { T, when } from "@/lib/vi";
 import { databaseReachable, healthReport } from "@/modules/export/service";
-import { listReviewQueue } from "@/modules/storage/curation";
+import { listPendingProposals } from "@/modules/knowledge/service";
 
 export const metadata = { title: T.healthPageTitle };
 
@@ -45,19 +45,6 @@ function Metric({
   );
 }
 
-/**
- * A degraded component, said in Vietnamese. The service writes these for an
- * operator ("pandoc (document render runs the HTML stub)"); the reader of this
- * page needs the consequence, not the component's name in English. An entry
- * this list has not caught up with is shown as the service wrote it — a
- * component silently missing from the screen would be the worse failure.
- */
-function degradedWords(component: string): string {
-  if (component.startsWith("pandoc")) return T.healthPandocMissing;
-  if (component.startsWith("pdf-engine")) return T.healthPdfEngineMissing;
-  return component;
-}
-
 /** Uptime in words. Whole hours and days: nobody reads a server age in seconds. */
 function uptimeWords(seconds: number): string {
   const days = Math.floor(seconds / 86_400);
@@ -70,27 +57,21 @@ function uptimeWords(seconds: number): string {
 
 export default async function HealthPage() {
   const user = await requireUser();
-  if (!user.capabilities.includes("system.operate")) notFound();
+  if (user.role !== "admin_op") notFound();
 
   const actor = toPrincipal(user);
-  const [health, dbOk, reviewQueue] = await Promise.all([
+  const [health, dbOk, pendingProposals] = await Promise.all([
     healthReport(actor),
     databaseReachable(),
-    user.capabilities.includes("content.review") ? listReviewQueue(actor, {}) : Promise.resolve([]),
+    listPendingProposals(actor),
   ]);
 
-  const waiting = reviewQueue.filter((t) =>
-    ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),
-  ).length;
+  const waiting = pendingProposals.publications.length + pendingProposals.changes.length;
 
   // The banner is a summary of the readings below it, not a separate fact: if
   // anything on this page is asking for a person, say so at the top rather
   // than making the reader scan eight cards to find out.
-  const attention =
-    !dbOk ||
-    health.degradedComponents.length > 0 ||
-    health.overdueLoanCount > 0 ||
-    health.lastExport?.state === "failed";
+  const attention = !dbOk || health.overdueLoanCount > 0;
 
   return (
     <main className="page">
@@ -120,39 +101,6 @@ export default async function HealthPage() {
           value={dbOk ? T.healthDbOk : T.healthDbDown}
           hint={T.healthDatabaseHint}
           tone={dbOk ? "done" : "attention"}
-        />
-        <Metric
-          label={T.healthDegraded}
-          value={
-            health.degradedComponents.length === 0 ? (
-              T.healthNone
-            ) : (
-              <>
-                {health.degradedComponents.map((c) => (
-                  <span key={c} className="health-line">
-                    {degradedWords(c)}
-                  </span>
-                ))}
-              </>
-            )
-          }
-          hint={T.healthDegradedHint}
-          tone={health.degradedComponents.length === 0 ? "done" : "attention"}
-        />
-        <Metric
-          label={T.healthLastExport}
-          value={
-            health.lastExport ? (
-              <>
-                {exportJobStateLabel(health.lastExport.state)}
-                <span className="health-line muted">{when(health.lastExport.updatedAt)}</span>
-              </>
-            ) : (
-              T.healthNoExport
-            )
-          }
-          hint={T.healthLastExportHint}
-          tone={health.lastExport?.state === "failed" ? "attention" : undefined}
         />
         <Metric
           label={T.healthReviewWaiting}

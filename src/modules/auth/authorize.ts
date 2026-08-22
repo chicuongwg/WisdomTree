@@ -1,135 +1,81 @@
 import { forbidden, notFound, unauthorized } from "@/lib/errors";
-import type { Principal } from "./dev-auth";
+import type { Principal } from "./principal";
 import type { Role } from "./schema";
 
-// The single authorize(actor, permission, resource) helper required by
-// docs/design/authorization-design.md — route handlers never hand-roll
-// checks. This is the demo subset of the permission catalog; keys and scope
-// qualifiers are verbatim from the catalog table.
+// The single authorize(actor, permission, resource) helper — route handlers
+// never hand-roll checks. Roles carry the whole vertical axis (the old
+// per-user capability table collapsed into them); the scope qualifier is the
+// horizontal axis and does the real per-record work.
+//
+// Role model: user (thành viên), editor (biên tập), admin_op (quản trị).
 
 type Scope = "global" | "space" | "self" | "owned-or-assigned";
 type SpaceRole = "viewer" | "contributor" | "manager";
 
+const EVERYONE: Role[] = ["user", "editor", "admin_op"];
+const REVIEWERS: Role[] = ["editor", "admin_op"];
+const ADMIN: Role[] = ["admin_op"];
+
 const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRole }> = {
-  "storage.intake.open": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "storage.library.browse": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "viewer",
-  },
-  "storage.upload": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "contributor",
-  },
-  "storage.submissions.read": { roles: ["user", "editor", "admin_op"], scope: "self" },
-  "storage.download": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "viewer",
-  },
-  "storage.search": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
-  "catalog.browse": { roles: ["user", "editor", "admin_op"], scope: "space", spaceRole: "viewer" },
-  "circulation.loan.request": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "viewer",
-  },
-  "circulation.loan.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "catalog.item.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "storage.space.manage": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "storage.space.members.manage": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "manager",
-  },
-  // --- Knowledge module (authorization-design.md § Permission Catalog) ---
-  "knowledge.node.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "knowledge.search": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "knowledge.graph.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  // --- Storage (Library) ---
+  "storage.library.browse": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "storage.upload": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "storage.submissions.read": { roles: EVERYONE, scope: "self" },
+  "storage.download": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  // Correcting your own upload: rename it, or withdraw it before anyone has
+  // built on it. Owned-or-assigned so a submitter can fix their own mistake
+  // without an admin.
+  "storage.source.manage": { roles: EVERYONE, scope: "owned-or-assigned" },
+  // The admin-only archive/restore view of withdrawn items.
+  "storage.source.read_all": { roles: ADMIN, scope: "global" },
+  "storage.space.manage": { roles: ADMIN, scope: "global" },
+  "storage.space.members.manage": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
+  // Physical books in the Library and their loans.
+  "library.physical.manage": { roles: ADMIN, scope: "global" },
+  "circulation.loan.request": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "circulation.loan.manage": { roles: ADMIN, scope: "global" },
+  // --- Knowledge ---
+  "knowledge.node.read": { roles: EVERYONE, scope: "global" },
+  "knowledge.search": { roles: EVERYONE, scope: "global" },
+  "knowledge.graph.read": { roles: EVERYONE, scope: "global" },
+  // Personal-branch creation bypasses authorize() by design (the service
+  // checks branch ownership itself); an empty role list means "no one
+  // through THIS gate", and it must stay that way.
   "knowledge.branch.create": { roles: [], scope: "global" },
   "knowledge.branch.edit": { roles: ["editor"], scope: "owned-or-assigned" },
   "knowledge.node.create": { roles: [], scope: "global" },
   "knowledge.node.edit": { roles: ["editor"], scope: "owned-or-assigned" },
-  "knowledge.publish": { roles: ["user", "editor", "admin_op"], scope: "global" },
+  // The single review boundary: promotion decisions and verification levers.
+  "knowledge.publish": { roles: REVIEWERS, scope: "global" },
   "knowledge.node.merge": { roles: ["editor"], scope: "global" },
   "knowledge.archive": { roles: ["editor"], scope: "global" },
-  "storage.corrected.edit": { roles: ["editor"], scope: "owned-or-assigned" },
-  "storage.draft.edit": { roles: ["editor"], scope: "owned-or-assigned" },
-  "review.corrected.approve": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "review.draft.approve": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "storage.source.read_all": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  // Correcting your own upload: rename it, or withdraw it before anyone has
-  // built on it. Owned-or-assigned so a submitter can fix their own mistake
-  // without an admin, which is the difference between this and a spreadsheet.
-  "storage.source.manage": { roles: ["user", "editor", "admin_op"], scope: "owned-or-assigned" },
-  // Not in the catalog table verbatim: curation assignment and gap triage are
-  // Admin/Op flows (sequence-diagrams.md Flow 2, admin-op-flows.md); keyed
-  // here as module.action pending a catalog addendum — flagged in the report.
-  "storage.curation.assign": { roles: ["editor"], scope: "global" },
-  "storage.gap.triage": { roles: ["editor"], scope: "global" },
-  // --- Export module (authorization-design.md § Permission Catalog) ---
-  "export.document": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "export.tree.trigger": { roles: ["admin_op"], scope: "global" },
-  // Not in the catalog table verbatim: the Admin/Op health surface (openapi
-  // GET /admin/health "Admin/Op") — keyed pending a catalog addendum like
-  // storage.curation.assign; flagged in the report.
-  "admin.health.read": { roles: ["admin_op"], scope: "global" },
-  // Catalog addendum rows (authorization-design.md § addendum): the Admin
-  // Console's user management and audit reads. Role changes are additionally
-  // required by that doc (:151) to audit old and new values — the service
-  // enforces it, this key only gates who may try.
-  "admin.users.manage": { roles: ["admin_op"], scope: "global" },
-  "admin.capabilities.manage": { roles: ["admin_op"], scope: "global" },
-  "admin.audit.read": { roles: ["admin_op"], scope: "global" },
-  // --- Notify + PM modules (authorization-design.md § Permission Catalog) ---
-  // notify.comment.create's catalog scope is "anchor (delegates to the
-  // anchor's read permission)": the role gate lives here; the anchor-scope
-  // delegation is resolveAnchor() in notify/service.ts, which calls the
-  // anchor object's own read authorize (404 on non-visible anchors).
-  "notify.comment.create": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  "notify.preferences.manage": { roles: ["user", "editor", "admin_op"], scope: "self" },
-  "pm.deadline.read": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "viewer",
-  },
-  "pm.deadline.edit": {
-    roles: ["user", "editor", "admin_op"],
-    scope: "space",
-    spaceRole: "contributor",
-  },
-  // pm.board.manage: owned-or-assigned task updates for every member,
-  // admin_op bypasses on role. The guild-board model (owner decision
-  // 2026-07-21): whoever holds a task works it, whatever their role.
-  "pm.board.manage": { roles: ["user", "editor", "admin_op"], scope: "owned-or-assigned" },
-  // Every approved member sees the team's workload — the board is the shared
-  // picture of who is carrying what (owner decision 2026-07-21).
-  "pm.board.read": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  // Taking an unassigned task from the pool. Separate from manage because the
-  // claimer by definition does not own the task yet; the service additionally
+  // --- Export ---
+  "export.tree.trigger": { roles: ADMIN, scope: "global" },
+  // --- Admin console ---
+  "admin.health.read": { roles: ADMIN, scope: "global" },
+  "admin.users.manage": { roles: ADMIN, scope: "global" },
+  "admin.audit.read": { roles: ADMIN, scope: "global" },
+  // --- Notify + PM ---
+  // notify.comment.create's scope is "anchor (delegates to the anchor's read
+  // permission)": the role gate lives here; the anchor-scope delegation is
+  // resolveAnchor() in notify/service.ts (404 on non-visible anchors).
+  "notify.comment.create": { roles: EVERYONE, scope: "global" },
+  "notify.preferences.manage": { roles: EVERYONE, scope: "self" },
+  "pm.deadline.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "pm.deadline.edit": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  // pm.board.manage: owned-or-assigned task updates for every member. The
+  // guild-board model (owner decision 2026-07-21): whoever holds a task works
+  // it, whatever their role.
+  "pm.board.manage": { roles: EVERYONE, scope: "owned-or-assigned" },
+  // Every approved member sees the team's workload.
+  "pm.board.read": { roles: EVERYONE, scope: "global" },
+  // Taking an unassigned task from the pool; the service additionally
   // requires assigned_to IS NULL, so this can never reassign someone's work.
-  "pm.task.claim": { roles: ["user", "editor", "admin_op"], scope: "global" },
-  // Archiving a finished or mistaken task off the board.
-  "pm.task.archive": { roles: ["user", "editor", "admin_op"], scope: "owned-or-assigned" },
+  "pm.task.claim": { roles: EVERYONE, scope: "global" },
+  "pm.task.archive": { roles: EVERYONE, scope: "owned-or-assigned" },
 };
 
 export type PermissionKey = keyof typeof CATALOG;
-
-const REQUIRED_CAPABILITY: Partial<Record<PermissionKey, string>> = {
-  "circulation.loan.manage": "circulation.manage",
-  "catalog.item.manage": "catalog.manage",
-  "storage.space.manage": "spaces.manage",
-  "knowledge.publish": "content.review",
-  "review.corrected.approve": "content.review",
-  "review.draft.approve": "content.review",
-  "storage.source.read_all": "content.review",
-  "export.tree.trigger": "system.operate",
-  "admin.health.read": "system.operate",
-  "admin.users.manage": "users.manage",
-  "admin.capabilities.manage": "capabilities.manage",
-  "admin.audit.read": "audit.read",
-};
 
 export type ResourceRef = {
   /** For space scope: the resource's space_id. */
@@ -155,10 +101,6 @@ export function authorize(
   const denial = resource.kind === "read" ? notFound() : forbidden();
 
   if (!entry.roles.includes(actor.role)) throw denial;
-  const capability = REQUIRED_CAPABILITY[permission];
-  // Undefined preserves compatibility for callers that construct the old
-  // Principal shape; resolved sessions always carry the explicit list.
-  if (capability && !actor.capabilities.includes(capability)) throw denial;
 
   switch (entry.scope) {
     case "global":
@@ -186,8 +128,7 @@ export function authorize(
 
 /**
  * The one query-layer scoping helper (authorization-design.md forbids
- * per-endpoint ad hoc filtering): returns the space ids a list query may see,
- * or null for admin_op (no filter).
+ * per-endpoint ad hoc filtering): returns the space ids a list query may see.
  */
 export function scopedToSpaces(actor: Principal): string[] {
   return actor.spaceIds;

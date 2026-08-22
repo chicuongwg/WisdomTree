@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
-import { T } from "@/lib/vi";
 import { requirePrincipal } from "@/lib/request";
 import { setUserDisabled, setUserRole } from "@/modules/auth/admin";
 
@@ -29,7 +28,7 @@ export async function PATCH(
       (hasRole && !ROLES.includes(body.role as Role)) ||
       (hasDisabled && typeof body.disabled !== "boolean")
     ) {
-      throw new ApiError(400, "invalid_user_change", T.invalidUserChange);
+      throw new ApiError(400, "invalid_user_change", "Invalid user change payload.");
     }
     if (hasRole) await setUserRole(actor, userId, body.role as Role);
     if (hasDisabled) await setUserDisabled(actor, userId, body.disabled as boolean);

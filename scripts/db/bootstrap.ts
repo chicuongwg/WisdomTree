@@ -4,16 +4,6 @@
 import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 
-const CAPABILITIES = [
-  "capabilities.manage",
-  "users.manage",
-  "audit.read",
-  "catalog.manage",
-  "circulation.manage",
-  "spaces.manage",
-  "system.operate",
-];
-
 function argument(flag: string, envName: string): string {
   const index = process.argv.indexOf(flag);
   const value = index >= 0 ? process.argv[index + 1] : process.env[envName];
@@ -60,31 +50,11 @@ async function main() {
       [adminId, `invited:${randomUUID()}`, email, displayName],
     );
     await client.query(
-      `INSERT INTO vaults (id, kind, owner_user_id, name, git_repo_key)
-       VALUES ($1,'personal',$2,$3,$4),
-              ($5,'shared',NULL,$6,$7)`,
-      [
-        personalVaultId,
-        adminId,
-        displayName,
-        `personal/${adminId}`,
-        sharedVaultId,
-        sharedVaultName,
-        `shared/${sharedVaultId}`,
-      ],
+      `INSERT INTO vaults (id, kind, owner_user_id, name)
+       VALUES ($1,'personal',$2,$3),
+              ($4,'shared',NULL,$5)`,
+      [personalVaultId, adminId, displayName, sharedVaultId, sharedVaultName],
     );
-    await client.query(
-      `INSERT INTO vault_grants (vault_id, user_id, grant_name, granted_by)
-       VALUES ($1,$2,'owner',$2)`,
-      [personalVaultId, adminId],
-    );
-    for (const capability of CAPABILITIES) {
-      await client.query(
-        `INSERT INTO user_capabilities (user_id, capability, granted_by)
-         VALUES ($1,$2,$1)`,
-        [adminId, capability],
-      );
-    }
     await client.query(
       `INSERT INTO audit_events
          (actor_id, actor_role, accountability, action, target_type, target_id, outcome, details)

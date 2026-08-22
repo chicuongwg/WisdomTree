@@ -1,20 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { T } from "@/lib/vi";
+import { T, userRoleLabel } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 import { ConfirmButton } from "./confirm-button";
-import {
-  ACCESS_TITLES,
-  titleCanReview,
-  type AccessTitle,
-} from "@/modules/auth/access-titles";
 
 // Admin Console, System section: every account and the two levers an
 // Admin/Op has over one — role and enabled/disabled. The guards worth
 // seeing (last_admin, self_disable) live server-side in modules/auth/admin;
 // this surface just relays their messages through SayMutation.
+
+const ROLES = ["user", "editor", "admin_op"] as const;
+type Role = (typeof ROLES)[number];
 
 type AdminUser = {
   id: string;
@@ -24,61 +22,36 @@ type AdminUser = {
   disabled: boolean;
   /** True until the person's first Google sign-in claims the row. */
   invited: boolean;
-  capabilities: string[];
-  accessTitle: AccessTitle | null;
-  reviewerVaultIds: string[];
 };
 
-type ReviewerVault = { id: string; name: string };
-
-export function UserAdmin({
-  users,
-  reviewerVaults,
-}: {
-  users: AdminUser[];
-  reviewerVaults: ReviewerVault[];
-}) {
+export function UserAdmin({ users }: { users: AdminUser[] }) {
   const change = useMutation();
-  const [picks, setPicks] = useState<Record<string, AccessTitle>>({});
-  const [reviewerPicks, setReviewerPicks] = useState<Record<string, string[]>>({});
+  const [rolePicks, setRolePicks] = useState<Record<string, Role>>({});
 
   // The invite form's own round trip, kept apart from the table's so its
   // message reads next to the form that caused it.
   const invite = useMutation();
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
-  const [inviteTitle, setInviteTitle] = useState<AccessTitle>("member");
-  const [inviteReviewerVaultIds, setInviteReviewerVaultIds] = useState<string[]>([]);
+  const [inviteRole, setInviteRole] = useState<Role>("user");
 
   return (
     <>
       <h3>{T.inviteMember}</h3>
       <SayMutation m={invite} />
-      {/* The plain form layout every other form in the app uses: one labelled
-          field per row, each the same width, the button under them. This one
-          was a .button-row of three bare placeholder inputs, so the three
-          controls came out three different widths on one centred line and
-          matched nothing else on the screen — and a placeholder is not a
-          label: it leaves the moment you type in the box. */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void invite
             .run("/api/admin/users/invite", {
-              body: {
-                email: inviteEmail,
-                displayName: inviteName,
-                accessTitle: inviteTitle,
-                reviewerVaultIds: inviteReviewerVaultIds,
-              },
+              body: { email: inviteEmail, displayName: inviteName, role: inviteRole },
               ok: T.inviteSent,
             })
             .then((done) => {
               if (done) {
                 setInviteEmail("");
                 setInviteName("");
-                setInviteTitle("member");
-                setInviteReviewerVaultIds([]);
+                setInviteRole("user");
               }
             });
         }}
@@ -106,31 +79,25 @@ export function UserAdmin({
           />
         </div>
         <div className="field">
-          <label htmlFor="invite-role">Chức danh</label>
+          <label htmlFor="invite-role">{T.roleColumn}</label>
           <select
             id="invite-role"
-            value={inviteTitle}
+            value={inviteRole}
             disabled={invite.busy}
-            onChange={(e) => setInviteTitle(e.target.value as AccessTitle)}
+            onChange={(e) => setInviteRole(e.target.value as Role)}
           >
-            {ACCESS_TITLES.map((title) => (
-              <option key={title.key} value={title.key}>
-                {title.label}
+            {ROLES.map((role) => (
+              <option key={role} value={role}>
+                {userRoleLabel(role)}
               </option>
             ))}
           </select>
         </div>
-        {titleCanReview(inviteTitle) && (
-          <ReviewerVaultPicker
-            id="invite-reviewer-vaults"
-            vaults={reviewerVaults}
-            value={inviteReviewerVaultIds}
-            onChange={setInviteReviewerVaultIds}
-          />
-        )}
-        <button type="submit" disabled={invite.busy}>
-          {invite.busy ? T.loading : T.inviteMember}
-        </button>
+        <p>
+          <button type="submit" disabled={invite.busy || !inviteEmail || !inviteName}>
+            {invite.busy ? T.loading : T.inviteMember}
+          </button>
+        </p>
       </form>
 
       <SayMutation m={change} />
@@ -138,135 +105,74 @@ export function UserAdmin({
         <table className="list">
           <thead>
             <tr>
-              <th scope="col">{T.membersHeading}</th>
+              <th scope="col">{T.displayNameLabel}</th>
               <th scope="col">{T.email}</th>
-              <th scope="col">Chức danh</th>
+              <th scope="col">{T.roleColumn}</th>
               <th scope="col">{T.state}</th>
               <th scope="col">
-                <span className="muted">{T.actionsColumn}</span>
+                <span className="muted">Thao tác</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => {
-              const pick = picks[u.id] ?? u.accessTitle ?? "";
-              const selectedReviewerVaults = reviewerPicks[u.id] ?? u.reviewerVaultIds;
+              const picked = rolePicks[u.id] ?? (u.role as Role);
               return (
-                <tr key={u.id} className={u.disabled ? "muted" : undefined}>
-                  <td>{u.displayName}</td>
+                <tr key={u.id}>
+                  <td>
+                    {u.displayName}
+                    {u.invited && <span className="badge muted"> {T.userInvitedBadge}</span>}
+                  </td>
                   <td>{u.email}</td>
                   <td>
-                    <div className="button-row">
+                    <span className="button-row">
                       <select
-                        aria-label={`${T.roleOfPrefix} ${u.displayName}`}
-                        value={pick}
+                        aria-label={`${T.roleColumn} — ${u.displayName}`}
+                        value={picked}
                         disabled={change.busy}
                         onChange={(e) =>
-                          setPicks((p) => ({
-                            ...p,
-                            [u.id]: e.target.value as AccessTitle,
-                          }))
+                          setRolePicks((prev) => ({ ...prev, [u.id]: e.target.value as Role }))
                         }
                       >
-                        {u.accessTitle === null && (
-                          <option value="" disabled>
-                            Cấu hình cũ — chọn chức danh mới
-                          </option>
-                        )}
-                        {ACCESS_TITLES.map((title) => (
-                          <option key={title.key} value={title.key}>
-                            {title.label}
+                        {ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {userRoleLabel(role)}
                           </option>
                         ))}
                       </select>
-                      {titleCanReview(pick) && (
-                        <ReviewerVaultPicker
-                          id={`reviewer-vaults-${u.id}`}
-                          vaults={reviewerVaults}
-                          value={selectedReviewerVaults}
-                          onChange={(value) =>
-                            setReviewerPicks((current) => ({ ...current, [u.id]: value }))
-                          }
-                        />
-                      )}
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={
-                          change.busy ||
-                          !pick ||
-                          (pick === u.accessTitle &&
-                            selectedReviewerVaults.join() === u.reviewerVaultIds.join())
-                        }
-                        onClick={() => {
-                          void change
-                            .run(`/api/admin/users/${u.id}/access-title`, {
+                      {picked !== u.role && (
+                        <button
+                          type="button"
+                          disabled={change.busy}
+                          onClick={() =>
+                            void change.run(`/api/admin/users/${u.id}`, {
                               method: "PATCH",
-                              body: {
-                                accessTitle: pick,
-                                reviewerVaultIds: titleCanReview(pick)
-                                  ? selectedReviewerVaults
-                                  : [],
-                              },
+                              body: { role: picked },
                               ok: T.roleChanged,
                             })
-                            .then((done) => {
-                              // Success: the refreshed server row now carries the
-                              // pick, so drop the local override either way it
-                              // resolves — on failure the select snaps back to
-                              // the truth instead of lying next to the error.
-                              if (done) {
-                                setPicks(({ [u.id]: _, ...rest }) => rest);
-                                setReviewerPicks(({ [u.id]: _, ...rest }) => rest);
-                              }
-                            });
-                        }}
-                      >
-                        Áp dụng
-                      </button>
-                    </div>
+                          }
+                        >
+                          {change.busy ? T.loading : T.save}
+                        </button>
+                      )}
+                    </span>
                   </td>
+                  <td>{u.disabled ? T.userDisabledBadge : T.userActiveBadge}</td>
                   <td>
-                    {u.disabled ? (
-                      <span className="badge tone-stopped">{T.userDisabledBadge}</span>
-                    ) : u.invited ? (
-                      <span className="badge tone-waiting">{T.userInvitedBadge}</span>
-                    ) : (
-                      <span className="badge tone-done">{T.userActiveBadge}</span>
-                    )}
-                  </td>
-                  <td>
-                    {u.disabled ? (
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={change.busy}
-                        onClick={() => {
-                          void change.run(`/api/admin/users/${u.id}`, {
-                            method: "PATCH",
-                            body: { disabled: false },
-                            ok: T.userReenabledOk,
-                          });
-                        }}
-                      >
-                        {change.busy ? T.loading : T.reenableUser}
-                      </button>
-                    ) : (
-                      <ConfirmButton
-                        label={T.disableUser}
-                        title={T.confirmDisableUserTitle}
-                        body={`${u.displayName} ${T.confirmDisableUserBody}`}
-                        className="danger"
-                        disabled={change.busy}
-                        onConfirm={() => {
-                          void change.run(`/api/admin/users/${u.id}`, {
-                            method: "PATCH",
-                            body: { disabled: true },
-                            ok: T.userDisabledOk,
-                          });
-                        }}
-                      />
-                    )}
+                    <ConfirmButton
+                      className={u.disabled ? undefined : "danger"}
+                      disabled={change.busy}
+                      label={u.disabled ? T.reenableUser : T.disableUser}
+                      title={u.disabled ? T.reenableUser : T.confirmDisableUserTitle}
+                      body={u.disabled ? `${u.displayName} sẽ đăng nhập được trở lại.` : `${u.displayName} ${T.confirmDisableUserBody}`}
+                      onConfirm={() =>
+                        void change.run(`/api/admin/users/${u.id}`, {
+                          method: "PATCH",
+                          body: { disabled: !u.disabled },
+                          ok: u.disabled ? T.userReenabledOk : T.userDisabledOk,
+                        })
+                      }
+                    />
                   </td>
                 </tr>
               );
@@ -275,43 +181,5 @@ export function UserAdmin({
         </table>
       </div>
     </>
-  );
-}
-
-function ReviewerVaultPicker({
-  id,
-  vaults,
-  value,
-  onChange,
-}: {
-  id: string;
-  vaults: ReviewerVault[];
-  value: string[];
-  onChange: (value: string[]) => void;
-}) {
-  return (
-    <fieldset id={id}>
-      <legend>Kho dùng chung được thẩm định</legend>
-      {vaults.length === 0 ? (
-        <span className="muted">Bạn chưa sở hữu kho dùng chung nào.</span>
-      ) : (
-        vaults.map((vault) => (
-          <label key={vault.id}>
-            <input
-              type="checkbox"
-              checked={value.includes(vault.id)}
-              onChange={(event) =>
-                onChange(
-                  event.currentTarget.checked
-                    ? [...value, vault.id]
-                    : value.filter((id) => id !== vault.id),
-                )
-              }
-            />
-            {vault.name}
-          </label>
-        ))
-      )}
-    </fieldset>
   );
 }

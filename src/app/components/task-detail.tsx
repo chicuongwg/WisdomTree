@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Principal } from "@/modules/auth/dev-auth";
+import type { Principal } from "@/modules/auth/principal";
 import type { getTask } from "@/modules/pm/service";
 import { authorize } from "@/modules/auth/authorize";
 import {

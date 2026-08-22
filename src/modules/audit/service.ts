@@ -1,7 +1,7 @@
 import type { Tx } from "@/db";
 import { auditEvents } from "./schema";
 import { outboxEvents } from "@/db/outbox";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 
 // Every mutation writes audit_events (and its outbox event) in the SAME
 // transaction as the mutation — database-schema.md conventions, demo-brief

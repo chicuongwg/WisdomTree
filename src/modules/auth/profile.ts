@@ -10,7 +10,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
-import type { Principal } from "./dev-auth";
+import type { Principal } from "./principal";
 import { users } from "./schema";
 import { recordAudit } from "../audit/service";
 import { objectStore } from "../storage/object-store";
@@ -25,7 +25,6 @@ export async function getProfile(actor: Principal) {
       email: users.email,
       displayName: users.displayName,
       role: users.role,
-      zaloUserId: users.zaloUserId,
       avatarKey: users.avatarKey,
       createdAt: users.createdAt,
     })
@@ -37,11 +36,11 @@ export async function getProfile(actor: Principal) {
 
 export async function updateProfile(
   actor: Principal,
-  input: { displayName?: string; zaloUserId?: string | null },
+  input: { displayName?: string },
 ) {
   const displayName = input.displayName?.trim();
   if (input.displayName !== undefined && !displayName) {
-    throw new ApiError(400, "invalid_name", "Tên hiển thị không được để trống.");
+    throw new ApiError(400, "invalid_name", "Display name must not be empty.");
   }
   await db.transaction(async (tx) => {
     const [before] = await tx
@@ -53,7 +52,6 @@ export async function updateProfile(
       .update(users)
       .set({
         ...(displayName ? { displayName } : {}),
-        ...(input.zaloUserId !== undefined ? { zaloUserId: input.zaloUserId || null } : {}),
         updatedAt: new Date(),
       })
       .where(eq(users.id, actor.userId));
@@ -73,10 +71,10 @@ export async function updateProfile(
  *  the store has no delete; a real S3 lifecycle rule reaps orphans. */
 export async function setAvatar(actor: Principal, file: File) {
   if (!AVATAR_TYPES.has(file.type)) {
-    throw new ApiError(415, "not_an_image", "Ảnh đại diện phải là PNG, JPEG hoặc WebP.");
+    throw new ApiError(415, "not_an_image", "Avatar must be PNG, JPEG or WebP.");
   }
   if (file.size > AVATAR_MAX_BYTES) {
-    throw new ApiError(413, "image_too_large", "Ảnh vượt quá 2 MB. Vui lòng chọn ảnh nhỏ hơn.");
+    throw new ApiError(413, "image_too_large", "Image exceeds 2 MB.");
   }
   const body = Buffer.from(await file.arrayBuffer());
   const key = `avatars/${actor.userId}/${Date.now()}`;

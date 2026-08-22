@@ -3,9 +3,11 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./",
   timeout: 30 * 1000,
+  globalSetup: "./global-setup.ts",
   use: {
     headless: true,
     baseURL: "http://localhost:3000",
+    storageState: "tests/e2e/.auth/admin.json",
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
     },

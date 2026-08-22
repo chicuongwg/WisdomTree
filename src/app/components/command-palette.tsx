@@ -35,13 +35,7 @@ type SearchHit = {
 
 type Entry = { key: string; label: string; hint: string; href: string };
 
-export function CommandPalette({
-  role,
-  capabilities = [],
-}: {
-  role: string;
-  capabilities?: string[];
-}) {
+export function CommandPalette({ role }: { role: string }) {
   const T = useShellCopy();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -67,7 +61,6 @@ export function CommandPalette({
     { key: "tree", label: T.tree, hint: T.paletteHintGo, href: "/tree" },
     { key: "branches", label: T.navBranches, hint: T.paletteHintGo, href: "/tree/branches" },
     { key: "library", label: T.library, hint: T.paletteHintGo, href: "/library" },
-    { key: "catalog", label: T.catalog, hint: T.paletteHintGo, href: "/catalog" },
     { key: "intake", label: T.sourceIntake, hint: T.paletteHintGo, href: "/source/intake" },
     { key: "mine", label: T.mySubmissions, hint: T.paletteHintGo, href: "/source/mine" },
     {
@@ -76,7 +69,6 @@ export function CommandPalette({
       hint: T.navPersonalSpace,
       href: "/vault/review",
     },
-    { key: "ai-librarian", label: T.aiLibrarian, hint: T.navPersonalSpace, href: "/librarian" },
     // These two say which space they belong to instead of the generic "đi
     // tới": the board and the deadline calendar are the pair readers mix up,
     // and the palette is often how they are reached.
@@ -98,28 +90,21 @@ export function CommandPalette({
       href: "/tree/branch/new",
     });
   }
-  if (capabilities.includes("content.review")) {
-    screens.push(
-      { key: "review", label: T.reviewQueue, hint: T.paletteHintGo, href: "/review" },
-      { key: "inbox", label: T.sourceInbox, hint: T.paletteHintGo, href: "/source/inbox" },
-    );
+  if (role === "editor" || role === "admin_op") {
+    screens.push({ key: "review", label: T.reviewQueue, hint: T.paletteHintGo, href: "/review" });
   }
-  if (capabilities.includes("catalog.manage")) {
+  if (role === "admin_op") {
     screens.push({
       key: "desk",
       label: T.librarianDesk,
       hint: T.paletteHintGo,
-      href: "/catalog/admin",
+      href: "/library/loans",
     });
   }
-  if (
-    capabilities.includes("users.manage") ||
-    capabilities.includes("spaces.manage") ||
-    capabilities.includes("audit.read")
-  ) {
+  if (role === "admin_op") {
     screens.push({ key: "admin", label: T.adminConsole, hint: T.paletteHintGo, href: "/admin" });
   }
-  if (capabilities.includes("system.operate")) {
+  if (role === "admin_op") {
     screens.push({
       key: "health",
       label: T.healthPageTitle,

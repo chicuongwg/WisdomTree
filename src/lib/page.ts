@@ -1,14 +1,16 @@
 import { notFound as nextNotFound, redirect } from "next/navigation";
 import { ApiError } from "./errors";
+import { enforceUserRateLimit } from "./rate-limit";
 import { currentUser } from "@/modules/auth/session";
-import type { Principal } from "@/modules/auth/dev-auth";
+import type { Principal } from "@/modules/auth/principal";
 
 export type PageUser = NonNullable<Awaited<ReturnType<typeof currentUser>>>;
 
-/** Server pages: session or redirect to the dev sign-in picker. */
+/** Server pages: session or redirect to sign-in, then the traffic cap. */
 export async function requireUser(): Promise<PageUser> {
   const user = await currentUser();
   if (!user) redirect("/login");
+  enforceUserRateLimit(user.id);
   return user;
 }
 
@@ -18,9 +20,6 @@ export function toPrincipal(user: PageUser): Principal {
     role: user.role,
     spaceIds: user.spaceIds,
     spaceMemberships: user.spaceMemberships,
-    capabilities: user.capabilities,
-    vaultIds: user.vaultIds,
-    vaultGrants: user.vaultGrants,
   };
 }
 

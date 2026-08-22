@@ -2,19 +2,26 @@ import { cookies } from "next/headers";
 import { createHash, randomBytes } from "node:crypto";
 import { eq, isNull, and, gt } from "drizzle-orm";
 import { db } from "@/db";
-import { sessions, userCapabilities, users } from "./schema";
+import { sessions, users } from "./schema";
 import { spaceMembers } from "../storage/schema";
-import { vaultGrants } from "../knowledge/schema";
 import { SESSION_TTL_MS } from "@/lib/sign";
-import type { Principal } from "./dev-auth";
+import type { Principal } from "./principal";
 
 export const SESSION_COOKIE = "session";
+
+/**
+ * Inactivity timeout: a session whose last request is older than this reads
+ * as signed out, whatever its absolute expiry says. The per-request
+ * last_seen_at write below is the sliding renewal; SESSION_TTL_MS stays the
+ * absolute cap a session can never slide past.
+ */
+export const SESSION_IDLE_MS = Number(process.env.SESSION_IDLE_MS ?? 30 * 60_000);
 
 function tokenHash(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-async function resolveToken(token: string): Promise<(Principal & { user: typeof users.$inferSelect }) | null> {
+export async function resolveSessionToken(token: string): Promise<(Principal & { user: typeof users.$inferSelect }) | null> {
   const [row] = await db
     .select({ session: sessions, user: users })
     .from(sessions)
@@ -24,25 +31,16 @@ async function resolveToken(token: string): Promise<(Principal & { user: typeof 
         eq(sessions.tokenHash, tokenHash(token)),
         isNull(sessions.revokedAt),
         gt(sessions.expiresAt, new Date()),
+        gt(sessions.lastSeenAt, new Date(Date.now() - SESSION_IDLE_MS)),
         isNull(users.disabledAt),
       ),
     );
   if (!row) return null;
 
-  const [memberships, capabilities, grants] = await Promise.all([
-    db
-      .select({ spaceId: spaceMembers.spaceId, role: spaceMembers.memberRole })
-      .from(spaceMembers)
-      .where(eq(spaceMembers.userId, row.user.id)),
-    db
-      .select({ capability: userCapabilities.capability })
-      .from(userCapabilities)
-      .where(eq(userCapabilities.userId, row.user.id)),
-    db
-      .select({ vaultId: vaultGrants.vaultId, grant: vaultGrants.grant })
-      .from(vaultGrants)
-      .where(eq(vaultGrants.userId, row.user.id)),
-  ]);
+  const memberships = await db
+    .select({ spaceId: spaceMembers.spaceId, role: spaceMembers.memberRole })
+    .from(spaceMembers)
+    .where(eq(spaceMembers.userId, row.user.id));
   void db
     .update(sessions)
     .set({ lastSeenAt: new Date() })
@@ -52,9 +50,6 @@ async function resolveToken(token: string): Promise<(Principal & { user: typeof 
     role: row.user.role,
     spaceIds: memberships.map((membership) => membership.spaceId),
     spaceMemberships: memberships,
-    capabilities: capabilities.map((capability) => capability.capability),
-    vaultIds: grants.map((grant) => grant.vaultId),
-    vaultGrants: grants,
     user: row.user,
   };
 }
@@ -62,21 +57,18 @@ async function resolveToken(token: string): Promise<(Principal & { user: typeof 
 export async function resolvePrincipal(): Promise<Principal | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return resolveToken(token);
+  return resolveSessionToken(token);
 }
 
 export async function currentUser() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const principal = await resolveToken(token);
+  const principal = await resolveSessionToken(token);
   if (!principal) return null;
   return {
     ...principal.user,
     spaceIds: principal.spaceIds,
     spaceMemberships: principal.spaceMemberships ?? [],
-    capabilities: principal.capabilities ?? [],
-    vaultIds: principal.vaultIds ?? [],
-    vaultGrants: principal.vaultGrants ?? [],
   };
 }
 
@@ -103,4 +95,14 @@ export async function revokeUserSessions(tx: Parameters<Parameters<typeof db.tra
     .update(sessions)
     .set({ revokedAt: new Date() })
     .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+}
+
+/**
+ * The caller's login-session identity for concerns keyed per SESSION rather
+ * than per user (the node edit lock): the same token hash the sessions table
+ * stores, so it names exactly one signed-in browser.
+ */
+export async function currentSessionKey(): Promise<string | null> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token ? tokenHash(token) : null;
 }
