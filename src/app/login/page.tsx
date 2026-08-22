@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@/modules/auth/session";
-import { devLoginEnabled, listSignInCandidates } from "@/modules/auth/dev-auth";
 import { oidcEnabled } from "@/modules/auth/oidc";
-import { T } from "@/lib/vi";
-import { LoginPicker } from "../components/login-picker";
+import { devLoginEnabled, listSignInCandidates } from "@/modules/auth/dev-login";
+import { T, userRoleLabel } from "@/lib/vi";
 
 export const metadata = { title: T.signIn };
 
-// Screen: cổng đăng nhập. Google OIDC is the real door when configured; the
-// dev picker survives beneath it as the demo's quick sign-in. The layout's
-// signed-out branch already provides the plain-shell topbar around this page.
+// Screen: cổng đăng nhập — Google OIDC is the real door. Outside production
+// a seeded-member picker sits beneath it so local testing needs no Google
+// configuration; the picker and its endpoint do not exist in production.
 export default async function LoginPage({
   searchParams,
 }: {
@@ -19,10 +18,6 @@ export default async function LoginPage({
   const { error } = await searchParams;
   const oidc = oidcEnabled();
   const dev = devLoginEnabled();
-
-  // The picker lists real user ids, and the route behind it turns any of them
-  // into that user's session. Both halves stay shut together: with the gate
-  // closed this page must not enumerate the team either.
   const seeded = dev ? await listSignInCandidates() : [];
 
   return (
@@ -53,22 +48,28 @@ export default async function LoginPage({
         </a>
       )}
 
-      {dev && (
+      {dev && seeded.length > 0 && (
         <>
-          <hr className="login-divider" />
-          {/* The heading is the whole explanation — a second sentence
-              restating it was chrome. */}
-          <h2 className="meta">{T.loginDemoHeading}</h2>
-          <LoginPicker users={seeded} />
+          {oidc && <hr className="login-divider" />}
+          <h2 className="meta">{T.demoLoginHeading}</h2>
+          {/* Plain form posts — no JS: the route sets the session cookie and
+              303s home. One button per seeded member. */}
+          <div className="panel">
+            {seeded.map((u) => (
+              <form key={u.id} method="post" action="/api/auth/dev-login" className="inline">
+                <input type="hidden" name="userId" value={u.id} />
+                <button type="submit" className="secondary login-person">
+                  {u.displayName} · {userRoleLabel(u.role)}
+                </button>
+              </form>
+            ))}
+          </div>
         </>
       )}
 
       {!oidc && !dev && (
         <div className="panel">
-          <p className="muted">
-            Bản cài đặt này chưa bật cách đăng nhập nào. Liên hệ quản trị viên để được cấp quyền
-            truy cập.
-          </p>
+          <p className="muted">{T.oidcNotConfigured}</p>
         </div>
       )}
     </main>
