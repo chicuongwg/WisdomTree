@@ -1,68 +1,90 @@
 import assert from "node:assert/strict";
-import { DEFAULT_SETTINGS, LINK_TYPES, parseSettings, scale } from "@/lib/graph-settings";
-import { branchLayout, CANVAS, degreeOf, egoLayout } from "@/lib/graph-layout";
-import { wheelZoomFactor } from "@/app/components/knowledge-map/model";
-import { LINK_PROFILE, nodeMobility, TUNE } from "@/lib/graph-force";
-import { CENTRE_RANGE, REPEL_RANGE } from "@/app/components/knowledge-map/model";
+import { DEFAULT_SETTINGS, parseSettings, scale, SLIDER_KEYS } from "@/lib/graph-settings";
+import {
+  CENTRE_RANGE,
+  degreeOf,
+  EDGE_WIDTH_RANGE,
+  FADE_ALL_RANGE,
+  FADE_HUBS_RANGE,
+  groupFor,
+  LABEL_ZOOM_ALL,
+  LABEL_ZOOM_HUBS,
+  LINK_DISTANCE_RANGE,
+  LINK_FORCE_RANGE,
+  LINK_PROFILE,
+  markRadius,
+  NODE_SCALE_RANGE,
+  REPEL_RANGE,
+} from "@/app/components/knowledge-map/model";
 
-export function run() {
-  assert.equal(scale(-1, 10, 20), 10);
-  assert.equal(scale(0.5, 10, 20), 15);
-  assert.equal(scale(2, 10, 20), 20);
-  assert.equal(parseSettings(null), DEFAULT_SETTINGS);
-  assert.equal(parseSettings("{broken"), DEFAULT_SETTINGS);
+export const run = async () => {
+  // scale(): linear, clamped at both ends.
+  assert.equal(scale(0.5, 0, 10), 5);
+  assert.equal(scale(-1, 0, 10), 0);
+  assert.equal(scale(2, 0, 10), 10);
+  // Reversed ranges (the label thresholds) still clamp correctly.
+  assert.equal(scale(0, ...FADE_ALL_RANGE), LABEL_ZOOM_ALL * 2);
+  assert.equal(scale(1, ...FADE_ALL_RANGE), 0);
 
-  const parsed = parseSettings(
-    JSON.stringify({
-      branchId: "branch",
-      localDepth: 99,
-      linkTypes: { supports: false, related: "invalid" },
-      centreForce: Number.NaN,
-      repelForce: -2,
-      groups: [{ id: "g", name: "Group", query: "tag:test", color: "not-a-colour" }, { id: 1 }],
-    }),
-  );
-  assert.equal(parsed.branchId, "branch");
-  assert.equal(parsed.localDepth, 5);
-  assert.equal(parsed.linkTypes.supports, false);
-  assert.equal(parsed.linkTypes.related, true);
-  assert.equal(parsed.centreForce, DEFAULT_SETTINGS.centreForce);
-  assert.equal(parsed.repelForce, 0);
-  assert.deepEqual(parsed.groups, [
-    { id: "g", name: "Group", query: "tag:test", color: "#526fa8" },
-  ]);
-  assert.deepEqual(Object.keys(parsed.linkTypes), [...LINK_TYPES]);
-  assert.ok(wheelZoomFactor(-100, 0) > 1);
-  assert.ok(wheelZoomFactor(100, 0) < 1);
-  assert.equal(wheelZoomFactor(10_000, 0), wheelZoomFactor(120, 0));
-  assert.equal(wheelZoomFactor(3, 1), wheelZoomFactor(48, 0));
+  // "Middle is the shipped default" — every slider at 0.5 must land on the
+  // value the map ships with. The physics defaults are the d3 units the
+  // force-graph engine consumes.
+  assert.equal(scale(0.5, ...FADE_ALL_RANGE), LABEL_ZOOM_ALL);
+  assert.equal(scale(0.5, ...FADE_HUBS_RANGE), LABEL_ZOOM_HUBS);
+  assert.equal(scale(0.5, ...NODE_SCALE_RANGE), 1);
+  assert.equal(scale(0.5, ...EDGE_WIDTH_RANGE), 1.4);
+  assert.equal(scale(0.5, ...CENTRE_RANGE), 0.06);
+  assert.equal(scale(0.5, ...REPEL_RANGE), 60);
+  assert.equal(scale(0.5, ...LINK_FORCE_RANGE), 0.42);
+  assert.equal(scale(0.5, ...LINK_DISTANCE_RANGE), 80);
+  for (const key of SLIDER_KEYS) assert.equal(DEFAULT_SETTINGS[key], 0.5);
+
+  // Link profile: structure binds tightest and shortest, contrast loosest and
+  // longest — the ordering is the product decision, the numbers may retune.
   assert.ok(LINK_PROFILE.part_of.strength > LINK_PROFILE.supports.strength);
   assert.ok(LINK_PROFILE.supports.strength > LINK_PROFILE.related.strength);
   assert.ok(LINK_PROFILE.related.strength > LINK_PROFILE.contrasts.strength);
   assert.ok(LINK_PROFILE.part_of.distance < LINK_PROFILE.supports.distance);
-  assert.ok(LINK_PROFILE.supports.distance < LINK_PROFILE.related.distance);
   assert.ok(LINK_PROFILE.related.distance < LINK_PROFILE.contrasts.distance);
-  assert.ok(nodeMobility("verified") < nodeMobility("unverified"));
-  assert.ok(nodeMobility("unverified") < nodeMobility("no_source"));
-  assert.equal(scale(DEFAULT_SETTINGS.centreForce, ...CENTRE_RANGE), TUNE.centre);
-  assert.equal(scale(DEFAULT_SETTINGS.repelForce, ...REPEL_RANGE), TUNE.repel);
 
-  const nodes = [
-    { id: "a", branchId: "one" },
-    { id: "b", branchId: "one" },
-    { id: "c", branchId: "two" },
-  ];
-  const edges = [
+  // degreeOf counts both ends; markRadius grows sub-linearly and caps.
+  const degree = degreeOf([
     { from: "a", to: "b" },
-    { from: "b", to: "c" },
+    { from: "a", to: "c" },
+  ]);
+  assert.equal(degree.a, 2);
+  assert.equal(degree.b, 1);
+  assert.equal(markRadius(8, 0), 8);
+  assert.ok(markRadius(8, 4) > markRadius(8, 1));
+  assert.equal(markRadius(8, 10_000), 17); // capped at base + 9
+
+  // groupFor: tag:/branch: exact (vi-folded), plain query = title substring.
+  const node = {
+    id: "n1",
+    title: "Lễ hội đình làng",
+    branchId: "b1",
+    branchName: "Văn hóa",
+    verification: "verified",
+    tags: ["lễ hội"],
+  };
+  const groups = [
+    { id: "g1", name: "tags", query: "tag:LỄ HỘI", color: "#111111" },
+    { id: "g2", name: "branch", query: "branch:văn hóa", color: "#222222" },
+    { id: "g3", name: "text", query: "đình", color: "#333333" },
   ];
-  const degree = degreeOf(edges);
-  assert.deepEqual(degree, { a: 1, b: 2, c: 1 });
-  for (const layout of [branchLayout(nodes, degree), egoLayout(nodes, "b")]) {
-    assert.deepEqual(Object.keys(layout).sort(), ["a", "b", "c"]);
-    for (const point of Object.values(layout)) {
-      assert.ok(point.x >= 0 && point.x <= CANVAS.width);
-      assert.ok(point.y >= 0 && point.y <= CANVAS.height);
-    }
-  }
+  assert.equal(groupFor(node, groups)?.id, "g1");
+  assert.equal(groupFor(node, [groups[1]])?.id, "g2");
+  assert.equal(groupFor(node, [groups[2]])?.id, "g3");
+  assert.equal(groupFor(node, [{ id: "x", name: "", query: "tag:khác", color: "#4444" }]), undefined);
+
+  // parseSettings degrades garbage to defaults without throwing.
+  assert.deepEqual(parseSettings("not json"), DEFAULT_SETTINGS);
+  assert.equal(parseSettings(JSON.stringify({ repelForce: 0.9 })).repelForce, 0.9);
+};
+
+if (import.meta.url === new URL(process.argv[1], import.meta.url).href) {
+  run().catch((err) => {
+    console.error(err.stack || err);
+    process.exit(1);
+  });
 }

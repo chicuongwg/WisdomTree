@@ -27,7 +27,6 @@ export default async function GraphPage({
   const isPersonal = scope === "personal";
   const graph = await createGraphProvider(principal).loadGraph({
     scope: isPersonal ? "personal" : "shared",
-    vaultId: isPersonal ? principal.vaultIds?.[0] : undefined,
   });
 
   const teamHref = "/graph";
