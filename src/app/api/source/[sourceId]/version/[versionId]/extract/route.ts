@@ -13,7 +13,7 @@ export async function POST(
     const { sourceId, versionId } = await params;
     const body = (await request.json()) as { method?: ExtractionMethod };
     if (!body.method || !["auto", "pandoc", "ocr"].includes(body.method)) {
-      throw new ApiError(400, "invalid_method", "Hãy chọn Pandoc hoặc OCR.");
+      throw new ApiError(400, "invalid_method", "Extraction method must be pandoc or ocr.");
     }
     return NextResponse.json(
       await requestExtraction(actor, sourceId, versionId, body.method),

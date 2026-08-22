@@ -2,16 +2,16 @@ import { and, asc, desc, eq, gt, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import { foldName } from "@/lib/mention-fold";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { curations, sources, sourceVersions, spaceMembers } from "../storage/schema";
+import { sources, sourcePhysical, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
 import { comments, notificationPreferences, notifications, presence } from "./schema";
-import { DEFAULT_CHANNELS, kickDispatch, type Channel } from "./dispatcher";
+import { NOTIFIED_EVENTS, kickDispatch } from "./dispatcher";
 import { notificationLink, type NotificationLinkContext } from "./links";
 
 // Module: notify — comments anchored to work objects, the in-app notification
@@ -229,7 +229,7 @@ export async function createComment(
   if (input.parentCommentId) {
     const [parent] = await db.select().from(comments).where(eq(comments.id, input.parentCommentId));
     if (!parent || parent.anchorType !== input.anchorType || parent.anchorId !== input.anchorId) {
-      throw new ApiError(400, "invalid_parent_comment", "Bình luận gốc không thuộc mục này.");
+      throw new ApiError(400, "invalid_parent_comment", "The parent comment belongs to a different item.");
     }
   }
   // Mentions come out of the text itself, against members who can see this
@@ -303,66 +303,41 @@ export async function listNotifications(actor: Principal, unreadOnly = false) {
 }
 
 /**
- * Hydrate the few database facts the pure link resolver cannot know, ONCE per
- * page render rather than per row: which catalog item each referenced loan
- * ticket belongs to, and which of the referenced sources the viewer actually
- * holds a curation assignment on (that decides workbench vs member view).
- * Read-only and self-scoped — it only ever looks at ids the viewer's own
- * notifications already contain.
+ * Hydrate the one database fact the pure link resolver cannot know, ONCE per
+ * page render rather than per row: which Library item each referenced loan
+ * ticket belongs to. Read-only and self-scoped — it only ever looks at ids
+ * the viewer's own notifications already contain.
  */
 export async function buildNotificationLinkContext(
   actor: Principal,
   notes: ReadonlyArray<{ eventType: string; payload: unknown }>,
 ): Promise<NotificationLinkContext> {
   const ticketIds = new Set<string>();
-  const sourceIds = new Set<string>();
   const pick = (p: Record<string, unknown>, key: string): string | null =>
     typeof p[key] === "string" && p[key] ? (p[key] as string) : null;
 
   for (const note of notes) {
     const p = (note.payload ?? {}) as Record<string, unknown>;
     if (note.eventType.startsWith("loan.")) {
-      // Only tickets whose payload lacks itemId need the lookup.
-      if (!pick(p, "itemId")) {
+      // Only tickets whose payload lacks sourceId need the lookup.
+      if (!pick(p, "sourceId")) {
         const id = pick(p, "ticketId");
         if (id) ticketIds.add(id);
       }
-    } else if (note.eventType.startsWith("source.")) {
-      const id = pick(p, "sourceId");
-      if (id) sourceIds.add(id);
-    } else if (note.eventType === "comment.created") {
-      const anchorId = pick(p, "anchorId");
-      if (!anchorId) continue;
-      if (p.anchorType === "source") sourceIds.add(anchorId);
     }
   }
 
-  const ticketItemIds: Record<string, string> = {};
+  const ticketSourceIds: Record<string, string> = {};
   if (ticketIds.size > 0) {
     const rows = await db
-      .select({ id: loanTickets.id, itemId: loanTickets.itemId })
+      .select({ id: loanTickets.id, sourceId: sourcePhysical.sourceId })
       .from(loanTickets)
+      .innerJoin(sourcePhysical, eq(loanTickets.itemId, sourcePhysical.id))
       .where(inArray(loanTickets.id, [...ticketIds]));
-    for (const row of rows) ticketItemIds[row.id] = row.itemId;
+    for (const row of rows) ticketSourceIds[row.id] = row.sourceId;
   }
 
-  let assignedSourceIds: string[] = [];
-  if (sourceIds.size > 0) {
-    // curations hang off source_versions, so join back to the source id.
-    const rows = await db
-      .select({ sourceId: sourceVersions.sourceId })
-      .from(curations)
-      .innerJoin(sourceVersions, eq(curations.sourceVersionId, sourceVersions.id))
-      .where(
-        and(
-          eq(curations.assignedTo, actor.userId),
-          inArray(sourceVersions.sourceId, [...sourceIds]),
-        ),
-      );
-    assignedSourceIds = [...new Set(rows.map((r) => r.sourceId))];
-  }
-
-  return { ticketItemIds, assignedSourceIds, viewerRole: actor.role };
+  return { ticketSourceIds, viewerRole: actor.role };
 }
 
 /** Rows ready to render: the notification plus its resolved jump-to link. */
@@ -397,45 +372,41 @@ export async function markNotificationRead(actor: Principal, notificationId: str
 // Preferences — absent row means the default matrix (notifications.md)
 // ---------------------------------------------------------------------------
 
-const CHANNELS: Channel[] = ["in_app", "email", "zalo"];
-
-/** Stored overrides merged over the default matrix, one row per event type. */
+/** Per-event on/off, stored as a channels row so the table needs no change. */
 export async function getPreferences(actor: Principal) {
   authorize(actor, "notify.preferences.manage", { userId: actor.userId, kind: "read" });
   const stored = await db
     .select()
     .from(notificationPreferences)
     .where(eq(notificationPreferences.userId, actor.userId));
-  const byEvent = new Map(stored.map((p) => [p.eventType, p.channels as Channel[]]));
-  return Object.entries(DEFAULT_CHANNELS).map(([eventType, defaults]) => ({
+  const byEvent = new Map(stored.map((p) => [p.eventType, p.channels as string[]]));
+  return [...NOTIFIED_EVENTS].map((eventType) => ({
     eventType,
-    channels: byEvent.get(eventType) ?? defaults,
+    enabled: byEvent.has(eventType) ? byEvent.get(eventType)!.includes("in_app") : true,
   }));
 }
 
 export async function updatePreferences(
   actor: Principal,
-  prefs: Array<{ eventType: string; channels: string[] }>,
+  prefs: Array<{ eventType: string; enabled: boolean }>,
 ) {
   authorize(actor, "notify.preferences.manage", { userId: actor.userId, kind: "write" });
   for (const p of prefs) {
-    if (!(p.eventType in DEFAULT_CHANNELS)) {
-      throw new ApiError(400, "unknown_event_type", "Loại sự kiện thông báo không hợp lệ.", {
+    if (!NOTIFIED_EVENTS.has(p.eventType)) {
+      throw new ApiError(400, "unknown_event_type", "Unknown notification event type.", {
         eventType: p.eventType,
       });
-    }
-    if (!Array.isArray(p.channels) || p.channels.some((c) => !CHANNELS.includes(c as Channel))) {
-      throw new ApiError(400, "unknown_channel", "Kênh thông báo không hợp lệ.");
     }
   }
   await db.transaction(async (tx) => {
     for (const p of prefs) {
+      const channels = p.enabled ? ["in_app"] : [];
       await tx
         .insert(notificationPreferences)
-        .values({ userId: actor.userId, eventType: p.eventType, channels: p.channels })
+        .values({ userId: actor.userId, eventType: p.eventType, channels })
         .onConflictDoUpdate({
           target: [notificationPreferences.userId, notificationPreferences.eventType],
-          set: { channels: p.channels },
+          set: { channels },
         });
     }
     await recordAudit(tx, actor, {
@@ -485,7 +456,7 @@ export const PRESENCE_TTL_MS = 90_000;
 export async function markPresence(actor: Principal, pageKey: string): Promise<void> {
   const key = pageKey.trim();
   if (!key || key.length > 200) {
-    throw new ApiError(400, "invalid_page", "Trang không hợp lệ.");
+    throw new ApiError(400, "invalid_page", "Invalid page.");
   }
   await db
     .insert(presence)

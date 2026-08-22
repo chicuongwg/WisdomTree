@@ -19,7 +19,7 @@ function pageKeyOf(request: NextRequest): string {
   // markPresence validates this too, but GET and DELETE never reach it, and a
   // missing key on a read would quietly answer "nobody is here" — which is the
   // one wrong answer this feature must not give by accident.
-  if (!key) throw new ApiError(400, "invalid_page", "Trang không hợp lệ.");
+  if (!key) throw new ApiError(400, "invalid_page", "Invalid page.");
   return key;
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { T } from "@/lib/vi";
+import { T, translateApiError } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { Say, SayMutation } from "./say";
 import { ConfirmButton } from "./confirm-button";
@@ -14,7 +14,7 @@ import { ConfirmButton } from "./confirm-button";
  * still out, so the server's message is what this shows — it names how many
  * are unreturned, which the browser's own `min` validation cannot know.
  */
-export function CatalogCopiesForm({ itemId, copies }: { itemId: string; copies: number }) {
+export function CatalogCopiesForm({ sourceId, copies }: { sourceId: string; copies: number }) {
   const m = useMutation();
   const [value, setValue] = useState(String(copies));
 
@@ -23,7 +23,7 @@ export function CatalogCopiesForm({ itemId, copies }: { itemId: string; copies: 
       className="inline"
       onSubmit={(event) => {
         event.preventDefault();
-        void m.run(`/api/catalog/${itemId}`, {
+        void m.run(`/api/library/${sourceId}/physical`, {
           method: "PATCH",
           body: { copies: value },
           ok: T.copiesSaved,
@@ -56,21 +56,25 @@ export function CatalogCopiesForm({ itemId, copies }: { itemId: string; copies: 
  * says what happens — off the list, still on record — rather than asking
  * whether the librarian is sure.
  */
-export function CatalogArchiveButton({ itemId }: { itemId: string }) {
+export function CatalogArchiveButton({ sourceId }: { sourceId: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   async function archive() {
     setError(null);
-    const res = await fetch(`/api/catalog/${itemId}/archive`, { method: "POST" });
+    const res = await fetch(`/api/library/${sourceId}/physical/archive`, { method: "POST" });
     if (!res.ok) {
       // The refusal that matters is "a copy is still out", and only the server
       // knows how many — so its sentence is the one shown.
-      const body = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? T.genericError);
+      const body = (await res.json().catch(() => null)) as {
+          message?: string;
+          code?: string;
+          details?: Record<string, unknown>;
+        } | null;
+      setError(body ? translateApiError(body.code, body.details, body.message) : T.genericError);
       return;
     }
-    router.push("/catalog");
+    router.push("/library");
     router.refresh();
   }
 

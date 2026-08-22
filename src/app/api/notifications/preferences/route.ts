@@ -12,20 +12,20 @@ export async function GET() {
 }
 
 // PATCH /api/notifications/preferences — body is the contract array of
-// { eventType, channels }; absent event types keep their current value.
+// { eventType, enabled }; absent event types keep their current value.
 export async function PATCH(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const body = (await request.json().catch(() => null)) as Array<{
       eventType?: string;
-      channels?: string[];
+      enabled?: boolean;
     }> | null;
-    if (!Array.isArray(body) || body.some((p) => !p?.eventType || !Array.isArray(p.channels))) {
-      throw new ApiError(400, "invalid_preferences", "Danh sách tùy chọn thông báo không hợp lệ.");
+    if (!Array.isArray(body) || body.some((p) => !p?.eventType || typeof p.enabled !== "boolean")) {
+      throw new ApiError(400, "invalid_preferences", "Invalid notification preferences payload.");
     }
     const prefs = await updatePreferences(
       actor,
-      body.map((p) => ({ eventType: p.eventType!, channels: p.channels! })),
+      body.map((p) => ({ eventType: p.eventType!, enabled: p.enabled! })),
     );
     return NextResponse.json(prefs);
   });

@@ -6,6 +6,8 @@ import {
   listLibrary,
   listMemberSpaces,
 } from "@/modules/storage/service";
+import { listCategories } from "@/modules/storage/physical";
+import { CatalogItemForm } from "@/app/components/catalog-item-form";
 import { badgeToneClass, T, when } from "@/lib/vi";
 import { extractionDisplay } from "@/lib/source-status";
 import { Pager } from "@/app/components/pager";
@@ -44,6 +46,7 @@ export default async function LibraryPage({
     spaceId?: string;
     page?: string;
     folderId?: string;
+    categoryId?: string;
     sort?: string;
     dir?: string;
     archived?: string;
@@ -64,10 +67,22 @@ export default async function LibraryPage({
   const sort = sp.sort === "title" ? ("title" as const) : ("storedAt" as const);
   const dir = sp.dir === "asc" ? ("asc" as const) : ("desc" as const);
 
-  const [items, spaces, folders] = await Promise.all([
-    listLibrary(actor, { q, spaceId: spaceId || undefined, page, folderId, sort, dir, archived }),
+  const categoryId = sp.categoryId || undefined;
+  const canManagePhysical = user.role === "admin_op";
+  const [items, spaces, folders, categories] = await Promise.all([
+    listLibrary(actor, {
+      q,
+      spaceId: spaceId || undefined,
+      page,
+      folderId,
+      categoryId,
+      sort,
+      dir,
+      archived,
+    }),
     listMemberSpaces(actor),
     browsing && spaceId ? listFolders(actor, spaceId) : Promise.resolve([]),
+    listCategories(),
   ]);
 
   const href = (over: Record<string, string | undefined>) => {
@@ -75,6 +90,7 @@ export default async function LibraryPage({
       q,
       spaceId,
       folderId: sp.folderId,
+      categoryId: sp.categoryId,
       sort: sp.sort,
       dir: sp.dir,
       archived: sp.archived,
@@ -144,6 +160,14 @@ export default async function LibraryPage({
             {spaces.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
+              </option>
+            ))}
+          </select>
+          <select name="categoryId" defaultValue={sp.categoryId ?? ""} aria-label={T.categoryFilterAria}>
+            <option value="">{T.categoryAll}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -221,11 +245,18 @@ export default async function LibraryPage({
                   </tr>
                 ))}
                 {items.map((item) => {
-                  const ed = extractionDisplay(item.extractionStatus, item.hasText, item.mimeType);
+                  const ed = extractionDisplay(
+                    item.extractionStatus ?? "processed",
+                    item.hasText,
+                    item.mimeType ?? undefined,
+                  );
                   return (
                     <tr key={item.sourceId}>
                       <td>
                         <Link href={`/library/${item.sourceId}`}>{item.title}</Link>
+                        {item.itemCode && (
+                          <span className="muted"> ({item.itemCode})</span>
+                        )}
                       </td>
                       <td>{item.spaceName}</td>
                       <td>{item.submitterName}</td>
@@ -237,8 +268,12 @@ export default async function LibraryPage({
                           Everything else — including `processed` with no text,
                           which the stub used to hide behind that quiet cell —
                           wears its badge. */}
-                        {ed.tone !== "done" && (
-                          <span className={badgeToneClass(ed.tone)}>{ed.label}</span>
+                        {item.itemCode ? (
+                          <span className="muted">{T.physicalBookHeading}</span>
+                        ) : (
+                          ed.tone !== "done" && (
+                            <span className={badgeToneClass(ed.tone)}>{ed.label}</span>
+                          )
                         )}
                       </td>
                     </tr>
@@ -247,6 +282,17 @@ export default async function LibraryPage({
               </tbody>
             </table>
           </div>
+        )}
+        {canManagePhysical && (
+          <>
+            <section className="panel">
+              <h2>{T.addCatalogItem}</h2>
+              <CatalogItemForm spaces={spaces} />
+            </section>
+            <p>
+              <Link href="/library/loans">{T.librarianDesk}</Link>
+            </p>
+          </>
         )}
         <Pager
           page={page}

@@ -12,8 +12,8 @@ import {
 import { users } from "../auth/schema";
 import { sourceVersions } from "../storage/schema";
 
-// Module: knowledge — branches, tree nodes, versions, links, tags, promotions,
-// review queue, and conflicts (module-map.md).
+// Module: knowledge — vaults, branches, tree nodes, versions, links, tags,
+// proposals and promotions.
 // Column definitions transcribed from docs/design/database-schema.md.
 // Generated tsvector columns (tree_nodes.tsv), the publish/canonical CHECKs,
 // and the append-only triggers (tree_node_versions, promotions) live only in
@@ -24,28 +24,9 @@ export const vaults = pgTable("vaults", {
   kind: text("kind", { enum: ["personal", "shared"] }).notNull(),
   ownerUserId: uuid("owner_user_id").references(() => users.id),
   name: text("name").notNull(),
-  gitRepoKey: text("git_repo_key").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
-
-export const vaultGrants = pgTable(
-  "vault_grants",
-  {
-    vaultId: uuid("vault_id")
-      .notNull()
-      .references(() => vaults.id),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
-    grant: text("grant_name", { enum: ["owner", "editor", "reviewer", "viewer"] }).notNull(),
-    grantedBy: uuid("granted_by")
-      .notNull()
-      .references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [primaryKey({ columns: [t.vaultId, t.userId] })],
-);
 
 export const branches = pgTable("branches", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -128,7 +109,6 @@ export const nodeChangeProposals = pgTable("node_change_proposals", {
   contentMd: text("content_md").notNull(),
   tags: jsonb("tags").notNull().default([]),
   links: jsonb("links").notNull().default([]),
-  contentSha256: text("content_sha256").notNull(),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => users.id),
@@ -154,7 +134,6 @@ export const nodePublicationProposals = pgTable("node_publication_proposals", {
   contentMd: text("content_md").notNull(),
   tags: jsonb("tags").notNull().default([]),
   links: jsonb("links").notNull().default([]),
-  snapshotSha256: text("snapshot_sha256").notNull(),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => users.id),
@@ -164,26 +143,8 @@ export const nodePublicationProposals = pgTable("node_publication_proposals", {
     .notNull()
     .default("pending"),
   decisionNote: text("decision_note"),
+  decidedBy: uuid("decided_by").references(() => users.id),
   approvedNodeVersionId: uuid("approved_node_version_id").references(() => treeNodeVersions.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const vaultGitJobs = pgTable("vault_git_jobs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  vaultId: uuid("vault_id")
-    .notNull()
-    .references(() => vaults.id),
-  nodeVersionId: uuid("node_version_id")
-    .notNull()
-    .unique()
-    .references(() => treeNodeVersions.id),
-  state: text("state", { enum: ["pending", "running", "done", "failed"] })
-    .notNull()
-    .default("pending"),
-  attempts: integer("attempts").notNull().default(0),
-  commitSha: text("commit_sha"),
-  lastError: text("last_error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -244,52 +205,18 @@ export const promotions = pgTable("promotions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const reviewTasks = pgTable("review_tasks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  taskType: text("task_type", {
-    enum: ["correction", "gap_triage", "publish", "merge", "archive", "operational"],
-  }).notNull(),
-  targetType: text("target_type", {
-    enum: [
-      "source_version",
-      "branch_gap_request",
-      "markdown_draft",
-      "tree_node",
-      "node_publication_proposal",
-      "conflict",
-    ],
-  }).notNull(),
-  targetId: uuid("target_id").notNull(),
-  state: text("state", {
-    enum: ["queued", "assigned", "in_review", "changes_requested", "approved", "rejected"],
-  }).notNull(),
-  assignedTo: uuid("assigned_to").references(() => users.id),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => users.id),
-  resolvedBy: uuid("resolved_by").references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
-});
 
-export const conflicts = pgTable("conflicts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  targetType: text("target_type", {
-    enum: ["tree_node", "corrected_text", "markdown_draft", "branch"],
-  }).notNull(),
-  targetId: uuid("target_id").notNull(),
-  state: text("state", {
-    enum: ["detected", "locked", "resolving", "resolved", "archived_conflict"],
-  }).notNull(),
-  baseVersion: integer("base_version").notNull(), // the version the losing save targeted
-  attemptedPayload: jsonb("attempted_payload").notNull(), // the rejected save, preserved
-  attemptedBy: uuid("attempted_by")
+// Single-writer editing: one row per node while its editor is open. The
+// session key (not just the user) is the holder, so the same person in a
+// second browser is a different holder; a stale heartbeat frees the lock.
+export const nodeEditLocks = pgTable("node_edit_locks", {
+  nodeId: uuid("node_id")
+    .primaryKey()
+    .references(() => treeNodes.id),
+  userId: uuid("user_id")
     .notNull()
     .references(() => users.id),
-  resolvedBy: uuid("resolved_by").references(() => users.id),
-  resolution: jsonb("resolution"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
+  sessionKey: text("session_key").notNull(),
+  acquiredAt: timestamp("acquired_at", { withTimezone: true }).notNull().defaultNow(),
+  heartbeatAt: timestamp("heartbeat_at", { withTimezone: true }).notNull().defaultNow(),
 });

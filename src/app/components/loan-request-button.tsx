@@ -4,7 +4,7 @@ import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { SayMutation } from "./say";
 
-export function LoanRequestButton({ itemId, disabled }: { itemId: string; disabled: boolean }) {
+export function LoanRequestButton({ sourceId, disabled }: { sourceId: string; disabled: boolean }) {
   // One `message` state used to carry both answers and both were painted in
   // .error-text — a granted request announced itself in the colour the app
   // reserves for refusal. useMutation keeps them apart; <Say> colours and
@@ -16,7 +16,7 @@ export function LoanRequestButton({ itemId, disabled }: { itemId: string; disabl
       <SayMutation m={m} />
       <button
         onClick={() =>
-          void m.run(`/api/catalog/${itemId}/loan/request`, {
+          void m.run(`/api/library/${sourceId}/loan/request`, {
             ok: T.loanRequestSent,
           })
         }

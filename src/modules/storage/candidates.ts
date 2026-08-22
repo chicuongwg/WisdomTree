@@ -1,16 +1,20 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { branches, treeNodes, treeNodeVersions } from "../knowledge/schema";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { extractionCandidates, sources, sourceVersions } from "./schema";
 
-function canReviewVault(actor: Principal, vaultId: string): boolean {
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === vaultId)?.grant;
-  return grant === "owner" || grant === "editor" || grant === "reviewer";
+/**
+ * "Bản trích xuất của tôi": an extraction candidate is the uploader's own
+ * working copy on the way into their personal branch — no review layer, just
+ * ownership (admins may act for anyone).
+ */
+function canActOnCandidate(actor: Principal, candidate: { createdBy: string }): boolean {
+  return candidate.createdBy === actor.userId || actor.role === "admin_op";
 }
 
 async function loadSourceVersion(sourceId: string, versionId: string) {
@@ -39,7 +43,7 @@ export async function requestExtraction(
     .from(extractionCandidates)
     .where(eq(extractionCandidates.sourceVersionId, versionId));
   if (existing) {
-    throw new ApiError(409, "candidate_exists", "Tệp này đã có bản Markdown chờ duyệt.");
+    throw new ApiError(409, "candidate_exists", "This file already has an extracted Markdown candidate.");
   }
   await db.transaction(async (tx) => {
     await tx
@@ -65,7 +69,6 @@ export async function requestExtraction(
 
 export async function listPersonalCandidates(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
-  if (!actor.vaultIds?.length) return [];
   return db
     .select({
       id: extractionCandidates.id,
@@ -83,7 +86,7 @@ export async function listPersonalCandidates(actor: Principal) {
     .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
     .where(
       and(
-        inArray(extractionCandidates.vaultId, actor.vaultIds),
+        eq(extractionCandidates.createdBy, actor.userId),
         eq(extractionCandidates.state, "pending_review"),
       ),
     )
@@ -95,9 +98,9 @@ export async function rejectCandidate(actor: Principal, candidateId: string) {
     .select()
     .from(extractionCandidates)
     .where(eq(extractionCandidates.id, candidateId));
-  if (!candidate || !canReviewVault(actor, candidate.vaultId)) throw notFound();
+  if (!candidate || !canActOnCandidate(actor, candidate)) throw notFound();
   if (candidate.state !== "pending_review") {
-    throw new ApiError(409, "invalid_state", "Bản trích xuất này đã được xử lý.");
+    throw new ApiError(409, "invalid_state", "This extraction candidate has already been handled.");
   }
   return db.transaction(async (tx) => {
     const [updated] = await tx
@@ -110,7 +113,7 @@ export async function rejectCandidate(actor: Principal, candidateId: string) {
         ),
       )
       .returning();
-    if (!updated) throw new ApiError(409, "invalid_state", "Bản trích xuất đã được xử lý.");
+    if (!updated) throw new ApiError(409, "invalid_state", "The extraction candidate has already been handled.");
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "candidate.reject",
@@ -136,9 +139,9 @@ export async function evolveCandidate(
     .innerJoin(sourceVersions, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
     .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
     .where(eq(extractionCandidates.id, candidateId));
-  if (!candidate || !canReviewVault(actor, candidate.candidate.vaultId)) throw notFound();
+  if (!candidate || !canActOnCandidate(actor, candidate.candidate)) throw notFound();
   if (candidate.candidate.state !== "pending_review") {
-    throw new ApiError(409, "invalid_state", "Bản trích xuất này đã được xử lý.");
+    throw new ApiError(409, "invalid_state", "This extraction candidate has already been handled.");
   }
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (
@@ -170,7 +173,7 @@ export async function evolveCandidate(
       contentMd: candidate.candidate.contentMd,
       verification: "unverified",
       createdBy: actor.userId,
-      changeSummary: "Evolve từ bản Markdown đã trích xuất và duyệt",
+      changeSummary: "evolved_from_extraction",
     });
     const [evolved] = await tx
       .update(extractionCandidates)
@@ -187,7 +190,7 @@ export async function evolveCandidate(
         ),
       )
       .returning();
-    if (!evolved) throw new ApiError(409, "invalid_state", "Bản trích xuất đã được xử lý.");
+    if (!evolved) throw new ApiError(409, "invalid_state", "The extraction candidate has already been handled.");
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "candidate.evolve",

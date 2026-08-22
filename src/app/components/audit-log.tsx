@@ -11,7 +11,6 @@ import {
   detailFieldLabel,
   auditValueLabel,
   notificationEventLabel,
-  channelLabel,
 } from "@/lib/vi";
 import { Say } from "./say";
 
@@ -71,7 +70,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * before the guarded lookup warns about a key it does not know.
  */
 function fieldName(key: string): string {
-  return notificationEventLabel[key] ?? channelLabel[key] ?? detailFieldLabel(key);
+  return notificationEventLabel[key] ?? detailFieldLabel(key);
 }
 
 /**

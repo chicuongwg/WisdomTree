@@ -35,7 +35,7 @@ function automaticMethod(mimeType: string): StoredMethod {
   if (mimeType === "application/pdf") return "text";
   if (mimeType.startsWith("image/")) return "ocr";
   if (PANDOC_MIME_TYPES.has(mimeType)) return "pandoc";
-  throw new Error("định dạng không hỗ trợ trích xuất");
+  throw new Error("format does not support extraction");
 }
 
 async function extractMarkdown(
@@ -53,7 +53,7 @@ async function extractMarkdown(
   try {
     if (method === "pandoc") {
       if (!PANDOC_MIME_TYPES.has(mimeType)) {
-        throw new Error("Pandoc không hỗ trợ định dạng đầu vào này");
+        throw new Error("pandoc does not support this input format");
       }
       const { stdout } = await run("pandoc", [input, "--to=gfm"], { maxBuffer: 50 * 1024 * 1024 });
       return { content: stdout.trim(), method, engine: "pandoc" };
@@ -80,7 +80,7 @@ async function extractMarkdown(
         return { content: content.join("\n\n").trim(), method, engine: "tesseract" };
       }
       if (!mimeType.startsWith("image/")) {
-        throw new Error("OCR chỉ nhận PDF hoặc ảnh");
+        throw new Error("ocr accepts only pdf or images");
       }
       const { stdout } = await run("tesseract", [input, "stdout", "-l", "vie+eng"], {
         maxBuffer: 50 * 1024 * 1024,
@@ -122,7 +122,7 @@ class LocalExtractionWorker {
         .select({ id: vaults.id })
         .from(vaults)
         .where(eq(vaults.ownerUserId, row.submittedBy));
-      if (!vault) throw new Error("không tìm thấy kho cá nhân của người tải lên");
+      if (!vault) throw new Error("uploader has no personal vault");
 
       const { body } = await objectStore.get(row.version.originalObjectKey);
       const extracted = await extractMarkdown(
@@ -131,7 +131,7 @@ class LocalExtractionWorker {
         row.version.mimeType,
         method,
       );
-      if (!extracted.content) throw new Error("không trích xuất được nội dung");
+      if (!extracted.content) throw new Error("no content could be extracted");
 
       const paragraphs = extracted.content
         .split(/\r?\n\s*\r?\n/)
@@ -178,7 +178,7 @@ class LocalExtractionWorker {
         });
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "lỗi trích xuất";
+      const message = error instanceof Error ? error.message : "extraction failed";
       await db.transaction(async (tx) => {
         await tx
           .update(sourceVersions)

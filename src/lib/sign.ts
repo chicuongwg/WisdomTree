@@ -74,14 +74,6 @@ function verify(purpose: Purpose, token: string): string | null {
   return payload.slice(secondSep + 1);
 }
 
-export function signSession(userId: string): string {
-  return sign("session", userId, SESSION_TTL_MS);
-}
-
-export function verifySession(token: string): string | null {
-  return verify("session", token);
-}
-
 /** Signed URL substitute: token for exactly one object key, valid for minutes. */
 export function signDownload(objectKey: string, filename: string, ttlMs = DOWNLOAD_TTL_MS): string {
   return sign("download", JSON.stringify({ k: objectKey, f: filename }), ttlMs);

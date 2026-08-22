@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       throw new ApiError(
         400,
         "invalid_anchor",
-        "Vui lòng cung cấp loại và mã của mục cần xem thảo luận.",
+        "An anchor type and id are required.",
       );
     }
     return NextResponse.json(await listComments(actor, anchorType, anchorId));
@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
     // of thing" and "you typed nothing" are different mistakes, and the reader
     // deserves the one that actually applies.
     if (!body?.anchorType || !ANCHOR_TYPES.includes(body.anchorType) || !body.anchorId) {
-      throw new ApiError(400, "invalid_anchor", "Mục này không nhận thảo luận.");
+      throw new ApiError(400, "invalid_anchor", "This item does not accept comments.");
     }
     if (!body.body?.trim()) {
-      throw new ApiError(400, "invalid_comment", "Vui lòng nhập nội dung thảo luận.");
+      throw new ApiError(400, "invalid_comment", "Comment body must not be empty.");
     }
     const comment = await createComment(actor, {
       anchorType: body.anchorType,

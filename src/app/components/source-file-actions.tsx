@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { T } from "@/lib/vi";
+import { T, translateApiError } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { ConfirmButton } from "./confirm-button";
 import { Say } from "./say";
@@ -50,9 +50,13 @@ export function SourceFileActions({
     }
     if (!res?.ok) {
       const payload = res
-        ? ((await res.json().catch(() => null)) as { message?: string } | null)
+        ? ((await res.json().catch(() => null)) as {
+          message?: string;
+          code?: string;
+          details?: Record<string, unknown>;
+        } | null)
         : null;
-      setUploadError(payload?.message ?? T.genericError);
+      setUploadError(payload ? translateApiError(payload.code, payload.details, payload.message) : T.genericError);
       setUploading(false);
       return;
     }

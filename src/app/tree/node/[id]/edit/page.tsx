@@ -23,13 +23,10 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
-  const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === node.branchVaultId)?.grant;
-  const canEdit =
-    isOwnPersonalNode ||
-    (user.role === "editor" &&
-      node.createdBy === user.id &&
-      (vaultGrant === "editor" || vaultGrant === "owner"));
-  if (!canEdit || node.verification === "archived") notFound();
+  // Two-tier model: own personal node saves live; a promoted node opens the
+  // same editor in propose mode (mirrors proposeNodeChange's authorize).
+  const canPropose = user.role === "editor" && node.createdBy === user.id;
+  if ((!isOwnPersonalNode && !canPropose) || node.verification === "archived") notFound();
 
   return (
     <main className="page">
@@ -54,6 +51,7 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
           tags: node.tags,
         }}
         wikiIndex={wiki}
+        mode={isOwnPersonalNode ? "live" : "propose"}
       />
     </main>
   );

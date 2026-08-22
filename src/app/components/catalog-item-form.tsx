@@ -5,7 +5,7 @@ import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { Say } from "./say";
 
-/** Librarian Desk: add a physical item. The only way the catalogue grows. */
+/** Library admin: add a physical book. The only way the shelf grows. */
 export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: string }> }) {
   const m = useMutation();
   const [title, setTitle] = useState("");
@@ -20,7 +20,7 @@ export function CatalogItemForm({ spaces }: { spaces: Array<{ id: string; name: 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAdded(null);
-    const item = await m.runJson<{ itemCode: string }>("/api/catalog", {
+    const item = await m.runJson<{ itemCode: string }>("/api/library/items", {
       body: { title, author, location, copies, spaceId },
     });
     if (!item) return;

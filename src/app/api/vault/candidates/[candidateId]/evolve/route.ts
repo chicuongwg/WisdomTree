@@ -12,7 +12,7 @@ export async function POST(
     const { candidateId } = await params;
     const body = (await request.json()) as { branchId?: string; title?: string };
     if (!body.branchId) {
-      throw new ApiError(400, "invalid_branch", "Hãy chọn vị trí trong kho cá nhân.");
+      throw new ApiError(400, "invalid_branch", "A personal branch is required.");
     }
     return NextResponse.json(
       await evolveCandidate(actor, candidateId, {

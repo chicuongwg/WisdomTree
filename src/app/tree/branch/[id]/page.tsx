@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { getBranch } from "@/modules/knowledge/service";
-import { listGapsForBranch } from "@/modules/storage/curation";
-import { badgeClass, gapLabel, gapStateLabel, T, when } from "@/lib/vi";
+import { T, when } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeCreateForm } from "@/app/components/node-create-form";
 import { BranchArchiveButton, BranchForm } from "@/app/components/branch-form";
 import { Empty } from "@/app/components/empty";
 import { authorize } from "@/modules/auth/authorize";
-import type { Principal } from "@/modules/auth/dev-auth";
+import type { Principal } from "@/modules/auth/principal";
 
 // Static, not generateMetadata: naming the record in the tab would cost a
 // second read of it on every detail view (the getters take a freshly built
@@ -33,13 +32,12 @@ function mayArchive(actor: Principal): boolean {
 }
 
 // Screen: Branch Hub (`/tree/branch/:id`) — branch summary, node map,
-// progress, and open gaps (user-screen-specs.md).
+// progress (user-screen-specs.md).
 export default async function BranchHubPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const actor = toPrincipal(user);
   const { id } = await params;
   const branch = await orNotFound(() => getBranch(actor, id));
-  const gaps = await listGapsForBranch(actor, id);
 
   const verified = branch.nodes.filter((n) => n.verification === "verified").length;
   const isOwnPersonalBranch =
@@ -60,9 +58,6 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
         </div>
         <div className="stat">
           <strong>{verified}</strong> Đã thẩm định
-        </div>
-        <div className="stat">
-          <strong>{gaps.length}</strong> {T.gapRequest}
         </div>
       </div>
 
@@ -102,19 +97,6 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
       )}
       {canEdit && <NodeCreateForm branchId={branch.id} />}
 
-      {gaps.length > 0 && (
-        <>
-          <h2>{T.gapRequest}</h2>
-          <ul>
-            {gaps.map((g) => (
-              <li key={g.id}>
-                {g.title}{" "}
-                <span className={badgeClass(gapStateLabel, g.state)}>{gapLabel(g.state)}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
 
       {canEditMeta && (
         <>

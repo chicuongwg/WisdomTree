@@ -24,14 +24,9 @@ export type NotificationLink = { href: string; label: string };
 export type AnchorType = "source" | "tree_node" | "deadline";
 
 export type NotificationLinkContext = {
-  /** loan ticket id → catalog item id, for loan payloads carrying no itemId. */
-  ticketItemIds?: Readonly<Record<string, string>>;
-  /**
-   * Source ids on which the VIEWER is the assignee of an existing curation.
-   * Presence routes to the editor workbench; absence to the member view.
-   */
-  assignedSourceIds?: readonly string[];
-  /** The viewer's role — decides the Admin/Op-only source routes. */
+  /** loan ticket id → Library source id, for loan payloads carrying no sourceId. */
+  ticketSourceIds?: Readonly<Record<string, string>>;
+  /** The viewer's role — kept for role-aware routes. */
   viewerRole?: "user" | "editor" | "admin_op";
 };
 
@@ -46,19 +41,14 @@ const str = (v: unknown): string | null => (typeof v === "string" && v.length > 
 export function anchorHref(
   anchorType: string | null,
   anchorId: string | null,
-  ctx: NotificationLinkContext = {},
+  _ctx: NotificationLinkContext = {},
 ): string | null {
   if (!anchorId) return null;
   switch (anchorType) {
     case "tree_node":
       return `/tree/node/${anchorId}`;
     case "source":
-      // Assigned Editor keeps their workbench; everyone else gets the member
-      // view (screen-inventory.md: `/source/task/:id` is Assigned Editor +
-      // Admin/Op, `/library/:id` is the member Stored Item Detail).
-      return (ctx.assignedSourceIds ?? []).includes(anchorId)
-        ? `/source/task/${anchorId}`
-        : `/library/${anchorId}`;
+      return `/library/${anchorId}`;
     case "deadline":
       return `/deadlines/${anchorId}`;
     default:
@@ -78,22 +68,7 @@ function hrefFor(eventType: string, payload: Payload, ctx: NotificationLinkConte
     case "tree.node.published":
       return anchorHref("tree_node", str(payload.nodeId), ctx);
 
-    case "source.ready_for_review":
-      // Recipients are Admin/Op only (dispatcher resolveRecipients). The
-      // object is ONE intake item, so we deep-link Source Detail — the
-      // Admin/Op screen whose goal is "inspect one intake item in depth"
-      // (admin-op-screen-specs.md § Source Detail) and whose actions include
-      // "proceed to draft review". `/review` is a queue: it would make the
-      // reader hunt for the row this notification is already about.
-      // Defensive: a non-admin recipient (preference row edited by hand)
-      // falls back to the member view rather than a 404.
-      return ctx.viewerRole === "admin_op"
-        ? str(payload.sourceId) && `/source/${str(payload.sourceId)}`
-        : anchorHref("source", str(payload.sourceId), ctx);
-
-    case "source.assigned":
     case "source.processing_failed":
-    case "source.approved":
       return anchorHref("source", str(payload.sourceId), ctx);
 
     case "loan.approved":
@@ -102,15 +77,15 @@ function hrefFor(eventType: string, payload: Payload, ctx: NotificationLinkConte
     case "loan.declined":
     case "loan.overdue":
     case "loan.requested": {
-      // Payloads from circulation carry itemId; fall back to the ticket
-      // lookup so a payload written without it still resolves.
-      const itemId = str(payload.itemId);
-      if (itemId) return `/catalog/${itemId}`;
-      // There is no ticket screen: a loan lives on its Catalog Item Detail,
-      // where the loan record block names borrower, approver and due date.
+      // Payloads from circulation carry sourceId; fall back to the ticket
+      // lookup so an older payload still resolves. There is no ticket screen:
+      // a loan lives on its Library item detail, where the loan record block
+      // names borrower, approver and due date.
+      const sourceId = str(payload.sourceId);
+      if (sourceId) return `/library/${sourceId}`;
       const ticketId = str(payload.ticketId);
-      const viaTicket = ticketId ? ctx.ticketItemIds?.[ticketId] : null;
-      return viaTicket ? `/catalog/${viaTicket}` : null;
+      const viaTicket = ticketId ? ctx.ticketSourceIds?.[ticketId] : null;
+      return viaTicket ? `/library/${viaTicket}` : null;
     }
 
     case "deadline.approaching":

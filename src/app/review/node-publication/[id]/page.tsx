@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Crumbs } from "@/app/components/crumbs";
-import { NodePublicationDecision } from "@/app/components/node-publication-decision";
+import { ProposalDecision } from "@/app/components/proposal-decision";
 import { Markdown } from "@/lib/markdown";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { T } from "@/lib/vi";
 import { getNodePublicationReview } from "@/modules/knowledge/service";
 
-export const metadata = { title: "Kiểm chéo đề cử cá nhân" };
+export const metadata = { title: T.publicationReviewTitle };
 
 export default async function NodePublicationReviewPage({
   params,
@@ -15,7 +15,7 @@ export default async function NodePublicationReviewPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
-  if (!user.capabilities.includes("content.review")) notFound();
+  if (user.role === "user") notFound();
   const { id } = await params;
   const item = await orNotFound(() => getNodePublicationReview(toPrincipal(user), id));
   const decided = item.proposal.state !== "pending";
@@ -23,15 +23,14 @@ export default async function NodePublicationReviewPage({
   return (
     <main className="page">
       <Crumbs items={[{ label: T.reviewQueue, href: "/review" }]} />
-      <h1>Kiểm chéo: {item.proposal.title}</h1>
-      {decided && <p className="notice">Đề cử này đã được xử lý.</p>}
+      <h1>{T.publicationReviewHeading(item.proposal.title)}</h1>
+      {decided && <p className="notice">{T.publicationDecided}</p>}
       {decided && item.proposal.decisionNote && (
-        <p className="notice">Nhận xét của reviewer: {item.proposal.decisionNote}</p>
+        <p className="notice">{T.reviewerNotePrefix} {item.proposal.decisionNote}</p>
       )}
       {!item.canReview && !decided && (
         <p className="notice">
-          Bạn là người tạo, người gửi hoặc không có quyền reviewer tại kho đích. Một reviewer độc
-          lập khác phải xử lý đề cử này.
+          Bạn là người tạo hoặc người gửi đề cử. Một reviewer độc lập khác phải xử lý đề cử này.
         </p>
       )}
       {item.stale && !decided && (
@@ -58,7 +57,6 @@ export default async function NodePublicationReviewPage({
               "Không có — chỉ được duyệt ở mức chưa thẩm định"
             )}
           </li>
-          <li>SHA-256: {item.proposal.snapshotSha256}</li>
         </ul>
       </div>
 
@@ -70,9 +68,9 @@ export default async function NodePublicationReviewPage({
       </section>
 
       {!decided && (
-        <NodePublicationDecision
-          taskId={item.task.id}
-          reviewVersion={item.review.version}
+        <ProposalDecision
+          endpoint={`/api/tree/publication-proposals/${item.proposal.id}/decision`}
+          withNote
           hasSource={Boolean(item.proposal.sourceVersionId)}
           disabled={!item.canReview}
           approvalDisabled={item.stale}

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       scope?: string;
     } | null;
     if (!body?.name?.trim()) {
-      throw new ApiError(400, "invalid_branch", "Vui lòng nhập tên chuyên đề.");
+      throw new ApiError(400, "invalid_branch", "Branch name must not be empty.");
     }
     const branch = await createBranch(actor, {
       name: body.name.trim(),

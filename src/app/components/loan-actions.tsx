@@ -13,7 +13,7 @@ export function LoanActions({ ticketId, state }: { ticketId: string; state: stri
   // ponytail: one busy flag for the row, so every button in it shows the
   // pending label rather than only the one that was pressed.
   const act = (action: "approve" | "decline" | "borrow" | "return", body?: object) =>
-    void m.run(`/api/catalog/loan/${ticketId}/${action}`, body ? { body } : undefined);
+    void m.run(`/api/loans/${ticketId}/${action}`, body ? { body } : undefined);
 
   return (
     <div>

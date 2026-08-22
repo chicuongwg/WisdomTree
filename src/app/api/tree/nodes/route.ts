@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       links?: Array<{ toNodeId: string; linkType: string }>;
     } | null;
     if (!body?.branchId || !body.title?.trim() || typeof body.contentMd !== "string") {
-      throw new ApiError(400, "invalid_node", "Vui lòng nhập chuyên đề, tiêu đề và nội dung.");
+      throw new ApiError(400, "invalid_node", "Branch, title and content are required.");
     }
     const node = await createNode(actor, {
       branchId: body.branchId,

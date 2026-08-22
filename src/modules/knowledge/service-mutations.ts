@@ -1,13 +1,12 @@
 import { and, asc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
-import { createHash } from "node:crypto";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { buildWikiIndex, normalizeTitle, wikiTargetKeys } from "@/lib/wikilink";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { assertIndependentReviewer } from "../auth/maker-checker";
+import { assertNotLockedByOther } from "./edit-lock";
 import { emitOutbox, recordAudit } from "../audit/service";
-import { contentReviews } from "../storage/schema";
 import { kickDispatch } from "../notify/dispatcher";
 import {
   branches,
@@ -24,23 +23,6 @@ import { branchVisibilityCondition } from "./service-queries";
 // Knowledge node mutation operations.
 
 export type Verification = (typeof treeNodes.$inferSelect)["verification"];
-
-function proposalSha256(value: unknown): string {
-  const canonical = (item: unknown): unknown => {
-    if (Array.isArray(item)) return item.map(canonical);
-    if (item && typeof item === "object") {
-      return Object.fromEntries(
-        Object.entries(item as Record<string, unknown>)
-          .sort(([left], [right]) => left.localeCompare(right))
-          .map(([key, child]) => [key, canonical(child)]),
-      );
-    }
-    return item;
-  };
-  return createHash("sha256")
-    .update(JSON.stringify(canonical(value)))
-    .digest("hex");
-}
 
 /** Stable export/publish path: Vietnamese-safe slug, unique via numeric suffix. */
 async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promise<string> {
@@ -107,7 +89,7 @@ export async function syncLinks(
     .where(and(eq(nodeLinks.fromNodeId, nodeId), ne(nodeLinks.linkType, "related")));
   for (const link of links) {
     if (!["related", "supports", "contrasts", "part_of"].includes(link.linkType)) {
-      throw new ApiError(400, "invalid_link_type", "Loại liên kết không hợp lệ.");
+      throw new ApiError(400, "invalid_link_type", "Invalid link type.");
     }
     await tx
       .insert(nodeLinks)
@@ -189,7 +171,7 @@ export async function createNode(
     throw new ApiError(
       403,
       "submission_required",
-      "Nội dung chung phải đi qua maker-checker review.",
+      "Shared content must go through review.",
     );
   }
 
@@ -212,7 +194,7 @@ export async function createNode(
       contentMd: input.contentMd,
       verification: "no_source",
       createdBy: actor.userId,
-      changeSummary: "Tạo trang thủ công",
+      changeSummary: "manual_create",
     });
     if (input.tags) await syncTags(tx, actor, node.id, input.tags);
     if (input.links) await syncLinks(tx, node.id, input.links);
@@ -231,8 +213,12 @@ export async function createNode(
 }
 
 /**
- * Optimistic-locked node edit. Content changes append a tree_node_versions
- * snapshot. `verification` / `publish` are Admin/Op-only levers — the
+ * Optimistic-locked node edit — the LIVE half of the two-tier model: a node
+ * in your own personal branch saves immediately (with a tree_node_versions
+ * snapshot). A node anywhere else got there through promotion, and promoted
+ * content never changes in place: this refuses with review_required and the
+ * caller goes through proposeNodeChange → reviewNodeProposal instead.
+ * `verification` / `publish` are Admin/Op-only levers — the
  * verified→unverified downgrade is a distinct audited action
  * (state-machines.md § Node Verification, downgrade rule).
  */
@@ -248,72 +234,23 @@ export async function updateNode(
     publish?: boolean;
     expectedVersion?: number;
   },
+  /** The caller's login-session key; a fresh edit lock held by another session refuses the save. */
+  editSessionKey?: string | null,
 ) {
   const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
   if (!node) throw notFound();
+  await assertNotLockedByOther(nodeId, editSessionKey);
   const [branch] = await db.select().from(branches).where(eq(branches.id, node.branchId));
   const isOwnPersonalBranch =
     branch?.scope === "personal" &&
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
   if (!isOwnPersonalBranch) {
     authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
-    if (!branch) throw notFound();
-    const grant = actor.vaultGrants?.find((item) => item.vaultId === branch.vaultId)?.grant;
-    if (grant !== "editor" && grant !== "owner") throw notFound();
-    if (patch.verification !== undefined || patch.publish !== undefined) {
-      throw new ApiError(403, "review_required", "Mức thẩm định chỉ thay đổi qua review.");
-    }
-    const [currentTags, currentLinks] = await Promise.all([
-      db
-        .select({ name: tags.name })
-        .from(nodeTags)
-        .innerJoin(tags, eq(nodeTags.tagId, tags.id))
-        .where(eq(nodeTags.nodeId, nodeId)),
-      db
-        .select({ toNodeId: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
-        .from(nodeLinks)
-        .where(eq(nodeLinks.fromNodeId, nodeId)),
-    ]);
-    const snapshot = {
-      title: patch.title ?? node.title,
-      contentMd: patch.contentMd ?? node.contentMd,
-      tags: [...(patch.tags ?? currentTags.map((tag) => tag.name))].sort(),
-      links: [...(patch.links ?? currentLinks)].sort(
-        (a, b) => a.toNodeId.localeCompare(b.toNodeId) || a.linkType.localeCompare(b.linkType),
-      ),
-    };
-    return db.transaction(async (tx) => {
-      const [proposal] = await tx
-        .insert(nodeChangeProposals)
-        .values({
-          nodeId,
-          baseVersion: patch.expectedVersion ?? node.version,
-          ...snapshot,
-          contentSha256: proposalSha256(snapshot),
-          createdBy: actor.userId,
-        })
-        .returning();
-      const [review] = await tx
-        .insert(contentReviews)
-        .values({
-          targetType: "node_proposal",
-          proposalId: proposal.id,
-          contentSha256: proposal.contentSha256,
-          originatorId: node.createdBy,
-          lastEditorId: actor.userId,
-          submittedBy: actor.userId,
-          targetNodeId: nodeId,
-        })
-        .returning();
-      await recordAudit(tx, actor, {
-        accountability: "editor_updater",
-        action: "node.change.propose",
-        targetType: "node_change_proposal",
-        targetId: proposal.id,
-        details: { nodeId, reviewId: review.id, baseVersion: proposal.baseVersion },
-      });
-      return { proposalId: proposal.id, reviewId: review.id, state: proposal.state };
-    });
+    throw new ApiError(
+      403,
+      "review_required",
+      "A promoted node only changes through an approved proposal.",
+    );
   }
 
   if (patch.verification !== undefined || patch.publish !== undefined) {
@@ -329,13 +266,13 @@ export async function updateNode(
       archived: ["archived"],
     };
     if (!allowed[node.verification].includes(patch.verification)) {
-      throw new ApiError(409, "invalid_state", "Chuyển trạng thái thẩm định không hợp lệ.");
+      throw new ApiError(409, "invalid_state", "Invalid verification transition.");
     }
   }
   const nextVerification = patch.verification ?? node.verification;
   const nextPublish = patch.publish ?? node.publish;
   if (nextPublish && nextVerification !== "verified") {
-    throw new ApiError(409, "invalid_state", "Chỉ trang Đã thẩm định mới được bật xuất bản.");
+    throw new ApiError(409, "invalid_state", "Only a verified node can be published.");
   }
 
   const expected = patch.expectedVersion ?? node.version;
@@ -371,7 +308,7 @@ export async function updateNode(
         contentMd: patch.contentMd!,
         verification: nextVerification,
         createdBy: actor.userId,
-        changeSummary: "Cập nhật nội dung",
+        changeSummary: "content_update",
       });
     }
     // Derived wiki-links ride the same transaction as the node row (also on
@@ -412,6 +349,75 @@ export async function updateNode(
   return result;
 }
 
+/**
+ * The LOCKED half of the two-tier model: propose a change to a promoted node
+ * (any node outside your own personal branch). The proposal freezes the full
+ * patched snapshot plus the node version it was based on; an independent
+ * reviewer applies it via reviewNodeProposal.
+ */
+export async function proposeNodeChange(
+  actor: Principal,
+  nodeId: string,
+  patch: {
+    title?: string;
+    contentMd?: string;
+    tags?: string[];
+    links?: Array<{ toNodeId: string; linkType: string }>;
+    expectedVersion?: number;
+  },
+) {
+  const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
+  if (!node || node.verification === "archived") throw notFound();
+  const [branch] = await db.select().from(branches).where(eq(branches.id, node.branchId));
+  if (!branch) throw notFound();
+  const isOwnPersonalBranch =
+    branch.scope === "personal" &&
+    (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
+  if (isOwnPersonalBranch) {
+    throw new ApiError(400, "live_editable", "Personal nodes are edited directly; no proposal needed.");
+  }
+  authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
+
+  const [currentTags, currentLinks] = await Promise.all([
+    db
+      .select({ name: tags.name })
+      .from(nodeTags)
+      .innerJoin(tags, eq(nodeTags.tagId, tags.id))
+      .where(eq(nodeTags.nodeId, nodeId)),
+    db
+      .select({ toNodeId: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
+      .from(nodeLinks)
+      .where(eq(nodeLinks.fromNodeId, nodeId)),
+  ]);
+  const snapshot = {
+    title: patch.title ?? node.title,
+    contentMd: patch.contentMd ?? node.contentMd,
+    tags: [...(patch.tags ?? currentTags.map((tag) => tag.name))].sort(),
+    links: [...(patch.links ?? currentLinks)].sort(
+      (a, b) => a.toNodeId.localeCompare(b.toNodeId) || a.linkType.localeCompare(b.linkType),
+    ),
+  };
+  return db.transaction(async (tx) => {
+    const [proposal] = await tx
+      .insert(nodeChangeProposals)
+      .values({
+        nodeId,
+        baseVersion: patch.expectedVersion ?? node.version,
+        ...snapshot,
+        createdBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "editor_updater",
+      action: "node.change.propose",
+      targetType: "node_change_proposal",
+      targetId: proposal.id,
+      details: { nodeId, baseVersion: proposal.baseVersion },
+    });
+    return { proposalId: proposal.id, state: proposal.state };
+  });
+}
+
 export async function reviewNodeProposal(
   actor: Principal,
   nodeId: string,
@@ -419,64 +425,46 @@ export async function reviewNodeProposal(
   input: {
     decision: "approved" | "rejected" | "changes_requested";
     verification?: "unverified" | "verified";
-    expectedReviewVersion: number;
   },
 ) {
   authorize(actor, "knowledge.publish", { kind: "write" });
   const [row] = await db
-    .select({
-      proposal: nodeChangeProposals,
-      review: contentReviews,
-      node: treeNodes,
-      vaultId: branches.vaultId,
-    })
+    .select({ proposal: nodeChangeProposals, node: treeNodes })
     .from(nodeChangeProposals)
-    .innerJoin(contentReviews, eq(contentReviews.proposalId, nodeChangeProposals.id))
     .innerJoin(treeNodes, eq(treeNodes.id, nodeChangeProposals.nodeId))
-    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.nodeId, nodeId)));
-  if (!row || row.review.state !== "pending" || row.proposal.state !== "pending") throw notFound();
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === row.vaultId)?.grant;
-  if (grant !== "reviewer" && grant !== "owner") throw notFound();
-  assertIndependentReviewer(actor.userId, row.review);
-  if (
-    proposalSha256({
-      title: row.proposal.title,
-      contentMd: row.proposal.contentMd,
-      tags: row.proposal.tags,
-      links: row.proposal.links,
-    }) !== row.review.contentSha256
-  ) {
-    throw new ApiError(409, "review_stale", "Proposal không còn khớp review snapshot.");
-  }
+  if (!row || row.proposal.state !== "pending") throw notFound();
+  // Proposer cannot approve their own change; the node's original author may
+  // review someone else's proposal — the separation is on this proposal.
+  assertIndependentReviewer(actor.userId, {
+    originatorId: row.proposal.createdBy,
+    lastEditorId: row.proposal.createdBy,
+    submittedBy: row.proposal.createdBy,
+  });
 
   return db.transaction(async (tx) => {
     if (input.decision !== "approved") {
-      await tx
+      // The state='pending' guard doubles as the concurrency check: two
+      // concurrent decisions race on it and the loser matches zero rows.
+      const [proposal] = await tx
         .update(nodeChangeProposals)
         .set({ state: input.decision })
-        .where(eq(nodeChangeProposals.id, proposalId));
-      const [review] = await tx
-        .update(contentReviews)
-        .set({
-          state: input.decision,
-          reviewedBy: actor.userId,
-          reviewedAt: new Date(),
-          updatedAt: new Date(),
-          version: row.review.version + 1,
-        })
         .where(
-          and(
-            eq(contentReviews.id, row.review.id),
-            eq(contentReviews.version, input.expectedReviewVersion),
-          ),
+          and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.state, "pending")),
         )
         .returning();
-      if (!review) throw versionConflict();
-      return { state: review.state };
+      if (!proposal) throw versionConflict();
+      await recordAudit(tx, actor, {
+        accountability: "approver_publisher",
+        action: `node.change.${input.decision}`,
+        targetType: "node_change_proposal",
+        targetId: proposalId,
+        details: { nodeId },
+      });
+      return { state: proposal.state };
     }
     if (!input.verification)
-      throw new ApiError(400, "missing_verification", "Thiếu mức thẩm định.");
+      throw new ApiError(400, "missing_verification", "A verification level is required.");
     const [node] = await tx
       .update(treeNodes)
       .set({
@@ -508,7 +496,7 @@ export async function reviewNodeProposal(
         contentMd: node.contentMd,
         verification: input.verification,
         createdBy: row.proposal.createdBy,
-        changeSummary: "Approved maker-checker proposal",
+        changeSummary: "proposal_approved",
         reviewStatus: "approved",
       })
       .returning();
@@ -519,36 +507,18 @@ export async function reviewNodeProposal(
       row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
     );
     await syncDerivedLinks(tx, nodeId, node.title, node.contentMd);
-    await tx
+    const [proposal] = await tx
       .update(nodeChangeProposals)
       .set({ state: "approved" })
-      .where(eq(nodeChangeProposals.id, proposalId));
-    const [review] = await tx
-      .update(contentReviews)
-      .set({
-        state: "approved",
-        reviewedBy: actor.userId,
-        reviewedAt: new Date(),
-        verification: input.verification,
-        approvedNodeVersionId: version.id,
-        updatedAt: new Date(),
-        version: row.review.version + 1,
-      })
-      .where(
-        and(
-          eq(contentReviews.id, row.review.id),
-          eq(contentReviews.version, input.expectedReviewVersion),
-          eq(contentReviews.state, "pending"),
-        ),
-      )
+      .where(and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.state, "pending")))
       .returning();
-    if (!review) throw versionConflict();
+    if (!proposal) throw versionConflict();
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",
       action: "node.change.approve",
       targetType: "tree_node",
       targetId: nodeId,
-      details: { proposalId, reviewId: review.id, nodeVersionId: version.id },
+      details: { proposalId, nodeVersionId: version.id },
     });
     return node;
   });
@@ -562,8 +532,6 @@ export async function archiveNode(actor: Principal, nodeId: string) {
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, nodeId));
   if (!row) throw notFound();
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === row.vaultId)?.grant;
-  if (grant !== "editor" && grant !== "owner") throw notFound();
   const node = row.node;
   if (node.verification === "archived") return node;
 
@@ -609,8 +577,6 @@ export async function archiveBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.archive", { kind: "write" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
   if (!branch) throw notFound();
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === branch.vaultId)?.grant;
-  if (grant !== "editor" && grant !== "owner") throw notFound();
   if (branch.archivedAt) return branch;
 
   return db.transaction(async (tx) => {
@@ -635,7 +601,7 @@ export async function archiveBranch(actor: Principal, branchId: string) {
 export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeId: string) {
   authorize(actor, "knowledge.node.merge", { kind: "write" });
   if (nodeId === canonicalNodeId) {
-    throw new ApiError(400, "invalid_merge", "Không thể gộp một trang vào chính nó.");
+    throw new ApiError(400, "invalid_merge", "A node cannot be merged into itself.");
   }
   const [nodeRow] = await db
     .select({ node: treeNodes, vaultId: branches.vaultId })
@@ -648,12 +614,10 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, canonicalNodeId));
   if (!nodeRow || !canonicalRow || nodeRow.vaultId !== canonicalRow.vaultId) throw notFound();
-  const grant = actor.vaultGrants?.find((item) => item.vaultId === nodeRow.vaultId)?.grant;
-  if (grant !== "editor" && grant !== "owner") throw notFound();
   const node = nodeRow.node;
   const canonical = canonicalRow.node;
   if (canonical.verification === "archived") {
-    throw new ApiError(409, "invalid_state", "Trang chuẩn không được ở trạng thái lưu trữ.");
+    throw new ApiError(409, "invalid_state", "The canonical node must not be archived.");
   }
 
   const result = await db.transaction(async (tx) => {

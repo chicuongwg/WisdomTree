@@ -1,149 +1,111 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { listReviewQueue } from "@/modules/storage/curation";
-import {
-  badgeClass,
-  reviewLabel,
-  reviewStateLabel,
-  reviewTaskTypeLabel,
-  reviewTypeLabel,
-  T,
-  targetKindLabel,
-  when,
-} from "@/lib/vi";
+import { listPendingProposals } from "@/modules/knowledge/service";
+import { T, when } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
 
 export const metadata = { title: T.reviewQueue };
 
-// Screen: Review Queue (`/review`, admin-op-screen-specs.md) — the central
-// decision surface; publish tasks open the Publish Review workbench.
-export default async function ReviewQueuePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ taskType?: string; state?: string }>;
-}) {
+// Screen: Review (`/review`) — the single review boundary of the two-tier
+// model: pending promotions of personal nodes, and pending change proposals
+// on promoted nodes. Read straight from the knowledge services; no queue
+// machinery behind it.
+export default async function ReviewQueuePage() {
   const user = await requireUser();
-  if (!user.capabilities.includes("content.review")) notFound();
-  const { taskType, state } = await searchParams;
-  const tasks = await listReviewQueue(toPrincipal(user), {
-    taskType: taskType || undefined,
-    state: state || undefined,
-  });
-  const hasReviewVault = user.vaultGrants.some(
-    (grant) => grant.grant === "reviewer" || grant.grant === "owner",
-  );
-
-  const open = tasks.filter((t) =>
-    t.targetType === "node_publication_proposal"
-      ? ["queued", "assigned", "in_review"].includes(t.state)
-      : ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),
-  ).length;
+  if (user.role === "user") notFound();
+  const { publications, changes } = await listPendingProposals(toPrincipal(user));
+  const total = publications.length + changes.length;
 
   return (
     <main className="page">
       <h1>{T.reviewQueue}</h1>
       <div className="stat-row">
         <div className="stat">
-          <strong>{tasks.length}</strong> Tổng số việc
-        </div>
-        <div className="stat">
-          <strong>{open}</strong> Đang chờ xử lý
+          <strong>{total}</strong> {T.pendingReviewStat}
         </div>
       </div>
-      <form className="inline" method="get">
-        <label htmlFor="filter-type" className="muted">
-          {T.taskType}
-        </label>
-        <select id="filter-type" name="taskType" defaultValue={taskType ?? ""}>
-          <option value="">Tất cả</option>
-          {Object.entries(reviewTaskTypeLabel).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="filter-state" className="muted">
-          {T.state}
-        </label>
-        <select id="filter-state" name="state" defaultValue={state ?? ""}>
-          <option value="">Tất cả</option>
-          {Object.entries(reviewStateLabel).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <button type="submit">{T.search}</button>
-      </form>
 
-      {tasks.length === 0 ? (
-        taskType || state ? (
-          <Empty title={T.noMatches} action={<Link href="/review">{T.clearFilters}</Link>} />
-        ) : (
-          <Empty
-            title={hasReviewVault ? T.reviewQueueEmptyTitle : "Chưa có phạm vi thẩm định"}
-            hint={
-              hasReviewVault
-                ? T.reviewQueueEmptyHint
-                : "Bạn cần được cấp quyền Người thẩm định tại ít nhất một kho chung."
-            }
-            action={{ label: T.sourceInbox, href: "/source/inbox" }}
-          />
-        )
+      {total === 0 ? (
+        <Empty title={T.reviewQueueEmptyTitle} hint={T.reviewQueueEmptyHint} />
       ) : (
-        <div className="record-scroll">
-          <table className="list">
-            <thead>
-              <tr>
-                <th scope="col">{T.taskType}</th>
-                <th scope="col">{T.targetColumn}</th>
-                <th scope="col">{T.state}</th>
-                <th scope="col">{T.assignee}</th>
-                <th scope="col">{T.lastUpdated}</th>
-                <th scope="col">
-                  <span className="muted">Thao tác</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((t) => (
-                <tr key={t.id}>
-                  <td>{reviewTypeLabel(t.taskType)}</td>
-                  <td>
-                    {t.target ? (
-                      <Link href={t.target.href}>{t.target.title}</Link>
-                    ) : (
-                      <span className="muted">{targetKindLabel(t.targetType)}</span>
-                    )}
-                  </td>
-                  <td>
-                    <span className={badgeClass(reviewStateLabel, t.state)}>
-                      {reviewLabel(t.state)}
-                    </span>
-                  </td>
-                  <td>{t.assigneeName ?? <span className="muted">—</span>}</td>
-                  <td>{when(t.updatedAt)}</td>
-                  <td>
-                    {t.targetType === "node_publication_proposal" &&
-                    ["queued", "assigned", "in_review"].includes(t.state) ? (
-                      <Link className="button" href={`/review/node-publication/${t.id}`}>
-                        {T.publishReview}
-                      </Link>
-                    ) : (
-                      t.taskType === "publish" &&
-                      ["queued", "assigned", "in_review"].includes(t.state) && (
-                        <Link className="button" href={`/review/publish/${t.id}`}>
-                          {T.publishReview}
-                        </Link>
-                      )
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <section aria-labelledby="review-publications">
+            <h2 id="review-publications">{T.publicationSection}</h2>
+            {publications.length === 0 ? (
+              <p className="muted">{T.noPendingPublications}</p>
+            ) : (
+              <div className="record-scroll">
+                <table className="list">
+                  <thead>
+                    <tr>
+                      <th scope="col">{T.title}</th>
+                      <th scope="col">{T.targetBranchColumn}</th>
+                      <th scope="col">{T.submitterColumn}</th>
+                      <th scope="col">{T.submittedAtColumn}</th>
+                      <th scope="col">
+                        <span className="muted">{T.actionsColumn}</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {publications.map((p) => (
+                      <tr key={p.id}>
+                        <td>{p.title}</td>
+                        <td>{p.targetBranchName}</td>
+                        <td>{p.authorName}</td>
+                        <td>{when(p.createdAt)}</td>
+                        <td>
+                          <Link className="button" href={`/review/node-publication/${p.id}`}>
+                            {T.publishReview}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section aria-labelledby="review-changes">
+            <h2 id="review-changes">{T.changeProposalSection}</h2>
+            {changes.length === 0 ? (
+              <p className="muted">{T.noPendingChanges}</p>
+            ) : (
+              <div className="record-scroll">
+                <table className="list">
+                  <thead>
+                    <tr>
+                      <th scope="col">{T.title}</th>
+                      <th scope="col">{T.proposerColumn}</th>
+                      <th scope="col">{T.submittedAtColumn}</th>
+                      <th scope="col">
+                        <span className="muted">{T.actionsColumn}</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changes.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <Link href={`/tree/node/${c.nodeId}`}>{c.title}</Link>
+                        </td>
+                        <td>{c.authorName}</td>
+                        <td>{when(c.createdAt)}</td>
+                        <td>
+                          <Link className="button" href={`/review/change/${c.id}`}>
+                            {T.publishReview}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
       )}
     </main>
   );

@@ -13,14 +13,9 @@ export async function POST(
     const body = (await request.json().catch(() => null)) as {
       decision?: string;
       verification?: string;
-      expectedReviewVersion?: number;
     } | null;
-    if (
-      !body ||
-      !["approved", "rejected", "changes_requested"].includes(body.decision ?? "") ||
-      typeof body.expectedReviewVersion !== "number"
-    ) {
-      throw new ApiError(400, "invalid_review", "Quyết định review không hợp lệ.");
+    if (!body || !["approved", "rejected", "changes_requested"].includes(body.decision ?? "")) {
+      throw new ApiError(400, "invalid_review", "Invalid review decision.");
     }
     return NextResponse.json(
       await reviewNodeProposal(actor, nodeId, proposalId, {
@@ -29,7 +24,6 @@ export async function POST(
           body.verification === "verified" || body.verification === "unverified"
             ? body.verification
             : undefined,
-        expectedReviewVersion: body.expectedReviewVersion,
       }),
     );
   });

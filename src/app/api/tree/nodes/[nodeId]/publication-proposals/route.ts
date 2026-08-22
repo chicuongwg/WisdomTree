@@ -12,7 +12,7 @@ export async function POST(
     const { nodeId } = await params;
     const body = (await request.json().catch(() => null)) as { targetBranchId?: string } | null;
     if (!body?.targetBranchId) {
-      throw new ApiError(400, "invalid_target_branch", "Vui lòng chọn chuyên đề chung đích.");
+      throw new ApiError(400, "invalid_target_branch", "A target team branch is required.");
     }
     return NextResponse.json(await submitNodePublication(actor, nodeId, body.targetBranchId), {
       status: 201,

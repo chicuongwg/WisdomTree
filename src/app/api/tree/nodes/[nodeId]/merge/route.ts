@@ -14,7 +14,7 @@ export async function POST(
     const { nodeId } = await params;
     const body = (await request.json().catch(() => null)) as { canonicalNodeId?: string } | null;
     if (!body?.canonicalNodeId) {
-      throw new ApiError(400, "invalid_merge", "Vui lòng chọn trang chuẩn để gộp vào.");
+      throw new ApiError(400, "invalid_merge", "A canonical node to merge into is required.");
     }
     return NextResponse.json(await mergeNode(actor, nodeId, body.canonicalNodeId));
   });

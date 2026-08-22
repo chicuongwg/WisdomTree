@@ -4,7 +4,6 @@ import { db } from "@/db";
 import { outboxEvents } from "@/db/outbox";
 import { sources } from "../storage/schema";
 import { spaceMembers } from "../storage/schema";
-import { users } from "../auth/schema";
 import { deadlines } from "../pm/schema";
 import { notificationDeliveries, notificationPreferences, notifications } from "./schema";
 
@@ -18,25 +17,24 @@ import { notificationDeliveries, notificationPreferences, notifications } from "
 // zalo V1 adapters console.log the message and mark the delivery sent —
 // best-effort and additive, never blocking the triggering workflow.
 
-export type Channel = "in_app" | "email" | "zalo";
+export type Channel = "in_app";
 
-// Default matrix, verbatim from docs/system/notifications.md
-// § Event-to-Notification Matrix, keyed by concrete outbox event type.
-// loan.borrowed/returned/declined ride the "submission state changed →
-// in-app, Zalo" default (matrix names only approved/overdue explicitly).
-export const DEFAULT_CHANNELS: Record<string, Channel[]> = {
-  "source.processing_failed": ["in_app", "zalo"],
-  "source.assigned": ["in_app", "email", "zalo"],
-  "source.ready_for_review": ["in_app", "email"],
-  "tree.node.published": ["in_app"],
-  "loan.approved": ["in_app", "zalo"],
-  "loan.borrowed": ["in_app", "zalo"],
-  "loan.returned": ["in_app", "zalo"],
-  "loan.declined": ["in_app", "zalo"],
-  "loan.overdue": ["in_app", "zalo", "email"],
-  "deadline.approaching": ["in_app", "zalo", "email"],
-  "comment.created": ["in_app", "zalo"],
-};
+// The notified events. One channel — the in-app center; per-event opt-out
+// lives in notification_preferences. (The email/zalo console stubs are gone:
+// a real adapter, when someone asks for one, starts from the deliveries
+// table, not from a stub.)
+export const NOTIFIED_EVENTS: ReadonlySet<string> = new Set([
+  "source.processing_failed",
+  "tree.node.published",
+  "loan.approved",
+  "loan.borrowed",
+  "loan.returned",
+  "loan.declined",
+  "loan.overdue",
+  "loan.requested",
+  "deadline.approaching",
+  "comment.created",
+]);
 
 type Payload = Record<string, unknown>;
 
@@ -56,18 +54,6 @@ async function resolveRecipients(eventType: string, payload: Payload): Promise<s
     case "tree.node.published": {
       const id = str(payload.uploaderId);
       return id ? [id] : [];
-    }
-    case "source.assigned": {
-      const id = str(payload.assigneeId);
-      return id ? [id] : [];
-    }
-    case "source.ready_for_review": {
-      // Matrix: Admin/Op — every enabled admin_op member.
-      const admins = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(and(eq(users.role, "admin_op"), isNull(users.disabledAt)));
-      return admins.map((a) => a.id);
     }
     case "source.processing_failed": {
       // Payload carries only sourceId; the uploader is the source submitter.
@@ -102,6 +88,7 @@ async function resolveRecipients(eventType: string, payload: Payload): Promise<s
   }
 }
 
+/** Per-event opt-out: a preference row without "in_app" silences the event. */
 async function channelsFor(userId: string, eventType: string): Promise<Channel[]> {
   const [pref] = await db
     .select()
@@ -112,8 +99,8 @@ async function channelsFor(userId: string, eventType: string): Promise<Channel[]
         eq(notificationPreferences.eventType, eventType),
       ),
     );
-  if (pref) return pref.channels as Channel[];
-  return DEFAULT_CHANNELS[eventType] ?? ["in_app"];
+  if (pref) return (pref.channels as string[]).includes("in_app") ? ["in_app"] : [];
+  return NOTIFIED_EVENTS.has(eventType) ? ["in_app"] : [];
 }
 
 /**
@@ -196,6 +183,7 @@ export async function dispatchOutbox(): Promise<void> {
     const recipients = await resolveRecipients(event.eventType, payload);
     for (const userId of recipients) {
       const channels = await channelsFor(userId, event.eventType);
+      if (channels.length === 0) continue; // opted out: no notification at all
       // The notifications row is the durable in-app-center record; deliveries
       // hang off it per chosen channel. Everything for one recipient commits
       // together with its notification.dispatched event.
@@ -205,29 +193,13 @@ export async function dispatchOutbox(): Promise<void> {
           .values({ userId, eventType: event.eventType, payload })
           .returning();
         for (const channel of channels) {
-          if (channel === "in_app") {
-            // in_app is "sent" the moment the notifications row exists.
-            await tx.insert(notificationDeliveries).values({
-              notificationId: note.id,
-              channel,
-              state: "sent",
-              attempts: 1,
-            });
-          } else {
-            // V1 email/zalo adapters: console.log the outbound message, then
-            // mark sent (integration-contracts.md provider stubs).
-            // eslint-disable-next-line no-console -- console output is the documented V1 adapter
-            console.log(
-              `[notify:${channel}] → user ${userId}: ${event.eventType} ${JSON.stringify(payload)}`,
-            );
-            await tx.insert(notificationDeliveries).values({
-              notificationId: note.id,
-              channel,
-              state: "sent",
-              attempts: 1,
-              updatedAt: new Date(),
-            });
-          }
+          // in_app is "sent" the moment the notifications row exists.
+          await tx.insert(notificationDeliveries).values({
+            notificationId: note.id,
+            channel,
+            state: "sent",
+            attempts: 1,
+          });
         }
         await tx.insert(outboxEvents).values({
           eventType: "notification.dispatched",

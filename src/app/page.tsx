@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
 import { listLibrary } from "@/modules/storage/service";
-import { myAssignedTasks } from "@/modules/storage/curation";
 import { myTickets } from "@/modules/circulation/service";
 import { listNotificationsWithLinks } from "@/modules/notify/service";
 import { NotificationLink } from "@/app/components/notification-actions";
 import { Empty } from "@/app/components/empty";
 import {
   badgeClass,
-  curationLabel,
-  curationStateLabel,
   eventLabel,
   extractionLabel,
   extractionStateLabel,
@@ -23,12 +20,9 @@ import {
 export default async function Home() {
   const user = await requireUser();
   const actor = toPrincipal(user);
-  const [recent, tickets, assigned, notes] = await Promise.all([
+  const [recent, tickets, notes] = await Promise.all([
     listLibrary(actor, {}),
     myTickets(actor),
-    user.role === "editor" || user.role === "admin_op"
-      ? myAssignedTasks(actor)
-      : Promise.resolve([]),
     listNotificationsWithLinks(actor, 5),
   ]);
 
@@ -66,13 +60,13 @@ export default async function Home() {
               panel={false}
               title={T.homeLoansEmptyTitle}
               hint={T.homeLoansEmptyHint}
-              action={{ label: T.catalog, href: "/catalog" }}
+              action={{ label: T.library, href: "/library" }}
             />
           )}
           <ul>
-            {tickets.slice(0, 5).map(({ ticket, itemTitle }) => (
+            {tickets.slice(0, 5).map(({ ticket, sourceId, itemTitle }) => (
               <li key={ticket.id}>
-                <Link href={`/catalog/${ticket.itemId}`}>{itemTitle}</Link>{" "}
+                <Link href={`/library/${sourceId}`}>{itemTitle}</Link>{" "}
                 <span className={badgeClass(loanStateLabel, ticket.state)}>
                   {loanLabel(ticket.state)}
                 </span>
@@ -80,21 +74,6 @@ export default async function Home() {
             ))}
           </ul>
         </div>
-        {assigned.length > 0 && (
-          <div className="panel">
-            <h2>{T.assignedTask}</h2>
-            <ul>
-              {assigned.slice(0, 5).map((a) => (
-                <li key={a.curation.id}>
-                  <Link href={`/source/task/${a.sourceId}`}>{a.title}</Link>{" "}
-                  <span className={badgeClass(curationStateLabel, a.curation.state)}>
-                    {curationLabel(a.curation.state)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         <div className="panel">
           <h2>
             <Link href="/notifications">{T.notifications}</Link>

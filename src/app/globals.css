@@ -2665,164 +2665,43 @@ a.tree-item.nav-item {
   pointer-events: none;
 }
 
-svg.knowledge-map,
-canvas.knowledge-map {
+/* The force-graph holder: the library appends its own canvas inside. Full
+   size is the point of this screen; the floating control panel eats into it
+   too. touch-action none — the engine owns pinch-zoom and drag-pan. */
+div.knowledge-map {
   width: 100%;
-  /* Full size is the point of this screen (owner: "ưu tiên full size"), and the
-     floating control panel eats into it as well, so the map takes the height of
-     the window rather than the fixed 640px it used to be capped at. It keeps
-     its 1000×640 viewBox, so on a very wide column the drawing is centred with
-     paper either side — the same paper, so nothing shows a seam.
-     ponytail: a viewBox that tracked the element's own aspect ratio would use
-     that strip too, at the cost of a resize observer and a re-layout on every
-     drag of the window edge. Do it only if someone asks for the strip back. */
   height: min(72vh, 46rem);
   background: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
-  /* A one-finger horizontal drag pans the map; a vertical swipe still scrolls
-     the page, so a full-width map is never a scroll trap on a phone. (This
-     was `none` while the map claimed pinch-to-zoom for itself.) Plain wheel
-     over the map is never intercepted either. */
-  touch-action: pan-y;
-}
-canvas.graph-canvas {
-  display: block;
-  cursor: grab;
+  overflow: hidden;
   touch-action: none;
-}
-canvas.graph-canvas:active {
-  cursor: grabbing;
-}
-canvas.graph-canvas[hidden] {
-  display: none;
-}
-.g-surface {
-  fill: var(--color-surface);
   cursor: grab;
 }
-.g-surface:active {
+div.knowledge-map:active {
   cursor: grabbing;
 }
-svg.knowledge-map .g-edge {
-  stroke: var(--color-line-strong);
-  /* --g-edge-w is written on the <svg> from the "độ dày đường" slider; 1.4 is
-     what the map shipped with and what the slider's midpoint produces. */
-  stroke-width: var(--g-edge-w, 1.4);
-}
-svg.knowledge-map .g-edge.t-related {
-  stroke: var(--color-line-strong);
-}
-svg.knowledge-map .g-edge.t-supports {
-  stroke: var(--color-canopy);
-}
-svg.knowledge-map .g-edge.t-contrasts {
-  stroke: var(--color-seal);
-  stroke-dasharray: 5 4;
-}
-svg.knowledge-map .g-edge.t-part_of {
-  stroke: var(--color-cham);
-}
-/* Direction markers. A <marker> does not inherit from the line that uses it,
-   so the four fills repeat the four stroke colours above — same tokens, so the
-   two lists cannot drift apart in appearance without drifting in the source. */
-svg.knowledge-map .g-arrow > path {
-  fill: var(--color-line-strong);
-}
-svg.knowledge-map .g-arrow.t-supports > path {
-  fill: var(--color-canopy);
-}
-svg.knowledge-map .g-arrow.t-contrasts > path {
-  fill: var(--color-seal);
-}
-svg.knowledge-map .g-arrow.t-part_of > path {
-  fill: var(--color-cham);
-}
-/* Hover or focus a mark: it and its neighbours stay lit, the rest recede.
-   The dim level stays well above the point where faded content becomes
-   unreadable, and dimmed marks remain focusable and clickable. */
-svg.knowledge-map[data-dim="on"] .g-node.is-far,
-svg.knowledge-map[data-dim="on"] .g-edge.is-far {
-  opacity: var(--graph-dim);
-}
-svg.knowledge-map[data-dim="on"] .g-edge.is-near {
-  stroke-width: calc(var(--g-edge-w, 1.4) * 1.6);
-}
 
-.g-node {
-  cursor: pointer;
+/* Legend swatches — the shape vocabulary, drawn in CSS now that the SVG
+   node classes are gone with the old engine. */
+.legend-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: none;
+  display: inline-block;
+  border: 1.5px solid var(--color-ink-muted);
+  background: var(--color-surface-sunken);
+  border-radius: 2px;
 }
-.g-node .g-mark {
-  fill: var(--color-surface);
-  stroke-width: 2;
-  transition: fill var(--speed) ease;
+.legend-verified {
+  border-radius: 50%;
+  background: var(--color-canopy);
+  border-color: var(--color-canopy-deep);
 }
-/* Ghim = a seal stamped on the page: a mark held in place wears a vermilion
-   chop ring. The local map's centre is pinned by definition, so its existing
-   seal stroke and this ring say the same thing. */
-.g-node .g-seal {
-  fill: none;
-  stroke: var(--color-seal);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 3.5;
-}
-.g-node .g-group-ring {
-  fill: none;
-  stroke: var(--g-group);
-  stroke-width: 3;
-}
-.g-node.v-verified .g-mark {
-  fill: var(--color-canopy);
-  stroke: var(--color-canopy-deep);
-}
-.g-node.v-unverified .g-mark {
-  fill: var(--color-amber-wash);
-  stroke: var(--color-amber);
-}
-.g-node.v-no_source .g-mark {
-  fill: var(--color-surface-sunken);
-  stroke: var(--color-ink-muted);
-}
-.g-node.v-archived .g-mark {
-  fill: var(--color-surface-sunken);
-  stroke: var(--color-line-strong);
-}
-.g-node.is-focus .g-mark {
-  stroke: var(--color-seal);
-  stroke-width: 3;
-}
-.g-node .g-label {
-  fill: var(--color-ink);
-  /* A node label is the title of a knowledge page, so it is set in the
-     knowledge serif rather than the interface sans. */
-  font-family: var(--font-display);
-  font-size: 12px;
-  text-anchor: middle;
-  pointer-events: none;
-  transition: opacity var(--speed) ease;
-}
-/* Titles step down with the zoom, the way a map drops place names as you pull
-   back: every page, then the linked ones only, then none — the shape itself is
-   what a zoomed-out map is for. The mark under the pointer or the keyboard
-   always keeps its title, at any zoom. */
-svg.knowledge-map[data-labels="hubs"] .g-node:not(.is-hub) .g-label,
-svg.knowledge-map[data-labels="none"] .g-label {
-  opacity: 0;
-}
-svg.knowledge-map .g-node:hover .g-label,
-svg.knowledge-map .g-node:focus-visible .g-label {
-  opacity: 1;
-}
-
-.g-node:hover .g-mark {
-  fill: var(--color-canopy-wash);
-}
-.g-node:focus-visible {
-  outline: none;
-}
-.g-node:focus-visible .g-mark {
-  stroke: var(--color-focus);
-  stroke-width: 3.5;
+.legend-unverified {
+  transform: rotate(45deg);
+  background: var(--color-amber-wash);
+  border-color: var(--color-amber);
 }
 
 .map-legend {
@@ -2839,11 +2718,6 @@ svg.knowledge-map .g-node:focus-visible .g-label {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-}
-.map-legend .legend-mark {
-  width: 1rem;
-  height: 1rem;
-  flex: none;
 }
 .graph-context-menu {
   position: fixed;
@@ -3712,4 +3586,41 @@ button.login-person:hover .login-person-role {
 .crumbs {
   color: var(--color-ink-muted);
   font-size: 0.85rem;
+}
+
+/* Unified line diff (version history, proposal review, edit conflicts).
+   Wash + ink pairs reuse the badge tones so both themes are already covered:
+   canopy = added, seal = removed. Monospace because alignment IS the message. */
+.diff-view {
+  border: 1px solid var(--color-line-strong);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+.diff-line {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.6rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.diff-sign {
+  flex: 0 0 1ch;
+  user-select: none;
+  color: var(--color-ink-muted);
+}
+.diff-add {
+  background: var(--color-canopy-wash);
+  color: var(--color-canopy-deep);
+}
+.diff-del {
+  background: var(--color-seal-wash);
+  color: var(--color-seal-deep);
+}
+.diff-skip {
+  color: var(--color-ink-muted);
+  font-style: italic;
 }

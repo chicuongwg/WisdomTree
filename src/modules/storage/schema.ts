@@ -68,12 +68,22 @@ export const folders = pgTable("folders", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Flat content taxonomy. "Sách" is seeded; more categories are an INSERT (no
+// admin UI until someone needs one).
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const sources = pgTable("sources", {
   id: uuid("id").primaryKey().defaultRandom(),
   spaceId: uuid("space_id")
     .notNull()
     .references(() => spaces.id),
   folderId: uuid("folder_id").references(() => folders.id),
+  categoryId: uuid("category_id").references(() => categories.id),
   title: text("title").notNull(),
   description: text("description"),
   trustStatus: text("trust_status", {
@@ -166,120 +176,31 @@ export const extractionCandidates = pgTable("extraction_candidates", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Each save appends a new row (the corrected text version chain); the latest
-// seq is current. No updates, so no version column.
-export const correctedTexts = pgTable(
-  "corrected_texts",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    sourceVersionId: uuid("source_version_id")
-      .notNull()
-      .references(() => sourceVersions.id),
-    seq: integer("seq").notNull(),
-    content: text("content").notNull(),
-    editedBy: uuid("edited_by")
-      .notNull()
-      .references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [unique().on(t.sourceVersionId, t.seq)],
-);
-
-// Curation is an optional overlay on storage; a stored item with no row here
-// is simply "stored, never nominated".
-export const curations = pgTable("curations", {
+// Physical copy metadata for a Library item — the book-on-a-shelf half of a
+// source (the merge of the old catalog_items table). 1:1 with sources; a
+// source without a row here is digital-only. Loans (loan_tickets) key on this
+// row's id, so the one-active-loan partial unique index survives.
+export const sourcePhysical = pgTable("source_physical", {
   id: uuid("id").primaryKey().defaultRandom(),
-  sourceVersionId: uuid("source_version_id")
+  sourceId: uuid("source_id")
     .notNull()
     .unique()
-    .references(() => sourceVersions.id),
-  state: text("state", {
-    enum: ["under_correction", "ready_for_review", "promoted", "rejected"],
-  }).notNull(),
-  assignedTo: uuid("assigned_to").references(() => users.id),
-  nominatedBy: uuid("nominated_by")
+    .references(() => sources.id),
+  itemCode: text("item_code").notNull().unique(), // format LIB-000001
+  author: text("author"),
+  coverPhotoKey: text("cover_photo_key"),
+  location: text("location"),
+  /** How many physical books sit under this item code. Never below 1. */
+  copies: integer("copies").notNull().default(1),
+  status: text("status", { enum: ["available", "borrowed", "lost", "repair"] })
     .notNull()
-    .references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
-});
-
-export const markdownDrafts = pgTable("markdown_drafts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  sourceVersionId: uuid("source_version_id")
-    .notNull()
-    .unique()
-    .references(() => sourceVersions.id),
-  contentMd: text("content_md").notNull(),
-  // FK to branches lives in the migration; mapped plain here to avoid a
-  // storage ↔ knowledge module import cycle (same pattern as currentVersionId).
-  suggestedBranchId: uuid("suggested_branch_id"),
+    .default("available"),
+  /** Retired from the shelf. Set = hidden from every read, kept on record. */
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => users.id),
-  updatedBy: uuid("updated_by")
-    .notNull()
-    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
 });
-
-export const contentReviews = pgTable("content_reviews", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  targetType: text("target_type", {
-    enum: ["source_draft", "node_proposal", "personal_node_publication"],
-  }).notNull(),
-  sourceVersionId: uuid("source_version_id").references(() => sourceVersions.id),
-  proposalId: uuid("proposal_id"),
-  publicationProposalId: uuid("publication_proposal_id"),
-  contentSha256: text("content_sha256").notNull(),
-  originatorId: uuid("originator_id")
-    .notNull()
-    .references(() => users.id),
-  lastEditorId: uuid("last_editor_id")
-    .notNull()
-    .references(() => users.id),
-  submittedBy: uuid("submitted_by")
-    .notNull()
-    .references(() => users.id),
-  state: text("state", {
-    enum: ["pending", "approved", "rejected", "changes_requested"],
-  })
-    .notNull()
-    .default("pending"),
-  reviewedBy: uuid("reviewed_by").references(() => users.id),
-  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-  targetBranchId: uuid("target_branch_id"),
-  targetNodeId: uuid("target_node_id"),
-  verification: text("verification", { enum: ["unverified", "verified"] }),
-  excerptChunkIds: uuid("excerpt_chunk_ids").array(),
-  approvedNodeVersionId: uuid("approved_node_version_id"),
-  version: integer("version").notNull().default(1),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const branchGapRequests = pgTable("branch_gap_requests", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  description: text("description"),
-  state: text("state", {
-    enum: ["submitted", "triaged", "converted_to_branch", "rejected", "archived"],
-  })
-    .notNull()
-    .default("submitted"),
-  submittedBy: uuid("submitted_by")
-    .notNull()
-    .references(() => users.id),
-  triagedBy: uuid("triaged_by").references(() => users.id),
-  convertedBranchId: uuid("converted_branch_id"),
-  convertedNodeId: uuid("converted_node_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
-});
-
-// The intake_items SQL view still exists in the migration but is no longer
-// mapped: mySubmissions derives its rows in TS from the base tables.

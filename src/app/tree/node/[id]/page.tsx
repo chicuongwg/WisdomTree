@@ -2,18 +2,19 @@ import { Crumbs } from "@/app/components/crumbs";
 import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import {
+  getEditLock,
   getNode,
   getLatestPublicationForNode,
   listNodeOptions,
   listPublicationTargets,
   wikiIndex,
 } from "@/modules/knowledge/service";
+import { currentSessionKey } from "@/modules/auth/session";
 import { badgeToneClass, day, nodeLinkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
 import { NodeLink } from "@/app/components/node-link";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
-import { NodeExportActions } from "@/app/components/node-export-actions";
 import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { PresenceRow } from "@/app/components/presence-row";
@@ -36,9 +37,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
-  const vaultGrant = actor.vaultGrants?.find((grant) => grant.vaultId === node.branchVaultId)?.grant;
-  const canManageShared =
-    user.role === "editor" && (vaultGrant === "editor" || vaultGrant === "owner");
+  const canManageShared = user.role === "editor";
   const canEdit =
     isOwnPersonalNode || (canManageShared && node.createdBy === user.id);
   const candidates =
@@ -50,6 +49,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
       ])
     : [[], null];
   const wiki = await wikiIndex(actor);
+  const editLock = await getEditLock(actor, node.id, await currentSessionKey());
 
   return (
     <main className="page">
@@ -165,7 +165,9 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
               </ul>
             )}
           </div>
-          {node.verification !== "archived" && <NodeExportActions nodeId={node.id} />}
+          {editLock.locked && !editLock.ownedByMe && (
+            <p className="notice">{T.editLockNotice(editLock.holderName)}</p>
+          )}
           {canEdit && node.verification !== "archived" && (
             <p>
               <Link className="button" href={`/tree/node/${node.id}/edit`}>
@@ -173,6 +175,9 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
               </Link>
             </p>
           )}
+          <p>
+            <Link href={`/tree/node/${node.id}/history`}>{T.nodeHistory}</Link>
+          </p>
           {canManageShared && node.verification !== "archived" && (
             <NodeAdminActions nodeId={node.id} candidates={candidates} />
           )}

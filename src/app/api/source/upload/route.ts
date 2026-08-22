@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const file = form.get("file");
     const spaceId = form.get("spaceId");
     if (!(file instanceof File) || typeof spaceId !== "string") {
-      throw new ApiError(400, "invalid_upload", "Vui lòng chọn tệp và kho.");
+      throw new ApiError(400, "invalid_upload", "A file and a space are required.");
     }
     // Title defaults to the filename, extension dropped. Drive taught everyone
     // that storing a file demands no form; a mandatory title field was the

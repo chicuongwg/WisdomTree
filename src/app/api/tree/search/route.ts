@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const actor = await requirePrincipal();
     const params = request.nextUrl.searchParams;
     const q = params.get("q");
-    if (!q?.trim()) throw new ApiError(400, "invalid_query", "Vui lòng nhập từ khóa tìm kiếm.");
+    if (!q?.trim()) throw new ApiError(400, "invalid_query", "A search query is required.");
     const page = params.get("page") ? Number(params.get("page")) : 1;
     return NextResponse.json(await searchTree(actor, q, page));
   });

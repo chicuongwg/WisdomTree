@@ -1,41 +1,31 @@
-import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
-import { assertReviewScope, canReviewVault } from "../auth/maker-checker";
+import { assertIndependentReviewer } from "../auth/maker-checker";
 import { users } from "../auth/schema";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { kickDispatch } from "../notify/dispatcher";
-import { contentReviews, extractionCandidates, sources, sourceVersions } from "../storage/schema";
+import { extractionCandidates, sources, sourceVersions } from "../storage/schema";
 import { syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
 import {
   branches,
+  nodeChangeProposals,
   nodeLinks,
   nodePublicationProposals,
   nodeTags,
   promotions,
-  reviewTasks,
   tags,
   treeNodes,
   treeNodeVersions,
+  vaults,
 } from "./schema";
 
-type PublicationSnapshot = {
-  sourceNodeId: string;
-  sourceNodeVersion: number;
-  sourceVersionId: string | null;
-  targetBranchId: string;
-  title: string;
-  contentMd: string;
-  tags: string[];
-  links: Array<{ toNodeId: string; linkType: string }>;
-};
-
-function publicationSha256(value: PublicationSnapshot): string {
-  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
-}
+// Promotion — the single review boundary of the two-tier model: a personal
+// node is proposed onto a team branch, an independent reviewer decides, and
+// the approved snapshot becomes a promoted node (locked from then on; changes
+// go through node change proposals).
 
 async function uniqueSlug(tx: Tx, title: string): Promise<string> {
   const base =
@@ -59,15 +49,15 @@ async function uniqueSlug(tx: Tx, title: string): Promise<string> {
 
 export async function listPublicationTargets(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
-  if (!actor.vaultIds?.length) return [];
   return db
     .select({ id: branches.id, name: branches.name })
     .from(branches)
+    .innerJoin(vaults, eq(branches.vaultId, vaults.id))
     .where(
       and(
         eq(branches.scope, "team"),
+        eq(vaults.kind, "shared"),
         sql`${branches.archivedAt} IS NULL`,
-        inArray(branches.vaultId, actor.vaultIds),
       ),
     )
     .orderBy(asc(branches.name));
@@ -130,14 +120,18 @@ export async function submitNodePublication(
   ) {
     throw notFound();
   }
-  const [target] = await db.select().from(branches).where(eq(branches.id, targetBranchId));
+  const [target] = await db
+    .select({ branch: branches, vaultKind: vaults.kind })
+    .from(branches)
+    .innerJoin(vaults, eq(branches.vaultId, vaults.id))
+    .where(eq(branches.id, targetBranchId));
   if (
     !target ||
-    target.archivedAt ||
-    target.scope !== "team" ||
-    !actor.vaultIds?.includes(target.vaultId)
+    target.branch.archivedAt ||
+    target.branch.scope !== "team" ||
+    target.vaultKind !== "shared"
   ) {
-    throw new ApiError(400, "invalid_target_branch", "Chuyên đề chung đích không hợp lệ.");
+    throw new ApiError(400, "invalid_target_branch", "Invalid target team branch.");
   }
   const [pending] = await db
     .select({ id: nodePublicationProposals.id })
@@ -149,7 +143,7 @@ export async function submitNodePublication(
       ),
     );
   if (pending) {
-    throw new ApiError(409, "publication_pending", "Trang này đã có đề cử đang chờ duyệt.");
+    throw new ApiError(409, "publication_pending", "This node already has a pending publication proposal.");
   }
   const [alreadyPublished] = await db
     .select({ id: nodePublicationProposals.id })
@@ -165,7 +159,7 @@ export async function submitNodePublication(
     throw new ApiError(
       409,
       "publication_unchanged",
-      "Phiên bản hiện tại đã được duyệt lên cây chung.",
+      "This version has already been published to the shared tree.",
     );
   }
 
@@ -187,46 +181,19 @@ export async function submitNodePublication(
       .where(eq(extractionCandidates.evolvedNodeId, nodeId))
       .limit(1),
   ]);
-  const snapshot: PublicationSnapshot = {
-    sourceNodeId: nodeId,
-    sourceNodeVersion: row.node.version,
-    sourceVersionId: sourceCandidate[0]?.sourceVersionId ?? null,
-    targetBranchId,
-    title: row.node.title,
-    contentMd: row.node.contentMd,
-    tags: tagRows.map((tag) => tag.name),
-    links: linkRows,
-  };
-  const hash = publicationSha256(snapshot);
 
   const result = await db.transaction(async (tx) => {
     const [proposal] = await tx
       .insert(nodePublicationProposals)
       .values({
-        ...snapshot,
-        snapshotSha256: hash,
-        createdBy: actor.userId,
-      })
-      .returning();
-    const [review] = await tx
-      .insert(contentReviews)
-      .values({
-        targetType: "personal_node_publication",
-        publicationProposalId: proposal.id,
-        contentSha256: hash,
-        originatorId: row.node.createdBy,
-        lastEditorId: actor.userId,
-        submittedBy: actor.userId,
+        sourceNodeId: nodeId,
+        sourceNodeVersion: row.node.version,
+        sourceVersionId: sourceCandidate[0]?.sourceVersionId ?? null,
         targetBranchId,
-      })
-      .returning();
-    const [task] = await tx
-      .insert(reviewTasks)
-      .values({
-        taskType: "publish",
-        targetType: "node_publication_proposal",
-        targetId: proposal.id,
-        state: "queued",
+        title: row.node.title,
+        contentMd: row.node.contentMd,
+        tags: tagRows.map((tag) => tag.name),
+        links: linkRows,
         createdBy: actor.userId,
       })
       .returning();
@@ -235,45 +202,65 @@ export async function submitNodePublication(
       action: "node.publication.submit",
       targetType: "node_publication_proposal",
       targetId: proposal.id,
-      details: { nodeId, targetBranchId, reviewId: review.id, snapshotSha256: hash },
+      details: { nodeId, targetBranchId },
     });
-    return { proposalId: proposal.id, reviewTaskId: task.id, state: proposal.state };
+    return { proposalId: proposal.id, state: proposal.state };
   });
   kickDispatch();
   return result;
 }
 
-export async function getNodePublicationReview(actor: Principal, taskId: string) {
-  authorize(actor, "review.draft.approve", { kind: "read" });
+/** Pending proposals of both kinds, for the review surface. */
+export async function listPendingProposals(actor: Principal) {
+  authorize(actor, "knowledge.publish", { kind: "read" });
+  const [publications, changes] = await Promise.all([
+    db
+      .select({
+        id: nodePublicationProposals.id,
+        title: nodePublicationProposals.title,
+        targetBranchName: branches.name,
+        authorName: users.displayName,
+        createdBy: nodePublicationProposals.createdBy,
+        createdAt: nodePublicationProposals.createdAt,
+      })
+      .from(nodePublicationProposals)
+      .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
+      .innerJoin(users, eq(users.id, nodePublicationProposals.createdBy))
+      .where(eq(nodePublicationProposals.state, "pending"))
+      .orderBy(asc(nodePublicationProposals.createdAt)),
+    db
+      .select({
+        id: nodeChangeProposals.id,
+        nodeId: nodeChangeProposals.nodeId,
+        title: nodeChangeProposals.title,
+        authorName: users.displayName,
+        createdBy: nodeChangeProposals.createdBy,
+        createdAt: nodeChangeProposals.createdAt,
+      })
+      .from(nodeChangeProposals)
+      .innerJoin(users, eq(users.id, nodeChangeProposals.createdBy))
+      .where(eq(nodeChangeProposals.state, "pending"))
+      .orderBy(asc(nodeChangeProposals.createdAt)),
+  ]);
+  return { publications, changes };
+}
+
+export async function getNodePublicationReview(actor: Principal, proposalId: string) {
+  authorize(actor, "knowledge.publish", { kind: "read" });
   const [row] = await db
     .select({
-      task: reviewTasks,
       proposal: nodePublicationProposals,
-      review: contentReviews,
       targetBranchName: branches.name,
-      targetVaultId: branches.vaultId,
       authorName: users.displayName,
+      sourceNodeCreatedBy: treeNodes.createdBy,
       currentSourceVersion: treeNodes.version,
     })
-    .from(reviewTasks)
-    .innerJoin(nodePublicationProposals, eq(nodePublicationProposals.id, reviewTasks.targetId))
-    .innerJoin(
-      contentReviews,
-      eq(contentReviews.publicationProposalId, nodePublicationProposals.id),
-    )
+    .from(nodePublicationProposals)
     .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
     .innerJoin(treeNodes, eq(treeNodes.id, nodePublicationProposals.sourceNodeId))
     .innerJoin(users, eq(users.id, nodePublicationProposals.createdBy))
-    .where(
-      and(eq(reviewTasks.id, taskId), eq(reviewTasks.targetType, "node_publication_proposal")),
-    );
+    .where(eq(nodePublicationProposals.id, proposalId));
   if (!row) throw notFound();
-  if (!canReviewVault(actor, row.targetVaultId)) throw notFound();
-  const independent = ![
-    row.review.originatorId,
-    row.review.lastEditorId,
-    row.review.submittedBy,
-  ].includes(actor.userId);
   const source = row.proposal.sourceVersionId
     ? (
         await db
@@ -286,124 +273,82 @@ export async function getNodePublicationReview(actor: Principal, taskId: string)
   return {
     ...row,
     source: source ?? null,
-    canReview: independent,
+    canReview: ![row.proposal.createdBy, row.sourceNodeCreatedBy].includes(actor.userId),
     stale: row.currentSourceVersion !== row.proposal.sourceNodeVersion,
   };
 }
 
 export async function decideNodePublication(
   actor: Principal,
-  taskId: string,
+  proposalId: string,
   input: {
     decision: "approved" | "rejected" | "changes_requested";
     verification?: "unverified" | "verified";
-    expectedReviewVersion: number;
     note?: string;
   },
 ) {
   authorize(actor, "knowledge.publish", { kind: "write" });
   const [row] = await db
     .select({
-      task: reviewTasks,
       proposal: nodePublicationProposals,
-      review: contentReviews,
-      targetVaultId: branches.vaultId,
+      sourceNodeCreatedBy: treeNodes.createdBy,
       sourceNodeVersion: treeNodes.version,
     })
-    .from(reviewTasks)
-    .innerJoin(nodePublicationProposals, eq(nodePublicationProposals.id, reviewTasks.targetId))
-    .innerJoin(
-      contentReviews,
-      eq(contentReviews.publicationProposalId, nodePublicationProposals.id),
-    )
-    .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
+    .from(nodePublicationProposals)
     .innerJoin(treeNodes, eq(treeNodes.id, nodePublicationProposals.sourceNodeId))
     .where(
       and(
-        eq(reviewTasks.id, taskId),
-        eq(reviewTasks.targetType, "node_publication_proposal"),
+        eq(nodePublicationProposals.id, proposalId),
         eq(nodePublicationProposals.state, "pending"),
-        eq(contentReviews.state, "pending"),
       ),
     );
   if (!row) throw notFound();
-  assertReviewScope(actor, { vaultId: row.targetVaultId, review: row.review });
+  assertIndependentReviewer(actor.userId, {
+    originatorId: row.sourceNodeCreatedBy,
+    lastEditorId: row.proposal.createdBy,
+    submittedBy: row.proposal.createdBy,
+  });
   const note = input.note?.trim() || null;
   if (input.decision !== "approved" && !note) {
-    throw new ApiError(400, "review_note_required", "Vui lòng ghi lý do cho quyết định này.");
-  }
-  const snapshot: PublicationSnapshot = {
-    sourceNodeId: row.proposal.sourceNodeId,
-    sourceNodeVersion: row.proposal.sourceNodeVersion,
-    sourceVersionId: row.proposal.sourceVersionId,
-    targetBranchId: row.proposal.targetBranchId,
-    title: row.proposal.title,
-    contentMd: row.proposal.contentMd,
-    tags: row.proposal.tags as string[],
-    links: row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
-  };
-  if (
-    publicationSha256(snapshot) !== row.proposal.snapshotSha256 ||
-    row.review.contentSha256 !== row.proposal.snapshotSha256
-  ) {
-    throw new ApiError(409, "review_stale", "Snapshot đề cử không còn khớp nội dung duyệt.");
+    throw new ApiError(400, "review_note_required", "A note is required for this decision.");
   }
 
   if (input.decision !== "approved") {
     return db.transaction(async (tx) => {
-      await tx
+      // The state='pending' guard doubles as the concurrency check.
+      const [proposal] = await tx
         .update(nodePublicationProposals)
-        .set({ state: input.decision, decisionNote: note, updatedAt: new Date() })
-        .where(eq(nodePublicationProposals.id, row.proposal.id));
-      const [review] = await tx
-        .update(contentReviews)
-        .set({
-          state: input.decision,
-          reviewedBy: actor.userId,
-          reviewedAt: new Date(),
-          updatedAt: new Date(),
-          version: row.review.version + 1,
-        })
+        .set({ state: input.decision, decisionNote: note, decidedBy: actor.userId, updatedAt: new Date() })
         .where(
           and(
-            eq(contentReviews.id, row.review.id),
-            eq(contentReviews.version, input.expectedReviewVersion),
-            eq(contentReviews.state, "pending"),
+            eq(nodePublicationProposals.id, proposalId),
+            eq(nodePublicationProposals.state, "pending"),
           ),
         )
         .returning();
-      if (!review) throw versionConflict();
-      await tx
-        .update(reviewTasks)
-        .set({
-          state: input.decision,
-          resolvedBy: actor.userId,
-          updatedAt: new Date(),
-          version: row.task.version + 1,
-        })
-        .where(eq(reviewTasks.id, taskId));
+      if (!proposal) throw versionConflict();
       await recordAudit(tx, actor, {
         accountability: "approver_publisher",
         action: `node.publication.${input.decision}`,
         targetType: "node_publication_proposal",
-        targetId: row.proposal.id,
-        details: { reviewId: row.review.id, note },
+        targetId: proposalId,
+        details: { note },
       });
       return { state: input.decision };
     });
   }
 
   if (row.sourceNodeVersion !== row.proposal.sourceNodeVersion) {
-    throw new ApiError(409, "review_stale", "Trang cá nhân đã thay đổi sau khi gửi duyệt.");
+    throw new ApiError(409, "review_stale", "The personal node changed after submission.");
   }
   if (!input.verification) {
-    throw new ApiError(400, "missing_verification", "Thiếu mức thẩm định.");
+    throw new ApiError(400, "missing_verification", "A verification level is required.");
   }
   if (!row.proposal.sourceVersionId && input.verification === "verified") {
     throw new ApiError(
       409,
       "source_required",
-      "Trang không có tư liệu nguồn chỉ được xuất bản ở mức chưa thẩm định.",
+      "A node without a source can only be published as unverified.",
     );
   }
 
@@ -417,7 +362,7 @@ export async function decideNodePublication(
         slug,
         contentMd: row.proposal.contentMd,
         verification: input.verification!,
-        createdBy: row.review.originatorId,
+        createdBy: row.sourceNodeCreatedBy,
       })
       .returning();
     const [nodeVersion] = await tx
@@ -427,8 +372,8 @@ export async function decideNodePublication(
         seq: 1,
         contentMd: row.proposal.contentMd,
         verification: input.verification!,
-        createdBy: row.review.lastEditorId,
-        changeSummary: `Xuất bản từ trang cá nhân "${row.proposal.title}"`,
+        createdBy: row.proposal.createdBy,
+        changeSummary: "published_from_personal",
         reviewStatus: "approved",
       })
       .returning();
@@ -446,53 +391,30 @@ export async function decideNodePublication(
         approvedBy: actor.userId,
       });
     }
-    await tx
+    const [proposal] = await tx
       .update(nodePublicationProposals)
       .set({
         state: "approved",
         decisionNote: note,
+        decidedBy: actor.userId,
         approvedNodeVersionId: nodeVersion.id,
         updatedAt: new Date(),
-      })
-      .where(eq(nodePublicationProposals.id, row.proposal.id));
-    const [review] = await tx
-      .update(contentReviews)
-      .set({
-        state: "approved",
-        reviewedBy: actor.userId,
-        reviewedAt: new Date(),
-        targetNodeId: node.id,
-        verification: input.verification!,
-        approvedNodeVersionId: nodeVersion.id,
-        updatedAt: new Date(),
-        version: row.review.version + 1,
       })
       .where(
         and(
-          eq(contentReviews.id, row.review.id),
-          eq(contentReviews.version, input.expectedReviewVersion),
-          eq(contentReviews.state, "pending"),
+          eq(nodePublicationProposals.id, proposalId),
+          eq(nodePublicationProposals.state, "pending"),
         ),
       )
       .returning();
-    if (!review) throw versionConflict();
-    await tx
-      .update(reviewTasks)
-      .set({
-        state: "approved",
-        resolvedBy: actor.userId,
-        updatedAt: new Date(),
-        version: row.task.version + 1,
-      })
-      .where(eq(reviewTasks.id, taskId));
+    if (!proposal) throw versionConflict();
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",
       action: "node.publication.approve",
       targetType: "tree_node",
       targetId: node.id,
       details: {
-        proposalId: row.proposal.id,
-        reviewId: review.id,
+        proposalId,
         sourceNodeId: row.proposal.sourceNodeId,
         sourceVersionId: row.proposal.sourceVersionId,
         targetBranchId: row.proposal.targetBranchId,
@@ -504,7 +426,7 @@ export async function decideNodePublication(
       branchId: node.branchId,
       sourceNodeId: row.proposal.sourceNodeId,
       sourceVersionId: row.proposal.sourceVersionId,
-      uploaderId: row.review.originatorId,
+      uploaderId: row.sourceNodeCreatedBy,
       verification: input.verification,
     });
     return node;

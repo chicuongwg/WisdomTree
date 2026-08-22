@@ -2,13 +2,14 @@ import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { backlinkContext, buildWikiIndex, normalizeTitle } from "@/lib/wikilink";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { contentReviews, sources, sourceVersions } from "../storage/schema";
+import { sources, sourceVersions } from "../storage/schema";
 import {
   branches,
+  nodeChangeProposals,
   nodeLinks,
   nodePublicationProposals,
   nodeTags,
@@ -28,21 +29,18 @@ const PAGE_SIZE = 20;
 // ---------------------------------------------------------------------------
 
 /**
- * Knowledge scope & visibility rules:
- * - Every branch requires an explicit vault grant, including for admins.
+ * Knowledge scope & visibility rules (post vault-grants): the shared vault is
+ * visible to every member; a personal vault only to its owner.
  */
-export function canViewBranch(
-  actor: Principal,
-  branch: { scope: string; vaultId: string },
-): boolean {
-  return actor.vaultIds?.includes(branch.vaultId) ?? false;
+export function visibleVaultIdsSql(actor: Principal) {
+  return sql`(SELECT ${vaults.id} FROM ${vaults}
+              WHERE ${vaults.kind} = 'shared' OR ${vaults.ownerUserId} = ${actor.userId})`;
 }
 
 export function branchVisibilityCondition(actor: Principal) {
-  const accessibleVaults = actor.vaultIds ?? [];
   return and(
     sql`${branches.archivedAt} IS NULL`,
-    accessibleVaults.length ? inArray(branches.vaultId, accessibleVaults) : sql`false`,
+    sql`${branches.vaultId} IN ${visibleVaultIdsSql(actor)}`,
   );
 }
 
@@ -110,7 +108,9 @@ export async function treeOutline(actor: Principal) {
 export async function getBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
-  if (!branch || branch.archivedAt || !canViewBranch(actor, branch)) throw notFound();
+  if (!branch || branch.archivedAt) throw notFound();
+  const [vault] = await db.select().from(vaults).where(eq(vaults.id, branch.vaultId));
+  if (!vault || (vault.kind !== "shared" && vault.ownerUserId !== actor.userId)) throw notFound();
   const nodes = await db
     .select({
       id: treeNodes.id,
@@ -135,7 +135,7 @@ export async function createBranch(
     throw new ApiError(
       403,
       "submission_required",
-      "Chuyên đề chung phải bắt đầu từ đề xuất của user.",
+      "Team branches start from a member proposal.",
     );
   }
   return db.transaction(async (tx) => {
@@ -147,7 +147,7 @@ export async function createBranch(
           ? and(eq(vaults.kind, "personal"), eq(vaults.ownerUserId, actor.userId))
           : eq(vaults.kind, "shared"),
       );
-    if (!vault) throw new ApiError(409, "vault_missing", "Không tìm thấy kho tri thức.");
+    if (!vault) throw new ApiError(409, "vault_missing", "Vault not found.");
     const [created] = await tx
       .insert(branches)
       .values({
@@ -324,18 +324,14 @@ export async function getNode(actor: Principal, nodeId: string) {
         sourceNodeId: nodePublicationProposals.sourceNodeId,
         sourceTitle: nodePublicationProposals.title,
         approvedByName: users.displayName,
-        reviewedAt: contentReviews.reviewedAt,
+        reviewedAt: nodePublicationProposals.updatedAt,
       })
       .from(nodePublicationProposals)
       .innerJoin(
         treeNodeVersions,
         eq(nodePublicationProposals.approvedNodeVersionId, treeNodeVersions.id),
       )
-      .innerJoin(
-        contentReviews,
-        eq(contentReviews.publicationProposalId, nodePublicationProposals.id),
-      )
-      .innerJoin(users, eq(contentReviews.reviewedBy, users.id))
+      .innerJoin(users, eq(nodePublicationProposals.decidedBy, users.id))
       .where(eq(treeNodeVersions.nodeId, nodeId)),
   ]);
 
@@ -400,4 +396,78 @@ export async function wikiIndex(actor: Principal) {
   }
 
   return nodeIndex;
+}
+
+// ---------------------------------------------------------------------------
+// Version history (diff / revert backbone)
+// ---------------------------------------------------------------------------
+
+export async function listNodeVersions(actor: Principal, nodeId: string) {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const [node] = await db
+    .select({ id: treeNodes.id, title: treeNodes.title, version: treeNodes.version })
+    .from(treeNodes)
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
+  if (!node) throw notFound();
+  const versions = await db
+    .select({
+      seq: treeNodeVersions.seq,
+      verification: treeNodeVersions.verification,
+      changeSummary: treeNodeVersions.changeSummary,
+      createdAt: treeNodeVersions.createdAt,
+      authorName: users.displayName,
+    })
+    .from(treeNodeVersions)
+    .innerJoin(users, eq(treeNodeVersions.createdBy, users.id))
+    .where(eq(treeNodeVersions.nodeId, nodeId))
+    .orderBy(desc(treeNodeVersions.seq));
+  return { node, versions };
+}
+
+export async function getNodeVersion(actor: Principal, nodeId: string, seq: number) {
+  authorize(actor, "knowledge.node.read", { kind: "read" });
+  const [row] = await db
+    .select({
+      seq: treeNodeVersions.seq,
+      contentMd: treeNodeVersions.contentMd,
+      verification: treeNodeVersions.verification,
+      changeSummary: treeNodeVersions.changeSummary,
+      createdAt: treeNodeVersions.createdAt,
+    })
+    .from(treeNodeVersions)
+    .innerJoin(treeNodes, eq(treeNodeVersions.nodeId, treeNodes.id))
+    .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+    .where(
+      and(
+        eq(treeNodeVersions.nodeId, nodeId),
+        eq(treeNodeVersions.seq, seq),
+        branchVisibilityCondition(actor),
+      ),
+    );
+  if (!row) throw notFound();
+  return row;
+}
+
+/** A change proposal beside the node's current text, for the review surface. */
+export async function getNodeChangeProposal(actor: Principal, proposalId: string) {
+  authorize(actor, "knowledge.publish", { kind: "read" });
+  const [row] = await db
+    .select({
+      proposal: nodeChangeProposals,
+      nodeTitle: treeNodes.title,
+      nodeContentMd: treeNodes.contentMd,
+      nodeVersion: treeNodes.version,
+      authorName: users.displayName,
+    })
+    .from(nodeChangeProposals)
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeChangeProposals.nodeId))
+    .innerJoin(users, eq(users.id, nodeChangeProposals.createdBy))
+    .where(eq(nodeChangeProposals.id, proposalId));
+  if (!row) throw notFound();
+  return {
+    ...row,
+    canReview: actor.userId !== row.proposal.createdBy,
+    stale: row.nodeVersion !== row.proposal.baseVersion,
+  };
 }

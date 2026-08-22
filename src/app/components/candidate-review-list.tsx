@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { T, translateApiError } from "@/lib/vi";
 
 type Candidate = {
   id: string;
@@ -31,8 +32,12 @@ export function CandidateReviewList({
       body: action === "evolve" ? JSON.stringify({ branchId }) : undefined,
     });
     if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { message?: string } | null;
-      setError(body?.message ?? "Không thể xử lý bản trích xuất.");
+      const body = (await response.json().catch(() => null)) as {
+          message?: string;
+          code?: string;
+          details?: Record<string, unknown>;
+        } | null;
+      setError(body ? translateApiError(body.code, body.details, body.message) : T.genericError);
       setBusy(null);
       return;
     }

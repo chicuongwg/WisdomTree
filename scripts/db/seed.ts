@@ -46,14 +46,12 @@ async function main() {
   try {
     await client.query("BEGIN");
     await client.query(
-      `TRUNCATE loan_tickets, catalog_items,
-                promotions, vault_git_jobs, tree_node_versions, node_links, node_tags, tags,
-                tree_nodes, extraction_candidates, branches, vault_grants,
-                vaults, user_capabilities,
-                review_tasks, conflicts,
-                curations, corrected_texts, markdown_drafts,
+      `TRUNCATE loan_tickets, source_physical, categories,
+                promotions, tree_node_versions, node_links, node_tags, tags,
+                tree_nodes, extraction_candidates, branches,
+                vaults,
                 text_chunks, source_versions, sources,
-                branch_gap_requests, comments, notification_deliveries,
+                comments, notification_deliveries,
                 notification_preferences, notifications,
                 deadline_reminders, deadline_links, deadlines,
                 tasks, achievements, calendar_tokens,
@@ -76,56 +74,39 @@ async function main() {
     }
     const [lan, minh, huong, duc] = users;
 
+    // With dev-login gone, the demo's own door is Google OIDC. SEED_ADMIN_EMAIL
+    // plants an invited admin row for the operator's Gmail so their first real
+    // login binds to it (auth/oidc.ts invite-list model).
+    if (process.env.SEED_ADMIN_EMAIL) {
+      await client.query(
+        `INSERT INTO users (google_sub, email, display_name, role)
+         VALUES ($1, $2, $3, 'admin_op')`,
+        [
+          `invited:${randomUUID()}`,
+          process.env.SEED_ADMIN_EMAIL.toLowerCase(),
+          process.env.SEED_ADMIN_EMAIL.split("@")[0],
+        ],
+      );
+    }
+
     // --- One personal vault per member + the shared knowledge vault ---
+    // Visibility is derived from the vault itself now (shared = everyone,
+    // personal = its owner); there are no grant rows.
     const personalVaults = new Map<string, string>();
     for (const u of users) {
       const vaultId = randomUUID();
       personalVaults.set(u.id, vaultId);
       await client.query(
-        `INSERT INTO vaults (id, kind, owner_user_id, name, git_repo_key)
-         VALUES ($1,'personal',$2,$3,$4)`,
-        [vaultId, u.id, u.name, `personal/${u.id}`],
-      );
-      await client.query(
-        `INSERT INTO vault_grants (vault_id, user_id, grant_name, granted_by)
-         VALUES ($1,$2,'owner',$2)`,
-        [vaultId, u.id],
+        `INSERT INTO vaults (id, kind, owner_user_id, name)
+         VALUES ($1,'personal',$2,$3)`,
+        [vaultId, u.id, u.name],
       );
     }
     const sharedVault = randomUUID();
     await client.query(
-      `INSERT INTO vaults (id, kind, name, git_repo_key)
-       VALUES ($1,'shared','Tri thức chung','shared/main')`,
+      `INSERT INTO vaults (id, kind, name) VALUES ($1,'shared','Tri thức chung')`,
       [sharedVault],
     );
-    for (const user of users) {
-      await client.query(
-        `INSERT INTO vault_grants (vault_id, user_id, grant_name, granted_by)
-         VALUES ($1,$2,$3,$4)`,
-        [
-          sharedVault,
-          user.id,
-          user.role === "admin_op" ? "owner" : user.role === "editor" ? "editor" : "viewer",
-          huong.id,
-        ],
-      );
-    }
-    for (const capability of [
-      "capabilities.manage",
-      "users.manage",
-      "audit.read",
-      "catalog.manage",
-      "circulation.manage",
-      "spaces.manage",
-      "system.operate",
-      "content.review",
-    ]) {
-      await client.query(
-        `INSERT INTO user_capabilities (user_id, capability, granted_by)
-         VALUES ($1,$2,$1)`,
-        [huong.id, capability],
-      );
-    }
 
     // --- 2 team spaces + 1 personal space each ---
     // The community library is a team space (database-schema.md); it doubles
@@ -256,7 +237,7 @@ async function main() {
 
     // --- Knowledge tree: 2 team branches, 4 published nodes (mixed
     // verification, incl. one no_source manual), provenance promotions for
-    // the source-driven ones, and 1 curation mid-flow so /review is non-empty.
+    // the source-driven ones.
     // Each user also gets 1 personal branch (scope='personal') so the sidebar
     // "Không Gian Của Tôi" section is non-empty from first boot. ---
     const branchFolk = randomUUID();
@@ -356,11 +337,6 @@ async function main() {
            VALUES ($1,$2,$3,$4)`,
           [src.versionId, nodeVersion[0].id, huong.id, src.chunkIds.length ? src.chunkIds : null],
         );
-        await client.query(
-          `INSERT INTO curations (source_version_id, state, assigned_to, nominated_by)
-           VALUES ($1,'promoted',$2,$3)`,
-          [src.versionId, minh.id, huong.id],
-        );
       }
     }
 
@@ -383,71 +359,6 @@ async function main() {
       );
     }
 
-    // 1 curation mid-flow: ready_for_review with corrected text + draft, and
-    // the matching review task queue entries (Flow 2), so /review has work.
-    const midFlow = sourceByTitle["Danh mục tài liệu tham khảo"];
-    const midFlowDraft =
-      "# Danh mục tài liệu tham khảo\n\nDanh mục nguồn nền tảng cho các chuyên đề lịch sử địa phương.\n\n- Địa chí vùng\n- Hồi ký người cao tuổi\n- Bản đồ cổ";
-    await client.query(
-      `INSERT INTO curations (source_version_id, state, assigned_to, nominated_by)
-       VALUES ($1,'ready_for_review',$2,$3)`,
-      [midFlow.versionId, minh.id, huong.id],
-    );
-    await client.query(`UPDATE sources SET assigned_to = $1 WHERE id = $2`, [
-      minh.id,
-      midFlow.sourceId,
-    ]);
-    await client.query(
-      `INSERT INTO corrected_texts (source_version_id, seq, content, edited_by)
-       VALUES ($1,1,$2,$3)`,
-      [
-        midFlow.versionId,
-        "Danh mục tài liệu tham khảo (bản hiệu đính): 1. Địa chí vùng; 2. Hồi ký người cao tuổi; 3. Bản đồ cổ.",
-        minh.id,
-      ],
-    );
-    await client.query(
-      `INSERT INTO markdown_drafts
-         (source_version_id, content_md, suggested_branch_id, created_by, updated_by)
-       VALUES ($1,$2,$3,$4,$4)`,
-      [
-        midFlow.versionId,
-        midFlowDraft,
-        branchHistory,
-        minh.id,
-      ],
-    );
-    await client.query(
-      `INSERT INTO content_reviews
-         (target_type, source_version_id, content_sha256, originator_id,
-          last_editor_id, submitted_by, target_branch_id)
-       VALUES ('source_draft',$1,$2,$3,$3,$3,$4)`,
-      [
-        midFlow.versionId,
-        createHash("sha256").update(Buffer.from(midFlowDraft, "utf8")).digest("hex"),
-        minh.id,
-        branchHistory,
-      ],
-    );
-    await client.query(
-      `INSERT INTO review_tasks (task_type, target_type, target_id, state, assigned_to, created_by, resolved_by)
-       VALUES ('correction','source_version',$1,'approved',$2,$3,$2)`,
-      [midFlow.versionId, minh.id, huong.id],
-    );
-    await client.query(
-      `INSERT INTO review_tasks (task_type, target_type, target_id, state, created_by)
-       VALUES ('publish','source_version',$1,'queued',$2)`,
-      [midFlow.versionId, minh.id],
-    );
-
-    // 1 branch-gap request so Source Inbox triage has a gap-request item.
-    await client.query(
-      `INSERT INTO branch_gap_requests (title, description, state, submitted_by)
-       VALUES ('Đề xuất chuyên đề nghề thủ công truyền thống',
-               'Chưa thấy chuyên đề về nghề đan lát và dệt chiếu của vùng.',
-               'submitted',$1)`,
-      [lan.id],
-    );
 
     // --- ~20 catalog items in the library space, 1 active loan ---
     const catalogTitles: Array<[string, string]> = [
@@ -472,15 +383,25 @@ async function main() {
       ["Sổ Tay Trồng Rừng Ngập Mặn", "Bộ NN&PTNT"],
       ["Cẩm Nang Sơ Cấp Cứu", "Hội Chữ Thập Đỏ"],
     ];
+    // Books are Library items now: a sources row (category "Sách") plus the
+    // shelf facts in source_physical. Loans key on the physical row id.
+    const bookCategory = randomUUID();
+    await client.query(`INSERT INTO categories (id, name) VALUES ($1,'Sách')`, [bookCategory]);
     const itemIds: string[] = [];
     for (let i = 0; i < catalogTitles.length; i++) {
       const [title, author] = catalogTitles[i];
+      const bookSourceId = randomUUID();
       const id = randomUUID();
       itemIds.push(id);
       await client.query(
-        `INSERT INTO catalog_items (id, item_code, title, author, location, status, space_id, created_by)
-         VALUES ($1,$2,$3,$4,$5,'available',$6,$7)`,
-        [id, `LIB-${String(i + 1).padStart(6, "0")}`, title, author, `Kệ ${String.fromCharCode(65 + (i % 4))}${(i % 5) + 1}`, library, huong.id],
+        `INSERT INTO sources (id, space_id, title, category_id, submitted_by)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [bookSourceId, library, title, bookCategory, huong.id],
+      );
+      await client.query(
+        `INSERT INTO source_physical (id, source_id, item_code, author, location, status, created_by)
+         VALUES ($1,$2,$3,$4,$5,'available',$6)`,
+        [id, bookSourceId, `LIB-${String(i + 1).padStart(6, "0")}`, author, `Kệ ${String.fromCharCode(65 + (i % 4))}${(i % 5) + 1}`, huong.id],
       );
     }
 
@@ -492,7 +413,7 @@ async function main() {
        VALUES ($1,$2,'borrowed',$3,$4,$5,$6,$7)`,
       [borrowedItem, lan.id, daysFromNow(-3), daysFromNow(-2), daysFromNow(-2), daysFromNow(5), huong.id],
     );
-    await client.query(`UPDATE catalog_items SET status = 'borrowed' WHERE id = $1`, [borrowedItem]);
+    await client.query(`UPDATE source_physical SET status = 'borrowed' WHERE id = $1`, [borrowedItem]);
 
     // 1 closed loan on the same item, so the Catalog Item Detail loan record
     // has a history to show under the current holder: Minh had it before Lan,
@@ -591,7 +512,7 @@ async function main() {
     await client.query("COMMIT");
     console.log(
       "Seed OK: 3 users, 2 team spaces (incl. library) + 3 personal, 10 stored sources, 20 catalog items, 1 active loan + 1 returned loan on the same item, " +
-        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 4 wiki-links between them, 1 curation ready_for_review (queue non-empty), 1 gap request, " +
+        "2 branches, 4 published nodes (mixed verification incl. 1 no_source), 4 wiki-links between them, " +
         "3 deadlines (1 due in 5 days), 2 tasks, 2 comments on the node (1 with an inline @mention), calendar tokens per user.",
     );
   } catch (err) {

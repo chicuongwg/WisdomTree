@@ -3,17 +3,17 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { T } from "@/lib/vi";
+import { T, translateApiError } from "@/lib/vi";
 import { Say } from "./say";
 import { PREVIEW_HOVER_DELAY_MS } from "./node-link";
 
 export function CatalogCover({
-  itemId,
+  sourceId,
   title,
   coverPhotoKey,
   compact = false,
 }: {
-  itemId: string;
+  sourceId: string;
   title: string;
   coverPhotoKey: string | null;
   compact?: boolean;
@@ -31,13 +31,13 @@ export function CatalogCover({
     /* Session-guarded object-store route; the DB key provides cache busting. */
     <img
       className={className}
-      src={`/api/catalog/${itemId}/cover?v=${encodeURIComponent(coverPhotoKey)}`}
+      src={`/api/library/${sourceId}/cover?v=${encodeURIComponent(coverPhotoKey)}`}
       alt={`${T.coverPhoto}: ${title}`}
     />
   );
 }
 
-export function CatalogCoverForm({ itemId }: { itemId: string }) {
+export function CatalogCoverForm({ sourceId }: { sourceId: string }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -53,15 +53,19 @@ export function CatalogCoverForm({ itemId }: { itemId: string }) {
     body.append("file", file);
     let response: Response;
     try {
-      response = await fetch(`/api/catalog/${itemId}/cover`, { method: "POST", body });
+      response = await fetch(`/api/library/${sourceId}/cover`, { method: "POST", body });
     } catch {
       setError(T.genericError);
       setBusy(false);
       return;
     }
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-      setError(payload?.message ?? T.genericError);
+      const payload = (await response.json().catch(() => null)) as {
+          message?: string;
+          code?: string;
+          details?: Record<string, unknown>;
+        } | null;
+      setError(payload ? translateApiError(payload.code, payload.details, payload.message) : T.genericError);
       setBusy(false);
       return;
     }
@@ -75,14 +79,14 @@ export function CatalogCoverForm({ itemId }: { itemId: string }) {
     <div className="catalog-cover-form">
       <div className="file-field">
         <input
-          id={`catalog-cover-${itemId}`}
+          id={`catalog-cover-${sourceId}`}
           type="file"
           accept="image/png,image/jpeg,image/webp"
           className="sr-only"
           disabled={busy}
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
         />
-        <label htmlFor={`catalog-cover-${itemId}`} className="button secondary">
+        <label htmlFor={`catalog-cover-${sourceId}`} className="button secondary">
           {T.chooseCover}
         </label>
         <span className="muted">{file ? file.name : T.coverConstraint}</span>
@@ -106,11 +110,11 @@ function coverPosition(target: HTMLElement) {
 }
 
 export function CatalogItemLink({
-  itemId,
+  sourceId,
   title,
   coverPhotoKey,
 }: {
-  itemId: string;
+  sourceId: string;
   title: string;
   coverPhotoKey: string | null;
 }) {
@@ -143,7 +147,7 @@ export function CatalogItemLink({
   return (
     <>
       <Link
-        href={`/catalog/${itemId}`}
+        href={`/catalog/${sourceId}`}
         aria-describedby={position ? cardId : undefined}
         onMouseEnter={(event) => {
           const target = event.currentTarget;
@@ -172,7 +176,7 @@ export function CatalogItemLink({
           role="tooltip"
           style={{ top: position.top, left: position.left }}
         >
-          <CatalogCover itemId={itemId} title={title} coverPhotoKey={coverPhotoKey} />
+          <CatalogCover sourceId={sourceId} title={title} coverPhotoKey={coverPhotoKey} />
         </span>
       )}
     </>

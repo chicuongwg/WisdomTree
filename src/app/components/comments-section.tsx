@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { T, when } from "@/lib/vi";
+import { T, when, translateApiError } from "@/lib/vi";
 import { foldName } from "@/lib/mention-fold";
 import { Say } from "./say";
 
@@ -173,8 +173,12 @@ export function CommentsSection({
       return;
     }
     if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { message?: string } | null;
-      setError(err?.message ?? T.genericError);
+      const err = (await res.json().catch(() => null)) as {
+          message?: string;
+          code?: string;
+          details?: Record<string, unknown>;
+        } | null;
+      setError(err ? translateApiError(err.code, err.details, err.message) : T.genericError);
       setBusy(false);
       return;
     }

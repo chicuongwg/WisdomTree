@@ -22,36 +22,19 @@ export function extractionDisplay(
 
 // ---------------------------------------------------------------------------
 // next_action — the one sentence a member sees about what happens to their
-// file next (functional-spec.md:57). Derived in TS from facts the services
-// already return; the old intake_items SQL view stays dead.
+// file next. Derived in TS from facts the services already return.
 // ---------------------------------------------------------------------------
 
-export type NextActionKey =
-  | "archived"
-  | "reading"
-  | "stored"
-  | "nominated_unassigned"
-  | "under_correction"
-  | "ready_for_review"
-  | "promoted"
-  | "rejected";
+export type NextActionKey = "archived" | "reading" | "stored" | "promoted";
 
 export function nextActionFor(input: {
   storageState: string | null | undefined;
   extractionStatus: string | null | undefined;
   hasText?: boolean;
-  curationState: string | null | undefined;
-  /** under_correction splits on whether an editor holds it yet. */
-  curationAssigned?: boolean;
   promoted?: boolean;
 }): NextActionKey {
   if (input.storageState === "archived") return "archived";
-  if (input.promoted || input.curationState === "promoted") return "promoted";
-  if (input.curationState === "rejected") return "rejected";
-  if (input.curationState === "ready_for_review") return "ready_for_review";
-  if (input.curationState === "under_correction") {
-    return input.curationAssigned ? "under_correction" : "nominated_unassigned";
-  }
+  if (input.promoted) return "promoted";
   if (input.extractionStatus === "pending") return "reading";
   return "stored";
 }
@@ -60,9 +43,5 @@ export const nextActionLabel: Record<NextActionKey, string> = {
   archived: T.nextActionArchived,
   reading: T.nextActionReading,
   stored: T.nextActionStored,
-  nominated_unassigned: T.nextActionNominated,
-  under_correction: T.nextActionUnderCorrection,
-  ready_for_review: T.nextActionReadyForReview,
   promoted: T.nextActionPromoted,
-  rejected: T.nextActionRejected,
 };

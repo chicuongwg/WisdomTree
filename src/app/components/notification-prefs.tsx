@@ -1,38 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { notifyChannelLabel, eventLabel, T } from "@/lib/vi";
+import { eventLabel, T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
 import { Say } from "@/app/components/say";
 
-// Per-event channel preferences (notifications.md): absent row = default
-// matrix; this form always shows the merged view served by the API.
+// Per-event on/off preferences: absent row = notified; the form always shows
+// the merged view served by the API.
 
-type Pref = { eventType: string; channels: string[] };
-const CHANNELS = ["in_app", "email", "zalo"] as const;
+type Pref = { eventType: string; enabled: boolean };
 
 export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
   const m = useMutation();
   const [prefs, setPrefs] = useState(initial);
   const [message, setMessage] = useState<string | null>(null);
 
-  function toggle(eventType: string, channel: string, on: boolean) {
-    setPrefs((prev) =>
-      prev.map((p) =>
-        p.eventType === eventType
-          ? {
-              ...p,
-              channels: on ? [...p.channels, channel] : p.channels.filter((c) => c !== channel),
-            }
-          : p,
-      ),
-    );
+  function toggle(eventType: string, on: boolean) {
+    setPrefs((prev) => prev.map((p) => (p.eventType === eventType ? { ...p, enabled: on } : p)));
     setMessage(null);
   }
 
   async function save() {
     setMessage(null);
-    // The answer is the merged matrix, so it replaces what is on screen. The
+    // The answer is the merged view, so it replaces what is on screen. The
     // boxes are disabled across the round trip below: without that, a toggle
     // made mid-flight was overwritten here without a word.
     const saved = await m.runJson<Pref[]>("/api/notifications/preferences", {
@@ -44,8 +34,8 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
     setMessage("Đã lưu tùy chọn nhận thông báo.");
   }
 
-  // Fragment for the same reason as the curation workbench: the panel spaces
-  // its own children, and a wrapper element absorbs that spacing.
+  // Fragment: the panel spaces its own children, and a wrapper element
+  // absorbs that spacing.
   return (
     <>
       <div className="record-scroll">
@@ -53,28 +43,22 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
           <thead>
             <tr>
               <th scope="col">{T.eventColumn}</th>
-              {CHANNELS.map((c) => (
-                <th scope="col" key={c}>
-                  {notifyChannelLabel(c)}
-                </th>
-              ))}
+              <th scope="col">{T.notifications}</th>
             </tr>
           </thead>
           <tbody>
             {prefs.map((p) => (
               <tr key={p.eventType}>
                 <td>{eventLabel(p.eventType)}</td>
-                {CHANNELS.map((c) => (
-                  <td key={c}>
-                    <input
-                      type="checkbox"
-                      aria-label={`${eventLabel(p.eventType)} — ${notifyChannelLabel(c)}`}
-                      disabled={m.busy}
-                      checked={p.channels.includes(c)}
-                      onChange={(e) => toggle(p.eventType, c, e.target.checked)}
-                    />
-                  </td>
-                ))}
+                <td>
+                  <input
+                    type="checkbox"
+                    aria-label={eventLabel(p.eventType)}
+                    disabled={m.busy}
+                    checked={p.enabled}
+                    onChange={(e) => toggle(p.eventType, e.target.checked)}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

@@ -5,7 +5,7 @@ import "./globals.css";
 import { currentUser } from "@/modules/auth/session";
 import { unreadCount } from "@/modules/notify/service";
 import { recentNodes, treeOutline } from "@/modules/knowledge/service";
-import { listReviewQueue } from "@/modules/storage/curation";
+import { listPendingProposals } from "@/modules/knowledge/service";
 import { shellCopy } from "@/lib/shell-locale";
 import { LogoutButton } from "./components/logout-button";
 import { ShellRail } from "./components/shell-rail";
@@ -66,21 +66,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     role: user.role,
     spaceIds: user.spaceIds,
     spaceMemberships: user.spaceMemberships,
-    capabilities: user.capabilities,
-    vaultIds: user.vaultIds,
-    vaultGrants: user.vaultGrants,
   };
-  const [unread, outline, recent, reviewTasks] = await Promise.all([
+  const canReview = user.role === "editor" || user.role === "admin_op";
+  const [unread, outline, recent, pendingProposals] = await Promise.all([
     unreadCount(principal),
     treeOutline(principal),
     recentNodes(principal, 6),
-    user.capabilities.includes("content.review")
-      ? listReviewQueue(principal, {})
-      : Promise.resolve([]),
+    canReview
+      ? listPendingProposals(principal)
+      : Promise.resolve({ publications: [], changes: [] }),
   ]);
-  const reviewOpen = reviewTasks.filter((t) =>
-    ["queued", "assigned", "in_review", "changes_requested"].includes(t.state),
-  ).length;
+  const reviewOpen = pendingProposals.publications.length + pendingProposals.changes.length;
 
   // Defensively handle HMR / cached server bundles where treeOutline might still
   // return an array instead of { team, personal }.
@@ -100,7 +96,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <div className="shell">
           <ShellRail
             role={user.role}
-            capabilities={user.capabilities}
             displayName={user.displayName}
             avatarUrl={
               user.avatarKey
@@ -115,7 +110,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             personalBranches={personalBranches}
             recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
             role={user.role}
-            capabilities={user.capabilities}
             spaceCount={user.spaceIds.length}
           />
           {/* ponytail: tabIndex 0, not -1. The skip link only needs a
@@ -142,7 +136,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <LogoutButton />
           </footer>
         </div>
-        <CommandPalette role={user.role} capabilities={user.capabilities} />
+        <CommandPalette role={user.role} />
         {/* One listener, every form: the browser refuses in Vietnamese now. */}
         <ValidationMessages />
       </body>

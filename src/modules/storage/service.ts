@@ -2,18 +2,17 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
-import { T } from "@/lib/vi";
 import { signDownload } from "@/lib/sign";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { objectStore } from "./object-store";
 import {
-  branchGapRequests,
-  curations,
+  categories,
   folders,
   sources,
+  sourcePhysical,
   sourceVersions,
   spaceMembers,
   spaces,
@@ -51,12 +50,12 @@ export async function uploadSource(
     throw new ApiError(
       413,
       "file_too_large",
-      "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.",
+      "File exceeds the 100 MB limit.",
     );
   }
   const mimeType = input.file.type || "application/octet-stream";
   if (FORMAT_DENYLIST.has(mimeType)) {
-    throw new ApiError(415, "format_not_allowed", "Định dạng tệp này không được chấp nhận.");
+    throw new ApiError(415, "format_not_allowed", "This file format is not accepted.");
   }
 
   const body = Buffer.from(await input.file.arrayBuffer());
@@ -128,6 +127,7 @@ export async function listLibrary(
     q?: string;
     page?: number;
     folderId?: string | null;
+    categoryId?: string;
     sort?: "title" | "storedAt";
     dir?: "asc" | "desc";
     archived?: boolean;
@@ -166,7 +166,12 @@ export async function listLibrary(
         : eq(sources.folderId, opts.folderId)
       : undefined;
 
-  const sortCol = opts.sort === "title" ? sources.title : sourceVersions.storedAt;
+  // Books live here with no stored file, so the version join is LEFT and the
+  // sort falls back to the source's own creation time.
+  const sortCol =
+    opts.sort === "title"
+      ? sources.title
+      : sql`coalesce(${sourceVersions.storedAt}, ${sources.createdAt})`;
   const order = (opts.dir ?? "desc") === "asc" ? asc(sortCol) : desc(sortCol);
 
   const page = Math.max(1, opts.page ?? 1);
@@ -176,6 +181,8 @@ export async function listLibrary(
       spaceId: sources.spaceId,
       spaceName: spaces.name,
       folderId: sources.folderId,
+      categoryId: sources.categoryId,
+      categoryName: categories.name,
       title: sources.title,
       submitterName: users.displayName,
       mimeType: sourceVersions.mimeType,
@@ -183,16 +190,29 @@ export async function listLibrary(
       extractionStatus: sourceVersions.extractionStatus,
       // `processed` with zero chunks is the stub lying; the chip needs the truth.
       hasText: sql<boolean>`EXISTS (SELECT 1 FROM ${textChunks} WHERE ${textChunks.sourceVersionId} = ${sourceVersions.id})`,
+      itemCode: sourcePhysical.itemCode,
+      physicalStatus: sourcePhysical.status,
     })
     .from(sources)
-    .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .leftJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .leftJoin(
+      sourcePhysical,
+      and(eq(sourcePhysical.sourceId, sources.id), isNull(sourcePhysical.archivedAt)),
+    )
+    .leftJoin(categories, eq(sources.categoryId, categories.id))
     .innerJoin(spaces, eq(sources.spaceId, spaces.id))
     .innerJoin(users, eq(sources.submittedBy, users.id))
     .where(
       and(
-        eq(sourceVersions.storageState, opts.archived ? "archived" : "stored"),
+        opts.archived
+          ? eq(sourceVersions.storageState, "archived")
+          : // A row belongs on the shelf if its file is stored, or it is a
+            // book (physical, no file) that is not retired.
+            sql`(${sourceVersions.storageState} = 'stored'
+                 OR (${sources.currentVersionId} IS NULL AND ${sourcePhysical.id} IS NOT NULL))`,
         spaceFilter,
         folderFilter,
+        opts.categoryId ? eq(sources.categoryId, opts.categoryId) : undefined,
         textMatch,
       ),
     )
@@ -218,15 +238,6 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
         .from(textChunks)
         .where(eq(textChunks.sourceVersionId, row.version.id))
     : [{ chunkCount: 0 }];
-
-  // Curation overlay on the current version: the detail page derives its
-  // next-action sentence from it, and the nominate button hides once one exists.
-  const [curation] = row.version
-    ? await db
-        .select({ state: curations.state, assignedTo: curations.assignedTo })
-        .from(curations)
-        .where(eq(curations.sourceVersionId, row.version.id))
-    : [];
 
   // The whole version chain, newest first — the detail page's history table.
   // One extra query on a page that already makes three; a dedicated
@@ -255,8 +266,6 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
     submittedBy: row.source.submittedBy,
     assignedTo: row.source.assignedTo,
     version: row.source.version,
-    curationState: curation?.state ?? null,
-    curationAssigned: Boolean(curation?.assignedTo),
     currentVersion: row.version
       ? {
           id: row.version.id,
@@ -335,7 +344,7 @@ export async function renameSource(
   const row = await loadOwnedSource(actor, sourceId, "write");
   const title = input.title?.trim();
   if (input.title !== undefined && !title) {
-    throw new ApiError(400, "invalid_title", "Tên tư liệu không được để trống.");
+    throw new ApiError(400, "invalid_title", "Title must not be empty.");
   }
 
   const updated = await db.transaction(async (tx) => {
@@ -368,29 +377,24 @@ export async function renameSource(
  * the versions and the audit trail all survive. Nothing here is a hard delete:
  * a storage-first product that can silently lose the original is not one.
  *
- * Refused once anything is derived from it. At that point it is no longer just
- * your upload: an editor's curation or a published page depends on it, and
- * removing it would strand their provenance.
+ * Refused once anything is published from it: at that point it is no longer
+ * just your upload — a promoted page's provenance depends on it.
  */
 export async function withdrawSource(actor: Principal, sourceId: string) {
   const row = await loadOwnedSource(actor, sourceId, "write");
   if (row.version.storageState !== "stored") {
-    throw new ApiError(409, "not_stored", "Tư liệu này không ở trạng thái có thể thu hồi.");
+    throw new ApiError(409, "not_stored", "This item is not in a withdrawable state.");
   }
 
-  const [derived] = await db
-    .select({ id: curations.id })
-    .from(curations)
-    .where(eq(curations.sourceVersionId, row.version.id));
   const [published] = await db
     .select({ id: promotions.id })
     .from(promotions)
     .where(eq(promotions.sourceVersionId, row.version.id));
-  if (derived || published) {
+  if (published) {
     throw new ApiError(
       409,
       "source_in_use",
-      "Không thể thu hồi: đã có người biên tập hoặc xuất bản dựa trên tư liệu này. Liên hệ quản trị viên.",
+      "Cannot withdraw: published content depends on this source. Contact an administrator.",
     );
   }
 
@@ -427,7 +431,7 @@ export async function restoreSource(actor: Principal, sourceId: string) {
     .where(eq(sources.id, sourceId));
   if (!row) throw notFound();
   if (row.version.storageState !== "archived") {
-    throw new ApiError(409, "not_archived", "Tư liệu này không ở trạng thái đã thu hồi.");
+    throw new ApiError(409, "not_archived", "This item is not withdrawn.");
   }
   await db.transaction(async (tx) => {
     await tx
@@ -458,9 +462,9 @@ export async function moveSource(actor: Principal, sourceId: string, folderId: s
       .select({ id: folders.id, spaceId: folders.spaceId })
       .from(folders)
       .where(eq(folders.id, folderId));
-    if (!folder) throw new ApiError(400, "unknown_folder", "Thư mục không tồn tại.");
+    if (!folder) throw new ApiError(400, "unknown_folder", "Folder does not exist.");
     if (folder.spaceId !== row.source.spaceId) {
-      throw new ApiError(400, "folder_other_space", "Thư mục này thuộc kho khác.");
+      throw new ApiError(400, "folder_other_space", "The folder belongs to a different space.");
     }
   }
   await db.transaction(async (tx) => {
@@ -488,18 +492,18 @@ export async function moveSource(actor: Principal, sourceId: string, folderId: s
 export async function addSourceVersion(actor: Principal, sourceId: string, file: File) {
   const row = await loadOwnedSource(actor, sourceId, "write");
   if (row.version.storageState !== "stored") {
-    throw new ApiError(409, "not_stored", "Chỉ thêm được bản mới cho tư liệu đang lưu.");
+    throw new ApiError(409, "not_stored", "New versions can only be added to a stored item.");
   }
   if (file.size > MAX_SIZE_BYTES) {
     throw new ApiError(
       413,
       "file_too_large",
-      "Tệp vượt quá giới hạn 100 MB. Vui lòng chọn tệp nhỏ hơn.",
+      "File exceeds the 100 MB limit.",
     );
   }
   const mimeType = file.type || "application/octet-stream";
   if (FORMAT_DENYLIST.has(mimeType)) {
-    throw new ApiError(415, "format_not_allowed", "Định dạng tệp này không được chấp nhận.");
+    throw new ApiError(415, "format_not_allowed", "This file format is not accepted.");
   }
 
   const body = Buffer.from(await file.arrayBuffer());
@@ -551,45 +555,26 @@ export async function addSourceVersion(actor: Principal, sourceId: string, file:
   return getSourceDetail(actor, sourceId);
 }
 
-/**
- * Unified intake history (sources + gap requests), merged in TS. The old
- * intake_items SQL view had dropped every field the member-facing next-action
- * sentence (functional-spec.md:57) derives from, so the rows are built from
- * the base tables instead; the view stays unused.
- */
+/** The member's own uploads, newest first. */
 export async function mySubmissions(actor: Principal) {
   authorize(actor, "storage.submissions.read", { userId: actor.userId, kind: "read" });
-  const [sourceRows, gapRows] = await Promise.all([
-    db
-      .select({
-        submissionId: sources.id,
-        title: sources.title,
-        storageState: sourceVersions.storageState,
-        extractionStatus: sourceVersions.extractionStatus,
-        curationState: curations.state,
-        curationAssignedTo: curations.assignedTo,
-        lastUpdatedAt: sources.updatedAt,
-      })
-      .from(sources)
-      .leftJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
-      .leftJoin(curations, eq(curations.sourceVersionId, sourceVersions.id))
-      .where(eq(sources.submittedBy, actor.userId)),
-    db
-      .select({
-        submissionId: branchGapRequests.id,
-        title: branchGapRequests.title,
-        state: branchGapRequests.state,
-        lastUpdatedAt: branchGapRequests.updatedAt,
-      })
-      .from(branchGapRequests)
-      .where(eq(branchGapRequests.submittedBy, actor.userId)),
-  ]);
-  return [
-    ...sourceRows.map((r) => ({ itemType: "source" as const, ...r })),
-    ...gapRows.map((r) => ({ itemType: "gap_request" as const, ...r })),
-  ].sort(
-    (a, b) => new Date(b.lastUpdatedAt ?? 0).getTime() - new Date(a.lastUpdatedAt ?? 0).getTime(),
-  );
+  const sourceRows = await db
+    .select({
+      submissionId: sources.id,
+      title: sources.title,
+      storageState: sourceVersions.storageState,
+      extractionStatus: sourceVersions.extractionStatus,
+      lastUpdatedAt: sources.updatedAt,
+    })
+    .from(sources)
+    .leftJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .where(eq(sources.submittedBy, actor.userId));
+  return sourceRows
+    .map((r) => ({ itemType: "source" as const, ...r }))
+    .sort(
+      (a, b) =>
+        new Date(b.lastUpdatedAt ?? 0).getTime() - new Date(a.lastUpdatedAt ?? 0).getTime(),
+    );
 }
 
 /**
@@ -605,7 +590,7 @@ export async function mySubmissions(actor: Principal) {
 export async function createSpace(actor: Principal, input: { name?: string }) {
   authorize(actor, "storage.space.manage", { kind: "write" });
   const name = input.name?.trim();
-  if (!name) throw new ApiError(400, "invalid_space", "Vui lòng nhập tên kho.");
+  if (!name) throw new ApiError(400, "invalid_space", "Space name must not be empty.");
 
   return db.transaction(async (tx) => {
     const [space] = await tx
@@ -677,7 +662,7 @@ export async function addSpaceMember(
     .select({ id: users.id })
     .from(users)
     .where(and(eq(users.id, userId), isNull(users.disabledAt)));
-  if (!user) throw new ApiError(400, "unknown_user", "Người dùng không tồn tại.");
+  if (!user) throw new ApiError(400, "unknown_user", "User does not exist.");
   await db.transaction(async (tx) => {
     // Re-adding an existing member is a no-op, not an error: the admin's goal
     // ("this person is in the space") is already true.
@@ -743,7 +728,7 @@ export async function setSpaceMemberRole(
 function rethrowFolderNameTaken(err: unknown): never {
   const raw = err as { code?: string; cause?: { code?: string } };
   if (raw?.code === "23505" || raw?.cause?.code === "23505") {
-    throw new ApiError(409, "folder_exists", T.folderNameTaken);
+    throw new ApiError(409, "folder_exists", "A folder with this name already exists here.");
   }
   throw err;
 }
@@ -768,7 +753,7 @@ export async function createFolder(
 ) {
   authorize(actor, "storage.upload", { spaceId: input.spaceId, kind: "write" });
   const name = input.name?.trim();
-  if (!name) throw new ApiError(400, "invalid_folder", T.folderNameRequired);
+  if (!name) throw new ApiError(400, "invalid_folder", "Folder name must not be empty.");
   const parentId = input.parentId || null;
   if (parentId) {
     const [parent] = await db
@@ -776,7 +761,7 @@ export async function createFolder(
       .from(folders)
       .where(eq(folders.id, parentId));
     if (!parent || parent.spaceId !== input.spaceId) {
-      throw new ApiError(400, "unknown_folder", T.folderParentMissing);
+      throw new ApiError(400, "unknown_folder", "Parent folder does not exist in this space.");
     }
   }
   try {
@@ -810,7 +795,7 @@ async function loadOwnedFolder(actor: Principal, folderId: string) {
 export async function renameFolder(actor: Principal, folderId: string, name: string) {
   const folder = await loadOwnedFolder(actor, folderId);
   const next = name?.trim();
-  if (!next) throw new ApiError(400, "invalid_folder", T.folderNameRequired);
+  if (!next) throw new ApiError(400, "invalid_folder", "Folder name must not be empty.");
   try {
     await db.transaction(async (tx) => {
       await tx.update(folders).set({ name: next }).where(eq(folders.id, folderId));
@@ -846,7 +831,7 @@ export async function deleteFolder(actor: Principal, folderId: string) {
     .where(eq(sources.folderId, folderId))
     .limit(1);
   if (child || filed) {
-    throw new ApiError(409, "folder_not_empty", T.folderNotEmpty);
+    throw new ApiError(409, "folder_not_empty", "The folder still contains items.");
   }
   await db.transaction(async (tx) => {
     await tx.delete(folders).where(eq(folders.id, folderId));

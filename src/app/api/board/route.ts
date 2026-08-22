@@ -12,7 +12,7 @@ function parseRange(from: string, to: string) {
   const start = new Date(from);
   const end = new Date(to);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
-    throw new ApiError(400, "invalid_range", "Khoảng thời gian không hợp lệ.");
+    throw new ApiError(400, "invalid_range", "Invalid date range.");
   }
   return { from: start, to: end };
 }
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const to = params.get("to");
     if (from === null && to === null) return NextResponse.json(await listBoard(actor));
     if (from === null || to === null) {
-      throw new ApiError(400, "invalid_range", "Cần cả ngày bắt đầu và ngày kết thúc.");
+      throw new ApiError(400, "invalid_range", "Both a start and an end date are required.");
     }
     return NextResponse.json(await listSchedule(actor, parseRange(from, to)));
   });

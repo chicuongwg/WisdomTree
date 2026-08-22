@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { T } from "@/lib/vi";
+import { T, translateApiError } from "@/lib/vi";
 import { Say } from "./say";
 
 /**
@@ -59,12 +59,19 @@ export function useSequentialUpload() {
           // work twice.
           const body = (() => {
             try {
-              return JSON.parse(xhr.responseText) as { message?: string };
+              return JSON.parse(xhr.responseText) as {
+                message?: string;
+                code?: string;
+                details?: Record<string, unknown>;
+              };
             } catch {
               return null;
             }
           })();
-          resolve({ status: "failed", reason: body?.message ?? null });
+          resolve({
+            status: "failed",
+            reason: body ? translateApiError(body.code, body.details, body.message) : null,
+          });
         }
       };
       // A transport error has no body and no sentence of its own.

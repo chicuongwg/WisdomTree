@@ -58,21 +58,15 @@ export function run() {
     tone: "no_source",
   });
   assert.equal(
-    nextActionFor({
-      storageState: "stored",
-      extractionStatus: "processed",
-      curationState: "under_correction",
-      curationAssigned: false,
-    }),
-    "nominated_unassigned",
+    nextActionFor({ storageState: "stored", extractionStatus: "pending" }),
+    "reading",
   );
   assert.equal(
-    nextActionFor({
-      storageState: "archived",
-      extractionStatus: "pending",
-      curationState: "promoted",
-      promoted: true,
-    }),
+    nextActionFor({ storageState: "archived", extractionStatus: "pending", promoted: true }),
     "archived",
+  );
+  assert.equal(
+    nextActionFor({ storageState: "stored", extractionStatus: "processed", promoted: true }),
+    "promoted",
   );
 }

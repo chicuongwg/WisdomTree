@@ -1,17 +1,17 @@
 import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
-import { catalogItems } from "../catalog/schema";
+import { sourcePhysical } from "../storage/schema";
 
-// Module: circulation — borrow/return workflow; depends on catalog for item
-// identity, never the other way around (module-map.md dependency rules).
-// Column definitions transcribed from docs/design/database-schema.md § loan_tickets.
+// Module: circulation — borrow/return workflow for the Library's physical
+// items (source_physical); depends on storage for item identity, never the
+// other way around.
 // "One active loan per item" is a partial unique index in the SQL migration.
 
 export const loanTickets = pgTable("loan_tickets", {
   id: uuid("id").primaryKey().defaultRandom(),
   itemId: uuid("item_id")
     .notNull()
-    .references(() => catalogItems.id),
+    .references(() => sourcePhysical.id),
   borrowerId: uuid("borrower_id")
     .notNull()
     .references(() => users.id),
