@@ -2,12 +2,35 @@
 
 This directory contains test files for the WisdomTree repository.
 
-## Structure
+## Structure — four tiers
 
-- `tests/unit/` - unit tests for functions and small modules.
-- `tests/integration/` - integration tests for API, DB, and service interactions.
-- `tests/e2e/` - Playwright smoke tests against the production standalone server.
-- `tests/run-all.ts` - simple runner for test files in a directory.
+- `tests/unit/` — pure logic, no DB: the authorize() catalog contract
+  (role gates, 404-vs-403, space ladder), the line diff, the error
+  translator, graph settings/model invariants, content helpers.
+- `tests/integration/` — one service area against the seeded DB: session
+  resolution + inactivity timeout, edit locks (conflict, save guard,
+  stale-heartbeat takeover), book/loan guard rails, the two review
+  boundaries (maker-checker).
+- `tests/usecase/` — end-to-end user journeys at the service layer:
+  the knowledge lifecycle (write → live edit → history/diff/restore →
+  promote → locked page → reviewed change), a book's life (shelve →
+  find under "Sách" → borrow → return → register), and an account's
+  life (invite → promote → disable revokes sessions → re-enable →
+  lockout guards).
+- `tests/privacy/` — isolation and leak rules: out-of-scope reads are
+  404 (never 403), personal vaults are invisible on every read surface
+  and untouchable from outside, tokens are stored only as hashes,
+  revocation is immediate, self-service cannot touch role/email/sub,
+  account enumeration and audit are admin-only, notifications are
+  owner-only, and the demo-login gate closes in production.
+- `tests/e2e/` — Playwright smoke tests against the production
+  standalone server (signs in via a session row from global-setup).
+- `tests/run-all.ts` — simple runner; `tests/setup.ts` provides
+  `issueTestSession` and `principalFor`.
+
+Tests are repeatable against one seeded DB without reseeding (fixtures
+they create use unique titles); reseed with
+`ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed` for a clean slate.
 
 Module, contract, and UI checks live under `scripts/` because they validate
 repository-wide structure or generated artifacts rather than one runtime
@@ -20,6 +43,8 @@ module.
 - `npm run test:contract` — signed-token and timezone contracts
 - `npm run test:ui` — WCAG contrast audit over globals.css
 - `npm run test:integration`
+- `npm run test:usecase` — service-layer user journeys
+- `npm run test:privacy` — isolation and leak rules
 - `npm run test:e2e`
 - `npm test` — fast, infrastructure-free gate
 - `npm run test:all` — integration, production build, and Playwright after the fast gate
@@ -42,7 +67,7 @@ npm run test:all
 ```text
 lint + typecheck
   -> unit + module + contract + UI checks
-  -> PostgreSQL integration
+  -> PostgreSQL integration + usecase + privacy
   -> production build
   -> Playwright E2E via scripts/start-e2e.mjs
 ```

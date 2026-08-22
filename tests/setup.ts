@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sessions, users } from "@/modules/auth/schema";
+import { spaceMembers } from "@/modules/storage/schema";
 
 export function testName(name: string) {
   return name;
@@ -26,4 +27,24 @@ export async function issueTestSession(
     ...(opts.lastSeenAt ? { lastSeenAt: opts.lastSeenAt } : {}),
   });
   return { token, userId: user.id };
+}
+
+/**
+ * A real-shaped principal for service-layer tests: role and space
+ * memberships loaded from the seeded DB, exactly what resolveSessionToken
+ * would build for this user.
+ */
+export async function principalFor(email: string) {
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  if (!user) throw new Error(`seeded user not found: ${email}`);
+  const memberships = await db
+    .select({ spaceId: spaceMembers.spaceId, role: spaceMembers.memberRole })
+    .from(spaceMembers)
+    .where(eq(spaceMembers.userId, user.id));
+  return {
+    userId: user.id,
+    role: user.role,
+    spaceIds: memberships.map((m) => m.spaceId),
+    spaceMemberships: memberships,
+  };
 }
