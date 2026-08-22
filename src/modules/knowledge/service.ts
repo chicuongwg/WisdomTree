@@ -1,2 +1,5 @@
 // Stable module facade. Callers should not depend on the service layout.
-export * from "./service-core";
+export * from "./service-queries";
+export * from "./service-mutations";
+export * from "./publication";
+export * from "./edit-lock";
