@@ -1,10 +1,9 @@
 # WisdomTree
 
 Storage-first knowledge platform for a small team — a modular monolith built as
-**Next.js (App Router) + Drizzle ORM + PostgreSQL**, one deployable, per the
-stack pin in [docs/roadmap/demo-brief.md](docs/roadmap/demo-brief.md).
+**Next.js (App Router) + Drizzle ORM + PostgreSQL**, one deployable.
 
-Planning and design docs live under [docs/](docs/README.md). The product is
+Documentation for the system as built lives under [docs/](docs/README.md). The product is
 three things and deliberately no more (refactor 2026-08-22 removed the rest):
 
 1. **Task & project management** — Kanban board, deadlines, calendar/ICS.
@@ -161,9 +160,8 @@ split behind them:
 - `components/knowledge-map.tsx` and `lib/vi.ts` preserve existing imports while
   their implementations live in same-named directories.
 
-See [docs/platform/module-map.md](docs/platform/module-map.md) for the current
-module/file map and [tests/README.md](tests/README.md) for the verification
-layers.
+See [docs/architecture.md](docs/architecture.md) for the module map and
+[tests/README.md](tests/README.md) for the verification layers.
 
 ## Deploying
 
@@ -227,14 +225,14 @@ the stub dispatcher produced in-app notifications.
 
 | Path                                  | What it is                                                                                                              |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `docs/`                               | Canonical planning + design baseline (read `docs/roadmap/demo-brief.md` first)                                          |
-| `drizzle/0000_init.sql`               | First migration, transcribed from `docs/design/database-schema.md` (demo subset)                                        |
-| `src/modules/<module>/`               | Module boundaries per `docs/platform/module-map.md`; large services may use a thin facade plus cohesive internal slices |
+| `docs/`                               | Documentation for the system as built (start at `docs/README.md`)                                                       |
+| `drizzle/`                            | Forward-only SQL migrations (tracked in `schema_migrations`)                                                            |
+| `src/modules/<module>/`               | Module boundaries (see `docs/architecture.md`); large services use a thin facade plus cohesive internal slices          |
 | `src/modules/*/schema.ts`             | Drizzle table definitions owned by that module                                                                          |
 | `src/app/components/knowledge-map/`   | Graph renderer model, responsive media hook, and component implementation                                               |
 | `src/lib/vi/`                         | Vietnamese copy and state-label implementation behind the `src/lib/vi.ts` facade                                        |
 | `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1                                                                                |
-| `src/modules/storage/extraction.ts`   | Dev substitution: in-process stub worker                                                                                |
+| `src/modules/storage/extraction.ts`   | In-process OCR/pandoc extraction (tesseract with Vietnamese data)                                                       |
 | `src/db/`                             | Drizzle client, aggregated schema, cross-cutting outbox table                                                           |
 | `scripts/db/`                         | Migration runner and seed script                                                                                        |
 | `tests/`                              | Unit, integration, and Playwright suites; module, contract, and UI audits are wired through package scripts             |

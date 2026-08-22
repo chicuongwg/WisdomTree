@@ -1,7 +1,7 @@
 import { APP_TZ, appDayNumber } from "../time";
 
-// State labels. `unprocessable`, trust `candidate/trusted/rejected` come from
-// the vocabulary doc; the rest are NEW pending humanities review.
+// State labels (governance: docs/vocabulary-vi.md). Entries marked NEW are
+// pending humanities review.
 export const extractionLabel: Record<string, string> = {
   pending: "Đang chờ xử lý", // NEW
   processed: "Đã xử lý", // NEW

@@ -16,9 +16,9 @@ module.
 ## Running tests
 
 - `npm run test:unit`
-- `npm run test:modules` — dependency boundaries and authorization matrix
+- `npm run test:modules` — layer/dependency boundaries
 - `npm run test:contract` — signed-token and timezone contracts
-- `npm run test:ui` — contrast and diagram layout audits
+- `npm run test:ui` — WCAG contrast audit over globals.css
 - `npm run test:integration`
 - `npm run test:e2e`
 - `npm test` — fast, infrastructure-free gate

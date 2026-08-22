@@ -1,6 +1,6 @@
-// User-facing Vietnamese vocabulary, per docs/ui/vocabulary-vi.md — the UI never
-// shows a raw internal term. Terms marked NEW are not yet in the vocabulary
-// doc and are flagged for humanities review in the step-2 report.
+// User-facing Vietnamese vocabulary (governance: docs/vocabulary-vi.md) — the
+// UI never shows a raw internal term. Terms marked NEW are pending humanities
+// review.
 
 export const T = {
   appName: "WisdomTree",
