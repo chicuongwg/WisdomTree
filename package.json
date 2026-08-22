@@ -29,19 +29,15 @@
     "test:contrast": "node scripts/contrast.test.mjs",
     "test:time": "tsx scripts/time.test.ts",
     "test:unit": "tsx tests/run-all.ts tests/unit",
-    "test:modules": "npm run test:boundaries",
-    "test:contract": "npm run test:sign && npm run test:time",
-    "test:ui": "npm run test:contrast",
     "test:integration": "tsx tests/run-all.ts tests/integration",
     "test:usecase": "tsx tests/run-all.ts tests/usecase",
     "test:privacy": "tsx tests/run-all.ts tests/privacy",
     "test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
-    "test:tests": "tsx tests/run-all.ts tests",
     "test:all": "npm test && npm run test:integration && npm run test:usecase && npm run test:privacy && npm run build && npm run test:e2e",
     "lint": "eslint src/ --max-warnings=0",
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
-    "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:modules && npm run test:contract && npm run test:ui"
+    "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:boundaries && npm run test:sign && npm run test:time && npm run test:contrast"
   },
   "dependencies": {
     "@wisdomtree/graph-obsidian": "*",
