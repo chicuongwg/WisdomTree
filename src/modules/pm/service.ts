@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
-import type { Principal } from "../auth/dev-auth";
+import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { emitOutbox, recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
@@ -90,10 +90,10 @@ type DeadlineInput = {
 function parseLinks(links: DeadlineInput["links"]) {
   if (links === undefined) return undefined;
   if (!Array.isArray(links))
-    throw new ApiError(400, "invalid_links", "Danh sách liên kết không hợp lệ.");
+    throw new ApiError(400, "invalid_links", "Invalid links payload.");
   return links.map((l) => {
     if (!l?.targetId || !LINK_TARGETS.includes(l.targetType as LinkTarget)) {
-      throw new ApiError(400, "invalid_links", "Liên kết phải có loại và mã hợp lệ.");
+      throw new ApiError(400, "invalid_links", "Each link needs a valid type and id.");
     }
     return { targetType: l.targetType as LinkTarget, targetId: l.targetId };
   });
@@ -102,7 +102,7 @@ function parseLinks(links: DeadlineInput["links"]) {
 function parseOffsets(offsets: string[] | undefined): string[] | undefined {
   if (offsets === undefined) return undefined;
   if (!Array.isArray(offsets) || offsets.some((o) => typeof o !== "string" || !o.trim())) {
-    throw new ApiError(400, "invalid_reminder_offsets", "Mốc nhắc hạn không hợp lệ.");
+    throw new ApiError(400, "invalid_reminder_offsets", "Invalid reminder offsets.");
   }
   return offsets;
 }
@@ -130,7 +130,7 @@ async function assertLinksVisibleFrom(
     throw new ApiError(
       400,
       "invalid_links",
-      "Chỉ được liên kết tư liệu thuộc cùng kho dự án với hạn chót.",
+      "Linked sources must belong to the deadline's space.",
     );
   }
 }
@@ -176,14 +176,14 @@ export async function getDeadlineLinks(actor: Principal, deadlineId: string) {
 
 export async function createDeadline(actor: Principal, input: DeadlineInput) {
   if (!input.spaceId || !input.title?.trim() || !input.dueAt) {
-    throw new ApiError(400, "invalid_deadline", "Vui lòng nhập kho dự án, tiêu đề và hạn chót.");
+    throw new ApiError(400, "invalid_deadline", "Space, title and due date are required.");
   }
   if (!DEADLINE_TYPES.includes(input.type as DeadlineType)) {
-    throw new ApiError(400, "invalid_deadline_type", "Loại hạn chót không hợp lệ.");
+    throw new ApiError(400, "invalid_deadline_type", "Invalid deadline type.");
   }
   const dueAt = new Date(input.dueAt);
   if (Number.isNaN(dueAt.getTime())) {
-    throw new ApiError(400, "invalid_due_date", "Ngày hạn chót không hợp lệ.");
+    throw new ApiError(400, "invalid_due_date", "Invalid due date.");
   }
   // Project members = space members; a non-member write is denied 403.
   authorize(actor, "pm.deadline.edit", { spaceId: input.spaceId, kind: "write" });
@@ -234,11 +234,11 @@ export async function updateDeadline(actor: Principal, deadlineId: string, input
     authorize(actor, "pm.deadline.edit", { spaceId: input.spaceId, kind: "write" });
   }
   if (input.type !== undefined && !DEADLINE_TYPES.includes(input.type as DeadlineType)) {
-    throw new ApiError(400, "invalid_deadline_type", "Loại hạn chót không hợp lệ.");
+    throw new ApiError(400, "invalid_deadline_type", "Invalid deadline type.");
   }
   const dueAt = input.dueAt !== undefined ? new Date(input.dueAt) : undefined;
   if (dueAt && Number.isNaN(dueAt.getTime())) {
-    throw new ApiError(400, "invalid_due_date", "Ngày hạn chót không hợp lệ.");
+    throw new ApiError(400, "invalid_due_date", "Invalid due date.");
   }
   const expectedVersion = input.expectedVersion;
   if (typeof expectedVersion !== "number") throw versionConflict();
@@ -326,9 +326,9 @@ function parseMoment(raw: string | null | undefined, code: string, message: stri
 }
 
 const parseDueAt = (raw: string | null | undefined) =>
-  parseMoment(raw, "invalid_due_at", "Thời hạn không hợp lệ.");
+  parseMoment(raw, "invalid_due_at", "Invalid due date.");
 const parseStartAt = (raw: string | null | undefined) =>
-  parseMoment(raw, "invalid_start_at", "Ngày bắt đầu không hợp lệ.");
+  parseMoment(raw, "invalid_start_at", "Invalid start date.");
 
 /**
  * One task with everything its own page shows. Gated on board READ, not on
@@ -390,7 +390,7 @@ export async function claimTask(actor: Principal, taskId: string) {
   if (!claimed) {
     const [exists] = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.id, taskId));
     if (!exists) throw notFound();
-    throw new ApiError(409, "already_claimed", "Việc này đã có người nhận.");
+    throw new ApiError(409, "already_claimed", "This task is already claimed.");
   }
   return claimed;
 }
@@ -471,11 +471,11 @@ export async function createTask(actor: Principal, input: TaskInput) {
   // Creation is board management of one's own task: the creator is the owner.
   authorize(actor, "pm.board.manage", { ownerIds: [actor.userId], kind: "write" });
   if (!input.title?.trim()) {
-    throw new ApiError(400, "invalid_task", "Vui lòng nhập tiêu đề công việc.");
+    throw new ApiError(400, "invalid_task", "Task title must not be empty.");
   }
   const state = input.state ?? "todo";
   if (!TASK_STATES.includes(state as TaskState)) {
-    throw new ApiError(400, "invalid_task_state", "Trạng thái công việc không hợp lệ.");
+    throw new ApiError(400, "invalid_task_state", "Invalid task state.");
   }
   const created = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -513,7 +513,7 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
     kind: "write",
   });
   if (input.state !== undefined && !TASK_STATES.includes(input.state as TaskState)) {
-    throw new ApiError(400, "invalid_task_state", "Trạng thái công việc không hợp lệ.");
+    throw new ApiError(400, "invalid_task_state", "Invalid task state.");
   }
   const expectedVersion = input.expectedVersion;
   if (typeof expectedVersion !== "number") throw versionConflict();
@@ -570,11 +570,11 @@ export async function logAchievement(
 ) {
   authorize(actor, "pm.board.manage", { ownerIds: [actor.userId], kind: "write" });
   if (!input.title?.trim()) {
-    throw new ApiError(400, "invalid_achievement", "Vui lòng nhập tiêu đề thành quả.");
+    throw new ApiError(400, "invalid_achievement", "Achievement title must not be empty.");
   }
   const achievedAt = input.achievedAt ? new Date(input.achievedAt) : new Date();
   if (Number.isNaN(achievedAt.getTime())) {
-    throw new ApiError(400, "invalid_achievement_date", "Ngày ghi nhận không hợp lệ.");
+    throw new ApiError(400, "invalid_achievement_date", "Invalid achievement date.");
   }
   return db.transaction(async (tx) => {
     const [row] = await tx

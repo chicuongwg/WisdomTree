@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { T } from "./vi";
+import { T, translateApiError } from "./vi";
 
 // The one POST-and-refresh. Thirteen components had carried a copy of it —
 // same busy flag, same error parse — which is thirteen places to forget an
@@ -74,8 +74,15 @@ export function useMutation(): Mutation {
       const payload = (await res.json().catch(() => null)) as {
         message?: string;
         code?: string;
+        details?: Record<string, unknown>;
       } | null;
-      setError(payload?.message ?? T.genericError);
+      // The BE speaks English + a stable code; the translator says it in
+      // Vietnamese, falling back to the server message for unknown codes.
+      setError(
+        payload
+          ? translateApiError(payload.code, payload.details, payload.message)
+          : T.genericError,
+      );
       opts?.onError?.(res, payload);
       setBusy(false);
       return failed;

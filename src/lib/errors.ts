@@ -29,16 +29,16 @@ export class ApiError extends Error {
 }
 
 export const unauthorized = () =>
-  new ApiError(401, "unauthorized", "Bạn cần đăng nhập để tiếp tục.");
+  new ApiError(401, "unauthorized", "Sign-in required.");
 // Denied writes → 403 (authorization-design.md); message uses the vocabulary term.
-export const forbidden = () => new ApiError(403, "forbidden", "Không có quyền truy cập.");
+export const forbidden = () => new ApiError(403, "forbidden", "Access denied.");
 // Out-of-scope reads → 404, never 403, so cross-space existence is not leaked.
-export const notFound = () => new ApiError(404, "not_found", "Không tìm thấy nội dung này.");
+export const notFound = () => new ApiError(404, "not_found", "Not found.");
 export const versionConflict = () =>
   new ApiError(
     409,
     "version_conflict",
-    "Nội dung vừa được người khác cập nhật. Vui lòng tải lại và thử lại.",
+    "The content was just updated by someone else. Reload and try again.",
   );
 
 type PgError = { code?: string; constraint?: string };
@@ -65,14 +65,14 @@ export async function handleApi(fn: () => Promise<Response>): Promise<Response> 
       const body: ErrorBody = {
         code: "loan_already_active",
         message:
-          "Bạn đang có phiếu mượn hiệu lực cho đầu sách này. Mỗi người chỉ giữ một cuốn của cùng một đầu sách.",
+          "You already hold an active loan for this title; one copy per person.",
       };
       return NextResponse.json(body, { status: 409 });
     }
     console.error(err);
     const body: ErrorBody = {
       code: "internal_error",
-      message: "Có lỗi xảy ra. Vui lòng thử lại sau.",
+      message: "Something went wrong. Try again later.",
     };
     return NextResponse.json(body, { status: 500 });
   }

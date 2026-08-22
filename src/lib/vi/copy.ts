@@ -7,7 +7,6 @@ export const T = {
   home: "Trang chủ",
   space: "Kho",
   library: "Tư liệu số",
-  catalog: "Sách & tài liệu vật lý",
   catalogItem: "Đầu sách",
   coverPhoto: "Ảnh bìa",
   coverPlaceholder: "Chưa có ảnh bìa",
@@ -19,9 +18,7 @@ export const T = {
   sourceIntake: "Gửi tư liệu",
   mySubmissions: "Tư liệu tôi đã gửi",
   storedItem: "Tư liệu đã lưu",
-  sourceDetail: "Hồ sơ tư liệu", // NEW
   librarianDesk: "Bàn thủ thư",
-  gapRequest: "Đề xuất bổ sung",
   accessDenied: "Không có quyền truy cập",
   // A refusal without a next step leaves the reader on a page with nothing on
   // it but the word no.
@@ -63,9 +60,6 @@ export const T = {
     "Đầu sách rời khỏi danh sách thư viện nhưng vẫn được lưu lại trong hồ sơ, kèm lịch sử mượn trả. Không có nút mở lại đầu sách.", // NEW
   updateCopies: "Cập nhật số lượng", // NEW
   // Quantity and state are two questions, so two columns (owner, 2026-07-21).
-  copiesColumn: "Số lượng", // NEW
-  // (`statusColumn` was a second key holding the same word as `state`, and the
-  //  catalogue used one while every other table used the other.)
   approve: "Duyệt",
   decline: "Từ chối",
   lend: "Giao sách",
@@ -76,7 +70,6 @@ export const T = {
   title: "Tiêu đề",
   description: "Mô tả",
   file: "Tệp",
-  submit: "Gửi",
   loading: "Đang tải…",
   empty: "Chưa có mục nào.",
   notifications: "Thông báo",
@@ -93,7 +86,6 @@ export const T = {
   libraryEmptyTitle: "Kho tư liệu này chưa có gì.",
   libraryEmptyHint: "Tải lên tài liệu đầu tiên — tệp xem và tải được ngay, không cần chờ xử lý.",
   uploadCta: "Gửi tư liệu",
-  catalogEmptyHint: "Thư viện chưa có đầu sách nào. Liên hệ thủ thư để bổ sung.",
   // Empty states, one per screen (NEW — not yet in vocabulary-vi.md)
   homeLoansEmptyTitle: "Bạn chưa mượn cuốn sách nào.",
   homeLoansEmptyHint: "Tìm sách trong thư viện rồi gửi yêu cầu mượn; thủ thư sẽ duyệt giúp bạn.",
@@ -119,12 +111,6 @@ export const T = {
   mySubmissionsEmptyTitle: "Bạn chưa gửi tư liệu nào.",
   mySubmissionsEmptyHint:
     "Tư liệu bạn tải lên và những đề xuất bổ sung bạn nêu đều được liệt kê ở đây.",
-  sourceInboxEmptyTitle: "Chưa có tư liệu nào được gửi lên.",
-  sourceInboxEmptyHint:
-    "Khi thành viên gửi tư liệu, chúng vào đây để bạn giao việc hiệu đính. Bạn cũng tự gửi được.",
-  gapRequestsEmptyTitle: "Chưa có đề xuất bổ sung nào.",
-  gapRequestsEmptyHint:
-    "Thành viên gửi đề xuất khi cần một tư liệu mà kho chưa có; đề xuất sẽ hiện ở đây.",
   reviewQueueEmptyTitle: "Không có việc nào đang chờ duyệt.",
   reviewQueueEmptyHint:
     "Việc sẽ tự vào hàng chờ khi có tư liệu mới gửi lên hoặc có bản thảo xin xuất bản.",
@@ -144,11 +130,6 @@ export const T = {
   validationMax: (max: string) => `Giá trị lớn nhất là ${max}.`, // NEW
   genericError: "Có lỗi xảy ra. Vui lòng thử lại sau.",
   // Gap request: the no-file intake mode (NEW — not yet in vocabulary-vi.md)
-  gapRequestHint: "Không có tệp để gửi? Nêu thứ còn thiếu, quản trị viên sẽ xem xét bổ sung.",
-  gapRequestTitle: "Cần bổ sung tư liệu gì?",
-  gapRequestWhy: "Vì sao cần (không bắt buộc)",
-  gapRequestSent: "Đã gửi đề xuất. Bạn theo dõi được ở mục “Tư liệu tôi đã gửi”.",
-  gapRequestSubmit: "Gửi đề xuất",
   // Librarian Desk: adding a physical item (NEW — not yet in vocabulary-vi.md)
   author: "Tác giả",
   shelfLocation: "Vị trí",
@@ -156,9 +137,7 @@ export const T = {
   catalogItemAdded: "Đã thêm đầu sách. Mã số:",
   extractionWatching: "Trang sẽ tự cập nhật khi xử lý xong — không cần tải lại.",
   extractionSlow: "Việc xử lý lâu hơn thường lệ. Tệp gốc vẫn tải xuống được bình thường.",
-  uploading: "Đang tải lên",
   uploadFinishing: "Đã tải xong, đang lưu…",
-  uploadNetworkError: "Mất kết nối khi đang tải lên. Kiểm tra mạng và thử lại.",
   noFileChosen: "Chưa chọn tệp",
   noSpacesTitle: "Bạn chưa thuộc kho nào.",
   noSpacesHint: "Cần được thêm vào một kho trước khi gửi tư liệu. Liên hệ quản trị viên.",
@@ -172,36 +151,23 @@ export const T = {
   tree: "Nội dung tri thức",
   node: "Trang tri thức",
   branch: "Chuyên đề",
-  markdownDraft: "Bản thảo",
   publish: "Xuất bản",
   reviewQueue: "Duyệt tư liệu",
   publishReview: "Duyệt xuất bản",
-  correctedText: "Văn bản đã hiệu đính", // NEW
   rawText: "Văn bản trích xuất", // NEW
-  sourceInbox: "Tiếp nhận tư liệu", // NEW
-  assignedTask: "Việc được giao", // NEW
   provenance: "Nguồn dẫn", // NEW
-  relatedNodes: "Trang liên quan", // NEW
   tags: "Thẻ", // NEW
   branchName: "Tên chuyên đề", // NEW
   createBranch: "Tạo chuyên đề", // NEW
   editNode: "Sửa trang tri thức", // NEW
   save: "Lưu", // NEW
-  saveDraft: "Lưu bản thảo", // NEW
-  markReady: "Gửi duyệt", // NEW
-  assign: "Giao việc", // NEW
   assignee: "Người phụ trách", // NEW
   reject: "Không dùng",
-  requestChanges: "Yêu cầu chỉnh sửa", // NEW
-  publishVerified: "Xuất bản (Đã thẩm định)", // NEW
-  publishUnverified: "Xuất bản (Chưa thẩm định)", // NEW
   archive: "Lưu trữ", // NEW
   merge: "Gộp trang", // NEW
   mergedNotice: "Trang này đã được gộp vào một trang chuẩn.", // NEW
   openCanonical: "Mở trang chuẩn", // NEW
   verificationLabelTitle: "Mức thẩm định", // NEW
-  excerpts: "Trích đoạn dẫn chứng", // NEW
-  nodeCount: "Số trang tri thức", // NEW
   lastUpdated: "Cập nhật lần cuối", // NEW
   state: "Trạng thái", // NEW
   // Column headings that used to be typed straight into the tables. They are
@@ -209,8 +175,6 @@ export const T = {
   // names on two screens — "Người gửi" and "Người tải lên" for the person who
   // sent a file, "Cập nhật lần cuối" and "Cập nhật" for the same timestamp.
   contentColumn: "Nội dung", // NEW
-  kindColumn: "Loại", // NEW
-  curationColumn: "Hiệu đính", // NEW
   extractionState: "Trạng thái xử lý", // NEW
   itemCode: "Mã số", // NEW
   memberColumn: "Thành viên", // NEW
@@ -220,18 +184,11 @@ export const T = {
   folderPath: "Đường dẫn thư mục", // NEW
   breadcrumbLabel: "Đường dẫn trang", // NEW
   taskType: "Loại việc", // NEW
-  openItem: "Mở", // NEW
-  triage: "Tiếp nhận", // NEW
-  convertToBranch: "Chuyển thành chuyên đề", // NEW
-  // "Markdown" is a programmer's word and nothing on either editor screen
-  // explains it. What the reader needs to know is that the box takes plain
-  // writing and that a few marks do something — which the hint says.
   contentMd: "Nội dung", // NEW
   contentMdHint:
     "Viết như bình thường. Gõ ## đầu dòng để tạo tiêu đề, - để tạo gạch đầu dòng, và [[Tên trang]] để dẫn sang một trang tri thức khác.", // NEW
   editNodeConflictNote:
     "Nếu người khác lưu trước bạn, hệ thống sẽ báo và giữ nguyên nội dung bạn đang soạn.", // NEW
-  suggestedBranch: "Chuyên đề đề xuất", // NEW
   preview: "Xem trước", // NEW
   // Notify + PM terms; Comment "Thảo luận" comes from vocabulary-vi.md § Term
   // Map, the rest are NEW pending humanities review.
@@ -262,7 +219,6 @@ export const T = {
   board: "Bảng phân công", // NEW
   task: "Công việc", // NEW
   createTask: "Thêm công việc", // NEW
-  achievement: "Thành quả", // NEW
   createDeadline: "Tạo hạn chót", // NEW
   editDeadline: "Sửa hạn chót", // NEW
   deadlineType: "Loại hạn chót", // NEW
@@ -305,7 +261,6 @@ export const T = {
   taskNotes: "Ghi chú", // NEW
   taskNotesHint: "Ghi lại diễn biến, việc cần làm tiếp, hoặc điều cần bàn với đồng nghiệp.", // NEW
   taskNotesEmpty: "Chưa có ghi chú nào.", // NEW
-  taskSchedule: "Thời gian", // NEW
   taskSaved: "Đã lưu công việc.", // NEW
   openFullPage: "Mở toàn trang", // NEW
   closeTaskPanel: "Đóng bảng chi tiết", // NEW
@@ -318,14 +273,12 @@ export const T = {
   quickSearch: "Tìm nhanh", // NEW
   openBranch: "Mở chuyên đề", // NEW
   recent: "Gần đây", // NEW
-  shortcuts: "Lối tắt", // NEW
   themeToggle: "Đổi giao diện sáng/tối", // NEW
   // The rail's review pip counts open review tasks, not unread anything. It
   // was announcing "Hàng chờ duyệt (3 chưa đọc)".
   pipOpenTasks: "việc đang chờ", // NEW
   // The theme button is a toggle, so its accessible name is the thing being
   // switched on ("dark theme, on/off"), not the act.
-  darkTheme: "Giao diện tối", // NEW
   palettePlaceholder: "Gõ để tìm trang tri thức hoặc mở nhanh một mục…", // NEW
   paletteNoResults: "Không tìm thấy kết quả.", // NEW
   paletteSearching: "Đang tìm…", // NEW
@@ -352,15 +305,8 @@ export const T = {
   graphEmpty: "Chưa có trang tri thức nào để vẽ bản đồ.", // NEW
   graphNoMatch: "Không có trang nào khớp bộ lọc. Xóa bớt điều kiện để xem lại.", // NEW
   noBacklinks: "Chưa trang nào liên kết đến trang này.", // NEW
-  navKnowledge: "Tri thức", // NEW
-  // Renamed: "Dự án & công việc" lumped the day's rotating tasks together with
-  // long-horizon project management, and readers could not tell why hạn chót
-  // sat beside bảng công việc. The group now names only the day's work; the
-  // project side moved to navProjects.
   navWork: "Công việc hằng ngày", // NEW
   navBranches: "Danh sách chuyên đề", // NEW
-  openGraph: "Mở bản đồ tri thức", // NEW
-  // Bản đồ tri thức: thao tác và tùy chỉnh hiển thị — NEW pending humanities review
   graphSettings: "Tùy chỉnh bản đồ", // NEW
   graphLinkTypes: "Loại liên kết", // NEW
   graphZoomIn: "Phóng to bản đồ", // NEW
@@ -419,24 +365,6 @@ export const T = {
   confirmMergeTitle: "Gộp trang này vào trang chuẩn?", // NEW
   confirmMergeBody:
     "Trang hiện tại sẽ được lưu trữ và người đọc được dẫn sang trang chuẩn; các liên kết trang này trỏ đi sẽ bị xóa. Không thể hoàn tác.", // NEW
-  confirmPublishVerifiedTitle: "Xuất bản ở mức Đã thẩm định?", // NEW
-  confirmPublishVerifiedBody:
-    "Tư liệu sẽ thành một trang tri thức mang nhãn Đã thẩm định — nhãn này nói với người đọc rằng nguồn dẫn đã được kiểm chứng. Hồ sơ hiệu đính đóng lại sau khi xuất bản.", // NEW
-  confirmPublishUnverifiedTitle: "Xuất bản ở mức Chưa thẩm định?", // NEW
-  confirmPublishUnverifiedBody:
-    "Tư liệu sẽ thành một trang tri thức hiện ngay trên cây tri thức cho cả nhóm, mang nhãn Chưa thẩm định. Hồ sơ hiệu đính đóng lại sau khi xuất bản.", // NEW
-  confirmRejectCurationTitle: "Đóng hồ sơ hiệu đính này ở mức Không dùng?", // NEW
-  confirmRejectCurationBody:
-    "Tư liệu sẽ không được xuất bản và không hiệu đính tiếp được. Tệp gốc vẫn nằm trong Kho tư liệu. Không thể hoàn tác — muốn dùng lại phải gửi tư liệu mới.", // NEW
-  confirmConvertGapTitle: "Chuyển đề xuất này thành chuyên đề?", // NEW
-  confirmConvertGapBody:
-    "Đề xuất sẽ được gắn vào chuyên đề đã chọn và khép lại. Không có nút mở lại đề xuất.", // NEW
-  confirmRejectGapTitle: "Không dùng đề xuất bổ sung này?", // NEW
-  confirmRejectGapBody:
-    "Đề xuất chuyển sang Không dùng và không tiếp nhận lại được. Người gửi vẫn xem được đề xuất của mình.", // NEW
-  confirmArchiveGapTitle: "Lưu trữ đề xuất bổ sung này?", // NEW
-  confirmArchiveGapBody:
-    "Đề xuất rời khỏi danh sách tiếp nhận và không xử lý tiếp được. Không thể hoàn tác.", // NEW
   confirmDeclineLoanTitle: "Từ chối yêu cầu mượn này?", // NEW
   confirmDeclineLoanBody:
     "Người mượn sẽ nhận thông báo bị từ chối và phiếu mượn đóng lại. Muốn mượn nữa, họ phải gửi yêu cầu mới.", // NEW
@@ -444,55 +372,21 @@ export const T = {
   confirmMarkReturnedBody:
     "Phiếu mượn đóng lại ở trạng thái Đã trả và đầu sách trở lại Sẵn sàng. Không thể hoàn tác — nếu ghi nhầm thì phải lập phiếu mượn mới.", // NEW
   // Gap-request triage: where a converted request lands — NEW pending humanities review
-  gapConvertTargetBranch: "— chuyên đề đích", // NEW
-  gapConvertTargetNode: "Hoặc trang tri thức đích", // NEW
-  chooseBranch: "— chọn chuyên đề —", // NEW
-  chooseNoNode: "— không chọn —", // NEW
-  // Curation workbench and the publish decision (NEW — not yet in vocabulary-vi.md)
-  correctedTextHint: "Mỗi lần lưu tạo một bản mới trong chuỗi hiệu đính (không ghi đè).", // NEW
-  correctedTextSaved: "Đã lưu bản hiệu đính mới.", // NEW
-  curationNotYours: "Việc hiệu đính này chưa được giao cho bạn, nên các ô bên dưới chỉ để đọc.", // NEW
-  curationNotUnderCorrection: "Bản này không còn ở bước hiệu đính, nên không sửa được nữa.", // NEW
-  draftSaved: "Đã lưu bản thảo.", // NEW
-  chooseBranchNotYet: "— chưa chọn —", // NEW
-  sentForReview: "Đã gửi duyệt. Quản trị/Vận hành sẽ ra quyết định xuất bản.", // NEW
-  chooseEditor: "— chọn biên tập viên —", // NEW
-  publishDecision: "Quyết định", // NEW
-  // Node Detail: admin panel, manual creation, save conflict (NEW — not yet in vocabulary-vi.md)
   nodeAdmin: "Quản trị trang", // NEW
   mergeCanonicalLabel: "— chọn trang chuẩn", // NEW
   chooseCanonicalNode: "— chọn trang chuẩn —", // NEW
   addNode: "Thêm trang tri thức", // NEW
   reloadNewVersion: "Tải lại phiên bản mới", // NEW
   // Node Detail: document export — NEW pending humanities review
-  exportNode: "Xuất tài liệu", // NEW
-  exportDocx: "Xuất docx", // NEW
-  exportPdf: "Xuất pdf", // NEW
-  exporting: "Đang xuất tệp…", // NEW
-  downloadExport: "Tải tệp đã xuất", // NEW
-  exportWarnings: "Lưu ý:", // NEW
-  // The two failures of an export. They were the only error sentences written
-  // inline in a component rather than here.
-  exportStatusFailed: "Không kiểm tra được trạng thái xuất tệp.", // NEW
-  exportFailed: "Xuất tệp thất bại. Vui lòng thử lại.", // NEW
-  // Deadline form: save results (NEW — not yet in vocabulary-vi.md).
-  // The three reminder offsets moved to reminderLabel() below — they are a
-  // translation of a wire value, not a phrase a screen composes.
   changesSaved: "Đã lưu thay đổi.", // NEW
   deadlineCreated: "Đã tạo hạn chót.", // NEW
   // Sign-in picker (NEW — not yet in vocabulary-vi.md)
-  loginPickerCaption: "Chọn một thành viên để đăng nhập", // NEW
-  signingIn: "Đang đăng nhập…", // NEW
-  // Loan request result — NEW pending humanities review
   loanRequestSent: "Đã gửi yêu cầu mượn. Vui lòng chờ thủ thư duyệt.", // NEW
   // Sign-in page (NEW — not yet in vocabulary-vi.md)
   loginTagline: "Nền tảng lưu trữ và tri thức của nhóm", // NEW — same string as the layout's metadata description
   loginNotInvited: "Tài khoản Google này chưa được mời vào WisdomTree. Liên hệ quản trị viên.", // NEW
   loginFailed: "Đăng nhập không thành công. Vui lòng thử lại.", // NEW
   signInWithGoogle: "Đăng nhập bằng Google", // NEW
-  loginDemoHeading: "Bản demo — chọn một thành viên để đăng nhập", // NEW
-  // Workspace shell: the two rail/palette entries that were still inline
-  // (NEW — not yet in vocabulary-vi.md)
   account: "Tài khoản", // NEW
   // The term vocabulary-vi.md approves, and now the only one the app uses: the
   // screen had been "Quản trị" in the rail, the palette and its own h1, and
@@ -537,53 +431,26 @@ export const T = {
   folderRootOption: "— Gốc kho —", // NEW
   moveAction: "Chuyển", // NEW
   uploadNewVersion: "Tải bản mới", // NEW
-  nominateCta: "Đề cử lên cây tri thức", // NEW
-  nominateSent: "Đã đề cử. Quản trị viên sẽ giao biên tập viên hiệu đính.", // NEW
-  nominatedAwaitingAssign: "Đã đề cử — chờ giao", // NEW
-  revertNominateCta: "Rút đề cử",
-  revertNominateSent: "Đã rút đề cử, tư liệu trở lại trạng thái lưu trữ.",
-  sourceNotNominated: "Tư liệu chưa được đề cử.",
-  sourceAlreadyPromoted: "Tư liệu đã xuất bản lên cây tri thức, không thể rút đề cử.",
   nextStepColumn: "Bước tiếp theo", // NEW
   // What happens to this file next, one sentence per state — the values of
   // nextActionLabel in src/lib/source-status.ts. NEW pending humanities review.
   nextActionArchived: "Đã thu hồi.", // NEW
   nextActionReading: "Hệ thống đang đọc nội dung tệp.", // NEW
   nextActionStored: "Đã lưu — dùng được ngay. Bạn có thể đề cử đưa lên cây tri thức.", // NEW
-  nextActionNominated: "Đã đề cử — chờ giao biên tập viên.", // NEW
-  nextActionUnderCorrection: "Đang hiệu đính.", // NEW
-  nextActionReadyForReview: "Chờ duyệt xuất bản.", // NEW
   nextActionPromoted: "Đã xuất bản lên cây tri thức.", // NEW
-  nextActionRejected: "Đề cử không được duyệt — tệp vẫn được lưu.", // NEW
-  // Node export: the one converter warning said in consequences
-  // (NEW — not yet in vocabulary-vi.md)
-  exportOtherWarning: "tệp đã xuất nhưng có phần chưa chuẩn", // NEW
-  exportPandocMissing:
-    "máy chủ chưa cài pandoc nên tệp xuất là bản HTML đơn giản, không phải docx/pdf.", // NEW
-  // Admin Console: headings and the health table (NEW — not yet in vocabulary-vi.md)
   membersHeading: "Thành viên", // NEW
   auditHeading: "Nhật ký hệ thống", // NEW
   healthHeading: "Sức khoẻ hệ thống", // NEW
   healthDatabase: "Cơ sở dữ liệu", // NEW
   healthDbOk: "Hoạt động bình thường", // NEW
   healthDbDown: "Không kết nối được", // NEW
-  healthJobs: "Công việc nền", // NEW
-  healthJobsEmpty: "Chưa có công việc nào", // NEW
   healthOverdueLoans: "Phiếu mượn quá hạn", // NEW
   healthOutbox: "Sự kiện chờ gửi", // NEW
-  healthLastExport: "Xuất dữ liệu gần nhất", // NEW
-  healthNoExport: "Chưa xuất lần nào", // NEW
   healthBackup: "Sao lưu", // NEW
   healthBackupNotConfigured: "Chưa cấu hình sao lưu", // NEW
-  healthDegraded: "Thành phần suy giảm", // NEW
-  healthNone: "Không có", // NEW
-  // Audit trail (NEW — not yet in vocabulary-vi.md)
   auditEmpty: "Chưa có sự kiện nào được ghi lại.", // NEW
   treeSearchEmpty: "Không tìm thấy trang tri thức nào.", // NEW
   treeSearchEmptyHint: "Thử một từ khóa khác, hoặc mở danh sách chuyên đề để duyệt theo chủ đề.", // NEW
-  noCorrectedText: "Chưa có bản hiệu đính.", // NEW
-  noDraft: "Chưa có bản thảo.", // NEW
-  noDraftCannotPublish: "Chưa có bản thảo — không thể xuất bản.", // NEW
   timeColumn: "Thời điểm", // NEW
   actorColumn: "Người thực hiện", // NEW
   actionColumn: "Hành động", // NEW
@@ -607,13 +474,7 @@ export const T = {
   healthOverdueLoansHint: "Phiếu mượn đã qua hạn trả mà chưa ghi nhận trả sách.", // NEW
   healthOutboxHint: "Thông báo đã ghi nhận nhưng chưa gửi đi.", // NEW
   healthDatabaseHint: "Máy chủ có đọc được cơ sở dữ liệu hay không.", // NEW
-  healthLastExportHint: "Lần đưa cây tri thức ra bản xuất bản gần nhất.", // NEW
   healthBackupHint: "Bản sao lưu dữ liệu gần nhất.", // NEW
-  healthDegradedHint: "Thành phần thiếu hoặc chạy ở chế độ hạn chế.", // NEW
-  // The service names a degraded component in English for the operator log;
-  // on screen the reader gets the consequence in their own language.
-  healthPandocMissing: "Chưa cài pandoc: tệp xuất ra là bản HTML đơn giản, không phải docx/pdf.", // NEW
-  healthPdfEngineMissing: "Chưa có bộ tạo PDF: bản xuất PDF là bản HTML đơn giản.", // NEW
   healthAllWell: "Mọi thứ đang bình thường", // NEW
   healthNeedsAttention: "Có mục cần xem lại", // NEW
   auditOpenTarget: "Mở", // NEW — the link text is the object's own name; this is its aria hint
@@ -657,8 +518,6 @@ export const T = {
   email: "Email", // NEW
   displayNameLabel: "Tên hiển thị", // NEW
   // Completed with the member's name: "Vai trò của «Tên»"
-  roleOfPrefix: "Vai trò của", // NEW
-  changeRole: "Đổi vai trò", // NEW
   roleChanged: "Đã đổi vai trò.", // NEW
   userDisabledBadge: "Đã vô hiệu hoá", // NEW
   userInvitedBadge: "Đã mời — chưa đăng nhập", // NEW
@@ -679,8 +538,6 @@ export const T = {
   calendarLinkMissing: "Chưa có đường dẫn lịch cho tài khoản này. Bấm nút dưới để tạo.", // NEW
   viewMySubmissions: "Xem tư liệu tôi đã gửi →", // NEW
   profileSaved: "Đã lưu hồ sơ.", // NEW
-  zaloIdLabel: "Zalo ID", // NEW
-  zaloIdHint: "Dùng để nhận thông báo qua Zalo, nếu bạn bật kênh này.", // NEW
   chooseAvatar: "Chọn ảnh đại diện", // NEW
   avatarConstraint: "PNG, JPEG hoặc WebP, tối đa 2 MB.", // NEW
   regenerateCalendarLink: "Tạo liên kết mới", // NEW
@@ -689,8 +546,6 @@ export const T = {
     "Liên kết cũ sẽ ngừng hoạt động ngay: ứng dụng lịch nào đang dùng nó sẽ không nhận được hạn chót nữa, và bạn cần dán liên kết mới vào đó.", // NEW
   calendarLinkRegenerated: "Đã tạo liên kết mới. Liên kết cũ không còn hoạt động.", // NEW
   // Service and route errors, said in words (NEW — not yet in vocabulary-vi.md)
-  sourceNotNominatable: "Tư liệu này không ở trạng thái có thể đề cử.", // NEW
-  sourceAlreadyNominated: "Tư liệu này đã được đề cử.", // NEW
   folderNameTaken: "Đã có thư mục tên này ở đây.", // NEW
   folderNameRequired: "Vui lòng nhập tên thư mục.", // NEW
   folderParentMissing: "Thư mục cha không tồn tại trong kho này.", // NEW
@@ -729,4 +584,80 @@ export const T = {
   // Graph page scope tabs
   graphScopeTeam: "Tri thức nhóm", // NEW
   graphScopePersonal: "Ghi chú cá nhân", // NEW
+
+  // --- 2026-08 refactor surfaces (two-tier edit, edit lock, library merge) ---
+  proposalSentOk: "Đã gửi đề xuất để kiểm chéo.",
+  sendProposal: "Gửi đề xuất",
+  proposeModeNote:
+    "Trang này đã lên cây chung: thay đổi được gửi thành đề xuất và chỉ áp dụng sau khi một người khác kiểm chéo.",
+  editLockBanner: (holder: string) =>
+    `🔒 Trang đang được chỉnh sửa bởi ${holder}. Chỉ một người sửa tại một thời điểm; khoá tự mở khi họ rời trang.`,
+  editLockNotice: (holder: string) => `🔒 Đang được chỉnh sửa bởi ${holder}.`,
+  compareWithLatestAria: "So sánh với bản mới nhất",
+  latestVsYours: "Bản mới nhất trên hệ thống (−) so với bản bạn đang gõ (+):",
+  diffAriaLabel: "So sánh nội dung",
+  diffUnchanged: (n: number) => `… ${n} dòng không đổi …`,
+  nodeHistory: "Lịch sử phiên bản",
+  compareVersions: (a: number, b: number) => `So sánh phiên bản ${a} → ${b}`,
+  versionColumnShort: "Phiên bản",
+  summaryColumn: "Tóm tắt",
+  savedByColumn: "Người lưu",
+  savedAtColumn: "Lúc",
+  compareColumn: "So sánh",
+  compareWith: (b: number) => `với bản ${b}`,
+  compareAsNew: "làm bản mới",
+  restoreVersion: (n: number) => `Khôi phục phiên bản ${n}`,
+  restoreVersionTitle: (n: number) => `Khôi phục phiên bản ${n}?`,
+  restoreVersionBody:
+    "Nội dung phiên bản này sẽ được lưu thành phiên bản mới nhất. Lịch sử không bị xoá.",
+  // review surfaces
+  reviewDecisionHeading: "Quyết định kiểm chéo",
+  reviewNoteLabel: "Nhận xét",
+  reviewNoteRequiredHint: "(bắt buộc khi yêu cầu sửa hoặc từ chối)",
+  approveVerified: "Duyệt — đã thẩm định",
+  approveVerifiedTitle: "Áp dụng bản đề xuất đã thẩm định?",
+  approveUnverified: "Duyệt — chưa thẩm định",
+  approveUnverifiedTitle: "Áp dụng bản đề xuất ở mức chưa thẩm định?",
+  applySnapshotBody: "Hệ thống sẽ áp dụng đúng snapshot đang xem.",
+  requestChanges: "Yêu cầu chỉnh sửa",
+  rejectProposalTitle: "Từ chối đề xuất?",
+  proposalWillClose: "Đề xuất sẽ bị đóng.",
+  pendingReviewStat: "Đang chờ duyệt",
+  publicationSection: "Đề cử lên cây chung",
+  changeProposalSection: "Đề xuất sửa trang chung",
+  noPendingPublications: "Không có đề cử nào đang chờ.",
+  noPendingChanges: "Không có đề xuất nào đang chờ.",
+  targetBranchColumn: "Chuyên đề đích",
+  submitterColumn: "Người gửi",
+  submittedAtColumn: "Gửi lúc",
+  proposerColumn: "Người đề xuất",
+  changeReviewTitle: "Kiểm chéo đề xuất sửa",
+  publicationReviewTitle: "Kiểm chéo đề cử cá nhân",
+  changeReviewHeading: (title: string) => `Đề xuất sửa: ${title}`,
+  publicationReviewHeading: (title: string) => `Kiểm chéo: ${title}`,
+  proposalDecided: "Đề xuất này đã được xử lý.",
+  publicationDecided: "Đề cử này đã được xử lý.",
+  reviewerNotePrefix: "Nhận xét của reviewer:",
+  ownProposalNotice: "Bạn là người tạo đề xuất. Một reviewer độc lập khác phải xử lý đề xuất này.",
+  proposerLabel: "Người đề xuất:",
+  openCurrentNode: "Mở trang hiện tại",
+  changeStale: (base: number, current: number) =>
+    `Trang đã thay đổi sau khi đề xuất được gửi (phiên bản gốc ${base}, hiện tại ${current}). Không thể áp dụng; hãy yêu cầu người gửi tạo đề xuất mới.`,
+  titleChangeLabel: "Tiêu đề:",
+  contentChangesHeading: "Thay đổi nội dung",
+  // library merge
+  physicalBookHeading: "Sách giấy",
+  categoryFilterAria: "Lọc theo danh mục",
+  categoryAll: "Danh mục: tất cả",
+  viewExtractedMd: "Xem Markdown đã trích xuất",
+  fileKeptNotice: "Tệp gốc vẫn được lưu và tải xuống bình thường.",
+  loanGroupRequested: "Chờ duyệt",
+  loanGroupApproved: "Chờ giao sách",
+  loanGroupBorrowed: "Đang mượn",
+  loanGroupDone: "Đã xong",
+  // login
+  demoLoginHeading: "Đăng nhập demo (chỉ máy phát triển)",
+  oidcNotConfigured:
+    "Bản cài đặt này chưa cấu hình đăng nhập Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APP_URL). Liên hệ quản trị viên để được cấp quyền truy cập.",
+
 } as const;

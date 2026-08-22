@@ -8,22 +8,6 @@ export const extractionLabel: Record<string, string> = {
   unprocessable: "Không xử lý được",
 };
 
-export const trustLabel: Record<string, string> = {
-  unknown: "Chưa đánh giá", // NEW
-  candidate: "Chờ thẩm định",
-  trusted: "Đáng tin",
-  rejected: "Không dùng",
-  archived: "Đã lưu trữ",
-};
-
-export const gapStateLabel: Record<string, string> = {
-  submitted: "Đã gửi", // NEW
-  triaged: "Đã tiếp nhận", // NEW
-  converted_to_branch: "Đã chuyển thành chuyên đề", // NEW
-  rejected: "Không dùng",
-  archived: "Đã lưu trữ",
-};
-
 export const loanStateLabel: Record<string, string> = {
   requested: "Chờ duyệt", // NEW
   approved: "Đã duyệt", // NEW
@@ -62,31 +46,6 @@ export const verificationLabel: Record<string, string> = {
   archived: "Đã lưu trữ",
 };
 
-export const curationStateLabel: Record<string, string> = {
-  under_correction: "Đang hiệu đính", // NEW
-  ready_for_review: "Chờ duyệt xuất bản", // NEW
-  promoted: "Đã xuất bản", // NEW
-  rejected: "Không dùng",
-};
-
-export const reviewStateLabel: Record<string, string> = {
-  queued: "Đang chờ", // NEW
-  assigned: "Đã giao", // NEW
-  in_review: "Đang duyệt", // NEW
-  changes_requested: "Cần chỉnh sửa", // NEW
-  approved: "Đã duyệt", // NEW
-  rejected: "Không dùng",
-};
-
-export const reviewTaskTypeLabel: Record<string, string> = {
-  correction: "Hiệu đính", // NEW
-  gap_triage: "Tiếp nhận đề xuất", // NEW
-  publish: "Xuất bản",
-  merge: "Gộp trang", // NEW
-  archive: "Lưu trữ", // NEW
-  operational: "Vận hành", // NEW
-};
-
 export const linkTypeLabel: Record<string, string> = {
   related: "Liên quan", // NEW
   supports: "Bổ trợ", // NEW
@@ -111,18 +70,11 @@ export const taskStateLabel: Record<string, string> = {
 /** Weekday column heads, Monday first — the week a Vietnamese calendar shows. */
 export const weekdayShort = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]; // NEW
 
-export const channelLabel: Record<string, string> = {
-  in_app: "Trong ứng dụng", // NEW
-  email: "Email", // NEW
-  zalo: "Zalo", // NEW
-};
-
 // One user-facing sentence per notification event type (matrix events).
 export const notificationEventLabel: Record<string, string> = {
   "source.processing_failed": "Tư liệu bạn gửi không xử lý được (tệp gốc vẫn được lưu)", // NEW
-  "source.assigned": "Bạn được giao việc hiệu đính", // NEW
-  "source.ready_for_review": "Có tư liệu chờ duyệt xuất bản", // NEW
   "tree.node.published": "Tư liệu bạn gửi đã được xuất bản lên cây tri thức", // NEW
+  "loan.requested": "Có yêu cầu mượn sách mới", // NEW
   "loan.approved": "Yêu cầu mượn sách đã được duyệt", // NEW
   "loan.borrowed": "Bạn đã nhận sách; nhớ hạn trả", // NEW
   "loan.returned": "Phiếu mượn đã ghi nhận trả sách", // NEW
@@ -182,10 +134,6 @@ export const eventLabel = (eventType: string | null | undefined): string =>
 
 export const extractionStateLabel = (v: string | null | undefined): string =>
   guarded(extractionLabel, "extractionLabel", v, FALLBACK.state);
-export const trustStateLabel = (v: string | null | undefined): string =>
-  guarded(trustLabel, "trustLabel", v, FALLBACK.state);
-export const gapLabel = (v: string | null | undefined): string =>
-  guarded(gapStateLabel, "gapStateLabel", v, FALLBACK.state);
 export const loanLabel = (v: string | null | undefined): string =>
   guarded(loanStateLabel, "loanStateLabel", v, FALLBACK.state);
 export const itemLabel = (v: string | null | undefined): string =>
@@ -195,22 +143,14 @@ export const itemLabelShort = (v: string | null | undefined): string =>
   guarded(itemStatusShort, "itemStatusShort", v, FALLBACK.state);
 export const verificationStateLabel = (v: string | null | undefined): string =>
   guarded(verificationLabel, "verificationLabel", v, FALLBACK.state);
-export const curationLabel = (v: string | null | undefined): string =>
-  guarded(curationStateLabel, "curationStateLabel", v, FALLBACK.state);
-export const reviewLabel = (v: string | null | undefined): string =>
-  guarded(reviewStateLabel, "reviewStateLabel", v, FALLBACK.state);
 export const taskLabel = (v: string | null | undefined): string =>
   guarded(taskStateLabel, "taskStateLabel", v, FALLBACK.state);
-export const reviewTypeLabel = (v: string | null | undefined): string =>
-  guarded(reviewTaskTypeLabel, "reviewTaskTypeLabel", v, FALLBACK.kind);
 export const deadlineKindLabel = (v: string | null | undefined): string =>
   guarded(deadlineTypeLabel, "deadlineTypeLabel", v, FALLBACK.kind);
 export const nodeLinkTypeLabel = (v: string | null | undefined): string =>
   guarded(linkTypeLabel, "linkTypeLabel", v, FALLBACK.kind);
 export const userRoleLabel = (v: string | null | undefined): string =>
   guarded(roleLabel, "roleLabel", v, FALLBACK.role);
-export const notifyChannelLabel = (v: string | null | undefined): string =>
-  guarded(channelLabel, "channelLabel", v, FALLBACK.channel);
 
 // ---------------------------------------------------------------------------
 // NEW — the audit trail in words.
@@ -223,6 +163,21 @@ export const notifyChannelLabel = (v: string | null | undefined): string =>
 // anything added later falls through to `FALLBACK.action`, which is neutral
 // Vietnamese and warns in development so the gap gets closed.
 // ---------------------------------------------------------------------------
+
+/**
+ * tree_node_versions.change_summary → Vietnamese. The BE stores stable
+ * English codes (english-internals convention); legacy rows hold Vietnamese
+ * sentences and render verbatim through the fallback.
+ */
+const changeSummaryMap: Record<string, string> = {
+  manual_create: "Tạo trang thủ công",
+  content_update: "Cập nhật nội dung",
+  proposal_approved: "Đề xuất được duyệt",
+  published_from_personal: "Xuất bản từ trang cá nhân",
+  evolved_from_extraction: "Chuyển từ bản trích xuất",
+};
+export const changeSummaryLabel = (v: string | null | undefined): string | null =>
+  v == null ? null : (changeSummaryMap[v] ?? v);
 
 /** Audit action key → what a person did, said as a phrase. */
 export const auditActionLabel: Record<string, string> = {
@@ -247,16 +202,14 @@ export const auditActionLabel: Record<string, string> = {
   "folder.create": "Tạo thư mục", // NEW
   "folder.rename": "Đổi tên thư mục", // NEW
   "folder.delete": "Xoá thư mục", // NEW
-  // storage — curation
-  "source.nominate": "Đề cử tư liệu đưa vào hiệu đính", // NEW
-  "source.assign": "Giao việc hiệu đính", // NEW
-  "corrected_text.append": "Ghi thêm phần văn bản đã hiệu đính", // NEW
-  "draft.save": "Lưu bản thảo", // NEW
-  "curation.ready_for_review": "Trình bản thảo để duyệt", // NEW
-  "curation.approve": "Nhận duyệt bản thảo", // NEW
-  "curation.reject": "Trả lại bản thảo", // NEW
-  "node.publish": "Xuất bản tư liệu lên cây tri thức", // NEW
-  "gap.submit": "Gửi đề xuất bổ sung", // NEW
+  // ocr candidates + change proposals
+  "source.extraction.request": "Yêu cầu trích xuất nội dung", // NEW
+  "candidate.evolve": "Chuyển bản trích xuất thành trang", // NEW
+  "candidate.reject": "Bỏ bản trích xuất", // NEW
+  "node.change.propose": "Đề xuất sửa trang chung",
+  "node.change.approve": "Duyệt đề xuất sửa trang chung",
+  "node.change.rejected": "Từ chối đề xuất sửa trang chung",
+  "node.change.changes_requested": "Yêu cầu sửa lại đề xuất",
   // knowledge
   "branch.create": "Tạo nhánh tri thức", // NEW
   "branch.update": "Sửa nhánh tri thức", // NEW
@@ -299,18 +252,18 @@ export const auditTargetLabel: Record<string, string> = {
   folder: "Thư mục", // NEW
   source: "Tư liệu", // NEW
   source_version: "Bản tư liệu", // NEW
-  markdown_draft: "Bản thảo", // NEW
+  extraction_candidate: "Bản trích xuất", // NEW
+  node_change_proposal: "Đề xuất sửa trang", // NEW
   tree_node: "Trang tri thức", // NEW
   node_publication_proposal: "Đề cử trang cá nhân",
   branch: "Nhánh tri thức", // NEW
-  branch_gap_request: "Đề xuất bổ sung", // NEW
   task: "Công việc", // NEW
   deadline: "Hạn chót", // NEW
   achievement: "Thành quả", // NEW
   comment: "Thảo luận", // NEW
-  catalog_item: "Đầu sách", // NEW
+  source_physical: "Đầu sách", // NEW
   loan_ticket: "Phiếu mượn", // NEW
-  export_job: "Lượt xuất dữ liệu", // NEW
+  export: "Lượt xuất dữ liệu", // NEW
 };
 
 /** A key inside an audit row's details → the name of that fact in Vietnamese. */
@@ -369,14 +322,6 @@ export const auditValueLabel: Record<string, string> = {
   full_tree: "toàn bộ cây tri thức", // NEW — export scope
 };
 
-/** Export job state → a word, for the health screen's last-export row. */
-export const exportStateLabel: Record<string, string> = {
-  queued: "Đang chờ", // NEW
-  running: "Đang chạy", // NEW
-  succeeded: "Thành công", // NEW
-  failed: "Thất bại", // NEW
-};
-
 const AUDIT_FALLBACK = {
   action: "Thao tác khác", // NEW
   target: "Đối tượng khác", // NEW
@@ -389,8 +334,6 @@ export const targetKindLabel = (v: string | null | undefined): string =>
   guarded(auditTargetLabel, "auditTargetLabel", v, AUDIT_FALLBACK.target);
 export const detailFieldLabel = (v: string | null | undefined): string =>
   guarded(auditFieldLabel, "auditFieldLabel", v, AUDIT_FALLBACK.field);
-export const exportJobStateLabel = (v: string | null | undefined): string =>
-  guarded(exportStateLabel, "exportStateLabel", v, FALLBACK.state);
 
 /**
  * A reminder offset, in words.
@@ -550,22 +493,6 @@ withTones(extractionLabel, "extractionLabel", {
   unprocessable: "attention",
 });
 
-withTones(trustLabel, "trustLabel", {
-  unknown: "waiting",
-  candidate: "waiting",
-  trusted: "done",
-  rejected: "stopped",
-  archived: "archived",
-});
-
-withTones(gapStateLabel, "gapStateLabel", {
-  submitted: "waiting",
-  triaged: "active",
-  converted_to_branch: "done",
-  rejected: "stopped",
-  archived: "archived",
-});
-
 withTones(loanStateLabel, "loanStateLabel", {
   requested: "waiting",
   approved: "done",
@@ -587,22 +514,6 @@ withTones(verificationLabel, "verificationLabel", {
   unverified: "attention",
   verified: "done",
   archived: "archived",
-});
-
-withTones(curationStateLabel, "curationStateLabel", {
-  under_correction: "active",
-  ready_for_review: "attention",
-  promoted: "done",
-  rejected: "stopped",
-});
-
-withTones(reviewStateLabel, "reviewStateLabel", {
-  queued: "waiting",
-  assigned: "active",
-  in_review: "active",
-  changes_requested: "attention",
-  approved: "done",
-  rejected: "stopped",
 });
 
 withTones(taskStateLabel, "taskStateLabel", {
