@@ -11,11 +11,18 @@ export const SESSION_COOKIE = "session";
 
 /**
  * Inactivity timeout: a session whose last request is older than this reads
- * as signed out, whatever its absolute expiry says. The per-request
+ * as signed out, whatever its absolute expiry says. The throttled
  * last_seen_at write below is the sliding renewal; SESSION_TTL_MS stays the
  * absolute cap a session can never slide past.
  */
 export const SESSION_IDLE_MS = Number(process.env.SESSION_IDLE_MS ?? 30 * 60_000);
+
+/**
+ * The sliding renewal is throttled: last_seen_at is only rewritten once it is
+ * this stale, so a busy session costs ~1 write a minute instead of one per
+ * request. Idle detection keeps minute granularity against a 30-minute window.
+ */
+const LAST_SEEN_WRITE_INTERVAL_MS = 60_000;
 
 function tokenHash(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -43,10 +50,12 @@ export async function resolveSessionToken(token: string): Promise<(Principal & {
     .where(eq(spaceMembers.userId, row.user.id));
   // Fire-and-forget on purpose, but never unhandled: a rejected promise here
   // (a dropped DB connection) would crash the process, not just skip a renewal.
-  db.update(sessions)
-    .set({ lastSeenAt: new Date() })
-    .where(eq(sessions.id, row.session.id))
-    .catch((err) => console.error("[auth] last_seen_at renewal failed:", err));
+  if (row.session.lastSeenAt.getTime() < Date.now() - LAST_SEEN_WRITE_INTERVAL_MS) {
+    db.update(sessions)
+      .set({ lastSeenAt: new Date() })
+      .where(eq(sessions.id, row.session.id))
+      .catch((err) => console.error("[auth] last_seen_at renewal failed:", err));
+  }
   return {
     userId: row.user.id,
     role: row.user.role,

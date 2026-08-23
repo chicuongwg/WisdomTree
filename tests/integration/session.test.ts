@@ -3,7 +3,7 @@ import { resolveSessionToken, SESSION_IDLE_MS } from "@/modules/auth/session";
 import { issueTestSession } from "../setup";
 
 // Session issuance and the inactivity timeout (SESSION_IDLE_MS): the
-// last_seen_at column is written on every request and READ on resolve — a
+// last_seen_at column is renewed on activity (throttled) and READ on resolve — a
 // session idle past the window reads as signed out even before its absolute
 // expiry.
 
