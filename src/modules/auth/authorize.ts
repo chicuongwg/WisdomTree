@@ -12,6 +12,8 @@ import type { Role } from "./schema";
 type Scope = "global" | "space" | "self" | "owned-or-assigned";
 type SpaceRole = "viewer" | "contributor" | "manager";
 
+const SPACE_ROLE_RANK: Record<SpaceRole, number> = { viewer: 0, contributor: 1, manager: 2 };
+
 const EVERYONE: Role[] = ["user", "editor", "admin_op"];
 const REVIEWERS: Role[] = ["editor", "admin_op"];
 const ADMIN: Role[] = ["admin_op"];
@@ -109,11 +111,7 @@ export function authorize(
       if (!resource.spaceId) throw denial;
       const membership = actor.spaceMemberships.find((item) => item.spaceId === resource.spaceId);
       if (!membership) throw denial;
-      if (
-        entry.spaceRole &&
-        ["viewer", "contributor", "manager"].indexOf(membership.role) <
-          ["viewer", "contributor", "manager"].indexOf(entry.spaceRole)
-      )
+      if (entry.spaceRole && SPACE_ROLE_RANK[membership.role] < SPACE_ROLE_RANK[entry.spaceRole])
         throw denial;
       return actor;
     }
