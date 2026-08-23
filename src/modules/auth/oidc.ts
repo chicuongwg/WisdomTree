@@ -30,17 +30,21 @@ export function oidcConfig() {
 
 export const oidcEnabled = () => oidcConfig() !== null;
 
-export function authorizationUrl(state: string): string {
+export function authorizationUrl(state: string, codeChallenge: string): string {
   const cfg = oidcConfig();
   if (!cfg) throw new Error("OIDC not configured");
-  return createGoogleOidcClient(cfg).authorizationUrl(state);
+  return createGoogleOidcClient(cfg).authorizationUrl(state, codeChallenge);
 }
 
-/** Exchange the code, check iss/aud/exp, hand back who Google says this is. */
-export async function exchangeCode(code: string): Promise<GoogleClaims | null> {
+/** Exchange the code (with its PKCE verifier), check iss/aud/exp, hand back
+ *  who Google says this is. */
+export async function exchangeCode(
+  code: string,
+  codeVerifier: string,
+): Promise<GoogleClaims | null> {
   const cfg = oidcConfig();
   if (!cfg) return null;
-  return createGoogleOidcClient(cfg).exchangeCode(code);
+  return createGoogleOidcClient(cfg).exchangeCode(code, codeVerifier);
 }
 
 /**

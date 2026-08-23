@@ -18,18 +18,20 @@ const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth
 
 export function createGoogleOidcClient(config: GoogleOidcConfig) {
   return {
-    authorizationUrl(state: string): string {
+    authorizationUrl(state: string, codeChallenge: string): string {
       return `${AUTH_ENDPOINT}?${new URLSearchParams({
         client_id: config.clientId,
         redirect_uri: config.redirectUri,
         response_type: "code",
         scope: "openid email",
         state,
+        code_challenge: codeChallenge,
+        code_challenge_method: "S256",
         prompt: "select_account",
       })}`;
     },
 
-    async exchangeCode(code: string): Promise<GoogleClaims | null> {
+    async exchangeCode(code: string, codeVerifier: string): Promise<GoogleClaims | null> {
       const response = await fetch(TOKEN_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -39,6 +41,7 @@ export function createGoogleOidcClient(config: GoogleOidcConfig) {
           client_secret: config.clientSecret,
           redirect_uri: config.redirectUri,
           grant_type: "authorization_code",
+          code_verifier: codeVerifier,
         }),
       });
       if (!response.ok) return null;

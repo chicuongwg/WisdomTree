@@ -21,10 +21,11 @@ export async function GET(request: NextRequest) {
     const state = request.nextUrl.searchParams.get("state");
     const code = request.nextUrl.searchParams.get("code");
     const cookieNonce = request.cookies.get("oidc_nonce")?.value;
-    if (!state || !code || !cookieNonce) return back("oidc_failed");
+    const codeVerifier = request.cookies.get("oidc_pkce")?.value;
+    if (!state || !code || !cookieNonce || !codeVerifier) return back("oidc_failed");
     if (verifyOAuthState(state) !== cookieNonce) return back("oidc_failed");
 
-    const claims = await exchangeCode(code);
+    const claims = await exchangeCode(code, codeVerifier);
     if (!claims) return back("oidc_failed");
 
     const user = await findOrBindUser(claims);
@@ -32,7 +33,10 @@ export async function GET(request: NextRequest) {
     if (!user) return back("not_invited");
 
     const response = new NextResponse(null, { status: 302, headers: { Location: "/" } });
-    response.cookies.delete("oidc_nonce");
+    // Expire with the same path they were set under, or the delete misses.
+    for (const name of ["oidc_nonce", "oidc_pkce"]) {
+      response.cookies.set(name, "", { maxAge: 0, path: "/api/auth/oidc" });
+    }
     response.cookies.set(SESSION_COOKIE, await issueSessionToken(user.id), {
       httpOnly: true,
       sameSite: "lax",
