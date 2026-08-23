@@ -3,17 +3,16 @@ import { db, type Tx } from "@/db";
 import { sources } from "../storage/schema";
 import { spaceMembers } from "../storage/schema";
 import { deadlines } from "../pm/schema";
-import { notificationDeliveries, notificationPreferences, notifications } from "./schema";
+import { notificationPreferences, notifications } from "./schema";
 
 // Notification fan-out, written directly inside the mutation's transaction —
 // one process, one consumer, so the notification is exactly as durable as the
 // mutation that caused it. notifyEvent resolves recipients from the event
 // matrix, consults per-user channel preferences (absent row = default matrix),
-// and writes the notifications row plus a notification_deliveries row per
-// channel. in_app is "sent" the moment the notifications row exists; a real
-// email/zalo adapter, when someone asks for one, starts from the deliveries
-// table. The one time-driven producer is the deadline-reminder check, run by
-// the cron route.
+// and writes the notifications row — which IS delivery for the one channel
+// that exists, the in-app center. A second channel, when someone asks for
+// one, brings its own delivery bookkeeping. The one time-driven producer is
+// the deadline-reminder check, run by the cron route.
 
 export type Channel = "in_app";
 
@@ -101,27 +100,15 @@ async function channelsFor(tx: Tx, userId: string, eventType: string): Promise<C
 
 /**
  * Fan an event out to notifications inside the caller's transaction: the
- * notifications row is the durable in-app-center record, deliveries hang
- * off it per chosen channel, and everything commits with the mutation.
+ * notifications row is the durable in-app-center record, and it commits
+ * with the mutation.
  */
 export async function notifyEvent(tx: Tx, eventType: string, payload: Payload): Promise<void> {
   const recipients = await resolveRecipients(tx, eventType, payload);
   for (const userId of recipients) {
     const channels = await channelsFor(tx, userId, eventType);
     if (channels.length === 0) continue; // opted out: no notification at all
-    const [note] = await tx
-      .insert(notifications)
-      .values({ userId, eventType, payload })
-      .returning();
-    for (const channel of channels) {
-      // in_app is "sent" the moment the notifications row exists.
-      await tx.insert(notificationDeliveries).values({
-        notificationId: note.id,
-        channel,
-        state: "sent",
-        attempts: 1,
-      });
-    }
+    await tx.insert(notifications).values({ userId, eventType, payload });
   }
 }
 

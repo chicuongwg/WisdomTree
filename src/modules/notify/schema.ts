@@ -1,9 +1,8 @@
 import { sql } from "drizzle-orm";
-import { integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
 
-// Module: notify — comments, in-app notifications, per-channel deliveries,
-// and per-user preferences.
+// Module: notify — comments, in-app notifications, and per-user preferences.
 // The comments append-only trigger lives in the SQL migration.
 
 export const comments = pgTable("comments", {
@@ -38,22 +37,6 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Best-effort with retry: a failed delivery after max attempts stays visible
-// in the in-app center; channel outages never touch the triggering workflow.
-export const notificationDeliveries = pgTable("notification_deliveries", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  notificationId: uuid("notification_id")
-    .notNull()
-    .references(() => notifications.id),
-  channel: text("channel", { enum: ["in_app", "email", "zalo"] }).notNull(),
-  state: text("state", { enum: ["pending", "sent", "failed"] })
-    .notNull()
-    .default("pending"),
-  attempts: integer("attempts").notNull().default(0),
-  lastError: text("last_error"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
 
 // Absent row means the built-in default channel matrix.
 export const notificationPreferences = pgTable(

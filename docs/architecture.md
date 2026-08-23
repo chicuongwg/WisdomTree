@@ -109,8 +109,8 @@ hand-over/return.
 Mutations call `notifyEvent` inside their own transaction
 (`notify/fanout.ts`): recipients come from the event matrix, per-event
 opt-out from `notification_preferences`, and the in-app center is the
-only channel (deliveries are still recorded per channel, so a future
-email/zalo adapter starts from data, not a stub). Deadline reminders are
+only channel — the notifications row is delivery itself; a second real
+channel brings its own bookkeeping. Deadline reminders are
 the one time-driven producer: the `POST /api/cron/dispatch` cron fires
 them exactly-once via the `(deadline_id, offset)` PK.
 
