@@ -2,7 +2,6 @@ export type GraphNode = {
   id: string;
   title: string;
   path: string;
-  vaultId: string;
   topicId: string | null;
   tags: string[];
   properties: Record<string, unknown>;
@@ -21,7 +20,6 @@ export type GraphData = { nodes: GraphNode[]; edges: GraphEdge[] };
 
 export type GraphQuery = {
   scope: "shared" | "personal";
-  vaultId?: string;
   centerId?: string;
   depth?: number;
   search?: string;

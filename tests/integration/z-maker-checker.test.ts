@@ -42,7 +42,7 @@ export async function run() {
   const reviewer = await principal("huong@wisdomtree.local");
 
   const [sharedNode] = await db
-    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .select({ node: treeNodes })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(branches.scope, "team"))
@@ -106,7 +106,7 @@ export async function run() {
   const [targetBranch] = await db
     .select()
     .from(branches)
-    .where(eq(branches.vaultId, sharedNode.vaultId))
+    .where(eq(branches.scope, "team"))
     .limit(1);
   assert.ok(targetBranch);
 

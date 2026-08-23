@@ -148,7 +148,7 @@ export async function evolveCandidate(
     !branch ||
     branch.archivedAt ||
     branch.scope !== "personal" ||
-    branch.vaultId !== candidate.candidate.vaultId
+    branch.ownerUserId !== candidate.candidate.createdBy
   ) {
     throw notFound();
   }

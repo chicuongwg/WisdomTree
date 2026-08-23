@@ -525,7 +525,7 @@ export async function reviewNodeProposal(
 export async function archiveNode(actor: Principal, nodeId: string) {
   authorize(actor, "knowledge.archive", { kind: "write" });
   const [row] = await db
-    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .select({ node: treeNodes })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, nodeId));
@@ -600,16 +600,23 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
     throw new ApiError(400, "invalid_merge", "A node cannot be merged into itself.");
   }
   const [nodeRow] = await db
-    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, nodeId));
   const [canonicalRow] = await db
-    .select({ node: treeNodes, vaultId: branches.vaultId })
+    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, canonicalNodeId));
-  if (!nodeRow || !canonicalRow || nodeRow.vaultId !== canonicalRow.vaultId) throw notFound();
+  // A merge stays inside one container: same scope, same owner.
+  if (
+    !nodeRow ||
+    !canonicalRow ||
+    nodeRow.scope !== canonicalRow.scope ||
+    nodeRow.ownerId !== canonicalRow.ownerId
+  )
+    throw notFound();
   const node = nodeRow.node;
   const canonical = canonicalRow.node;
   if (canonical.verification === "archived") {

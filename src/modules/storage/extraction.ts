@@ -7,7 +7,6 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notifyEvent } from "../notify/fanout";
-import { vaults } from "../knowledge/schema";
 import {
   extractionCandidates,
   sources,
@@ -118,12 +117,6 @@ class LocalExtractionWorker {
     if (!row || row.version.extractionStatus === "processed") return;
 
     try {
-      const [vault] = await db
-        .select({ id: vaults.id })
-        .from(vaults)
-        .where(eq(vaults.ownerUserId, row.submittedBy));
-      if (!vault) throw new Error("uploader has no personal vault");
-
       const { body } = await getObject(row.version.originalObjectKey);
       const extracted = await extractMarkdown(
         body,
@@ -156,7 +149,6 @@ class LocalExtractionWorker {
           .insert(extractionCandidates)
           .values({
             sourceVersionId,
-            vaultId: vault.id,
             contentMd: extracted.content,
             contentSha256: createHash("sha256").update(extracted.content).digest("hex"),
             method: extracted.method,

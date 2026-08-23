@@ -30,7 +30,7 @@ by eye — modules call each other's services freely and share transactions
   (`requested → approved → borrowed → returned`, + declined/overdue) over
   physical items; one active loan per item enforced by a partial unique
   index.
-- **knowledge** — vaults, branches, tree nodes with markdown content,
+- **knowledge** — branches, tree nodes with markdown content,
   append-only `tree_node_versions`, wiki/typed links, tags, the two
   proposal tables, promotions (provenance), `edit-lock.ts`, and the
   graph read-side (`graph-provider.ts`) feeding the graph view.
@@ -54,9 +54,10 @@ viewer<contributor<manager ladder over `space_members`), `self`, and
 `owned-or-assigned`. Denied reads throw 404 (no existence leak); denied
 writes throw 403.
 
-Vault visibility derives from the vault itself: a `shared` vault is
-visible to every member, a `personal` vault only to its owner
-(`branchVisibilityCondition`).
+Branch visibility derives from the branch row itself: a `team` branch
+is visible to every member, a `personal` branch only to its owner
+(`branchVisibilityCondition` — scope + owner_user_id, no container
+table in between).
 
 ## Sessions, timeout, traffic cap
 

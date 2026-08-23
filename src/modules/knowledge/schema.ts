@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -8,34 +9,24 @@ import {
   timestamp,
   unique,
   uuid,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
 import { sourceVersions } from "../storage/schema";
 
-// Module: knowledge — vaults, branches, tree nodes, versions, links, tags,
+// Module: knowledge — branches, tree nodes, versions, links, tags,
 // proposals and promotions.
 // Generated tsvector columns (tree_nodes.tsv), the publish/canonical CHECKs,
 // and the append-only triggers (tree_node_versions, promotions) live only in
 // the SQL migration.
 
-export const vaults = pgTable("vaults", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  kind: text("kind", { enum: ["personal", "shared"] }).notNull(),
-  ownerUserId: uuid("owner_user_id").references(() => users.id),
-  name: text("name").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
 export const branches = pgTable(
   "branches",
   {
   id: uuid("id").primaryKey().defaultRandom(),
-  vaultId: uuid("vault_id")
-    .notNull()
-    .references(() => vaults.id),
   parentId: uuid("parent_id"),
-  // Unique per vault: two people's personal vaults may both hold "Ghi chú".
+  // Uniqueness is scoped by the partial indexes below: team names among team
+  // branches, personal names per owner — two people may both hold "Ghi chú".
   name: text("name").notNull(),
   description: text("description"),
   // scope: 'team' = shared project knowledge (all members); 'personal' = private
@@ -53,7 +44,12 @@ export const branches = pgTable(
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
   },
-  (t) => [unique().on(t.vaultId, t.name)],
+  (t) => [
+    uniqueIndex("branches_team_name_key").on(t.name).where(sql`${t.scope} = 'team'`),
+    uniqueIndex("branches_personal_owner_name_key")
+      .on(t.ownerUserId, t.name)
+      .where(sql`${t.scope} = 'personal'`),
+  ],
 );
 
 export const treeNodes = pgTable(

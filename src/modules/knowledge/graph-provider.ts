@@ -29,7 +29,6 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
           updatedAt: treeNodes.updatedAt,
           branchId: branches.id,
           branchName: branches.name,
-          vaultId: branches.vaultId,
         })
         .from(treeNodes)
         .innerJoin(branches, eq(treeNodes.branchId, branches.id))
@@ -81,7 +80,6 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
           id: row.id,
           title: row.title,
           path: `${row.branchName}/${row.slug}.md`,
-          vaultId: row.vaultId,
           topicId: row.branchId,
           tags: tagged.get(row.id) ?? [],
           properties: {},

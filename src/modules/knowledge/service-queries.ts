@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { backlinkContext, buildWikiIndex, normalizeTitle } from "@/lib/wikilink";
@@ -17,7 +17,6 @@ import {
   tags,
   treeNodes,
   treeNodeVersions,
-  vaults,
 } from "./schema";
 
 // Knowledge branch and read/query operations.
@@ -29,18 +28,14 @@ const PAGE_SIZE = 20;
 // ---------------------------------------------------------------------------
 
 /**
- * Knowledge scope & visibility rules (post vault-grants): the shared vault is
- * visible to every member; a personal vault only to its owner.
+ * Knowledge scope & visibility: a team branch is visible to every member,
+ * a personal branch only to its owner. The branch row itself carries the
+ * whole rule (scope + owner_user_id).
  */
-export function visibleVaultIdsSql(actor: Principal) {
-  return sql`(SELECT ${vaults.id} FROM ${vaults}
-              WHERE ${vaults.kind} = 'shared' OR ${vaults.ownerUserId} = ${actor.userId})`;
-}
-
 export function branchVisibilityCondition(actor: Principal) {
   return and(
     sql`${branches.archivedAt} IS NULL`,
-    sql`${branches.vaultId} IN ${visibleVaultIdsSql(actor)}`,
+    or(eq(branches.scope, "team"), eq(branches.ownerUserId, actor.userId)),
   );
 }
 
@@ -109,8 +104,7 @@ export async function getBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
   if (!branch || branch.archivedAt) throw notFound();
-  const [vault] = await db.select().from(vaults).where(eq(vaults.id, branch.vaultId));
-  if (!vault || (vault.kind !== "shared" && vault.ownerUserId !== actor.userId)) throw notFound();
+  if (branch.scope !== "team" && branch.ownerUserId !== actor.userId) throw notFound();
   const nodes = await db
     .select({
       id: treeNodes.id,
@@ -140,22 +134,22 @@ export async function createBranch(
   // The personal vault is the actor's own ground, whatever their global role.
   authorize(actor, "knowledge.branch.create", { ownerIds: [actor.userId], kind: "write" });
   return db.transaction(async (tx) => {
-    const [vault] = await tx
-      .select({ id: vaults.id })
-      .from(vaults)
-      .where(and(eq(vaults.kind, "personal"), eq(vaults.ownerUserId, actor.userId)));
-    if (!vault) throw new ApiError(409, "vault_missing", "Vault not found.");
     const [dup] = await tx
       .select({ id: branches.id })
       .from(branches)
-      .where(and(eq(branches.vaultId, vault.id), eq(branches.name, input.name)));
+      .where(
+        and(
+          eq(branches.scope, "personal"),
+          eq(branches.ownerUserId, actor.userId),
+          eq(branches.name, input.name),
+        ),
+      );
     if (dup) {
       throw new ApiError(409, "branch_exists", "A branch with this name already exists here.");
     }
     const [created] = await tx
       .insert(branches)
       .values({
-        vaultId: vault.id,
         name: input.name,
         description: input.description ?? null,
         scope: "personal",
@@ -268,7 +262,6 @@ export async function getNode(actor: Principal, nodeId: string) {
       branchName: branches.name,
       branchScope: branches.scope,
       branchOwnerId: branches.ownerUserId,
-      branchVaultId: branches.vaultId,
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
@@ -344,7 +337,6 @@ export async function getNode(actor: Principal, nodeId: string) {
     branchName: row.branchName,
     branchScope: row.branchScope,
     branchOwnerId: row.branchOwnerId,
-    branchVaultId: row.branchVaultId,
     tags: tagRows.map((t) => t.name),
     links: linkRows,
     backlinks: backlinkRows.map((b) => ({

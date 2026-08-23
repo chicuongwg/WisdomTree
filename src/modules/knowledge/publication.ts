@@ -19,7 +19,6 @@ import {
   tags,
   treeNodes,
   treeNodeVersions,
-  vaults,
 } from "./schema";
 
 // Promotion — the single review boundary of the two-tier model: a personal
@@ -52,11 +51,9 @@ export async function listPublicationTargets(actor: Principal) {
   return db
     .select({ id: branches.id, name: branches.name })
     .from(branches)
-    .innerJoin(vaults, eq(branches.vaultId, vaults.id))
     .where(
       and(
         eq(branches.scope, "team"),
-        eq(vaults.kind, "shared"),
         sql`${branches.archivedAt} IS NULL`,
       ),
     )
@@ -121,16 +118,10 @@ export async function submitNodePublication(
     throw notFound();
   }
   const [target] = await db
-    .select({ branch: branches, vaultKind: vaults.kind })
+    .select({ branch: branches })
     .from(branches)
-    .innerJoin(vaults, eq(branches.vaultId, vaults.id))
     .where(eq(branches.id, targetBranchId));
-  if (
-    !target ||
-    target.branch.archivedAt ||
-    target.branch.scope !== "team" ||
-    target.vaultKind !== "shared"
-  ) {
+  if (!target || target.branch.archivedAt || target.branch.scope !== "team") {
     throw new ApiError(400, "invalid_target_branch", "Invalid target team branch.");
   }
   const [pending] = await db

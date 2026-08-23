@@ -158,8 +158,6 @@ export const extractionCandidates = pgTable("extraction_candidates", {
     .notNull()
     .unique()
     .references(() => sourceVersions.id),
-  // FK lives in the migration to keep storage and knowledge schemas acyclic.
-  vaultId: uuid("vault_id").notNull(),
   contentMd: text("content_md").notNull(),
   contentSha256: text("content_sha256").notNull(),
   method: text("method", { enum: ["text", "pandoc", "ocr"] }).notNull(),
