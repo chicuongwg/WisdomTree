@@ -5,7 +5,6 @@ import { spaces } from "../storage/schema";
 import { branches } from "../knowledge/schema";
 
 // Module: pm — deadlines, checklists, tasks, achievements, calendar tokens.
-// Column definitions transcribed from docs/design/database-schema.md.
 
 export const deadlines = pgTable("deadlines", {
   id: uuid("id").primaryKey().defaultRandom(),

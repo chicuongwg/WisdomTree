@@ -5,7 +5,7 @@ import { T, when, translateApiError } from "@/lib/vi";
 import { foldName } from "@/lib/mention-fold";
 import { Say } from "./say";
 
-// The ONE comment block (docs/system/notifications.md § Comments): anchored
+// The ONE comment block: anchored
 // discussion reused verbatim on Node Detail, Stored Item Detail and Deadline
 // Detail. Threading is one reply level in the UI (parentCommentId).
 //

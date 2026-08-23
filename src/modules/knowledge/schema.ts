@@ -14,7 +14,6 @@ import { sourceVersions } from "../storage/schema";
 
 // Module: knowledge — vaults, branches, tree nodes, versions, links, tags,
 // proposals and promotions.
-// Column definitions transcribed from docs/design/database-schema.md.
 // Generated tsvector columns (tree_nodes.tsv), the publish/canonical CHECKs,
 // and the append-only triggers (tree_node_versions, promotions) live only in
 // the SQL migration.

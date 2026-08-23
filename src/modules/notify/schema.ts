@@ -3,8 +3,7 @@ import { integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "driz
 import { users } from "../auth/schema";
 
 // Module: notify — comments, in-app notifications, per-channel deliveries,
-// and per-user preferences (docs/system/notifications.md).
-// Column definitions transcribed from docs/design/database-schema.md.
+// and per-user preferences.
 // The comments append-only trigger lives in the SQL migration.
 
 export const comments = pgTable("comments", {
@@ -56,7 +55,7 @@ export const notificationDeliveries = pgTable("notification_deliveries", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Absent row means the default matrix in docs/system/notifications.md.
+// Absent row means the built-in default channel matrix.
 export const notificationPreferences = pgTable(
   "notification_preferences",
   {

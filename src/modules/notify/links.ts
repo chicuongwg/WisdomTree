@@ -2,8 +2,7 @@
 // (scripts/proofs.ts Proof 7) where the bundler alias does not exist.
 import { eventLabel } from "../../lib/vi";
 
-// The ONE notification "jump to" resolver (docs/system/notifications.md §
-// Notification Center): (eventType, payload) → the route of the object the
+// The ONE notification "jump to" resolver: (eventType, payload) → the route of the object the
 // notification is about, plus the Vietnamese sentence that becomes the link
 // text. Both surfaces that render notifications — the Home panel and
 // `/notifications` — call this, so a row can never link to one place on one

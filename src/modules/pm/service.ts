@@ -649,7 +649,7 @@ const icsDate = (d: Date) =>
 /**
  * Resolve a calendar token (404 when unknown or revoked) and render the ICS
  * body of deadlines visible to that subscriber's spaces — no session, no
- * Google credentials (database-schema.md § calendar_tokens).
+ * Google credentials.
  */
 export async function renderCalendarFeed(token: string): Promise<string> {
   const [row] = await db.select().from(calendarTokens).where(eq(calendarTokens.token, token));

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-// The one Error shape from docs/design/openapi.yaml § components.schemas.Error:
-// { code, message, details? } — message is user-facing Vietnamese by default.
+// The one Error shape every API route returns:
+// { code, message, details? } — message is developer-facing English; the FE
+// translates known codes to Vietnamese (src/lib/vi/errors.ts).
 
 export type ErrorBody = {
   code: string;
@@ -30,7 +31,7 @@ export class ApiError extends Error {
 
 export const unauthorized = () =>
   new ApiError(401, "unauthorized", "Sign-in required.");
-// Denied writes → 403 (authorization-design.md); message uses the vocabulary term.
+// Denied writes → 403; message uses the vocabulary term.
 export const forbidden = () => new ApiError(403, "forbidden", "Access denied.");
 // Out-of-scope reads → 404, never 403, so cross-space existence is not leaked.
 export const notFound = () => new ApiError(404, "not_found", "Not found.");

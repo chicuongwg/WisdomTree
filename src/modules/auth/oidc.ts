@@ -1,7 +1,7 @@
 // Google OIDC — the real sign-in the dev picker has substituted for since the
-// demo (decision-log.md:92). The reusable identity package owns the protocol:
-// authorization-code exchange plus Google JWKS, issuer, audience and expiry
-// verification. This module owns only WisdomTree's invite-list binding.
+// demo. google-oidc.ts owns the protocol: authorization-code exchange plus
+// Google JWKS, issuer, audience and expiry verification. This module owns only
+// WisdomTree's invite-list binding.
 //
 // Access control is the invite list: a Google identity with no users row gets
 // nothing. Invited rows carry google_sub = "invited:<uuid>" (the column is NOT

@@ -16,7 +16,7 @@ import {
   when,
 } from "@/lib/vi";
 
-// Screen: Home (`/` — screen-inventory.md)
+// Screen: Home (`/`)
 export default async function Home() {
   const user = await requireUser();
   const actor = toPrincipal(user);

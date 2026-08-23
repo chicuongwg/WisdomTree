@@ -1,8 +1,7 @@
 // Admin-side user management — the other half of the users table's write
 // story (profile.ts is the member's own half). Everything here is admin_op
 // under admin.users.manage, and every change lands in the audit trail;
-// authorization-design.md:151 requires role changes to record old and new
-// values, which is done here rather than trusted to callers.
+// role changes record old and new values here rather than trusting callers.
 //
 // What this file must never do: touch google_sub (the identity provider's),
 // or let an admin disable or demote THEMSELVES into a lockout — the last
@@ -107,7 +106,6 @@ export async function setUserRole(actor: Principal, userId: string, role: Role) 
       action: "user.role.change",
       targetType: "user",
       targetId: userId,
-      // old and new values, per authorization-design.md:151
       details: { from: target.role, to: role },
     });
   });

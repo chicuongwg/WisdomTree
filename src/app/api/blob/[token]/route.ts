@@ -4,7 +4,7 @@ import { objectStore } from "@/modules/storage/object-store";
 
 // GET /api/blob/{token} — the signed-URL substitute for local-FS object
 // storage: token-authorized (short-lived, single object), like an S3
-// pre-signed URL. Unknown/expired tokens → 404. Not part of openapi.yaml;
+// pre-signed URL. Unknown/expired tokens → 404. Not part of the public API;
 // it stands in for the object-storage host itself.
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   return handleApi(async () => {

@@ -7,8 +7,7 @@ import { spaceMembers } from "../storage/schema";
 import { deadlines } from "../pm/schema";
 import { notificationDeliveries, notificationPreferences, notifications } from "./schema";
 
-// The notify dispatcher tick (docs/design/database-schema.md § outbox_events,
-// docs/system/notifications.md): it first runs the deadline-reminder check
+// The notify dispatcher tick: it first runs the deadline-reminder check
 // (idempotent via deadline_reminders PK (deadline_id, offset)), then drains
 // undispatched outbox rows in id order, resolving recipients from the
 // event-to-notification matrix, consulting per-user channel preferences

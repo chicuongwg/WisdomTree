@@ -3,7 +3,7 @@ import { handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { logAchievement } from "@/modules/pm/service";
 
-// POST /api/achievements — log an achievement (minimal per openapi).
+// POST /api/achievements — log an achievement.
 export async function POST(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();

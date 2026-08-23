@@ -1,7 +1,7 @@
 import type { Role } from "./schema";
 
 /**
- * The request principal (docs/design/authorization-design.md § Principals):
+ * The request principal:
  * resolved once per request from the session, memberships cached on it.
  * Roles carry the vertical axis (user | editor | admin_op); space
  * memberships carry the horizontal one.

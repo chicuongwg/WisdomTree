@@ -1,8 +1,7 @@
-// Dev-mode substitution boundary (docs/roadmap/demo-brief.md): the demo uses
+// Dev-mode substitution boundary: the demo uses
 // the local filesystem behind this module; V1 can swap in real S3 without
-// touching callers. Downloads always go through the authorized endpoint
-// (docs/design/authorization-design.md § Object Storage Delivery) — object
-// keys are opaque and never public paths.
+// touching callers. Downloads always go through the authorized endpoint —
+// object keys are opaque and never public paths.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";

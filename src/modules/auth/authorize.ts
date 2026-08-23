@@ -84,7 +84,7 @@ export type ResourceRef = {
   userId?: string;
   /**
    * For owned-or-assigned scope: created_by / submitted_by plus any active
-   * assignment (authorization-design.md enforcement pipeline step 3).
+   * assignment (enforcement pipeline step 3).
    */
   ownerIds?: Array<string | null | undefined>;
   /** Reads throw 404 on scope failure (no existence leak); writes throw 403. */
@@ -127,8 +127,8 @@ export function authorize(
 }
 
 /**
- * The one query-layer scoping helper (authorization-design.md forbids
- * per-endpoint ad hoc filtering): returns the space ids a list query may see.
+ * The one query-layer scoping helper (no per-endpoint ad hoc filtering):
+ * returns the space ids a list query may see.
  */
 export function scopedToSpaces(actor: Principal): string[] {
   return actor.spaceIds;

@@ -2,8 +2,7 @@ import { handleApi } from "@/lib/errors";
 import { renderCalendarFeed } from "@/modules/pm/service";
 
 // GET /calendar/{token}.ics — outbound ICS deadline feed. Token-authenticated
-// (calendar_tokens), NO session; unknown or revoked token → 404
-// (docs/design/openapi.yaml, database-schema.md § calendar_tokens).
+// (calendar_tokens), NO session; unknown or revoked token → 404.
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   return handleApi(async () => {
     const { token } = await params;

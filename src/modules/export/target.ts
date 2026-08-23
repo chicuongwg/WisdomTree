@@ -1,7 +1,5 @@
-// Dev-mode substitution boundary (docs/roadmap/demo-brief.md): the export
-// target is the content repo the tree export pushes to
-// (integration-contracts.md: "Content repo receives export commits from the
-// export service only" — strictly one-way, nothing reads back). The demo
+// Dev-mode substitution boundary: the export target is the content repo the
+// tree export pushes to — strictly one-way, nothing reads back. The demo
 // substitutes a LOCAL bare git repository at ./data/content-repo.git, created
 // on demand; V1 swaps in the real GitHub remote behind this same interface.
 

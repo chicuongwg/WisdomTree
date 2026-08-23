@@ -255,7 +255,7 @@ export async function updateNode(
 
   if (patch.verification !== undefined || patch.publish !== undefined) {
     // Verification transitions and the Quartz publish flag ride on
-    // knowledge.publish (Admin/Op only, authorization-design.md note).
+    // knowledge.publish (Admin/Op only).
     authorize(actor, "knowledge.publish", { kind: "write" });
   }
   if (patch.verification !== undefined) {

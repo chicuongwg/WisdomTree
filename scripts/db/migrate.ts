@@ -1,6 +1,6 @@
 // Minimal forward-only migration runner: applies drizzle/*.sql in filename
 // order, tracked in schema_migrations. Boring on purpose — one deployable,
-// one operator (docs/design/tech-stack decision pinned in demo-brief.md).
+// one operator.
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { Client } from "pg";

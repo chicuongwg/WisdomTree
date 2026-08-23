@@ -15,9 +15,9 @@ import { NOTIFIED_EVENTS, kickDispatch } from "./dispatcher";
 import { notificationLink, type NotificationLinkContext } from "./links";
 
 // Module: notify — comments anchored to work objects, the in-app notification
-// center, and per-user channel preferences (docs/system/notifications.md).
+// center, and per-user channel preferences.
 // Comment visibility DELEGATES to the anchor object's read scope
-// (authorization-design.md: notify.comment.create scope = "anchor"): a
+// (notify.comment.create scope = "anchor"): a
 // non-visible anchor throws the anchor's own read denial → 404, never 403,
 // so cross-space existence is not leaked.
 //
@@ -369,7 +369,7 @@ export async function markNotificationRead(actor: Principal, notificationId: str
 }
 
 // ---------------------------------------------------------------------------
-// Preferences — absent row means the default matrix (notifications.md)
+// Preferences — absent row means the built-in default matrix
 // ---------------------------------------------------------------------------
 
 /** Per-event on/off, stored as a channels row so the table needs no change. */

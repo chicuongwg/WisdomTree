@@ -24,7 +24,7 @@ import { CatalogCover, CatalogCoverForm } from "@/app/components/catalog-cover";
 export const metadata = { title: T.storedItem };
 
 // Screen: Stored Item Detail (`/library/:id`) — member view: metadata and
-// download only, never operational review internals (screen-inventory.md).
+// download only, never operational review internals.
 // The download button works even while extraction is `pending` (store-first).
 export default async function StoredItemDetail({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();

@@ -1,5 +1,4 @@
-// Seed data for the demo, matching docs/roadmap/demo-brief.md acceptance
-// criteria exactly: 3 users (one per role), 2 team spaces + personal spaces,
+// Seed data for the demo: 3 users (one per role), 2 team spaces + personal spaces,
 // ~10 stored sources, ~20 catalog items, 1 active loan.
 //
 // Membership layout backs the space-scoping proof: the `user`-role member
@@ -109,7 +108,7 @@ async function main() {
     );
 
     // --- 2 team spaces + 1 personal space each ---
-    // The community library is a team space (database-schema.md); it doubles
+    // The community library is a team space; it doubles
     // as the general team storage home so the count stays exactly 2.
     const library = randomUUID(); // "Thư Viện Cộng Đồng": all 3 users are members
     const teamCommunity = randomUUID(); // "Kho Dự Án Cộng Đồng": minh + huong only → scoping proof vs lan

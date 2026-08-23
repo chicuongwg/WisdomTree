@@ -1,7 +1,6 @@
 import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-// Module: auth — owns role assignment and session state (module-map.md).
-// Column definitions transcribed from docs/design/database-schema.md § users.
+// Module: auth — owns role assignment and session state.
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),

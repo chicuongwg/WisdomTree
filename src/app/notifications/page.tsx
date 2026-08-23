@@ -7,8 +7,8 @@ import { Empty } from "@/app/components/empty";
 
 export const metadata = { title: T.notificationCenter };
 
-// Screen: Notification Center (`/notifications`) — the in-app channel of
-// docs/system/notifications.md. The per-event channel preferences moved to
+// Screen: Notification Center (`/notifications`) — the in-app channel.
+// The per-event channel preferences moved to
 // /account (one home per setting); the link below points there.
 // Every row that CAN be opened is a link to the object it is about
 // (modules/notify/links.ts); an event we cannot map stays plain text rather

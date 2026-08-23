@@ -4,8 +4,8 @@ import { requirePrincipal } from "@/lib/request";
 import { getDownloadToken } from "@/modules/storage/service";
 
 // GET /api/source/{sourceId}/download — authorize, then 302 to a short-lived
-// signed URL for exactly one object (authorization-design.md § Object Storage
-// Delivery). The local-FS substitution serves it via /api/blob/{token}.
+// signed URL for exactly one object. The local-FS substitution serves it via
+// /api/blob/{token}.
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ sourceId: string }> },

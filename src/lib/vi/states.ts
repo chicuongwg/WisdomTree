@@ -446,7 +446,7 @@ export function spanLabel(start: Date | string, due: Date | string): string | nu
 //   stopped   — ended without succeeding, or withdrawn (son vermilion)
 //
 // Two states keep their own long-standing treatment instead: `archived` stays
-// subdued (design-system.md: archived is subdued, not alarming — never
+// subdued (archived is subdued, not alarming — never
 // vermilion) and `no_source` keeps its dashed unfilled edge, which already
 // encodes "incomplete" by shape.
 //

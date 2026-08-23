@@ -6,7 +6,7 @@ import { KnowledgeMap } from "../components/knowledge-map";
 
 export const metadata = { title: T.graph };
 
-// Screen: Graph Explorer (`/graph`, screen-inventory.md) — the knowledge tree
+// Screen: Graph Explorer (`/graph`) — the knowledge tree
 // seen as a map instead of an outline.
 //
 // `?scope=personal` switches to the actor's private note graph.

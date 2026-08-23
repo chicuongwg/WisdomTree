@@ -3,7 +3,7 @@ import { handleApi } from "@/lib/errors";
 import { currentUser } from "@/modules/auth/session";
 import { unauthorized } from "@/lib/errors";
 
-// GET /api/session — openapi.yaml Session schema
+// GET /api/session — the signed-in principal for the FE shell
 export async function GET() {
   return handleApi(async () => {
     const user = await currentUser();

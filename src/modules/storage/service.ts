@@ -229,7 +229,7 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
     .innerJoin(spaces, eq(sources.spaceId, spaces.id))
     .where(eq(sources.id, sourceId));
   if (!row) throw notFound();
-  // Out-of-scope read → 404, never 403 (authorization-design.md).
+  // Out-of-scope read → 404, never 403.
   authorize(actor, "storage.library.browse", { spaceId: row.source.spaceId, kind: "read" });
 
   const [{ chunkCount }] = row.version
@@ -292,7 +292,7 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
 /**
  * Authorized download: checks scope, then issues the signed-URL substitute
  * (short-lived token for exactly one object key) the route 302-redirects to.
- * Never a public path (demo-brief.md substitution rule).
+ * Never a public path.
  */
 export async function getDownloadToken(actor: Principal, sourceId: string) {
   const [row] = await db

@@ -2,7 +2,7 @@ import { bigint, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-co
 import { users } from "../auth/schema";
 
 // Module: audit — cross-cutting actor/action/target/outcome records, written
-// in the same transaction as the mutation (database-schema.md § audit_events).
+// in the same transaction as the mutation.
 // Append-only: enforced by trigger in the migration.
 
 export const auditEvents = pgTable("audit_events", {

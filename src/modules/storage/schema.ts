@@ -12,7 +12,6 @@ import {
 import { users } from "../auth/schema";
 
 // Module: storage — spaces, membership, sources, versions, raw text.
-// Column definitions transcribed from docs/design/database-schema.md.
 // Generated tsvector columns (text_chunks.tsv) live only in the SQL migration;
 // they are queried through raw SQL, never mapped here.
 
