@@ -13,7 +13,7 @@ import {
   treeNodes,
   treeNodeVersions,
 } from "../knowledge/schema";
-import { exportTarget, type ExportFile } from "./target";
+import { publishToContentRepo, type ExportFile } from "./target";
 
 // Module: export — the one-way tree export to the content repo (Admin/Op),
 // run synchronously: the target is a local bare repo, so the whole export is
@@ -116,7 +116,7 @@ export async function triggerTreeExport(actor: Principal): Promise<TreeExportRes
 
   // No-change policy (documented): identical tree → NO new commit; the
   // response records changed=false and the previous HEAD sha.
-  const { commitSha, changed } = await exportTarget.publish(
+  const { commitSha, changed } = await publishToContentRepo(
     files,
     `WisdomTree tree export ${new Date().toISOString()}`,
   );
