@@ -5,8 +5,7 @@ import { users } from "../../src/modules/auth/schema";
 import type { Principal } from "../../src/modules/auth/principal";
 import {
   branches,
-  nodeChangeProposals,
-  nodePublicationProposals,
+  nodeProposals,
   treeNodes,
   treeNodeVersions,
 } from "../../src/modules/knowledge/schema";
@@ -93,8 +92,8 @@ export async function run() {
   assert.ok(approvedVersion);
   const [proposal] = await db
     .select()
-    .from(nodeChangeProposals)
-    .where(eq(nodeChangeProposals.id, proposed.proposalId));
+    .from(nodeProposals)
+    .where(eq(nodeProposals.id, proposed.proposalId));
   assert.equal(proposal.state, "approved");
   // A decided proposal cannot be decided again.
   await assert.rejects(
@@ -161,8 +160,8 @@ export async function run() {
   assert.equal(commonNode.createdBy, user.userId);
   const [approvedPublication] = await db
     .select()
-    .from(nodePublicationProposals)
-    .where(eq(nodePublicationProposals.id, submitted.proposalId));
+    .from(nodeProposals)
+    .where(eq(nodeProposals.id, submitted.proposalId));
   assert.equal(approvedPublication?.state, "approved");
   assert.equal(approvedPublication?.decidedBy, reviewer.userId);
 

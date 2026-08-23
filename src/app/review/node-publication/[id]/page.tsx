@@ -47,7 +47,7 @@ export default async function NodePublicationReviewPage({
           <li>Chuyên đề chung đích: {item.targetBranchName}</li>
           <li>
             Trang cá nhân nguồn:{" "}
-            <Link href={`/tree/node/${item.proposal.sourceNodeId}`}>Mở trang</Link>
+            <Link href={`/tree/node/${item.proposal.nodeId}`}>Mở trang</Link>
           </li>
           <li>
             Tư liệu nguồn:{" "}

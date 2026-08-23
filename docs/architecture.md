@@ -31,9 +31,10 @@ by eye — modules call each other's services freely and share transactions
   physical items; one active loan per item enforced by a partial unique
   index.
 - **knowledge** — branches, tree nodes with markdown content,
-  append-only `tree_node_versions`, wiki/typed links, tags, the two
-  proposal tables, promotions (provenance), `edit-lock.ts`, and the
-  graph read-side (`graph-provider.ts`) feeding the graph view.
+  append-only `tree_node_versions`, wiki/typed links, tags, the one
+  proposal table (`node_proposals`, kind = change | publication),
+  promotions (provenance), `edit-lock.ts`, and the graph read-side
+  (`graph-provider.ts`) feeding the graph view.
 - **pm** — tasks (board), deadlines (+reminders, checklists, links),
   calendar tokens/ICS.
 - **notify** — comments with inline `@mentions`, the in-app notification
@@ -83,13 +84,14 @@ table in between).
   diffs any two versions (`src/lib/diff.ts`, line LCS) and restores by
   appending — history is never rewritten (append-only trigger).
 - **Promotion is the single review boundary.** A personal node is
-  proposed onto a team branch (`node_publication_proposals`); an
-  independent reviewer (editor/admin, never the submitter or author —
+  proposed onto a team branch (`node_proposals`, kind=publication); an
+  independent reviewer (editor/admin, never the submitter —
   `assertIndependentReviewer`) decides; approval creates the promoted
   node and a `promotions` provenance row.
 - **Promoted nodes are locked.** In-place saves are refused
-  (`review_required`); changes travel as `node_change_proposals`,
-  decided the same way, applied under the proposal's base-version check.
+  (`review_required`); changes travel as kind=change proposals in the
+  same table, decided the same way, applied under the proposal's
+  base-version check.
 - **Single-writer edit locks.** Opening the live editor takes the node's
   lock (`node_edit_locks`, keyed by *login session*, so the same person
   in a second browser is also refused). Re-POSTing the lock is the

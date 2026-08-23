@@ -11,9 +11,8 @@ import { extractionCandidates, sources, sourceVersions } from "../storage/schema
 import { syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
 import {
   branches,
-  nodeChangeProposals,
+  nodeProposals,
   nodeLinks,
-  nodePublicationProposals,
   nodeTags,
   promotions,
   tags,
@@ -76,25 +75,25 @@ export async function getLatestPublicationForNode(actor: Principal, nodeId: stri
   }
   const [proposal] = await db
     .select({
-      id: nodePublicationProposals.id,
-      state: nodePublicationProposals.state,
-      targetBranchId: nodePublicationProposals.targetBranchId,
+      id: nodeProposals.id,
+      state: nodeProposals.state,
+      targetBranchId: nodeProposals.targetBranchId,
       targetBranchName: branches.name,
-      decisionNote: nodePublicationProposals.decisionNote,
+      decisionNote: nodeProposals.decisionNote,
       approvedNodeId: treeNodeVersions.nodeId,
-      sourceNodeVersion: nodePublicationProposals.sourceNodeVersion,
+      sourceNodeVersion: nodeProposals.baseVersion,
       currentNodeVersion: treeNodes.version,
-      createdAt: nodePublicationProposals.createdAt,
+      createdAt: nodeProposals.createdAt,
     })
-    .from(nodePublicationProposals)
-    .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
+    .from(nodeProposals)
+    .innerJoin(branches, eq(branches.id, nodeProposals.targetBranchId))
     .leftJoin(
       treeNodeVersions,
-      eq(treeNodeVersions.id, nodePublicationProposals.approvedNodeVersionId),
+      eq(treeNodeVersions.id, nodeProposals.approvedNodeVersionId),
     )
-    .innerJoin(treeNodes, eq(treeNodes.id, nodePublicationProposals.sourceNodeId))
-    .where(eq(nodePublicationProposals.sourceNodeId, nodeId))
-    .orderBy(sql`${nodePublicationProposals.createdAt} DESC`)
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .where(and(eq(nodeProposals.kind, "publication"), eq(nodeProposals.nodeId, nodeId)))
+    .orderBy(sql`${nodeProposals.createdAt} DESC`)
     .limit(1);
   return proposal ?? null;
 }
@@ -125,25 +124,27 @@ export async function submitNodePublication(
     throw new ApiError(400, "invalid_target_branch", "Invalid target team branch.");
   }
   const [pending] = await db
-    .select({ id: nodePublicationProposals.id })
-    .from(nodePublicationProposals)
+    .select({ id: nodeProposals.id })
+    .from(nodeProposals)
     .where(
       and(
-        eq(nodePublicationProposals.sourceNodeId, nodeId),
-        eq(nodePublicationProposals.state, "pending"),
+        eq(nodeProposals.kind, "publication"),
+        eq(nodeProposals.nodeId, nodeId),
+        eq(nodeProposals.state, "pending"),
       ),
     );
   if (pending) {
     throw new ApiError(409, "publication_pending", "This node already has a pending publication proposal.");
   }
   const [alreadyPublished] = await db
-    .select({ id: nodePublicationProposals.id })
-    .from(nodePublicationProposals)
+    .select({ id: nodeProposals.id })
+    .from(nodeProposals)
     .where(
       and(
-        eq(nodePublicationProposals.sourceNodeId, nodeId),
-        eq(nodePublicationProposals.sourceNodeVersion, row.node.version),
-        eq(nodePublicationProposals.state, "approved"),
+        eq(nodeProposals.kind, "publication"),
+        eq(nodeProposals.nodeId, nodeId),
+        eq(nodeProposals.baseVersion, row.node.version),
+        eq(nodeProposals.state, "approved"),
       ),
     );
   if (alreadyPublished) {
@@ -175,10 +176,11 @@ export async function submitNodePublication(
 
   const result = await db.transaction(async (tx) => {
     const [proposal] = await tx
-      .insert(nodePublicationProposals)
+      .insert(nodeProposals)
       .values({
-        sourceNodeId: nodeId,
-        sourceNodeVersion: row.node.version,
+        kind: "publication",
+        nodeId,
+        baseVersion: row.node.version,
         sourceVersionId: sourceCandidate[0]?.sourceVersionId ?? null,
         targetBranchId,
         title: row.node.title,
@@ -206,31 +208,31 @@ export async function listPendingProposals(actor: Principal) {
   const [publications, changes] = await Promise.all([
     db
       .select({
-        id: nodePublicationProposals.id,
-        title: nodePublicationProposals.title,
+        id: nodeProposals.id,
+        title: nodeProposals.title,
         targetBranchName: branches.name,
         authorName: users.displayName,
-        createdBy: nodePublicationProposals.createdBy,
-        createdAt: nodePublicationProposals.createdAt,
+        createdBy: nodeProposals.createdBy,
+        createdAt: nodeProposals.createdAt,
       })
-      .from(nodePublicationProposals)
-      .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
-      .innerJoin(users, eq(users.id, nodePublicationProposals.createdBy))
-      .where(eq(nodePublicationProposals.state, "pending"))
-      .orderBy(asc(nodePublicationProposals.createdAt)),
+      .from(nodeProposals)
+      .innerJoin(branches, eq(branches.id, nodeProposals.targetBranchId))
+      .innerJoin(users, eq(users.id, nodeProposals.createdBy))
+      .where(and(eq(nodeProposals.kind, "publication"), eq(nodeProposals.state, "pending")))
+      .orderBy(asc(nodeProposals.createdAt)),
     db
       .select({
-        id: nodeChangeProposals.id,
-        nodeId: nodeChangeProposals.nodeId,
-        title: nodeChangeProposals.title,
+        id: nodeProposals.id,
+        nodeId: nodeProposals.nodeId,
+        title: nodeProposals.title,
         authorName: users.displayName,
-        createdBy: nodeChangeProposals.createdBy,
-        createdAt: nodeChangeProposals.createdAt,
+        createdBy: nodeProposals.createdBy,
+        createdAt: nodeProposals.createdAt,
       })
-      .from(nodeChangeProposals)
-      .innerJoin(users, eq(users.id, nodeChangeProposals.createdBy))
-      .where(eq(nodeChangeProposals.state, "pending"))
-      .orderBy(asc(nodeChangeProposals.createdAt)),
+      .from(nodeProposals)
+      .innerJoin(users, eq(users.id, nodeProposals.createdBy))
+      .where(and(eq(nodeProposals.kind, "change"), eq(nodeProposals.state, "pending")))
+      .orderBy(asc(nodeProposals.createdAt)),
   ]);
   return { publications, changes };
 }
@@ -239,17 +241,17 @@ export async function getNodePublicationReview(actor: Principal, proposalId: str
   authorize(actor, "knowledge.publish", { kind: "read" });
   const [row] = await db
     .select({
-      proposal: nodePublicationProposals,
+      proposal: nodeProposals,
       targetBranchName: branches.name,
       authorName: users.displayName,
       sourceNodeCreatedBy: treeNodes.createdBy,
       currentSourceVersion: treeNodes.version,
     })
-    .from(nodePublicationProposals)
-    .innerJoin(branches, eq(branches.id, nodePublicationProposals.targetBranchId))
-    .innerJoin(treeNodes, eq(treeNodes.id, nodePublicationProposals.sourceNodeId))
-    .innerJoin(users, eq(users.id, nodePublicationProposals.createdBy))
-    .where(eq(nodePublicationProposals.id, proposalId));
+    .from(nodeProposals)
+    .innerJoin(branches, eq(branches.id, nodeProposals.targetBranchId))
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .innerJoin(users, eq(users.id, nodeProposals.createdBy))
+    .where(and(eq(nodeProposals.kind, "publication"), eq(nodeProposals.id, proposalId)));
   if (!row) throw notFound();
   const source = row.proposal.sourceVersionId
     ? (
@@ -264,7 +266,7 @@ export async function getNodePublicationReview(actor: Principal, proposalId: str
     ...row,
     source: source ?? null,
     canReview: ![row.proposal.createdBy, row.sourceNodeCreatedBy].includes(actor.userId),
-    stale: row.currentSourceVersion !== row.proposal.sourceNodeVersion,
+    stale: row.currentSourceVersion !== row.proposal.baseVersion,
   };
 }
 
@@ -280,16 +282,17 @@ export async function decideNodePublication(
   authorize(actor, "knowledge.publish", { kind: "write" });
   const [row] = await db
     .select({
-      proposal: nodePublicationProposals,
+      proposal: nodeProposals,
       sourceNodeCreatedBy: treeNodes.createdBy,
       sourceNodeVersion: treeNodes.version,
     })
-    .from(nodePublicationProposals)
-    .innerJoin(treeNodes, eq(treeNodes.id, nodePublicationProposals.sourceNodeId))
+    .from(nodeProposals)
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
     .where(
       and(
-        eq(nodePublicationProposals.id, proposalId),
-        eq(nodePublicationProposals.state, "pending"),
+        eq(nodeProposals.kind, "publication"),
+        eq(nodeProposals.id, proposalId),
+        eq(nodeProposals.state, "pending"),
       ),
     );
   if (!row) throw notFound();
@@ -303,12 +306,12 @@ export async function decideNodePublication(
     return db.transaction(async (tx) => {
       // The state='pending' guard doubles as the concurrency check.
       const [proposal] = await tx
-        .update(nodePublicationProposals)
+        .update(nodeProposals)
         .set({ state: input.decision, decisionNote: note, decidedBy: actor.userId, updatedAt: new Date() })
         .where(
           and(
-            eq(nodePublicationProposals.id, proposalId),
-            eq(nodePublicationProposals.state, "pending"),
+            eq(nodeProposals.id, proposalId),
+            eq(nodeProposals.state, "pending"),
           ),
         )
         .returning();
@@ -324,7 +327,7 @@ export async function decideNodePublication(
     });
   }
 
-  if (row.sourceNodeVersion !== row.proposal.sourceNodeVersion) {
+  if (row.sourceNodeVersion !== row.proposal.baseVersion) {
     throw new ApiError(409, "review_stale", "The personal node changed after submission.");
   }
   if (!input.verification) {
@@ -339,11 +342,13 @@ export async function decideNodePublication(
   }
 
   const result = await db.transaction(async (tx) => {
-    const slug = await uniqueSlug(tx, row.proposal.targetBranchId, row.proposal.title);
+    // kind='publication' guarantees targetBranchId (DB CHECK); the type is nullable.
+    const targetBranchId = row.proposal.targetBranchId!;
+    const slug = await uniqueSlug(tx, targetBranchId, row.proposal.title);
     const [node] = await tx
       .insert(treeNodes)
       .values({
-        branchId: row.proposal.targetBranchId,
+        branchId: targetBranchId,
         title: row.proposal.title,
         slug,
         contentMd: row.proposal.contentMd,
@@ -378,7 +383,7 @@ export async function decideNodePublication(
       });
     }
     const [proposal] = await tx
-      .update(nodePublicationProposals)
+      .update(nodeProposals)
       .set({
         state: "approved",
         decisionNote: note,
@@ -388,8 +393,8 @@ export async function decideNodePublication(
       })
       .where(
         and(
-          eq(nodePublicationProposals.id, proposalId),
-          eq(nodePublicationProposals.state, "pending"),
+          eq(nodeProposals.id, proposalId),
+          eq(nodeProposals.state, "pending"),
         ),
       )
       .returning();
@@ -401,7 +406,7 @@ export async function decideNodePublication(
       targetId: node.id,
       details: {
         proposalId,
-        sourceNodeId: row.proposal.sourceNodeId,
+        sourceNodeId: row.proposal.nodeId,
         sourceVersionId: row.proposal.sourceVersionId,
         targetBranchId: row.proposal.targetBranchId,
         verification: input.verification,
@@ -410,7 +415,7 @@ export async function decideNodePublication(
     await notifyEvent(tx, "tree.node.published", {
       nodeId: node.id,
       branchId: node.branchId,
-      sourceNodeId: row.proposal.sourceNodeId,
+      sourceNodeId: row.proposal.nodeId,
       sourceVersionId: row.proposal.sourceVersionId,
       uploaderId: row.sourceNodeCreatedBy,
       verification: input.verification,

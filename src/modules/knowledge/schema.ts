@@ -105,37 +105,21 @@ export const treeNodeVersions = pgTable(
   (t) => [unique().on(t.nodeId, t.seq)],
 );
 
-export const nodeChangeProposals = pgTable("node_change_proposals", {
+// The ONE proposal table of the review boundary. kind='change' proposes an
+// edit to an existing promoted node (node_id = that node); kind='publication'
+// proposes promoting a personal node onto a team branch (node_id = the
+// personal source node, target_branch_id = where it lands — CHECK in the
+// migration ties target_branch_id to the publication kind).
+export const nodeProposals = pgTable("node_proposals", {
   id: uuid("id").primaryKey().defaultRandom(),
+  kind: text("kind", { enum: ["change", "publication"] }).notNull(),
   nodeId: uuid("node_id")
     .notNull()
     .references(() => treeNodes.id),
+  /** The node's version the snapshot was taken from. */
   baseVersion: integer("base_version").notNull(),
-  title: text("title").notNull(),
-  contentMd: text("content_md").notNull(),
-  tags: jsonb("tags").notNull().default([]),
-  links: jsonb("links").notNull().default([]),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => users.id),
-  state: text("state", {
-    enum: ["pending", "approved", "rejected", "changes_requested"],
-  })
-    .notNull()
-    .default("pending"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const nodePublicationProposals = pgTable("node_publication_proposals", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  sourceNodeId: uuid("source_node_id")
-    .notNull()
-    .references(() => treeNodes.id),
-  sourceNodeVersion: integer("source_node_version").notNull(),
   sourceVersionId: uuid("source_version_id").references(() => sourceVersions.id),
-  targetBranchId: uuid("target_branch_id")
-    .notNull()
-    .references(() => branches.id),
+  targetBranchId: uuid("target_branch_id").references(() => branches.id),
   title: text("title").notNull(),
   contentMd: text("content_md").notNull(),
   tags: jsonb("tags").notNull().default([]),
@@ -154,6 +138,7 @@ export const nodePublicationProposals = pgTable("node_publication_proposals", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
 
 export const nodeLinks = pgTable(
   "node_links",

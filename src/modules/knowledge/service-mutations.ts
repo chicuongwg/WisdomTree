@@ -9,7 +9,7 @@ import { assertNotLockedByOther } from "./edit-lock";
 import { recordAudit } from "../audit/service";
 import {
   branches,
-  nodeChangeProposals,
+  nodeProposals,
   nodeLinks,
   nodeTags,
   tags,
@@ -401,8 +401,9 @@ export async function proposeNodeChange(
   };
   return db.transaction(async (tx) => {
     const [proposal] = await tx
-      .insert(nodeChangeProposals)
+      .insert(nodeProposals)
       .values({
+        kind: "change",
         nodeId,
         baseVersion: patch.expectedVersion ?? node.version,
         ...snapshot,
@@ -431,10 +432,16 @@ export async function reviewNodeProposal(
 ) {
   authorize(actor, "knowledge.publish", { kind: "write" });
   const [row] = await db
-    .select({ proposal: nodeChangeProposals, node: treeNodes })
-    .from(nodeChangeProposals)
-    .innerJoin(treeNodes, eq(treeNodes.id, nodeChangeProposals.nodeId))
-    .where(and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.nodeId, nodeId)));
+    .select({ proposal: nodeProposals, node: treeNodes })
+    .from(nodeProposals)
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .where(
+      and(
+        eq(nodeProposals.kind, "change"),
+        eq(nodeProposals.id, proposalId),
+        eq(nodeProposals.nodeId, nodeId),
+      ),
+    );
   if (!row || row.proposal.state !== "pending") throw notFound();
   // Proposer cannot approve their own change; the node's original author may
   // review someone else's proposal — the separation is on this proposal.
@@ -445,10 +452,10 @@ export async function reviewNodeProposal(
       // The state='pending' guard doubles as the concurrency check: two
       // concurrent decisions race on it and the loser matches zero rows.
       const [proposal] = await tx
-        .update(nodeChangeProposals)
+        .update(nodeProposals)
         .set({ state: input.decision })
         .where(
-          and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.state, "pending")),
+          and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")),
         )
         .returning();
       if (!proposal) throw versionConflict();
@@ -506,9 +513,9 @@ export async function reviewNodeProposal(
     );
     await syncDerivedLinks(tx, nodeId, node.title, node.contentMd);
     const [proposal] = await tx
-      .update(nodeChangeProposals)
+      .update(nodeProposals)
       .set({ state: "approved" })
-      .where(and(eq(nodeChangeProposals.id, proposalId), eq(nodeChangeProposals.state, "pending")))
+      .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
       .returning();
     if (!proposal) throw versionConflict();
     await recordAudit(tx, actor, {

@@ -9,9 +9,8 @@ import { users } from "../auth/schema";
 import { sources, sourceVersions } from "../storage/schema";
 import {
   branches,
-  nodeChangeProposals,
+  nodeProposals,
   nodeLinks,
-  nodePublicationProposals,
   nodeTags,
   promotions,
   tags,
@@ -318,18 +317,18 @@ export async function getNode(actor: Principal, nodeId: string) {
       .orderBy(desc(promotions.createdAt)),
     db
       .select({
-        sourceNodeId: nodePublicationProposals.sourceNodeId,
-        sourceTitle: nodePublicationProposals.title,
+        sourceNodeId: nodeProposals.nodeId,
+        sourceTitle: nodeProposals.title,
         approvedByName: users.displayName,
-        reviewedAt: nodePublicationProposals.updatedAt,
+        reviewedAt: nodeProposals.updatedAt,
       })
-      .from(nodePublicationProposals)
+      .from(nodeProposals)
       .innerJoin(
         treeNodeVersions,
-        eq(nodePublicationProposals.approvedNodeVersionId, treeNodeVersions.id),
+        eq(nodeProposals.approvedNodeVersionId, treeNodeVersions.id),
       )
-      .innerJoin(users, eq(nodePublicationProposals.decidedBy, users.id))
-      .where(eq(treeNodeVersions.nodeId, nodeId)),
+      .innerJoin(users, eq(nodeProposals.decidedBy, users.id))
+      .where(and(eq(nodeProposals.kind, "publication"), eq(treeNodeVersions.nodeId, nodeId))),
   ]);
 
   return {
@@ -450,16 +449,16 @@ export async function getNodeChangeProposal(actor: Principal, proposalId: string
   authorize(actor, "knowledge.publish", { kind: "read" });
   const [row] = await db
     .select({
-      proposal: nodeChangeProposals,
+      proposal: nodeProposals,
       nodeTitle: treeNodes.title,
       nodeContentMd: treeNodes.contentMd,
       nodeVersion: treeNodes.version,
       authorName: users.displayName,
     })
-    .from(nodeChangeProposals)
-    .innerJoin(treeNodes, eq(treeNodes.id, nodeChangeProposals.nodeId))
-    .innerJoin(users, eq(users.id, nodeChangeProposals.createdBy))
-    .where(eq(nodeChangeProposals.id, proposalId));
+    .from(nodeProposals)
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .innerJoin(users, eq(users.id, nodeProposals.createdBy))
+    .where(and(eq(nodeProposals.kind, "change"), eq(nodeProposals.id, proposalId)));
   if (!row) throw notFound();
   return {
     ...row,
