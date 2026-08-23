@@ -9,6 +9,7 @@ export type GoogleOidcConfig = {
 export type GoogleClaims = {
   sub: string;
   email: string;
+  emailVerified: boolean;
 };
 
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -49,7 +50,7 @@ export function createGoogleOidcClient(config: GoogleOidcConfig) {
           audience: config.clientId,
         });
         return typeof payload.sub === "string" && typeof payload.email === "string"
-          ? { sub: payload.sub, email: payload.email }
+          ? { sub: payload.sub, email: payload.email, emailVerified: payload.email_verified === true }
           : null;
       } catch {
         return null;

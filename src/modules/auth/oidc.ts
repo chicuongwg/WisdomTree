@@ -55,6 +55,12 @@ export async function findOrBindUser(claims: GoogleClaims): Promise<{ id: string
     .where(and(eq(users.googleSub, claims.sub), isNull(users.disabledAt)));
   if (bySub) return bySub;
 
+  // Email-based linking is only safe when Google has verified the address:
+  // Workspace/imported accounts can carry an unverified email, and an
+  // unverified match must not claim an invite. Sub-based sign-in above is
+  // unaffected — it never trusts the email.
+  if (!claims.emailVerified) return null;
+
   const [invited] = await db
     .select({ id: users.id })
     .from(users)
