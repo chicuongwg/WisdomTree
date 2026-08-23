@@ -133,16 +133,18 @@ class LocalExtractionWorker {
         .slice(0, 200);
 
       await db.transaction(async (tx) => {
-        for (let index = 0; index < paragraphs.length; index++) {
+        if (paragraphs.length) {
           await tx
             .insert(textChunks)
-            .values({
-              sourceVersionId,
-              position: index,
-              refType: "paragraph",
-              refLabel: `¶ ${index + 1}`,
-              content: paragraphs[index],
-            })
+            .values(
+              paragraphs.map((content, index) => ({
+                sourceVersionId,
+                position: index,
+                refType: "paragraph" as const,
+                refLabel: `¶ ${index + 1}`,
+                content,
+              })),
+            )
             .onConflictDoNothing();
         }
         await tx

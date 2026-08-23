@@ -56,15 +56,22 @@ async function uniqueSlug(tx: Tx, branchId: string, title: string, excludeNodeId
 
 export async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: string[]) {
   await tx.delete(nodeTags).where(eq(nodeTags.nodeId, nodeId));
-  for (const raw of names) {
-    const name = raw.trim();
-    if (!name) continue;
-    const [existing] = await tx.select().from(tags).where(eq(tags.name, name));
-    const tagId =
-      existing?.id ??
-      (await tx.insert(tags).values({ name, createdBy: actor.userId }).returning())[0].id;
-    await tx.insert(nodeTags).values({ nodeId, tagId }).onConflictDoNothing();
+  const cleaned = [...new Set(names.map((raw) => raw.trim()).filter(Boolean))];
+  if (!cleaned.length) return;
+  const existing = await tx.select().from(tags).where(inArray(tags.name, cleaned));
+  const idByName = new Map(existing.map((tag) => [tag.name, tag.id]));
+  const missing = cleaned.filter((name) => !idByName.has(name));
+  if (missing.length) {
+    const created = await tx
+      .insert(tags)
+      .values(missing.map((name) => ({ name, createdBy: actor.userId })))
+      .returning();
+    for (const tag of created) idByName.set(tag.name, tag.id);
   }
+  await tx
+    .insert(nodeTags)
+    .values(cleaned.map((name) => ({ nodeId, tagId: idByName.get(name)! })))
+    .onConflictDoNothing();
 }
 
 /**
@@ -92,13 +99,17 @@ export async function syncLinks(
     if (!["related", "supports", "contrasts", "part_of"].includes(link.linkType)) {
       throw new ApiError(400, "invalid_link_type", "Invalid link type.");
     }
+  }
+  if (links.length) {
     await tx
       .insert(nodeLinks)
-      .values({
-        fromNodeId: nodeId,
-        toNodeId: link.toNodeId,
-        linkType: link.linkType as (typeof nodeLinks.$inferInsert)["linkType"],
-      })
+      .values(
+        links.map((link) => ({
+          fromNodeId: nodeId,
+          toNodeId: link.toNodeId,
+          linkType: link.linkType as (typeof nodeLinks.$inferInsert)["linkType"],
+        })),
+      )
       .onConflictDoNothing();
   }
 }
@@ -143,10 +154,10 @@ export async function syncDerivedLinks(
         targetIds.length ? notInArray(nodeLinks.toNodeId, targetIds) : sql`true`,
       ),
     );
-  for (const toNodeId of targetIds) {
+  if (targetIds.length) {
     await tx
       .insert(nodeLinks)
-      .values({ fromNodeId: nodeId, toNodeId, linkType: "related" })
+      .values(targetIds.map((toNodeId) => ({ fromNodeId: nodeId, toNodeId, linkType: "related" as const })))
       .onConflictDoNothing();
   }
   return targetIds;
