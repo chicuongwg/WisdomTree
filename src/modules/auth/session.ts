@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { createHash, randomBytes } from "node:crypto";
 import { eq, isNull, and, gt, lt } from "drizzle-orm";
 import { db } from "@/db";
@@ -28,7 +29,13 @@ function tokenHash(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function resolveSessionToken(token: string): Promise<(Principal & { user: typeof users.$inferSelect }) | null> {
+/**
+ * Per-request memoized: the layout and the page both resolve the same cookie,
+ * and React's cache() collapses that to one session+membership read per
+ * request. Outside a React request scope (tests, scripts) cache() is a
+ * passthrough and every call hits the database, which is what tests rely on.
+ */
+export const resolveSessionToken = cache(async (token: string): Promise<(Principal & { user: typeof users.$inferSelect }) | null> => {
   const [row] = await db
     .select({ session: sessions, user: users })
     .from(sessions)
@@ -63,7 +70,7 @@ export async function resolveSessionToken(token: string): Promise<(Principal & {
     spaceMemberships: memberships,
     user: row.user,
   };
-}
+});
 
 export async function resolvePrincipal(): Promise<Principal | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
