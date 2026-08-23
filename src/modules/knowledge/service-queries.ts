@@ -130,23 +130,20 @@ export async function createBranch(
   actor: Principal,
   input: { name: string; description?: string; scope?: string },
 ) {
-  const isPersonalScope = input.scope === "personal";
-  if (!isPersonalScope || actor.role !== "user") {
+  if (input.scope !== "personal") {
     throw new ApiError(
       403,
       "submission_required",
       "Team branches start from a member proposal.",
     );
   }
+  // The personal vault is the actor's own ground, whatever their global role.
+  authorize(actor, "knowledge.branch.create", { ownerIds: [actor.userId], kind: "write" });
   return db.transaction(async (tx) => {
     const [vault] = await tx
       .select({ id: vaults.id })
       .from(vaults)
-      .where(
-        isPersonalScope
-          ? and(eq(vaults.kind, "personal"), eq(vaults.ownerUserId, actor.userId))
-          : eq(vaults.kind, "shared"),
-      );
+      .where(and(eq(vaults.kind, "personal"), eq(vaults.ownerUserId, actor.userId)));
     if (!vault) throw new ApiError(409, "vault_missing", "Vault not found.");
     const [created] = await tx
       .insert(branches)
@@ -154,8 +151,8 @@ export async function createBranch(
         vaultId: vault.id,
         name: input.name,
         description: input.description ?? null,
-        scope: isPersonalScope ? "personal" : "team",
-        ownerUserId: isPersonalScope ? actor.userId : null,
+        scope: "personal",
+        ownerUserId: actor.userId,
         createdBy: actor.userId,
       })
       .returning();

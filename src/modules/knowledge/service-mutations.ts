@@ -163,16 +163,17 @@ export async function createNode(
 ) {
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (!branch || branch.archivedAt) throw notFound();
-  const isOwnPersonalBranch =
-    branch.scope === "personal" &&
-    (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
-  if (!isOwnPersonalBranch) {
+  if (branch.scope !== "personal") {
     throw new ApiError(
       403,
       "submission_required",
       "Shared content must go through review.",
     );
   }
+  authorize(actor, "knowledge.node.create", {
+    ownerIds: [branch.ownerUserId, branch.createdBy],
+    kind: "write",
+  });
 
   return db.transaction(async (tx) => {
     const slug = await uniqueSlug(tx, input.title);

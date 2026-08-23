@@ -40,12 +40,13 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "knowledge.node.read": { roles: EVERYONE, scope: "global" },
   "knowledge.search": { roles: EVERYONE, scope: "global" },
   "knowledge.graph.read": { roles: EVERYONE, scope: "global" },
-  // Personal-branch creation bypasses authorize() by design (the service
-  // checks branch ownership itself); an empty role list means "no one
-  // through THIS gate", and it must stay that way.
-  "knowledge.branch.create": { roles: [], scope: "global" },
+  // Growing your own personal tree: the gate is ownership, not a global
+  // role — the service passes the personal branch's owner ids. Team-branch
+  // content never enters here; it goes through the proposal pipeline
+  // (submission_required).
+  "knowledge.branch.create": { roles: EVERYONE, scope: "owned-or-assigned" },
   "knowledge.branch.edit": { roles: ["editor"], scope: "owned-or-assigned" },
-  "knowledge.node.create": { roles: [], scope: "global" },
+  "knowledge.node.create": { roles: EVERYONE, scope: "owned-or-assigned" },
   "knowledge.node.edit": { roles: ["editor"], scope: "owned-or-assigned" },
   // The single review boundary: promotion decisions and verification levers.
   "knowledge.publish": { roles: REVIEWERS, scope: "global" },
