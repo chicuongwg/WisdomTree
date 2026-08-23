@@ -54,7 +54,7 @@ async function main() {
                 notification_preferences, notifications,
                 deadline_reminders, deadline_links, deadlines,
                 tasks, achievements, calendar_tokens,
-                audit_events, outbox_events,
+                audit_events,
                 space_members, spaces, users CASCADE`,
     );
 
@@ -430,7 +430,7 @@ async function main() {
     );
 
     // --- PM: 3 deadlines across the two team spaces (one due within 7 days so
-    // the 7-day reminder offset fires on the next dispatcher tick), with
+    // the 7-day reminder offset fires on the next reminder tick), with
     // checklist/document links, 2 board tasks, calendar tokens per user ---
     const dlReport = randomUUID();
     const dlFunding = randomUUID();
@@ -490,7 +490,7 @@ async function main() {
         `@${huong.name} xem giúp em phần phụ lục với ạ.`,
       ],
     );
-    // The mention that the dispatcher would have delivered. Seeding it keeps
+    // The mention notification the comment fan-out would have written. Seeding it keeps
     // every event in the notification-link proof present from a fresh seed, so
     // that proof's coverage does not depend on an earlier proof run having
     // written the row.

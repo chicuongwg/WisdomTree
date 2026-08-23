@@ -30,7 +30,7 @@ Do not run `npm run build` while a dev server is using the same `.next`
 
 See [.env.example](../.env.example) for the full list. The ones that
 matter in production: `DATABASE_URL` and `SESSION_SECRET` (both refused
-missing), `CRON_SECRET` (outbox safety cron), `TRUST_PROXY=1` only
+missing), `CRON_SECRET` (deadline-reminder cron), `TRUST_PROXY=1` only
 behind a proxy that rewrites forwarding headers, the Google OIDC
 triple, and the tunables `SESSION_IDLE_MS`, `USER_RATE_LIMIT`,
 `EDIT_LOCK_TTL_MS`.
@@ -53,9 +53,9 @@ deletes every uploaded file. Health: `GET /api/health` (unauthenticated
 
 Cron, on the host:
 
-- Outbox safety net: `POST /api/cron/dispatch` with
-  `Authorization: Bearer $CRON_SECRET` (dispatch already runs after
-  every mutation; this catches anything a crash left behind).
+- Deadline reminders: `POST /api/cron/dispatch` with
+  `Authorization: Bearer $CRON_SECRET` — the one time-driven
+  notification producer; everything else is written by its mutation.
 - Backups: `scripts/backup.sh [dest]` — `pg_dump` plus a tarball of the
   object store (suggested crontab inside the script).
 

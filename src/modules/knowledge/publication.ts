@@ -5,8 +5,8 @@ import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { assertIndependentReviewer } from "../auth/maker-checker";
 import { users } from "../auth/schema";
-import { emitOutbox, recordAudit } from "../audit/service";
-import { kickDispatch } from "../notify/dispatcher";
+import { recordAudit } from "../audit/service";
+import { notifyEvent } from "../notify/fanout";
 import { extractionCandidates, sources, sourceVersions } from "../storage/schema";
 import { syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
 import {
@@ -206,7 +206,6 @@ export async function submitNodePublication(
     });
     return { proposalId: proposal.id, state: proposal.state };
   });
-  kickDispatch();
   return result;
 }
 
@@ -421,7 +420,7 @@ export async function decideNodePublication(
         verification: input.verification,
       },
     });
-    await emitOutbox(tx, "tree.node.published", {
+    await notifyEvent(tx, "tree.node.published", {
       nodeId: node.id,
       branchId: node.branchId,
       sourceNodeId: row.proposal.sourceNodeId,
@@ -431,6 +430,5 @@ export async function decideNodePublication(
     });
     return node;
   });
-  kickDispatch();
   return result;
 }

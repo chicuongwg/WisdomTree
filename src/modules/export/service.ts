@@ -1,6 +1,5 @@
 import { eq, ne, sql } from "drizzle-orm";
 import { db, ping } from "@/db";
-import { outboxEvents } from "@/db/outbox";
 import { loanTickets } from "../circulation/schema";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
@@ -153,18 +152,12 @@ export async function databaseReachable(): Promise<boolean> {
 
 export async function healthReport(actor: Principal) {
   authorize(actor, "admin.health.read", { kind: "read" });
-  const [[{ overdue }], [{ undispatched }]] = await Promise.all([
-    db
-      .select({ overdue: sql<number>`count(*)::int` })
-      .from(loanTickets)
-      .where(
-        sql`${loanTickets.state} IN ('borrowed','overdue') AND ${loanTickets.dueAt} IS NOT NULL AND ${loanTickets.dueAt} < now()`,
-      ),
-    db
-      .select({ undispatched: sql<number>`count(*)::int` })
-      .from(outboxEvents)
-      .where(sql`${outboxEvents.dispatchedAt} IS NULL`),
-  ]);
+  const [{ overdue }] = await db
+    .select({ overdue: sql<number>`count(*)::int` })
+    .from(loanTickets)
+    .where(
+      sql`${loanTickets.state} IN ('borrowed','overdue') AND ${loanTickets.dueAt} IS NOT NULL AND ${loanTickets.dueAt} < now()`,
+    );
 
   return {
     // When these numbers were read. The screen used to stamp them with its own
@@ -173,7 +166,6 @@ export async function healthReport(actor: Principal) {
     // than one that shows none.
     checkedAt: new Date(),
     overdueLoanCount: overdue,
-    outboxUndispatchedCount: undispatched,
     lastBackupAt: null, // placeholder: no backup infrastructure in the demo
     backupStatus: "not_configured",
   };

@@ -5,7 +5,7 @@ import { ApiError, notFound } from "@/lib/errors";
 import { signDownload } from "@/lib/sign";
 import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
-import { emitOutbox, recordAudit } from "../audit/service";
+import { recordAudit } from "../audit/service";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { objectStore } from "./object-store";
 import {
@@ -97,16 +97,6 @@ export async function uploadSource(
       targetType: "source",
       targetId: sourceId,
       details: { spaceId: input.spaceId, versionId, filename: input.file.name },
-    });
-    await emitOutbox(tx, "source.uploaded", {
-      sourceId,
-      sourceVersionId: versionId,
-      spaceId: input.spaceId,
-    });
-    await emitOutbox(tx, "source.stored", {
-      sourceId,
-      sourceVersionId: versionId,
-      spaceId: input.spaceId,
     });
   });
 
@@ -543,11 +533,6 @@ export async function addSourceVersion(actor: Principal, sourceId: string, file:
       targetType: "source",
       targetId: sourceId,
       details: { versionId, seq: max + 1, filename: file.name },
-    });
-    await emitOutbox(tx, "source.stored", {
-      sourceId,
-      sourceVersionId: versionId,
-      spaceId: row.source.spaceId,
     });
   });
 

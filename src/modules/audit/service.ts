@@ -1,10 +1,9 @@
 import type { Tx } from "@/db";
 import { auditEvents } from "./schema";
-import { outboxEvents } from "@/db/outbox";
 import type { Principal } from "../auth/principal";
 
-// Every mutation writes audit_events (and its outbox event) in the SAME
-// transaction as the mutation. Services call these two helpers inside their tx.
+// Every mutation writes audit_events in the SAME transaction as the mutation.
+// Services call this helper inside their tx.
 
 export type Accountability =
   "uploader" | "editor_updater" | "approver_publisher" | "operator" | "member"; // baseline member actions (loan requests, comments) — gate-2 ruling
@@ -31,13 +30,4 @@ export async function recordAudit(
     outcome: entry.outcome ?? "success",
     details: entry.details ?? null,
   });
-}
-
-/** Event names are stable dotted codes, e.g. "loan.requested". */
-export async function emitOutbox(
-  tx: Tx,
-  eventType: string,
-  payload: Record<string, unknown>,
-): Promise<void> {
-  await tx.insert(outboxEvents).values({ eventType, payload });
 }

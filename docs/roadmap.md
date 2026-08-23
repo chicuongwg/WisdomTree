@@ -37,8 +37,6 @@ plan it as its own phase with owner sign-off.
 - App-wide sweep of the remaining pre-refactor inline Vietnamese strings
   into the `T` translator (the refactor-era surfaces are already
   compliant).
-- Simplify the transactional outbox to direct dispatch (one in-process
-  consumer today).
 - Re-verify the `--profile deploy` compose path end-to-end after the
   refactor.
 - Bilingual UI (English strings) — the translator layer already gives it

@@ -8,4 +8,3 @@ export * from "../modules/circulation/schema";
 export * from "../modules/pm/schema";
 export * from "../modules/notify/schema";
 export * from "../modules/audit/schema";
-export * from "./outbox";

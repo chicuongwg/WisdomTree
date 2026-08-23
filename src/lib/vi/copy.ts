@@ -445,7 +445,6 @@ export const T = {
   healthDbOk: "Hoạt động bình thường", // NEW
   healthDbDown: "Không kết nối được", // NEW
   healthOverdueLoans: "Phiếu mượn quá hạn", // NEW
-  healthOutbox: "Sự kiện chờ gửi", // NEW
   healthBackup: "Sao lưu", // NEW
   healthBackupNotConfigured: "Chưa cấu hình sao lưu", // NEW
   auditEmpty: "Chưa có sự kiện nào được ghi lại.", // NEW
@@ -472,7 +471,6 @@ export const T = {
   healthReviewWaiting: "Việc chờ duyệt", // NEW
   healthReviewWaitingHint: "Hồ sơ đang nằm trong hàng đợi duyệt.", // NEW
   healthOverdueLoansHint: "Phiếu mượn đã qua hạn trả mà chưa ghi nhận trả sách.", // NEW
-  healthOutboxHint: "Thông báo đã ghi nhận nhưng chưa gửi đi.", // NEW
   healthDatabaseHint: "Máy chủ có đọc được cơ sở dữ liệu hay không.", // NEW
   healthBackupHint: "Bản sao lưu dữ liệu gần nhất.", // NEW
   healthAllWell: "Mọi thứ đang bình thường", // NEW

@@ -116,12 +116,6 @@ export default async function HealthPage() {
           tone={health.overdueLoanCount > 0 ? "attention" : "done"}
         />
         <Metric
-          label={T.healthOutbox}
-          value={health.outboxUndispatchedCount}
-          hint={T.healthOutboxHint}
-          tone={health.outboxUndispatchedCount > 0 ? "attention" : "done"}
-        />
-        <Metric
           label={T.healthBackup}
           value={
             health.backupStatus === "not_configured"

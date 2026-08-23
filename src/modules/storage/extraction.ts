@@ -6,7 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { emitOutbox } from "../audit/service";
+import { notifyEvent } from "../notify/fanout";
 import { vaults } from "../knowledge/schema";
 import {
   extractionCandidates,
@@ -172,10 +172,6 @@ class LocalExtractionWorker {
             version: row.version.version + 1,
           })
           .where(eq(sourceVersions.id, sourceVersionId));
-        await emitOutbox(tx, "source.processed", {
-          sourceId: row.version.sourceId,
-          sourceVersionId,
-        });
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "extraction failed";
@@ -189,7 +185,7 @@ class LocalExtractionWorker {
             version: row.version.version + 1,
           })
           .where(eq(sourceVersions.id, sourceVersionId));
-        await emitOutbox(tx, "source.processing_failed", {
+        await notifyEvent(tx, "source.processing_failed", {
           sourceId: row.version.sourceId,
           sourceVersionId,
           error: message,

@@ -1,8 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { dispatchOutbox } from "@/modules/notify/dispatcher";
+import { checkDeadlineReminders } from "@/modules/notify/fanout";
 
-// POST /api/cron/dispatch — authenticated safety net for the transactional outbox.
+// POST /api/cron/dispatch — the deadline-reminder tick, the one time-driven
+// notification producer (every other notification is written by its mutation).
 export const dynamic = "force-dynamic";
 
 function bearerMatches(request: Request, expected: string): boolean {
@@ -25,10 +26,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    await dispatchOutbox();
+    await checkDeadlineReminders();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[cron:dispatch] outbox tick failed:", err);
+    console.error("[cron:dispatch] reminder tick failed:", err);
     return NextResponse.json({ ok: false, error: "dispatch_failed" }, { status: 500 });
   }
 }

@@ -4,17 +4,16 @@ import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
-import { emitOutbox, recordAudit } from "../audit/service";
+import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { sources, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
-import { kickDispatch } from "../notify/dispatcher";
 import { achievements, calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
 
 // Module: pm — deadlines with reminder offsets and links, the operational
 // board (tasks), achievements, and the token-authenticated ICS feed.
 // House rules as everywhere: authorize() first, one db.transaction with
-// recordAudit + emitOutbox inside, optimistic locking on versioned rows.
+// recordAudit inside, optimistic locking on versioned rows.
 
 export type DeadlineType = (typeof deadlines.$inferSelect)["type"];
 export type LinkTarget = (typeof deadlineLinks.$inferSelect)["targetType"];
@@ -211,16 +210,9 @@ export async function createDeadline(actor: Principal, input: DeadlineInput) {
       targetId: row.id,
       details: { spaceId: row.spaceId, dueAt: row.dueAt.toISOString() },
     });
-    await emitOutbox(tx, "deadline.created", {
-      deadlineId: row.id,
-      spaceId: row.spaceId,
-      title: row.title,
-      dueAt: row.dueAt.toISOString(),
-    });
     return row;
   });
 
-  kickDispatch();
   const [withL] = await withLinks([created]);
   return withL;
 }
@@ -273,7 +265,6 @@ export async function updateDeadline(actor: Principal, deadlineId: string, input
     return row;
   });
 
-  kickDispatch();
   const [withL] = await withLinks([updated]);
   return withL;
 }

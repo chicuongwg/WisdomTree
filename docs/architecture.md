@@ -1,8 +1,7 @@
 # Architecture
 
 One deployable: **Next.js (App Router) + Drizzle ORM + PostgreSQL**, a
-modular monolith. No workers, no queues beyond one outbox table, no
-second service.
+modular monolith. No workers, no queues, no second service.
 
 ## Layers (enforced, not aspirational)
 
@@ -34,11 +33,11 @@ every `npm test`; it has caught a real cross-space leak.
 - **pm** — tasks (board), deadlines (+reminders, checklists, links),
   calendar tokens/ICS.
 - **notify** — comments with inline `@mentions`, the in-app notification
-  center, per-event opt-out, and the outbox dispatcher tick.
+  center, per-event opt-out, and the fan-out (`fanout.ts`).
 - **export** — synchronous one-way markdown tree export into the local
   bare git repo `data/content-repo.git` (plain files + front-matter),
   plus the admin health report.
-- **audit** — `recordAudit`/`emitOutbox` helpers; `audit_events` is
+- **audit** — the `recordAudit` helper; `audit_events` is
   append-only (DB trigger) and read back on `/admin`.
 - **graph** — the read-side provider feeding the graph view.
 
@@ -105,15 +104,15 @@ guards, and the per-item loan register live in `circulation/service.ts`.
 The loan desk is `/library/loans`; the item page hosts request/approve/
 hand-over/return.
 
-## Notifications & outbox
+## Notifications
 
-Mutations `emitOutbox` inside their transaction; the dispatcher tick
-(`kickDispatch` after commit, plus the `POST /api/cron/dispatch` safety
-cron) fans events out to in-app notifications (the only channel) with
-per-event opt-out, and fires deadline reminders exactly-once via the
-`(deadline_id, offset)` PK. The outbox is deliberately more machinery
-than one in-process consumer strictly needs — kept because it already
-works; a candidate for later simplification.
+Mutations call `notifyEvent` inside their own transaction
+(`notify/fanout.ts`): recipients come from the event matrix, per-event
+opt-out from `notification_preferences`, and the in-app center is the
+only channel (deliveries are still recorded per channel, so a future
+email/zalo adapter starts from data, not a stub). Deadline reminders are
+the one time-driven producer: the `POST /api/cron/dispatch` cron fires
+them exactly-once via the `(deadline_id, offset)` PK.
 
 ## Graph view
 

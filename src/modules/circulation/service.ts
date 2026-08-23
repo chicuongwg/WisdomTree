@@ -4,16 +4,15 @@ import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
-import { emitOutbox, recordAudit } from "../audit/service";
+import { recordAudit } from "../audit/service";
 import { sources, sourcePhysical } from "../storage/schema";
 import { users } from "../auth/schema";
 import { loanTickets } from "./schema";
-import { kickDispatch } from "../notify/dispatcher";
+import { notifyEvent } from "../notify/fanout";
 
 // Loan lifecycle: requested → approved → borrowed → returned (+ declined).
 // Every transition writes the ticket, the item when its status changes,
-// audit_events, and outbox_events in ONE transaction; the outbox dispatcher
-// then turns loan events into in-app notifications.
+// audit_events, and the borrower's in-app notification in ONE transaction.
 // Borrower-initiated actions audit as `member`; librarian actions as
 // `operator`. Items are the Library's physical rows (source_physical); the
 // public entry points speak sourceId, the id the Library screens carry.
@@ -100,18 +99,11 @@ export async function requestLoan(actor: Principal, sourceId: string) {
       targetId: created.id,
       details: { itemId: item.id, sourceId },
     });
-    await emitOutbox(tx, "loan.requested", {
-      ticketId: created.id,
-      itemId: item.id,
-      sourceId,
-      borrowerId: actor.userId,
-    });
     // Requesting the last copy takes the title off the shelf immediately.
     await syncItemStatus(tx, item.id);
     return created;
   });
 
-  kickDispatch();
   return ticket;
 }
 
@@ -235,7 +227,7 @@ async function librarianTransition(
       borrow: "loan.borrowed",
       return: "loan.returned",
     } as const;
-    await emitOutbox(tx, eventByAction[action], {
+    await notifyEvent(tx, eventByAction[action], {
       ticketId: ticket.id,
       itemId: ticket.itemId,
       sourceId: itemRow?.sourceId ?? null,
@@ -244,7 +236,6 @@ async function librarianTransition(
     return updated;
   });
 
-  kickDispatch();
   return result;
 }
 

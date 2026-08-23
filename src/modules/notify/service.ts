@@ -4,14 +4,14 @@ import { ApiError, notFound } from "@/lib/errors";
 import { foldName } from "@/lib/mention-fold";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
-import { emitOutbox, recordAudit } from "../audit/service";
+import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { sources, sourcePhysical, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
 import { comments, notificationPreferences, notifications, presence } from "./schema";
-import { NOTIFIED_EVENTS, kickDispatch } from "./dispatcher";
+import { NOTIFIED_EVENTS, notifyEvent } from "./fanout";
 import { notificationLink, type NotificationLinkContext } from "./links";
 
 // Module: notify — comments anchored to work objects, the in-app notification
@@ -260,9 +260,9 @@ export async function createComment(
       targetId: created.id,
       details: { anchorType: input.anchorType, anchorId: input.anchorId, mentions: mentionIds },
     });
-    // comment.created carries the mentions; the dispatcher turns them into
-    // notifications per the matrix (in-app + zalo by default).
-    await emitOutbox(tx, "comment.created", {
+    // comment.created carries the mentions; the fan-out turns them into
+    // in-app notifications per the matrix, in this same transaction.
+    await notifyEvent(tx, "comment.created", {
       commentId: created.id,
       anchorType: input.anchorType,
       anchorId: input.anchorId,
@@ -272,7 +272,6 @@ export async function createComment(
     return created;
   });
 
-  kickDispatch();
   return comment;
 }
 

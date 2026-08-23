@@ -6,8 +6,7 @@ import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { assertIndependentReviewer } from "../auth/maker-checker";
 import { assertNotLockedByOther } from "./edit-lock";
-import { emitOutbox, recordAudit } from "../audit/service";
-import { kickDispatch } from "../notify/dispatcher";
+import { recordAudit } from "../audit/service";
 import {
   branches,
   nodeChangeProposals,
@@ -554,10 +553,8 @@ export async function archiveNode(actor: Principal, nodeId: string) {
       targetId: nodeId,
       details: { from: node.verification },
     });
-    await emitOutbox(tx, "tree.node.archived", { nodeId, branchId: node.branchId });
     return updated;
   });
-  kickDispatch();
   return result;
 }
 
@@ -642,10 +639,8 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
       targetId: nodeId,
       details: { canonicalNodeId },
     });
-    await emitOutbox(tx, "tree.node.merged", { nodeId, canonicalNodeId, branchId: node.branchId });
     return updated;
   });
-  kickDispatch();
   return result;
 }
 
