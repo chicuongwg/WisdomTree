@@ -22,6 +22,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       headers: {
         "Content-Type": object.contentType,
         "Content-Disposition": `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(grant.filename)}`,
+        // The token IS the cache key: it names one immutable object version
+        // and dies in minutes, so the browser may keep the bytes that long.
+        "Cache-Control": "private, max-age=300, immutable",
         "X-Content-Type-Options": "nosniff",
       },
     });
