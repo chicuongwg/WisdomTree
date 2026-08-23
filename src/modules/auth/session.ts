@@ -41,10 +41,12 @@ export async function resolveSessionToken(token: string): Promise<(Principal & {
     .select({ spaceId: spaceMembers.spaceId, role: spaceMembers.memberRole })
     .from(spaceMembers)
     .where(eq(spaceMembers.userId, row.user.id));
-  void db
-    .update(sessions)
+  // Fire-and-forget on purpose, but never unhandled: a rejected promise here
+  // (a dropped DB connection) would crash the process, not just skip a renewal.
+  db.update(sessions)
     .set({ lastSeenAt: new Date() })
-    .where(eq(sessions.id, row.session.id));
+    .where(eq(sessions.id, row.session.id))
+    .catch((err) => console.error("[auth] last_seen_at renewal failed:", err));
   return {
     userId: row.user.id,
     role: row.user.role,
