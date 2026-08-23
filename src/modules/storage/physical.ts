@@ -6,7 +6,7 @@ import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { loanTickets } from "../circulation/schema";
 import { ACTIVE_LOAN_STATES, activeLoanCount } from "../circulation/service";
-import { objectStore } from "./object-store";
+import { getObject, putObject } from "./object-store";
 import { categories, sources, sourcePhysical } from "./schema";
 
 // Physical items ("sách giấy") inside the Library: a source row carries the
@@ -174,7 +174,7 @@ export async function setPhysicalCover(actor: Principal, sourceId: string, file:
   const { physical: item } = await loadPhysical(db, sourceId);
   if (item.archivedAt) throw notFound();
   const key = `catalog-covers/${item.id}/${Date.now()}`;
-  await objectStore.put(key, Buffer.from(await file.arrayBuffer()), file.type);
+  await putObject(key, Buffer.from(await file.arrayBuffer()), file.type);
   await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(sourcePhysical)
@@ -196,7 +196,7 @@ export async function getPhysicalCover(actor: Principal, sourceId: string) {
   const { physical: item, source } = await loadPhysical(db, sourceId);
   if (item.archivedAt || !item.coverPhotoKey) throw notFound();
   authorize(actor, "storage.library.browse", { spaceId: source.spaceId, kind: "read" });
-  return objectStore.get(item.coverPhotoKey).catch(() => null);
+  return getObject(item.coverPhotoKey).catch(() => null);
 }
 
 /**

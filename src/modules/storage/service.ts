@@ -7,7 +7,7 @@ import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
-import { objectStore } from "./object-store";
+import { putObject } from "./object-store";
 import {
   categories,
   folders,
@@ -66,7 +66,7 @@ export async function uploadSource(
   // Bytes land in the object store first; the DB transaction then makes the
   // item `stored` — store-first: it is findable and downloadable immediately,
   // extraction has not run yet (extraction_status stays `pending`).
-  await objectStore.put(objectKey, body, mimeType);
+  await putObject(objectKey, body, mimeType);
 
   const storedAt = new Date();
   await db.transaction(async (tx) => {
@@ -499,7 +499,7 @@ export async function addSourceVersion(actor: Principal, sourceId: string, file:
   const body = Buffer.from(await file.arrayBuffer());
   const versionId = randomUUID();
   const objectKey = `sources/${sourceId}/${versionId}/${file.name}`;
-  await objectStore.put(objectKey, body, mimeType);
+  await putObject(objectKey, body, mimeType);
 
   await db.transaction(async (tx) => {
     // max(seq)+1 inside the transaction; two simultaneous re-uploads of the

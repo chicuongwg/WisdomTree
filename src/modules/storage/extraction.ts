@@ -14,7 +14,7 @@ import {
   sourceVersions,
   textChunks,
 } from "./schema";
-import { objectStore } from "./object-store";
+import { getObject } from "./object-store";
 
 const run = promisify(execFile);
 const DELAY_MS = Number(process.env.EXTRACTION_DELAY_MS ?? 0);
@@ -124,7 +124,7 @@ class LocalExtractionWorker {
         .where(eq(vaults.ownerUserId, row.submittedBy));
       if (!vault) throw new Error("uploader has no personal vault");
 
-      const { body } = await objectStore.get(row.version.originalObjectKey);
+      const { body } = await getObject(row.version.originalObjectKey);
       const extracted = await extractMarkdown(
         body,
         row.version.originalFilename,

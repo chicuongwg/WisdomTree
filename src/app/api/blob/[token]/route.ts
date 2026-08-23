@@ -1,6 +1,6 @@
 import { handleApi, notFound } from "@/lib/errors";
 import { verifyDownload } from "@/lib/sign";
-import { objectStore } from "@/modules/storage/object-store";
+import { getObject } from "@/modules/storage/object-store";
 
 // GET /api/blob/{token} — the signed-URL substitute for local-FS object
 // storage: token-authorized (short-lived, single object), like an S3
@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     const { token } = await params;
     const grant = verifyDownload(token);
     if (!grant) throw notFound();
-    const object = await objectStore.get(grant.objectKey).catch(() => null);
+    const object = await getObject(grant.objectKey).catch(() => null);
     if (!object) throw notFound();
     // Images and PDFs render in the page (the detail screen's preview panel);
     // everything else downloads. nosniff so the browser honours the stored

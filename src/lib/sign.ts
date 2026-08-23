@@ -1,8 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 // HMAC signing for dev-mode session cookies and short-lived download tokens.
-// V1 replaces the download half with real S3 pre-signed URLs behind the same
-// ObjectStore interface; the session half with OIDC-backed sessions.
+// V1 replaces the download half with real S3 pre-signed URLs; the session
+// half is already OIDC-backed.
 //
 // Every token carries a purpose tag and an expiry inside the signed payload.
 // The purpose tag is what stops a session cookie being replayed as a download

@@ -13,7 +13,7 @@ import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "./principal";
 import { users } from "./schema";
 import { recordAudit } from "../audit/service";
-import { objectStore } from "../storage/object-store";
+import { getObject, putObject } from "../storage/object-store";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -78,7 +78,7 @@ export async function setAvatar(actor: Principal, file: File) {
   }
   const body = Buffer.from(await file.arrayBuffer());
   const key = `avatars/${actor.userId}/${Date.now()}`;
-  await objectStore.put(key, body, file.type);
+  await putObject(key, body, file.type);
   await db.transaction(async (tx) => {
     await tx
       .update(users)
@@ -102,5 +102,5 @@ export async function getAvatar(userId: string) {
     .from(users)
     .where(and(eq(users.id, userId), isNull(users.disabledAt)));
   if (!row?.avatarKey) return null;
-  return objectStore.get(row.avatarKey).catch(() => null);
+  return getObject(row.avatarKey).catch(() => null);
 }
