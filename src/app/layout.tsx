@@ -32,6 +32,18 @@ export const dynamic = "force-dynamic";
 // would appear and then fold away on every full page load.
 const themeScript = `try{var t=localStorage.getItem("wt-theme");if(!t&&matchMedia("(prefers-color-scheme: dark)").matches)t="dark";if(t)document.documentElement.dataset.theme=t;var s=localStorage.getItem("wisdomtree.sidebar");if(s)document.documentElement.dataset.sidebar=s;}catch(e){}`;
 
+// The body face on every page; preloading the regular weight saves the
+// discover-via-CSS round trip on first paint (React hoists <link> to <head>).
+const fontPreload = (
+  <link
+    rel="preload"
+    href="/fonts/cda-independence-text-regular.otf"
+    as="font"
+    type="font/otf"
+    crossOrigin="anonymous"
+  />
+);
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
   const S = shellCopy();
@@ -43,6 +55,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <html lang="vi" suppressHydrationWarning>
         {/* See the note on the signed-in <body> below. */}
         <body suppressHydrationWarning>
+          {fontPreload}
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
           <ValidationMessages />
           <div className="plain-shell">
@@ -92,7 +105,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <a href="#main" className="skip-link">
           {S.skipNavigation}
         </a>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {fontPreload}
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <div className="shell">
           <ShellRail
             role={user.role}
