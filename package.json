@@ -2,9 +2,6 @@
   "name": "wisdomtree",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "description": "WisdomTree — storage-first knowledge platform (modular monolith: Next.js App Router + Drizzle + PostgreSQL)",
   "scripts": {
     "runtime:up": "docker compose up -d --wait db",
@@ -40,11 +37,10 @@
     "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:boundaries && npm run test:sign && npm run test:time && npm run test:contrast"
   },
   "dependencies": {
-    "@wisdomtree/graph-obsidian": "*",
-    "@wisdomtree/identity": "*",
     "d3-force": "^3.0.0",
     "drizzle-orm": "^0.45.2",
     "force-graph": "^1.51.4",
+    "jose": "^6.2.5",
     "next": "^15.3.4",
     "pg": "^8.16.0",
     "react": "^19.1.0",

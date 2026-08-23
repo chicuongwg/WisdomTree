@@ -4,7 +4,7 @@ import type {
   GraphEdge,
   GraphQuery,
   NodePreview,
-} from "@wisdomtree/graph-obsidian";
+} from "./types";
 import { and, asc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import type { Principal } from "../auth/principal";

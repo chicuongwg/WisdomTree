@@ -10,7 +10,7 @@
 // ≤10 people and the admin knows all of them.
 
 import { randomUUID } from "node:crypto";
-import { createGoogleOidcClient, type GoogleClaims } from "@wisdomtree/identity";
+import { createGoogleOidcClient, type GoogleClaims } from "./google-oidc";
 import { and, eq, isNull, like } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "./schema";
