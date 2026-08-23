@@ -10,7 +10,6 @@ const PUBLIC_PATHS = [
   "/api/cron/",
   "/api/blob/",
   "/calendar/",
-  "_next/",
 ];
 
 export function middleware(request: NextRequest) {
