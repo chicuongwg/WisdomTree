@@ -438,11 +438,7 @@ export async function reviewNodeProposal(
   if (!row || row.proposal.state !== "pending") throw notFound();
   // Proposer cannot approve their own change; the node's original author may
   // review someone else's proposal — the separation is on this proposal.
-  assertIndependentReviewer(actor.userId, {
-    originatorId: row.proposal.createdBy,
-    lastEditorId: row.proposal.createdBy,
-    submittedBy: row.proposal.createdBy,
-  });
+  assertIndependentReviewer(actor.userId, { submittedBy: row.proposal.createdBy });
 
   return db.transaction(async (tx) => {
     if (input.decision !== "approved") {

@@ -5,22 +5,8 @@ import { isIndependentReviewer } from "@/modules/auth/maker-checker";
 
 export const run = async () => {
   const reviewerId = "reviewer";
-  assert.equal(
-    isIndependentReviewer(reviewerId, {
-      originatorId: "author",
-      lastEditorId: "editor",
-      submittedBy: "submitter",
-    }),
-    true,
-  );
-  assert.equal(
-    isIndependentReviewer(reviewerId, {
-      originatorId: "author",
-      lastEditorId: reviewerId,
-      submittedBy: "submitter",
-    }),
-    false,
-  );
+  assert.equal(isIndependentReviewer(reviewerId, { submittedBy: "submitter" }), true);
+  assert.equal(isIndependentReviewer(reviewerId, { submittedBy: reviewerId }), false);
 
   const previousTrustProxy = process.env.TRUST_PROXY;
   try {

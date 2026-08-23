@@ -302,11 +302,7 @@ export async function decideNodePublication(
       ),
     );
   if (!row) throw notFound();
-  assertIndependentReviewer(actor.userId, {
-    originatorId: row.sourceNodeCreatedBy,
-    lastEditorId: row.proposal.createdBy,
-    submittedBy: row.proposal.createdBy,
-  });
+  assertIndependentReviewer(actor.userId, { submittedBy: row.proposal.createdBy });
   const note = input.note?.trim() || null;
   if (input.decision !== "approved" && !note) {
     throw new ApiError(400, "review_note_required", "A note is required for this decision.");
