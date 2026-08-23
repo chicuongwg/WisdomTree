@@ -15,7 +15,7 @@ import {
   updateNode,
   wikiIndex,
 } from "@/modules/knowledge/service";
-import { createGraphProvider } from "@/modules/graph/provider";
+import { createGraphProvider } from "@/modules/knowledge/graph-provider";
 import { diffLines } from "@/lib/diff";
 import { principalFor } from "../setup";
 

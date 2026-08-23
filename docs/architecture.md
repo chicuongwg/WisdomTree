@@ -8,11 +8,14 @@ modular monolith. No workers, no queues, no second service.
 | Layer | Path | May do | May not do |
 | --- | --- | --- | --- |
 | Delivery | `src/app/**` | Render, read params, call a service | Touch the DB — no `@/db`, no `*/schema`, no `drizzle-orm` |
-| Business logic | `src/modules/<module>/*` | Authorize, query, transact, audit | Reach into another module's tables |
+| Business logic | `src/modules/<module>/*` | Authorize, query, transact, audit | Reach into another module's tables (convention — see below) |
 | Data | `src/db/**`, `src/modules/*/schema.ts` | Connection, tables, migrations | Contain business rules |
 
 `scripts/boundaries.test.ts` greps the delivery layer for DB imports on
-every `npm test`; it has caught a real cross-space leak.
+every `npm test`; it has caught a real cross-space leak. That is the one
+machine-enforced rule; the module-to-module line is convention, reviewed
+by eye — modules call each other's services freely and share transactions
+(notifyEvent, recordAudit run inside the caller's tx).
 
 ## Modules
 
@@ -29,7 +32,8 @@ every `npm test`; it has caught a real cross-space leak.
   index.
 - **knowledge** — vaults, branches, tree nodes with markdown content,
   append-only `tree_node_versions`, wiki/typed links, tags, the two
-  proposal tables, promotions (provenance), and `edit-lock.ts`.
+  proposal tables, promotions (provenance), `edit-lock.ts`, and the
+  graph read-side (`graph-provider.ts`) feeding the graph view.
 - **pm** — tasks (board), deadlines (+reminders, checklists, links),
   calendar tokens/ICS.
 - **notify** — comments with inline `@mentions`, the in-app notification
@@ -39,7 +43,6 @@ every `npm test`; it has caught a real cross-space leak.
   plus the admin health report.
 - **audit** — the `recordAudit` helper; `audit_events` is
   append-only (DB trigger) and read back on `/admin`.
-- **graph** — the read-side provider feeding the graph view.
 
 ## Authorization
 
@@ -116,7 +119,7 @@ them exactly-once via the `(deadline_id, offset)` PK.
 
 ## Graph view
 
-Server: `modules/graph/provider.ts` loads visible nodes/edges/tags.
+Server: `modules/knowledge/graph-provider.ts` loads visible nodes/edges/tags.
 Client: `src/app/components/knowledge-map/` renders them with the
 open-source **force-graph** engine (canvas 2D, d3-force). The component
 owns product behavior — verification shapes (circle/diamond/square),

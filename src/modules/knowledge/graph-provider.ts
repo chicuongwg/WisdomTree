@@ -4,13 +4,15 @@ import type {
   GraphEdge,
   GraphQuery,
   NodePreview,
-} from "./types";
+} from "./graph-types";
 import { and, asc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
-import { branchVisibilityCondition } from "../knowledge/service";
-import { branches, nodeLinks, nodeTags, tags, treeNodes } from "../knowledge/schema";
+// The graph is knowledge's read side: it leans on branchVisibilityCondition
+// and the knowledge tables directly, which is why it lives in this module.
+import { branchVisibilityCondition } from "./service";
+import { branches, nodeLinks, nodeTags, tags, treeNodes } from "./schema";
 
 export function createGraphProvider(actor: Principal): GraphDataProvider {
   return {

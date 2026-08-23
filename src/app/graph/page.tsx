@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { createGraphProvider } from "@/modules/graph/provider";
+import { createGraphProvider } from "@/modules/knowledge/graph-provider";
 import { T } from "@/lib/vi";
 import { KnowledgeMap } from "../components/knowledge-map";
 
