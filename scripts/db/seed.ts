@@ -52,7 +52,7 @@ async function main() {
                 text_chunks, source_versions, sources,
                 comments, notification_preferences, notifications,
                 deadline_reminders, deadline_links, deadlines,
-                tasks, achievements, calendar_tokens,
+                tasks, calendar_tokens,
                 audit_events,
                 space_members, spaces, users CASCADE`,
     );

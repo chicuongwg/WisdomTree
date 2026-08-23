@@ -95,8 +95,6 @@ const STATIC: Record<string, string> = {
   already_claimed: "Việc này đã có người nhận.",
   invalid_task: "Vui lòng nhập tiêu đề công việc.",
   invalid_task_state: "Trạng thái công việc không hợp lệ.",
-  invalid_achievement: "Vui lòng nhập tiêu đề thành quả.",
-  invalid_achievement_date: "Ngày ghi nhận không hợp lệ.",
 };
 
 /** ApiError `{code, details, message}` → the sentence the reader sees. */

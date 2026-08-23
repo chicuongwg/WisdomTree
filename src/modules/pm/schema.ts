@@ -2,9 +2,8 @@ import { sql } from "drizzle-orm";
 import { integer, interval, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
 import { spaces } from "../storage/schema";
-import { branches } from "../knowledge/schema";
 
-// Module: pm — deadlines, checklists, tasks, achievements, calendar tokens.
+// Module: pm — deadlines, checklists, tasks, calendar tokens.
 
 export const deadlines = pgTable("deadlines", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -72,17 +71,6 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
-});
-
-export const achievements = pgTable("achievements", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  branchId: uuid("branch_id").references(() => branches.id),
-  loggedBy: uuid("logged_by")
-    .notNull()
-    .references(() => users.id),
-  achievedAt: timestamp("achieved_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const calendarTokens = pgTable("calendar_tokens", {

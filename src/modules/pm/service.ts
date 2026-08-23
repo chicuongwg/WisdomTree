@@ -8,10 +8,10 @@ import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { sources, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
-import { achievements, calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
+import { calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
 
 // Module: pm — deadlines with reminder offsets and links, the operational
-// board (tasks), achievements, and the token-authenticated ICS feed.
+// board (tasks), and the token-authenticated ICS feed.
 // House rules as everywhere: authorize() first, one db.transaction with
 // recordAudit inside, optimistic locking on versioned rows.
 
@@ -553,39 +553,6 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
     return row;
   });
   return updated;
-}
-
-export async function logAchievement(
-  actor: Principal,
-  input: { title?: string; branchId?: string; achievedAt?: string },
-) {
-  authorize(actor, "pm.board.manage", { ownerIds: [actor.userId], kind: "write" });
-  if (!input.title?.trim()) {
-    throw new ApiError(400, "invalid_achievement", "Achievement title must not be empty.");
-  }
-  const achievedAt = input.achievedAt ? new Date(input.achievedAt) : new Date();
-  if (Number.isNaN(achievedAt.getTime())) {
-    throw new ApiError(400, "invalid_achievement_date", "Invalid achievement date.");
-  }
-  return db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(achievements)
-      .values({
-        title: input.title!.trim(),
-        branchId: input.branchId ?? null,
-        loggedBy: actor.userId,
-        achievedAt,
-      })
-      .returning();
-    await recordAudit(tx, actor, {
-      accountability: "operator",
-      action: "achievement.log",
-      targetType: "achievement",
-      targetId: row.id,
-      details: { branchId: row.branchId },
-    });
-    return row;
-  });
 }
 
 // ---------------------------------------------------------------------------
