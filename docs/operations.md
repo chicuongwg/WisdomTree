@@ -53,9 +53,10 @@ deletes every uploaded file. Health: `GET /api/health` (unauthenticated
 
 Cron, on the host:
 
-- Deadline reminders: `POST /api/cron/dispatch` with
-  `Authorization: Bearer $CRON_SECRET` — the one time-driven
-  notification producer; everything else is written by its mutation.
+- Housekeeping tick: `POST /api/cron/dispatch` with
+  `Authorization: Bearer $CRON_SECRET` — deadline reminders (the one
+  time-driven notification producer; everything else is written by its
+  mutation) plus the stale-session purge.
 - Backups: `scripts/backup.sh [dest]` — `pg_dump` plus a tarball of the
   object store (suggested crontab inside the script).
 

@@ -1,9 +1,11 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { checkDeadlineReminders } from "@/modules/notify/fanout";
+import { purgeStaleSessions } from "@/modules/auth/session";
 
-// POST /api/cron/dispatch — the deadline-reminder tick, the one time-driven
-// notification producer (every other notification is written by its mutation).
+// POST /api/cron/dispatch — the time-driven housekeeping tick: deadline
+// reminders (the one notification not written by its mutation) and the
+// stale-session purge.
 export const dynamic = "force-dynamic";
 
 function bearerMatches(request: Request, expected: string): boolean {
@@ -27,6 +29,7 @@ export async function POST(request: Request) {
 
   try {
     await checkDeadlineReminders();
+    await purgeStaleSessions();
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[cron:dispatch] reminder tick failed:", err);

@@ -59,7 +59,7 @@ visible to every member, a `personal` vault only to its owner
 
 - Sessions are server-side rows (`sessions`), the cookie holds a random
   token and the DB only its SHA-256. Revocable per user (and revoked on
-  disable).
+  disable); rows expired 30+ days are purged by the cron tick.
 - **Inactivity timeout**: `last_seen_at` is written on every request and
   read on resolve — idle past `SESSION_IDLE_MS` (default 30 min) reads
   as signed out; `SESSION_TTL_MS` (7 days) is the absolute cap.

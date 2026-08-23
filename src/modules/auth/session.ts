@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createHash, randomBytes } from "node:crypto";
-import { eq, isNull, and, gt } from "drizzle-orm";
+import { eq, isNull, and, gt, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { sessions, users } from "./schema";
 import { spaceMembers } from "../storage/schema";
@@ -97,6 +97,15 @@ export async function revokeUserSessions(tx: Parameters<Parameters<typeof db.tra
     .update(sessions)
     .set({ revokedAt: new Date() })
     .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+}
+
+/**
+ * Delete session rows long past any use (expired 30+ days ago — which also
+ * catches revoked and idle-dead ones, since every row carries expires_at).
+ * Run from the cron tick; without it the table only ever grows.
+ */
+export async function purgeStaleSessions(): Promise<void> {
+  await db.delete(sessions).where(lt(sessions.expiresAt, new Date(Date.now() - 30 * 86_400_000)));
 }
 
 /**
