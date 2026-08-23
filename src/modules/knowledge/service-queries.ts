@@ -145,6 +145,13 @@ export async function createBranch(
       .from(vaults)
       .where(and(eq(vaults.kind, "personal"), eq(vaults.ownerUserId, actor.userId)));
     if (!vault) throw new ApiError(409, "vault_missing", "Vault not found.");
+    const [dup] = await tx
+      .select({ id: branches.id })
+      .from(branches)
+      .where(and(eq(branches.vaultId, vault.id), eq(branches.name, input.name)));
+    if (dup) {
+      throw new ApiError(409, "branch_exists", "A branch with this name already exists here.");
+    }
     const [created] = await tx
       .insert(branches)
       .values({

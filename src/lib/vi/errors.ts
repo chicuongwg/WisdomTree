@@ -78,6 +78,7 @@ const STATIC: Record<string, string> = {
   missing_verification: "Thiếu mức thẩm định.",
   source_required: "Trang không có tư liệu nguồn chỉ được xuất bản ở mức chưa thẩm định.",
   vault_missing: "Không tìm thấy kho tri thức.",
+  branch_exists: "Tên chuyên đề đã tồn tại trong kho này.",
   // comments / notifications / presence
   invalid_anchor: "Mục này không nhận thảo luận.",
   invalid_comment: "Vui lòng nhập nội dung thảo luận.",

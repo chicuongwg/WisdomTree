@@ -23,8 +23,8 @@ import { branchVisibilityCondition } from "./service-queries";
 
 export type Verification = (typeof treeNodes.$inferSelect)["verification"];
 
-/** Stable export/publish path: Vietnamese-safe slug, unique via numeric suffix. */
-async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promise<string> {
+/** Stable export/publish path: Vietnamese-safe slug, unique per branch via numeric suffix. */
+async function uniqueSlug(tx: Tx, branchId: string, title: string, excludeNodeId?: string): Promise<string> {
   const base =
     title
       .normalize("NFD")
@@ -40,9 +40,11 @@ async function uniqueSlug(tx: Tx, title: string, excludeNodeId?: string): Promis
       .select({ id: treeNodes.id })
       .from(treeNodes)
       .where(
-        excludeNodeId
-          ? and(eq(treeNodes.slug, candidate), ne(treeNodes.id, excludeNodeId))
-          : eq(treeNodes.slug, candidate),
+        and(
+          eq(treeNodes.branchId, branchId),
+          eq(treeNodes.slug, candidate),
+          excludeNodeId ? ne(treeNodes.id, excludeNodeId) : undefined,
+        ),
       );
     if (!taken) return candidate;
   }
@@ -176,7 +178,7 @@ export async function createNode(
   });
 
   return db.transaction(async (tx) => {
-    const slug = await uniqueSlug(tx, input.title);
+    const slug = await uniqueSlug(tx, input.branchId, input.title);
     const [node] = await tx
       .insert(treeNodes)
       .values({
@@ -281,7 +283,7 @@ export async function updateNode(
   const result = await db.transaction(async (tx) => {
     const slug =
       patch.title !== undefined && patch.title !== node.title
-        ? await uniqueSlug(tx, patch.title, nodeId)
+        ? await uniqueSlug(tx, node.branchId, patch.title, nodeId)
         : node.slug;
     const [updated] = await tx
       .update(treeNodes)

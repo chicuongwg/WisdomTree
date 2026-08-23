@@ -27,7 +27,7 @@ import {
 // the approved snapshot becomes a promoted node (locked from then on; changes
 // go through node change proposals).
 
-async function uniqueSlug(tx: Tx, title: string): Promise<string> {
+async function uniqueSlug(tx: Tx, branchId: string, title: string): Promise<string> {
   const base =
     title
       .normalize("NFD")
@@ -42,7 +42,7 @@ async function uniqueSlug(tx: Tx, title: string): Promise<string> {
     const [taken] = await tx
       .select({ id: treeNodes.id })
       .from(treeNodes)
-      .where(eq(treeNodes.slug, candidate));
+      .where(and(eq(treeNodes.branchId, branchId), eq(treeNodes.slug, candidate)));
     if (!taken) return candidate;
   }
 }
@@ -352,7 +352,7 @@ export async function decideNodePublication(
   }
 
   const result = await db.transaction(async (tx) => {
-    const slug = await uniqueSlug(tx, row.proposal.title);
+    const slug = await uniqueSlug(tx, row.proposal.targetBranchId, row.proposal.title);
     const [node] = await tx
       .insert(treeNodes)
       .values({

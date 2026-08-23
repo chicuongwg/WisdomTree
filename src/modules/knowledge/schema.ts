@@ -27,13 +27,16 @@ export const vaults = pgTable("vaults", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const branches = pgTable("branches", {
+export const branches = pgTable(
+  "branches",
+  {
   id: uuid("id").primaryKey().defaultRandom(),
   vaultId: uuid("vault_id")
     .notNull()
     .references(() => vaults.id),
   parentId: uuid("parent_id"),
-  name: text("name").notNull().unique(),
+  // Unique per vault: two people's personal vaults may both hold "Ghi chú".
+  name: text("name").notNull(),
   description: text("description"),
   // scope: 'team' = shared project knowledge (all members); 'personal' = private
   // note tree visible only to ownerUserId. Defaults to 'team' so all existing
@@ -49,15 +52,21 @@ export const branches = pgTable("branches", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
-});
+  },
+  (t) => [unique().on(t.vaultId, t.name)],
+);
 
-export const treeNodes = pgTable("tree_nodes", {
+export const treeNodes = pgTable(
+  "tree_nodes",
+  {
   id: uuid("id").primaryKey().defaultRandom(),
   branchId: uuid("branch_id")
     .notNull()
     .references(() => branches.id),
   title: text("title").notNull(),
-  slug: text("slug").notNull().unique(), // stable export/publish path
+  // Stable export/publish path, unique per branch (the export path is
+  // branch-slug/node-slug, so per-branch uniqueness keeps paths unique).
+  slug: text("slug").notNull(),
   contentMd: text("content_md").notNull(),
   verification: text("verification", {
     enum: ["no_source", "unverified", "verified", "archived"],
@@ -72,7 +81,9 @@ export const treeNodes = pgTable("tree_nodes", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   version: integer("version").notNull().default(1),
-});
+  },
+  (t) => [unique().on(t.branchId, t.slug)],
+);
 
 export const treeNodeVersions = pgTable(
   "tree_node_versions",
