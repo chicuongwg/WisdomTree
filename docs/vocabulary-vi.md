@@ -33,10 +33,11 @@ reading TypeScript.
 | Verification: unverified | Chưa thẩm định | Diamond mark |
 | Verification: verified | Đã thẩm định | Circle mark |
 | Promotion | Đề cử lên cây chung | The single review boundary |
-| Change proposal | Đề xuất sửa trang chung | Edit to a promoted node |
+| Protected page | Trang được bảo vệ | Shared page that requires review |
+| Draft | Bản nháp riêng | Per-user working copy over the official page |
 | Review | Kiểm chéo | Independent-reviewer decision |
 | Version history | Lịch sử phiên bản | Diff + restore |
-| Edit lock | Khoá chỉnh sửa | "Đang được chỉnh sửa bởi …" |
+| Presence | Người đang xem/sửa | Advisory warning, not a hard lock |
 | Graph | Bản đồ tri thức | The `/graph` view |
 | Role: user | Thành viên | |
 | Role: editor | Biên tập viên | |

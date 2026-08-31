@@ -1,4 +1,4 @@
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { normalizeTitle } from "@/lib/wikilink";
@@ -21,6 +21,8 @@ import {
 } from "./schema";
 import {
   assertSafeMarkdown,
+  assertUniqueWikiTitle,
+  nodeAssociations,
   syncDerivedLinks,
   syncLinks,
   syncTags,
@@ -298,39 +300,6 @@ function officialConflict(
   });
 }
 
-async function assertUniqueTitle(
-  tx: Tx,
-  spaceId: string,
-  title: string,
-  excludeNodeId: string | null,
-) {
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${spaceId}, 0))`);
-  const rows = await tx
-    .select({ nodeId: treeNodes.id, vi: treeNodes.title, en: nodeTranslations.title })
-    .from(treeNodes)
-    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
-    .leftJoin(nodeTranslations, eq(nodeTranslations.nodeId, treeNodes.id))
-    .where(
-      and(
-        eq(branches.spaceId, spaceId),
-        eq(branches.scope, "team"),
-        ne(treeNodes.verification, "archived"),
-        excludeNodeId ? ne(treeNodes.id, excludeNodeId) : undefined,
-      ),
-    );
-  const normalized = normalizeTitle(title);
-  const conflict = rows.find(
-    (row) =>
-      normalizeTitle(row.vi) === normalized || (row.en && normalizeTitle(row.en) === normalized),
-  );
-  if (conflict) {
-    throw new ApiError(409, "duplicate_wiki_title", "A page with this title already exists.", {
-      nodeId: conflict.nodeId,
-      title,
-    });
-  }
-}
-
 async function appendNodeVersion(
   tx: Tx,
   actor: Principal,
@@ -343,6 +312,7 @@ async function appendNodeVersion(
     .select({ maxSeq: sql<number>`coalesce(max(${treeNodeVersions.seq}), 0)::int` })
     .from(treeNodeVersions)
     .where(eq(treeNodeVersions.nodeId, node.id));
+  const associations = await nodeAssociations(tx, node.id);
   return tx.insert(treeNodeVersions).values({
     nodeId: node.id,
     seq: maxSeq + 1,
@@ -354,8 +324,8 @@ async function appendNodeVersion(
     title: snapshot.title,
     summary: snapshot.summary,
     sortOrder: snapshot.sortOrder,
-    tags: snapshot.tags,
-    links: snapshot.links,
+    tags: associations.tags,
+    links: associations.links,
     publish: node.publish,
     reviewRequired: node.reviewRequired,
     snapshotComplete: true,
@@ -373,7 +343,7 @@ export async function publishDraft(actor: Principal, draftId: string) {
   assertDraftSnapshot(snapshot);
 
   return db.transaction(async (tx) => {
-    await assertUniqueTitle(tx, row.branch.spaceId!, snapshot.title, row.draft.nodeId);
+    await assertUniqueWikiTitle(tx, row.branch.spaceId!, snapshot.title, row.draft.nodeId);
     if (!row.node) {
       const slug = await uniqueSlug(tx, row.branch.id, snapshot.title);
       const [node] = await tx
@@ -471,6 +441,7 @@ export async function publishDraft(actor: Principal, draftId: string) {
           title: snapshot.title,
           summary: snapshot.summary,
           contentMd: snapshot.contentMd,
+          slug: translationSlug(snapshot.title),
           version,
           updatedBy: actor.userId,
           updatedAt: new Date(),
@@ -600,6 +571,86 @@ export async function discardDraft(actor: Principal, draftId: string) {
       targetId: draftId,
       details: { nodeId: row.draft.nodeId, locale: row.draft.locale },
     });
+  });
+}
+
+export async function restoreNodeVersionToDraft(actor: Principal, nodeId: string, seq: number) {
+  const official = await officialSnapshot(nodeId, "vi");
+  authorize(actor, "knowledge.draft.write", { spaceId: official.branch.spaceId!, kind: "write" });
+  if (official.node.verification === "archived") throw notFound();
+  const [version] = await db
+    .select()
+    .from(treeNodeVersions)
+    .where(and(eq(treeNodeVersions.nodeId, nodeId), eq(treeNodeVersions.seq, seq)));
+  if (!version) throw notFound();
+
+  const legacyPartial = !version.snapshotComplete;
+  const snapshot = cleanSnapshot({
+    title: version.snapshotComplete && version.title ? version.title : official.snapshot.title,
+    summary: version.snapshotComplete ? version.summary : official.snapshot.summary,
+    sortOrder:
+      version.snapshotComplete && version.sortOrder !== null
+        ? version.sortOrder
+        : official.snapshot.sortOrder,
+    contentMd: version.contentMd,
+    tags:
+      version.snapshotComplete && Array.isArray(version.tags)
+        ? (version.tags as string[])
+        : official.snapshot.tags,
+    links:
+      version.snapshotComplete && Array.isArray(version.links)
+        ? (version.links as Array<{ toNodeId: string; linkType: string }>)
+        : official.snapshot.links,
+  });
+
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(nodeDrafts)
+      .where(
+        and(
+          eq(nodeDrafts.nodeId, nodeId),
+          eq(nodeDrafts.locale, "vi"),
+          eq(nodeDrafts.authorId, actor.userId),
+        ),
+      );
+    if (existing?.state === "in_review") {
+      throw new ApiError(409, "draft_in_review", "The draft is currently in review.");
+    }
+    const [draft] = existing
+      ? await tx
+          .update(nodeDrafts)
+          .set({
+            ...snapshot,
+            baseVersion: official.version,
+            draftVersion: existing.draftVersion + 1,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(eq(nodeDrafts.id, existing.id), eq(nodeDrafts.draftVersion, existing.draftVersion)),
+          )
+          .returning()
+      : await tx
+          .insert(nodeDrafts)
+          .values({
+            nodeId,
+            branchId: official.branch.id,
+            locale: "vi",
+            authorId: actor.userId,
+            baseVersion: official.version,
+            ...snapshot,
+          })
+          .onConflictDoNothing()
+          .returning();
+    if (!draft) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "editor_updater",
+      action: "node.version.restore_to_draft",
+      targetType: "node_draft",
+      targetId: draft.id,
+      details: { nodeId, seq, legacyPartial },
+    });
+    return { draft, legacyPartial };
   });
 }
 

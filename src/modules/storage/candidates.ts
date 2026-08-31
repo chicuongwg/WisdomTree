@@ -5,6 +5,7 @@ import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { branches, treeNodes, treeNodeVersions } from "../knowledge/schema";
+import { nodeAssociations } from "../knowledge/service-mutations";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { extractionCandidates, sources, sourceVersions } from "./schema";
 
@@ -43,7 +44,11 @@ export async function requestExtraction(
     .from(extractionCandidates)
     .where(eq(extractionCandidates.sourceVersionId, versionId));
   if (existing) {
-    throw new ApiError(409, "candidate_exists", "This file already has an extracted Markdown candidate.");
+    throw new ApiError(
+      409,
+      "candidate_exists",
+      "This file already has an extracted Markdown candidate.",
+    );
   }
   await db.transaction(async (tx) => {
     await tx
@@ -113,7 +118,12 @@ export async function rejectCandidate(actor: Principal, candidateId: string) {
         ),
       )
       .returning();
-    if (!updated) throw new ApiError(409, "invalid_state", "The extraction candidate has already been handled.");
+    if (!updated)
+      throw new ApiError(
+        409,
+        "invalid_state",
+        "The extraction candidate has already been handled.",
+      );
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "candidate.reject",
@@ -167,6 +177,7 @@ export async function evolveCandidate(
         createdBy: actor.userId,
       })
       .returning();
+    const associations = await nodeAssociations(tx, node.id);
     await tx.insert(treeNodeVersions).values({
       nodeId: node.id,
       seq: 1,
@@ -174,6 +185,14 @@ export async function evolveCandidate(
       verification: "unverified",
       createdBy: actor.userId,
       changeSummary: "evolved_from_extraction",
+      title: node.title,
+      summary: node.summary,
+      sortOrder: node.sortOrder,
+      tags: associations.tags,
+      links: associations.links,
+      publish: node.publish,
+      reviewRequired: node.reviewRequired,
+      snapshotComplete: true,
     });
     const [evolved] = await tx
       .update(extractionCandidates)
@@ -190,7 +209,12 @@ export async function evolveCandidate(
         ),
       )
       .returning();
-    if (!evolved) throw new ApiError(409, "invalid_state", "The extraction candidate has already been handled.");
+    if (!evolved)
+      throw new ApiError(
+        409,
+        "invalid_state",
+        "The extraction candidate has already been handled.",
+      );
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "candidate.evolve",

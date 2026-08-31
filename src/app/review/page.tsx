@@ -7,10 +7,8 @@ import { Empty } from "@/app/components/empty";
 
 export const metadata = { title: T.reviewQueue };
 
-// Screen: Review (`/review`) — the single review boundary of the two-tier
-// model: pending promotions of personal nodes, and pending change proposals
-// on promoted nodes. Read straight from the knowledge services; no queue
-// machinery behind it.
+// Screen: Review (`/review`) — pending promotions and protected-page changes.
+// Read straight from the knowledge services; no queue machinery behind it.
 export default async function ReviewQueuePage() {
   const user = await requireUser();
   if (user.role === "user") notFound();

@@ -3,8 +3,8 @@ import { handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { proposeNodeChange } from "@/modules/knowledge/service";
 
-// POST /api/tree/nodes/{nodeId}/proposals — propose a change to a promoted
-// node (the locked half of the two-tier model) → 201 {proposalId, state}.
+// Legacy direct proposal endpoint for a promoted node. The normal team editor
+// uses node_drafts.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ nodeId: string }> },

@@ -14,15 +14,17 @@ Excel/Docs habits with one place to store, edit, and connect knowledge.
    owner. Pages support hierarchy, manual ordering, canonical URLs, table of
    contents, previous/next navigation, unified search, wiki links/embeds,
    safe Markdown, and Vietnamese content with an optional English version.
-   Shared changes and translations pass one independent review boundary.
+   Team edits autosave into private drafts while readers keep seeing the
+   official page. Contributors self-publish normal pages; pages marked
+   protected require an independent review.
    Managers can create immutable per-space releases at `/wiki/releases`.
    The Library (`/library`) stores
    uploaded files (store-first: available the moment upload returns) with
    OCR/pandoc text extraction, and physical books as first-class Library
    items (category _Sách_) with a borrow/return desk. Personal note
    branches are **live-edited** markdown with full version history,
-   diff and restore; content reaches the shared tree only through the
-   single review boundary (see architecture.md § Two-tier editing). An
+   diff and restore; promotion into the shared tree remains reviewed (see
+   architecture.md § Wiki editing lifecycle). An
    Obsidian-style graph view (`/graph`) shows the link structure.
 3. **User management** — Google OIDC sign-in (invite-only), DB-backed
    per-session auth with an inactivity timeout, a per-account traffic
@@ -36,8 +38,8 @@ asks for it — see roadmap.md for the one planned exception (RAG).
 
 | Role (DB literal) | Vietnamese        | May do                                                                                                                                       |
 | ----------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `user`            | Thành viên        | Everything personal: own branches (live edit), uploads, loans, board/deadlines in their spaces, propose promotion of their own nodes.        |
-| `editor`          | Biên tập viên     | In spaces where they are a contributor: propose shared changes and **review** submissions they did not write themselves.                     |
+| `user`            | Thành viên        | Own personal branches, team drafts and self-publish in contributor spaces, uploads, loans, board/deadlines, and personal-node promotion.     |
+| `editor`          | Biên tập viên     | Contributor editing plus review of protected changes and submissions they did not write themselves.                                        |
 | `admin_op`        | Quản trị/Vận hành | Cross-space knowledge administration plus user management, spaces, physical books & the loan desk, releases/export, health, and audit trail. |
 
 Space membership adds a second permission axis: viewer, contributor, and
@@ -53,8 +55,8 @@ embeds. Raw HTML is displayed as text; MDX, unsafe protocols, and external
 images are not executed. The release gate additionally rejects malformed
 Markdown and unresolved wiki links.
 
-Separation of duties is orthogonal to roles: nobody reviews their own
-submission, whatever their role.
+Separation of duties applies to protected pages and promotion: nobody reviews
+their own submission, whatever their role.
 
 ## Language
 

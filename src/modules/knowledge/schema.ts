@@ -318,7 +318,3 @@ export const promotions = pgTable("promotions", {
   excerptChunkIds: uuid("excerpt_chunk_ids").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
-
-// Single-writer editing: one row per node while its editor is open. The
-// session key (not just the user) is the holder, so the same person in a
-// second browser is a different holder; a stale heartbeat frees the lock.

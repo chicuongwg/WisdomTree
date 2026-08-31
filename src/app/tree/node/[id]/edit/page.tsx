@@ -24,8 +24,7 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
-  // Two-tier model: own personal node saves live; a promoted node opens the
-  // same editor in propose mode (mirrors proposeNodeChange's authorize).
+  // Personal nodes save directly; team nodes edit a private draft.
   const canDraft =
     node.branchScope === "team" &&
     (user.role === "admin_op" ||

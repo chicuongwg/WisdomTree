@@ -9,7 +9,7 @@ speculative system and was retired with it; it remains in git history
 
 1. [product.md](./product.md) — what the product is, for whom, and its scope.
 2. [architecture.md](./architecture.md) — modules, data model, auth,
-   the two-tier editing model, and the conventions the code enforces.
+   the wiki draft lifecycle, and the conventions the code enforces.
 3. [operations.md](./operations.md) — running, deploying, backing up.
 4. [roadmap.md](./roadmap.md) — what is deliberately not built yet (RAG).
 5. [vocabulary-vi.md](./vocabulary-vi.md) — the Vietnamese UI term map.

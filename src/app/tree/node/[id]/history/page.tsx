@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Crumbs } from "@/app/components/crumbs";
 import { DiffView } from "@/app/components/diff-view";
 import { RevertNodeButton } from "@/app/components/revert-node-button";
+import { RestoreDraftButton } from "@/app/components/restore-draft-button";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
 import { changeSummaryLabel, T, when } from "@/lib/vi";
@@ -44,11 +45,20 @@ export default async function NodeHistoryPage({
   const isOwnPersonalNode =
     fullNode.branchScope === "personal" &&
     (fullNode.branchOwnerId === user.id || fullNode.createdBy === user.id);
+  const canDraftSharedNode =
+    fullNode.branchScope === "team" &&
+    (user.role === "admin_op" ||
+      user.spaceMemberships.some(
+        (membership) =>
+          membership.spaceId === fullNode.branchSpaceId && membership.role !== "viewer",
+      ));
 
   return (
     <main className="page">
       <Crumbs items={[{ label: node.title, href: `/tree/node/${id}` }]} />
-      <h1>{T.nodeHistory}: {node.title}</h1>
+      <h1>
+        {T.nodeHistory}: {node.title}
+      </h1>
 
       {versionA && versionB && a !== b && (
         <section aria-label={T.compareColumn}>
@@ -87,7 +97,9 @@ export default async function NodeHistoryPage({
                 <td>{v.authorName}</td>
                 <td>{when(v.createdAt)}</td>
                 <td>
-                  <Link href={`/tree/node/${id}/history?a=${v.seq}&b=${b}`}>{T.compareWith(b)}</Link>
+                  <Link href={`/tree/node/${id}/history?a=${v.seq}&b=${b}`}>
+                    {T.compareWith(b)}
+                  </Link>
                   {" · "}
                   <Link href={`/tree/node/${id}/history?a=${a}&b=${v.seq}`}>{T.compareAsNew}</Link>
                 </td>
@@ -101,6 +113,8 @@ export default async function NodeHistoryPage({
                       contentMd={versionA.contentMd}
                       expectedVersion={node.version}
                     />
+                  ) : canDraftSharedNode && v.seq !== seqs[0] && v.seq === versionA?.seq ? (
+                    <RestoreDraftButton nodeId={id} seq={v.seq} />
                   ) : (
                     <span className="muted">—</span>
                   )}

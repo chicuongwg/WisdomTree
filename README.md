@@ -9,7 +9,7 @@ three things and deliberately no more (refactor 2026-08-22 removed the rest):
 1. **Task & project management** — Kanban board, deadlines, calendar/ICS.
 2. **Secure internal wiki** — space-scoped team knowledge plus private notes,
    safe Markdown, hierarchy, version history, search, VI/EN pages, one review
-   boundary for shared content, graph navigation, and immutable per-space
+   boundary for protected pages, private autosaved drafts, graph navigation, and immutable per-space
    Markdown/XML releases mirrored to Git. The Library stores source files and
    physical books alongside the wiki.
 3. **User management** — Google OIDC sign-in (invite-only), DB-backed

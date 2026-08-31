@@ -34,7 +34,7 @@ by eye — modules call each other's services freely and share transactions
   safe Markdown content and optional English translations,
   append-only `tree_node_versions`, wiki/typed links, tags, the one
   proposal table (`node_proposals`, kind = change | publication),
-  promotions (provenance), `edit-lock.ts`, and the graph read-side
+  per-user `node_drafts`, promotions (provenance), presence, and the graph read-side
   (`graph-provider.ts`) feeding the graph view.
 - **pm** — tasks (board), deadlines (+reminders, checklists, links),
   calendar tokens/ICS.
@@ -90,29 +90,33 @@ without changing the release row.
   Automated tests do not use it — they insert a session row directly
   (`tests/setup.ts`, `tests/e2e/global-setup.ts`).
 
-## Two-tier editing (the heart of the knowledge model)
+## Wiki editing lifecycle
 
 - **Personal branches: live edit.** `updateNode` saves immediately under
-  an optimistic version check; every content change appends a
+  an optimistic version check; every save appends a complete
   `tree_node_versions` row. `/tree/node/:id/history` shows the chain,
   diffs any two versions (`src/lib/diff.ts`, line LCS) and restores by
   appending — history is never rewritten (append-only trigger).
-- **Promotion is the single review boundary.** A personal node is
+- **Team pages: private draft over official content.** Each contributor edits
+  their own `node_drafts` row. Autosave uses a draft version, publishing uses
+  the official base version, and a conflict must be merged before retrying.
+  Readers, search, graph, and releases continue to use only the official
+  `tree_nodes` / `node_translations` rows.
+- **Protected pages use review.** A manager can set `review_required`; those
+  drafts become an inline proposal and need an independent reviewer. Normal
+  pages are self-published by contributors. Existing verified/published pages
+  are protected by migration.
+- **Promotion remains a review boundary.** A personal node is
   proposed onto a team branch (`node_proposals`, kind=publication); an
   independent reviewer (editor/admin, never the submitter —
   `assertIndependentReviewer`) decides; approval creates the promoted
   node and a `promotions` provenance row.
-- **Promoted nodes are locked.** In-place saves are refused
-  (`review_required`); changes travel as kind=change proposals in the
-  same table, decided the same way, applied under the proposal's
-  base-version check.
-- **Single-writer edit locks.** Opening the live editor takes the node's
-  lock (`node_edit_locks`, keyed by _login session_, so the same person
-  in a second browser is also refused). Re-POSTing the lock is the
-  heartbeat; a heartbeat older than `EDIT_LOCK_TTL_MS` (90 s) frees it.
-  The lock is enforced in `updateNode`, shown as 🔒 with the holder's
-  name in the UI, and the optimistic version check remains the final
-  guard.
+- **Presence is advisory, not a lock.** The editor shows who else is on the
+  page. Concurrent saves are protected by optimistic checks; no user owns a
+  hard file lock.
+- **Restore cannot bypass protection.** Restoring a shared revision creates a
+  personal draft based on the current official version. It then follows the
+  same self-publish or protected-review path.
 
 ## Library, books, loans
 

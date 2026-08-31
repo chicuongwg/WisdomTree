@@ -8,7 +8,14 @@ import { users } from "../auth/schema";
 import { recordAudit } from "../audit/service";
 import { notifyEvent } from "../notify/fanout";
 import { extractionCandidates, sources, sourceVersions } from "../storage/schema";
-import { assertSafeMarkdown, syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
+import {
+  assertSafeMarkdown,
+  assertUniqueWikiTitle,
+  nodeAssociations,
+  syncDerivedLinks,
+  syncLinks,
+  syncTags,
+} from "./service-mutations";
 import { branchVisibilityCondition } from "./service-queries";
 import {
   branches,
@@ -21,10 +28,8 @@ import {
   treeNodeVersions,
 } from "./schema";
 
-// Promotion — the single review boundary of the two-tier model: a personal
-// node is proposed onto a team branch, an independent reviewer decides, and
-// the approved snapshot becomes a promoted node (locked from then on; changes
-// go through node change proposals).
+// Promotion: a personal node is proposed onto a team branch, an independent
+// reviewer decides, and approval preserves the personal origin as provenance.
 
 async function uniqueSlug(tx: Tx, branchId: string, title: string): Promise<string> {
   const base =
@@ -97,10 +102,7 @@ export async function getLatestPublicationForNode(actor: Principal, nodeId: stri
     })
     .from(nodeProposals)
     .innerJoin(branches, eq(branches.id, nodeProposals.targetBranchId))
-    .leftJoin(
-      treeNodeVersions,
-      eq(treeNodeVersions.id, nodeProposals.approvedNodeVersionId),
-    )
+    .leftJoin(treeNodeVersions, eq(treeNodeVersions.id, nodeProposals.approvedNodeVersionId))
     .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
     .where(
       and(
@@ -152,7 +154,11 @@ export async function submitNodePublication(
       ),
     );
   if (pending) {
-    throw new ApiError(409, "publication_pending", "This node already has a pending publication proposal.");
+    throw new ApiError(
+      409,
+      "publication_pending",
+      "This node already has a pending publication proposal.",
+    );
   }
   const [alreadyPublished] = await db
     .select({ id: nodeProposals.id })
@@ -357,13 +363,13 @@ export async function decideNodePublication(
       // The state='pending' guard doubles as the concurrency check.
       const [proposal] = await tx
         .update(nodeProposals)
-        .set({ state: input.decision, decisionNote: note, decidedBy: actor.userId, updatedAt: new Date() })
-        .where(
-          and(
-            eq(nodeProposals.id, proposalId),
-            eq(nodeProposals.state, "pending"),
-          ),
-        )
+        .set({
+          state: input.decision,
+          decisionNote: note,
+          decidedBy: actor.userId,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
         .returning();
       if (!proposal) throw versionConflict();
       await recordAudit(tx, actor, {
@@ -394,6 +400,7 @@ export async function decideNodePublication(
   const result = await db.transaction(async (tx) => {
     // kind='publication' guarantees targetBranchId (DB CHECK); the type is nullable.
     const targetBranchId = row.proposal.targetBranchId!;
+    await assertUniqueWikiTitle(tx, row.targetSpaceId!, row.proposal.title, null);
     const slug = await uniqueSlug(tx, targetBranchId, row.proposal.title);
     const [node] = await tx
       .insert(treeNodes)
@@ -408,6 +415,15 @@ export async function decideNodePublication(
         createdBy: row.sourceNodeCreatedBy,
       })
       .returning();
+    await syncTags(tx, actor, node.id, row.proposal.tags as string[]);
+    await syncLinks(
+      tx,
+      actor,
+      node.id,
+      row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
+    );
+    await syncDerivedLinks(tx, actor, node.id, node.title, node.contentMd);
+    const associations = await nodeAssociations(tx, node.id);
     const [nodeVersion] = await tx
       .insert(treeNodeVersions)
       .values({
@@ -418,16 +434,16 @@ export async function decideNodePublication(
         createdBy: row.proposal.createdBy,
         changeSummary: "published_from_personal",
         reviewStatus: "approved",
+        title: node.title,
+        summary: node.summary,
+        sortOrder: node.sortOrder,
+        tags: associations.tags,
+        links: associations.links,
+        publish: node.publish,
+        reviewRequired: node.reviewRequired,
+        snapshotComplete: true,
       })
       .returning();
-    await syncTags(tx, actor, node.id, row.proposal.tags as string[]);
-    await syncLinks(
-      tx,
-      actor,
-      node.id,
-      row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
-    );
-    await syncDerivedLinks(tx, actor, node.id, node.title, node.contentMd);
     if (row.proposal.sourceVersionId) {
       await tx.insert(promotions).values({
         sourceVersionId: row.proposal.sourceVersionId,
@@ -444,12 +460,7 @@ export async function decideNodePublication(
         approvedNodeVersionId: nodeVersion.id,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(nodeProposals.id, proposalId),
-          eq(nodeProposals.state, "pending"),
-        ),
-      )
+      .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
       .returning();
     if (!proposal) throw versionConflict();
     await recordAudit(tx, actor, {

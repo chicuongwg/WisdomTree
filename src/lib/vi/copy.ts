@@ -583,7 +583,7 @@ export const T = {
   graphScopeTeam: "Tri thức nhóm", // NEW
   graphScopePersonal: "Ghi chú cá nhân", // NEW
 
-  // --- 2026-08 refactor surfaces (two-tier edit, edit lock, library merge) ---
+  // --- 2026-08 refactor surfaces (draft lifecycle, presence, library merge) ---
   proposalSentOk: "Đã gửi đề xuất để kiểm chéo.",
   sendProposal: "Gửi đề xuất",
   proposeModeNote:

@@ -14,7 +14,7 @@ import {
   nodeTranslationVersions,
   treeNodes,
 } from "./schema";
-import { assertSafeMarkdown } from "./service-mutations";
+import { assertSafeMarkdown, assertUniqueWikiTitle } from "./service-mutations";
 import { branchVisibilityCondition } from "./service-queries";
 
 export type TranslationLocale = "en";
@@ -143,6 +143,7 @@ export async function saveNodeTranslation(
       summary: translation.summary,
       contentMd: translation.contentMd,
       createdBy: actor.userId,
+      snapshotComplete: true,
     });
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
@@ -250,6 +251,7 @@ export async function reviewTranslationProposal(
     });
   }
   return db.transaction(async (tx) => {
+    await assertUniqueWikiTitle(tx, row.spaceId!, row.proposal.title, row.proposal.nodeId);
     const [current] = await tx
       .select()
       .from(nodeTranslations)

@@ -66,6 +66,10 @@ Cron, on the host:
 
 ## Wiki releases
 
+Migration `0036_wiki_title_preflight.sql` stops if two active pages in one
+space share a normalized Vietnamese or English title. Resolve the reported
+titles before retrying; the migration does not rename content automatically.
+
 Managers use `/wiki/releases` to create, verify, or rebuild a space release;
 Admin/Op has cross-space knowledge access. The equivalent endpoints are:
 

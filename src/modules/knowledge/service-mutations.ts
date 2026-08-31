@@ -11,6 +11,8 @@ import {
   branches,
   nodeDrafts,
   nodeProposals,
+  nodeTranslationProposals,
+  nodeTranslations,
   nodeLinks,
   nodeTags,
   tags,
@@ -62,6 +64,39 @@ export async function uniqueSlug(
   }
 }
 
+export async function assertUniqueWikiTitle(
+  tx: Tx,
+  spaceId: string,
+  title: string,
+  excludeNodeId: string | null,
+) {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${spaceId}, 0))`);
+  const rows = await tx
+    .select({ nodeId: treeNodes.id, vi: treeNodes.title, en: nodeTranslations.title })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .leftJoin(nodeTranslations, eq(nodeTranslations.nodeId, treeNodes.id))
+    .where(
+      and(
+        eq(branches.spaceId, spaceId),
+        eq(branches.scope, "team"),
+        ne(treeNodes.verification, "archived"),
+        excludeNodeId ? ne(treeNodes.id, excludeNodeId) : undefined,
+      ),
+    );
+  const normalized = normalizeTitle(title);
+  const conflict = rows.find(
+    (row) =>
+      normalizeTitle(row.vi) === normalized || (row.en && normalizeTitle(row.en) === normalized),
+  );
+  if (conflict) {
+    throw new ApiError(409, "duplicate_wiki_title", "A page with this title already exists.", {
+      nodeId: conflict.nodeId,
+      title,
+    });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Node mutations
 // ---------------------------------------------------------------------------
@@ -84,6 +119,23 @@ export async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: 
     .insert(nodeTags)
     .values(cleaned.map((name) => ({ nodeId, tagId: idByName.get(name)! })))
     .onConflictDoNothing();
+}
+
+export async function nodeAssociations(tx: Tx, nodeId: string) {
+  const [tagRows, linkRows] = await Promise.all([
+    tx
+      .select({ name: tags.name })
+      .from(nodeTags)
+      .innerJoin(tags, eq(tags.id, nodeTags.tagId))
+      .where(eq(nodeTags.nodeId, nodeId))
+      .orderBy(asc(tags.name)),
+    tx
+      .select({ toNodeId: nodeLinks.toNodeId, linkType: nodeLinks.linkType })
+      .from(nodeLinks)
+      .where(eq(nodeLinks.fromNodeId, nodeId))
+      .orderBy(asc(nodeLinks.toNodeId), asc(nodeLinks.linkType)),
+  ]);
+  return { tags: tagRows.map((tag) => tag.name), links: linkRows };
 }
 
 /**
@@ -249,6 +301,12 @@ export async function createNode(
         createdBy: actor.userId,
       })
       .returning();
+    if (input.tags) await syncTags(tx, actor, node.id, input.tags);
+    if (input.links) await syncLinks(tx, actor, node.id, input.links);
+    // Same transaction as the node row: wiki-links in the content become
+    // node_links or the save does not happen at all.
+    await syncDerivedLinks(tx, actor, node.id, input.title, input.contentMd);
+    const associations = await nodeAssociations(tx, node.id);
     await tx.insert(treeNodeVersions).values({
       nodeId: node.id,
       seq: 1,
@@ -256,12 +314,15 @@ export async function createNode(
       verification: "no_source",
       createdBy: actor.userId,
       changeSummary: "manual_create",
+      title: node.title,
+      summary: node.summary,
+      sortOrder: node.sortOrder,
+      tags: associations.tags,
+      links: associations.links,
+      publish: node.publish,
+      reviewRequired: node.reviewRequired,
+      snapshotComplete: true,
     });
-    if (input.tags) await syncTags(tx, actor, node.id, input.tags);
-    if (input.links) await syncLinks(tx, actor, node.id, input.links);
-    // Same transaction as the node row: wiki-links in the content become
-    // node_links or the save does not happen at all.
-    await syncDerivedLinks(tx, actor, node.id, input.title, input.contentMd);
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "node.create",
@@ -274,11 +335,8 @@ export async function createNode(
 }
 
 /**
- * Optimistic-locked node edit — the LIVE half of the two-tier model: a node
- * in your own personal branch saves immediately (with a tree_node_versions
- * snapshot). A node anywhere else got there through promotion, and promoted
- * content never changes in place: this refuses with review_required and the
- * caller goes through proposeNodeChange → reviewNodeProposal instead.
+ * Optimistic-locked direct edit for personal nodes. Team pages use per-user
+ * drafts; this legacy mutation still refuses direct shared writes.
  * `verification` / `publish` are Admin/Op-only levers — the
  * verified→unverified downgrade is a distinct audited action
  * (state-machines.md § Node Verification, downgrade rule).
@@ -363,25 +421,34 @@ export async function updateNode(
       .returning();
     if (!updated) throw versionConflict();
 
-    if (contentChanged) {
-      const [{ maxSeq }] = await tx
-        .select({ maxSeq: sql<number>`coalesce(max(${treeNodeVersions.seq}), 0)::int` })
-        .from(treeNodeVersions)
-        .where(eq(treeNodeVersions.nodeId, nodeId));
-      await tx.insert(treeNodeVersions).values({
-        nodeId,
-        seq: maxSeq + 1,
-        contentMd: patch.contentMd!,
-        verification: nextVerification,
-        createdBy: actor.userId,
-        changeSummary: "content_update",
-      });
-    }
+    if (patch.tags) await syncTags(tx, actor, nodeId, patch.tags);
+    if (patch.links) await syncLinks(tx, actor, nodeId, patch.links);
     // Derived wiki-links ride the same transaction as the node row (also on
     // a title-only change: the self-link guard keys off the title).
     if (patch.contentMd !== undefined || patch.title !== undefined) {
       await syncDerivedLinks(tx, actor, nodeId, updated.title, updated.contentMd);
     }
+    const [{ maxSeq }] = await tx
+      .select({ maxSeq: sql<number>`coalesce(max(${treeNodeVersions.seq}), 0)::int` })
+      .from(treeNodeVersions)
+      .where(eq(treeNodeVersions.nodeId, nodeId));
+    const associations = await nodeAssociations(tx, nodeId);
+    await tx.insert(treeNodeVersions).values({
+      nodeId,
+      seq: maxSeq + 1,
+      contentMd: updated.contentMd,
+      verification: updated.verification,
+      createdBy: actor.userId,
+      changeSummary: contentChanged ? "content_update" : "node_update",
+      title: updated.title,
+      summary: updated.summary,
+      sortOrder: updated.sortOrder,
+      tags: associations.tags,
+      links: associations.links,
+      publish: updated.publish,
+      reviewRequired: updated.reviewRequired,
+      snapshotComplete: true,
+    });
     await recordAudit(tx, actor, {
       accountability: actor.role === "admin_op" ? "approver_publisher" : "editor_updater",
       action: "node.update",
@@ -405,21 +472,12 @@ export async function updateNode(
     return updated;
   });
 
-  // Tags/links sync after the lock check (separate rows, no version column).
-  if (patch.tags || patch.links) {
-    await db.transaction(async (tx) => {
-      if (patch.tags) await syncTags(tx, actor, nodeId, patch.tags);
-      if (patch.links) await syncLinks(tx, actor, nodeId, patch.links);
-    });
-  }
   return result;
 }
 
 /**
- * The LOCKED half of the two-tier model: propose a change to a promoted node
- * (any node outside your own personal branch). The proposal freezes the full
- * patched snapshot plus the node version it was based on; an independent
- * reviewer applies it via reviewNodeProposal.
+ * Legacy proposal entrypoint kept for compatibility. The normal team editor
+ * creates a personal draft and only protected pages submit it for review.
  */
 export async function proposeNodeChange(
   actor: Principal,
@@ -551,6 +609,7 @@ export async function reviewNodeProposal(
     }
     if (!input.verification)
       throw new ApiError(400, "missing_verification", "A verification level is required.");
+    await assertUniqueWikiTitle(tx, row.spaceId!, row.proposal.title, nodeId);
     const [node] = await tx
       .update(treeNodes)
       .set({
@@ -576,6 +635,15 @@ export async function reviewNodeProposal(
       .select({ maxSeq: sql<number>`coalesce(max(${treeNodeVersions.seq}), 0)::int` })
       .from(treeNodeVersions)
       .where(eq(treeNodeVersions.nodeId, nodeId));
+    await syncTags(tx, actor, nodeId, row.proposal.tags as string[]);
+    await syncLinks(
+      tx,
+      actor,
+      nodeId,
+      row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
+    );
+    await syncDerivedLinks(tx, actor, nodeId, node.title, node.contentMd);
+    const associations = await nodeAssociations(tx, nodeId);
     const [version] = await tx
       .insert(treeNodeVersions)
       .values({
@@ -589,21 +657,13 @@ export async function reviewNodeProposal(
         title: node.title,
         summary: node.summary,
         sortOrder: node.sortOrder,
-        tags: row.proposal.tags as string[],
-        links: row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
+        tags: associations.tags,
+        links: associations.links,
         publish: node.publish,
         reviewRequired: node.reviewRequired,
         snapshotComplete: true,
       })
       .returning();
-    await syncTags(tx, actor, nodeId, row.proposal.tags as string[]);
-    await syncLinks(
-      tx,
-      actor,
-      nodeId,
-      row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
-    );
-    await syncDerivedLinks(tx, actor, nodeId, node.title, node.contentMd);
     const [proposal] = await tx
       .update(nodeProposals)
       .set({ state: "approved" })
@@ -652,12 +712,51 @@ export async function archiveNode(actor: Principal, nodeId: string) {
       .where(and(eq(treeNodes.id, nodeId), eq(treeNodes.version, node.version)))
       .returning();
     if (!updated) throw versionConflict();
+    const rejectedChanges = await tx
+      .update(nodeProposals)
+      .set({
+        state: "rejected",
+        decisionNote: "Page archived.",
+        decidedBy: actor.userId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(nodeProposals.nodeId, nodeId),
+          eq(nodeProposals.kind, "change"),
+          eq(nodeProposals.state, "pending"),
+        ),
+      )
+      .returning({ id: nodeProposals.id });
+    const rejectedTranslations = await tx
+      .update(nodeTranslationProposals)
+      .set({
+        state: "rejected",
+        decisionNote: "Page archived.",
+        decidedBy: actor.userId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(nodeTranslationProposals.nodeId, nodeId),
+          eq(nodeTranslationProposals.state, "pending"),
+        ),
+      )
+      .returning({ id: nodeTranslationProposals.id });
+    const deletedDrafts = await tx
+      .delete(nodeDrafts)
+      .where(eq(nodeDrafts.nodeId, nodeId))
+      .returning({ id: nodeDrafts.id });
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",
       action: "node.archive",
       targetType: "tree_node",
       targetId: nodeId,
-      details: { from: node.verification },
+      details: {
+        from: node.verification,
+        deletedDrafts: deletedDrafts.length,
+        rejectedReviews: rejectedChanges.length + rejectedTranslations.length,
+      },
     });
     return updated;
   });
@@ -690,18 +789,70 @@ export async function archiveBranch(actor: Principal, branchId: string) {
   if (branch.archivedAt) return branch;
 
   return db.transaction(async (tx) => {
+    const branchNodes = await tx
+      .select({ id: treeNodes.id })
+      .from(treeNodes)
+      .where(eq(treeNodes.branchId, branchId));
+    const nodeIds = branchNodes.map((node) => node.id);
     const [updated] = await tx
       .update(branches)
       .set({ archivedAt: new Date(), updatedAt: new Date(), version: branch.version + 1 })
       .where(and(eq(branches.id, branchId), eq(branches.version, branch.version)))
       .returning();
     if (!updated) throw versionConflict();
+    let rejectedReviews = 0;
+    if (nodeIds.length) {
+      const rejectedChanges = await tx
+        .update(nodeProposals)
+        .set({
+          state: "rejected",
+          decisionNote: "Branch archived.",
+          decidedBy: actor.userId,
+          updatedAt: new Date(),
+        })
+        .where(and(inArray(nodeProposals.nodeId, nodeIds), eq(nodeProposals.state, "pending")))
+        .returning({ id: nodeProposals.id });
+      const rejectedTranslations = await tx
+        .update(nodeTranslationProposals)
+        .set({
+          state: "rejected",
+          decisionNote: "Branch archived.",
+          decidedBy: actor.userId,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            inArray(nodeTranslationProposals.nodeId, nodeIds),
+            eq(nodeTranslationProposals.state, "pending"),
+          ),
+        )
+        .returning({ id: nodeTranslationProposals.id });
+      rejectedReviews = rejectedChanges.length + rejectedTranslations.length;
+    }
+    const rejectedPublications = await tx
+      .update(nodeProposals)
+      .set({
+        state: "rejected",
+        decisionNote: "Target branch archived.",
+        decidedBy: actor.userId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(nodeProposals.targetBranchId, branchId), eq(nodeProposals.state, "pending")))
+      .returning({ id: nodeProposals.id });
+    const deletedDrafts = await tx
+      .delete(nodeDrafts)
+      .where(eq(nodeDrafts.branchId, branchId))
+      .returning({ id: nodeDrafts.id });
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",
       action: "branch.archive",
       targetType: "branch",
       targetId: branchId,
-      details: { name: branch.name },
+      details: {
+        name: branch.name,
+        deletedDrafts: deletedDrafts.length,
+        rejectedReviews: rejectedReviews + rejectedPublications.length,
+      },
     });
     return updated;
   });
@@ -768,6 +919,35 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
       .where(and(eq(treeNodes.id, nodeId), eq(treeNodes.version, node.version)))
       .returning();
     if (!updated) throw versionConflict();
+    const rejectedChanges = await tx
+      .update(nodeProposals)
+      .set({
+        state: "rejected",
+        decisionNote: "Page merged.",
+        decidedBy: actor.userId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(nodeProposals.nodeId, nodeId), eq(nodeProposals.state, "pending")))
+      .returning({ id: nodeProposals.id });
+    const rejectedTranslations = await tx
+      .update(nodeTranslationProposals)
+      .set({
+        state: "rejected",
+        decisionNote: "Page merged.",
+        decidedBy: actor.userId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(nodeTranslationProposals.nodeId, nodeId),
+          eq(nodeTranslationProposals.state, "pending"),
+        ),
+      )
+      .returning({ id: nodeTranslationProposals.id });
+    const deletedDrafts = await tx
+      .delete(nodeDrafts)
+      .where(eq(nodeDrafts.nodeId, nodeId))
+      .returning({ id: nodeDrafts.id });
     // Incoming links now point at the canonical node.
     await tx.delete(nodeLinks).where(eq(nodeLinks.fromNodeId, nodeId));
     await recordAudit(tx, actor, {
@@ -775,7 +955,11 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
       action: "node.merge",
       targetType: "tree_node",
       targetId: nodeId,
-      details: { canonicalNodeId },
+      details: {
+        canonicalNodeId,
+        deletedDrafts: deletedDrafts.length,
+        rejectedReviews: rejectedChanges.length + rejectedTranslations.length,
+      },
     });
     return updated;
   });

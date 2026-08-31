@@ -204,7 +204,11 @@ export async function createBranch(
       action: "branch.create",
       targetType: "branch",
       targetId: created.id,
-      details: { name: input.name, spaceId: input.spaceId ?? null, parentId: input.parentId ?? null },
+      details: {
+        name: input.name,
+        spaceId: input.spaceId ?? null,
+        parentId: input.parentId ?? null,
+      },
     });
     return created;
   });
@@ -285,13 +289,21 @@ async function assertValidBranchParent(input: {
     parent.spaceId !== input.spaceId ||
     parent.ownerUserId !== input.ownerUserId
   ) {
-    throw new ApiError(400, "invalid_branch_parent", "The parent branch must use the same knowledge scope.");
+    throw new ApiError(
+      400,
+      "invalid_branch_parent",
+      "The parent branch must use the same knowledge scope.",
+    );
   }
   const seen = new Set<string>();
   let cursor: string | null = parent.id;
   while (cursor) {
     if (cursor === input.branchId) {
-      throw new ApiError(400, "invalid_branch_parent", "A branch hierarchy cannot contain a cycle.");
+      throw new ApiError(
+        400,
+        "invalid_branch_parent",
+        "A branch hierarchy cannot contain a cycle.",
+      );
     }
     if (seen.has(cursor)) break;
     seen.add(cursor);
@@ -390,7 +402,9 @@ export async function searchKnowledge(actor: Principal, q: string, spaceId?: str
           sql`${treeNodes}.tsv @@ plainto_tsquery('simple', immutable_unaccent(${query}))`,
         ),
       )
-      .orderBy(sql`ts_rank(${treeNodes}.tsv, plainto_tsquery('simple', immutable_unaccent(${query}))) DESC`)
+      .orderBy(
+        sql`ts_rank(${treeNodes}.tsv, plainto_tsquery('simple', immutable_unaccent(${query}))) DESC`,
+      )
       .limit(12),
     db
       .select({
@@ -531,10 +545,7 @@ export async function getNode(actor: Principal, nodeId: string) {
         reviewedAt: nodeProposals.updatedAt,
       })
       .from(nodeProposals)
-      .innerJoin(
-        treeNodeVersions,
-        eq(nodeProposals.approvedNodeVersionId, treeNodeVersions.id),
-      )
+      .innerJoin(treeNodeVersions, eq(nodeProposals.approvedNodeVersionId, treeNodeVersions.id))
       .innerJoin(users, eq(nodeProposals.decidedBy, users.id))
       .where(
         and(
@@ -585,14 +596,27 @@ export async function getNodeNavigation(actor: Principal, nodeId: string) {
 export async function wikiIndex(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const rows = await db
-    .select({ id: treeNodes.id, title: treeNodes.title, slug: treeNodes.slug, contentMd: treeNodes.contentMd, verification: treeNodes.verification })
+    .select({
+      id: treeNodes.id,
+      title: treeNodes.title,
+      slug: treeNodes.slug,
+      contentMd: treeNodes.contentMd,
+      verification: treeNodes.verification,
+    })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
     .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
     .orderBy(asc(treeNodes.updatedAt));
   const nodeIndex: Record<
     string,
-    { id: string; title: string; slug?: string; contentMd?: string; verification: string; kind: "node" | "source" }
+    {
+      id: string;
+      title: string;
+      slug?: string;
+      contentMd?: string;
+      verification: string;
+      kind: "node" | "source";
+    }
   > = buildWikiIndex(rows.map((r) => ({ ...r, kind: "node" as const })));
   const translationRows = await db
     .select({
@@ -655,6 +679,7 @@ export async function listNodeVersions(actor: Principal, nodeId: string) {
       seq: treeNodeVersions.seq,
       verification: treeNodeVersions.verification,
       changeSummary: treeNodeVersions.changeSummary,
+      snapshotComplete: treeNodeVersions.snapshotComplete,
       createdAt: treeNodeVersions.createdAt,
       authorName: users.displayName,
     })
@@ -673,6 +698,14 @@ export async function getNodeVersion(actor: Principal, nodeId: string, seq: numb
       contentMd: treeNodeVersions.contentMd,
       verification: treeNodeVersions.verification,
       changeSummary: treeNodeVersions.changeSummary,
+      title: treeNodeVersions.title,
+      summary: treeNodeVersions.summary,
+      sortOrder: treeNodeVersions.sortOrder,
+      tags: treeNodeVersions.tags,
+      links: treeNodeVersions.links,
+      publish: treeNodeVersions.publish,
+      reviewRequired: treeNodeVersions.reviewRequired,
+      snapshotComplete: treeNodeVersions.snapshotComplete,
       createdAt: treeNodeVersions.createdAt,
     })
     .from(treeNodeVersions)
