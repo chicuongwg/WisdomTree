@@ -6,6 +6,7 @@ import {
   getLatestPublicationForNode,
   getNodeNavigation,
   getNodeTranslation,
+  getPendingDraftReviewsForNode,
   listNodeOptions,
   listPublicationTargets,
   wikiIndex,
@@ -22,6 +23,8 @@ import { listMentionCandidates } from "@/modules/notify/service";
 import { CommentsSection } from "@/app/components/comments-section";
 import { PresenceRow } from "@/app/components/presence-row";
 import { NodePublicationAction } from "@/app/components/node-publication-action";
+import { NodeProtectionAction } from "@/app/components/node-protection-action";
+import { InlineDraftReview } from "@/app/components/inline-draft-review";
 
 // Static, not generateMetadata: naming the record in the tab would cost a
 // second read of it on every detail view (the getters take a freshly built
@@ -56,7 +59,19 @@ export default async function NodeDetailPage({
         user.spaceMemberships.some(
           (membership) => membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
         )));
-  const canEdit = isOwnPersonalNode || canManageShared;
+  const canDraftShared =
+    node.branchScope === "team" &&
+    (user.role === "admin_op" ||
+      user.spaceMemberships.some(
+        (membership) => membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
+      ));
+  const canProtect =
+    node.branchScope === "team" &&
+    (user.role === "admin_op" ||
+      user.spaceMemberships.some(
+        (membership) => membership.spaceId === node.branchSpaceId && membership.role === "manager",
+      ));
+  const canEdit = isOwnPersonalNode || canDraftShared;
   const candidates =
     canManageShared && node.verification !== "archived" ? await listNodeOptions(actor) : [];
   const [publicationTargets, pendingPublication] = isOwnPersonalNode
@@ -65,6 +80,9 @@ export default async function NodeDetailPage({
         getLatestPublicationForNode(actor, node.id),
       ])
     : [[], null];
+  const pendingDraftReviews = canManageShared
+    ? await getPendingDraftReviewsForNode(actor, node.id)
+    : [];
   const wiki = await wikiIndex(actor);
   const navigation = await getNodeNavigation(actor, node.id);
   const headings = parseBlocks(display.contentMd).filter(
@@ -84,6 +102,7 @@ export default async function NodeDetailPage({
         {display.title} <VerificationBadge verification={node.verification} />
         {/* Published is an outcome, not an enum row of its own: `done` tone. */}
         {node.publish && <span className={badgeToneClass("done")}>{T.publish}</span>}
+        {node.reviewRequired && <span className="badge">Protected</span>}
       </h1>
       <p className="muted">
         {T.branch}: <Link href={`/tree/branch/${node.branchId}`}>{node.branchName}</Link>
@@ -122,6 +141,7 @@ export default async function NodeDetailPage({
           editor is exactly who this reader needs to know about before they
           click "sửa". A separate key per screen would split one room in two. */}
       <PresenceRow pageKey={`node:${node.id}`} />
+      <InlineDraftReview nodeId={node.id} actorId={user.id} reviews={pendingDraftReviews} />
 
       <div className="with-side">
         <div>
@@ -256,6 +276,9 @@ export default async function NodeDetailPage({
           </p>
           {canManageShared && node.verification !== "archived" && (
             <NodeAdminActions nodeId={node.id} candidates={candidates} />
+          )}
+          {canProtect && node.verification !== "archived" && (
+            <NodeProtectionAction nodeId={node.id} reviewRequired={node.reviewRequired} />
           )}
           {isOwnPersonalNode && node.verification !== "archived" && (
             <NodePublicationAction

@@ -8,6 +8,7 @@ import {
   getMyNodeDraft,
   publishDraft,
   rebaseDraft,
+  reviewNodeProposal,
   saveNodeDraft,
   setNodeProtection,
   submitDraftForReview,
@@ -84,6 +85,28 @@ export async function run() {
     .from(nodeDrafts)
     .where(and(eq(nodeDrafts.id, rebased.id), eq(nodeDrafts.state, "in_review")));
   assert.equal(reviewDraft.submittedProposalId, submitted.proposalId);
+  const approved = await reviewNodeProposal(admin, node.id, submitted.proposalId, {
+    decision: "approved",
+    verification: "unverified",
+  });
+  assert.ok("contentMd" in approved);
+  assert.match(approved.contentMd, /B$/);
+  assert.equal((await db.select().from(nodeDrafts).where(eq(nodeDrafts.id, rebased.id))).length, 0);
+
+  const afterApproval = await getMyNodeDraft(member, node.id, "vi");
+  const revise = await saveNodeDraft(member, node.id, "vi", {
+    ...snapshot(title, `# ${title}\n\nCần sửa`),
+    baseVersion: afterApproval.officialVersion,
+    expectedDraftVersion: 0,
+  });
+  const revisionReview = await submitDraftForReview(member, revise.id);
+  await reviewNodeProposal(admin, node.id, revisionReview.proposalId, {
+    decision: "changes_requested",
+  });
+  assert.equal(
+    (await db.select().from(nodeDrafts).where(eq(nodeDrafts.id, revise.id)))[0].state,
+    "editing",
+  );
 
   const duplicate = await createTeamDraft(member, { branchId: branch.id, ...snapshot(title) });
   await assert.rejects(

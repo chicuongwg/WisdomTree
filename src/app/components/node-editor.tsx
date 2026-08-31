@@ -20,27 +20,10 @@ type NodeInput = {
 };
 
 /**
- * Edit Node editor, both tiers of the edit model:
- *   mode="live"    — your own personal node: PATCH saves immediately with
- *                    optimistic locking. Opening the editor takes the node's
- *                    single-writer lock: anyone else (any other login
- *                    session, the same person included) sees 🔒 with the
- *                    holder's name and cannot save until the lock frees.
- *                    A concurrent save still surfaces the 409 plus a diff of
- *                    your unsaved text against the latest.
- *   mode="propose" — a promoted node: the same form, but submit files a
- *                    change proposal for an independent reviewer (proposals
- *                    are queued, not raced, so no lock).
+ * Personal-node editor: PATCH saves immediately with optimistic locking.
+ * Team pages use DraftEditor so unfinished work never changes official text.
  */
-export function NodeEditor({
-  node,
-  wikiIndex = {},
-  mode = "live",
-}: {
-  node: NodeInput;
-  wikiIndex?: WikiIndex;
-  mode?: "live" | "propose";
-}) {
+export function NodeEditor({ node, wikiIndex = {} }: { node: NodeInput; wikiIndex?: WikiIndex }) {
   const router = useRouter();
   const m = useMutation();
   const [conflict, setConflict] = useState(false);
@@ -81,29 +64,25 @@ export function NodeEditor({
         .filter(Boolean),
       expectedVersion: node.version,
     };
-    const saved = await m.run(
-      mode === "live" ? `/api/tree/nodes/${node.id}` : `/api/tree/nodes/${node.id}/proposals`,
-      {
-        method: mode === "live" ? "PATCH" : "POST",
-        body,
-        ...(mode === "propose" ? { ok: T.proposalSentOk } : {}),
-        onError: (res, resBody) => {
-          const isConflict = res.status === 409 && resBody?.code === "version_conflict";
-          setConflict(isConflict);
-          if (isConflict) {
-            // Show what actually changed underneath the writer before they
-            // decide between reloading and re-applying their paragraph.
-            void fetch(`/api/tree/nodes/${node.id}`)
-              .then((r) => (r.ok ? r.json() : null))
-              .then((latest: { contentMd?: string } | null) => {
-                if (latest?.contentMd !== undefined) setLatestContent(latest.contentMd);
-              })
-              .catch(() => {});
-          }
-        },
+    const saved = await m.run(`/api/tree/nodes/${node.id}`, {
+      method: "PATCH",
+      body,
+      onError: (res, resBody) => {
+        const isConflict = res.status === 409 && resBody?.code === "version_conflict";
+        setConflict(isConflict);
+        if (isConflict) {
+          // Show what actually changed underneath the writer before they
+          // decide between reloading and re-applying their paragraph.
+          void fetch(`/api/tree/nodes/${node.id}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((latest: { contentMd?: string } | null) => {
+              if (latest?.contentMd !== undefined) setLatestContent(latest.contentMd);
+            })
+            .catch(() => {});
+        }
       },
-    );
-    if (saved && mode === "live") router.push(`/tree/node/${node.id}`);
+    });
+    if (saved) router.push(`/tree/node/${node.id}`);
   }
 
   return (
@@ -177,14 +156,13 @@ export function NodeEditor({
         <label htmlFor="node-tags">{T.tags} (phân cách bằng dấu phẩy)</label>
         <input id="node-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
       </div>
-      {mode === "propose" && <p className="muted">{T.proposeModeNote}</p>}
       {/* The answer sits with the button, not only at the top of a form whose
           middle is a full-height editor. The one above stays: a version
           conflict is read on the way back UP to the reload button. */}
       <SayMutation m={m} />
       <p>
         <button type="submit" disabled={m.busy}>
-          {m.busy ? T.loading : mode === "live" ? T.save : T.sendProposal}
+          {m.busy ? T.loading : T.save}
         </button>
       </p>
     </form>

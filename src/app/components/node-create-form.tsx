@@ -8,7 +8,7 @@ import { Markdown } from "@/lib/markdown";
 import { SayMutation } from "./say";
 
 /** Branch Hub inline manual-node creation (Editor; enters "Chưa có nguồn dẫn"). */
-export function NodeCreateForm({ branchId }: { branchId: string }) {
+export function NodeCreateForm({ branchId, team = false }: { branchId: string; team?: boolean }) {
   const router = useRouter();
   const m = useMutation();
   const [open, setOpen] = useState(false);
@@ -17,7 +17,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const node = await m.runJson<{ id: string }>("/api/tree/nodes", {
+    const node = await m.runJson<{ id: string }>(team ? "/api/tree/drafts" : "/api/tree/nodes", {
       body: {
         branchId,
         title: String(form.get("title") ?? ""),
@@ -26,7 +26,7 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
         contentMd: String(form.get("contentMd") ?? ""),
       },
     });
-    if (node) router.push(`/tree/node/${node.id}`);
+    if (node) router.push(team ? `/tree/draft/${node.id}` : `/tree/node/${node.id}`);
   }
 
   if (!open) {
@@ -39,7 +39,11 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
   return (
     <form onSubmit={onSubmit} className="panel">
       <SayMutation m={m} />
-      <p className="muted">Trang tạo thủ công sẽ mang trạng thái “Chưa có nguồn dẫn”.</p>
+      <p className="muted">
+        {team
+          ? "Bản nháp chỉ bạn thấy; trang chính thức được tạo khi bạn bấm Xuất bản."
+          : "Trang tạo thủ công sẽ mang trạng thái “Chưa có nguồn dẫn”."}
+      </p>
       <div className="field">
         <label htmlFor="new-node-title">{T.title}</label>
         <input id="new-node-title" name="title" type="text" required />

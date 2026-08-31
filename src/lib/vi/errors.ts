@@ -82,6 +82,13 @@ const STATIC: Record<string, string> = {
   release_validation_failed: "Nội dung chưa đạt kiểm tra để phát hành.",
   release_verification_failed: "Không thể xác minh bản phát hành trong kho Git.",
   release_not_ready: "Bản phát hành chưa sẵn sàng.",
+  invalid_draft: "Bản nháp chưa có đủ tiêu đề và nội dung hợp lệ.",
+  draft_version_conflict: "Bản nháp đã thay đổi ở một phiên làm việc khác.",
+  official_version_conflict: "Trang chính thức đã thay đổi từ khi bạn bắt đầu soạn.",
+  draft_in_review: "Bản nháp đang chờ duyệt nên chưa thể sửa.",
+  protected_review_required: "Trang Protected phải qua kiểm duyệt trước khi xuất bản.",
+  review_not_required: "Trang này có thể tự xuất bản, không cần gửi duyệt.",
+  duplicate_wiki_title: "Trong kho đã có trang cùng tiêu đề.",
   // comments / notifications / presence
   invalid_anchor: "Mục này không nhận thảo luận.",
   invalid_comment: "Vui lòng nhập nội dung thảo luận.",

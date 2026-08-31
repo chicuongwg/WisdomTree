@@ -9,6 +9,7 @@ import { assertIndependentReviewer } from "../auth/maker-checker";
 import { recordAudit } from "../audit/service";
 import {
   branches,
+  nodeDrafts,
   nodeProposals,
   nodeLinks,
   nodeTags,
@@ -531,6 +532,14 @@ export async function reviewNodeProposal(
         .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
         .returning();
       if (!proposal) throw versionConflict();
+      if (input.decision === "changes_requested") {
+        await tx
+          .update(nodeDrafts)
+          .set({ state: "editing", submittedProposalId: null, updatedAt: new Date() })
+          .where(eq(nodeDrafts.submittedProposalId, proposalId));
+      } else {
+        await tx.delete(nodeDrafts).where(eq(nodeDrafts.submittedProposalId, proposalId));
+      }
       await recordAudit(tx, actor, {
         accountability: "approver_publisher",
         action: `node.change.${input.decision}`,
@@ -577,6 +586,14 @@ export async function reviewNodeProposal(
         createdBy: row.proposal.createdBy,
         changeSummary: "proposal_approved",
         reviewStatus: "approved",
+        title: node.title,
+        summary: node.summary,
+        sortOrder: node.sortOrder,
+        tags: row.proposal.tags as string[],
+        links: row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
+        publish: node.publish,
+        reviewRequired: node.reviewRequired,
+        snapshotComplete: true,
       })
       .returning();
     await syncTags(tx, actor, nodeId, row.proposal.tags as string[]);
@@ -593,6 +610,7 @@ export async function reviewNodeProposal(
       .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
       .returning();
     if (!proposal) throw versionConflict();
+    await tx.delete(nodeDrafts).where(eq(nodeDrafts.submittedProposalId, proposalId));
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",
       action: "node.change.approve",

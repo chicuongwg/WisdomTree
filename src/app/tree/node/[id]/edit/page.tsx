@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getNode, wikiIndex } from "@/modules/knowledge/service";
+import { getMyNodeDraft, getNode, wikiIndex } from "@/modules/knowledge/service";
 import { T } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeEditor } from "@/app/components/node-editor";
+import { DraftEditor } from "@/app/components/draft-editor";
 import { PresenceRow } from "@/app/components/presence-row";
 
 // Static, not generateMetadata: naming the record in the tab would cost a
@@ -25,15 +26,15 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
     (node.branchOwnerId === user.id || node.createdBy === user.id);
   // Two-tier model: own personal node saves live; a promoted node opens the
   // same editor in propose mode (mirrors proposeNodeChange's authorize).
-  const canPropose =
+  const canDraft =
     node.branchScope === "team" &&
     (user.role === "admin_op" ||
-      (user.role === "editor" &&
-        user.spaceMemberships.some(
-          (membership) =>
-            membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
-        )));
-  if ((!isOwnPersonalNode && !canPropose) || node.verification === "archived") notFound();
+      user.spaceMemberships.some(
+        (membership) => membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
+      ));
+  if ((!isOwnPersonalNode && !canDraft) || node.verification === "archived") notFound();
+
+  const draftState = canDraft ? await getMyNodeDraft(actor, id, "vi") : null;
 
   return (
     <main className="page">
@@ -49,19 +50,32 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
           Markdown, typed over minutes, where losing the conflict means
           retyping a paragraph. Shares its page key with the reading view. */}
       <PresenceRow pageKey={`node:${node.id}`} />
-      <NodeEditor
-        node={{
-          id: node.id,
-          title: node.title,
-          summary: node.summary,
-          sortOrder: node.sortOrder,
-          contentMd: node.contentMd,
-          version: node.version,
-          tags: node.tags,
-        }}
-        wikiIndex={wiki}
-        mode={isOwnPersonalNode ? "live" : "propose"}
-      />
+      {isOwnPersonalNode ? (
+        <NodeEditor
+          node={{
+            id: node.id,
+            title: node.title,
+            summary: node.summary,
+            sortOrder: node.sortOrder,
+            contentMd: node.contentMd,
+            version: node.version,
+            tags: node.tags,
+          }}
+          wikiIndex={wiki}
+        />
+      ) : (
+        <DraftEditor
+          nodeId={node.id}
+          nodeSlug={node.slug}
+          locale="vi"
+          official={draftState!.official}
+          officialVersion={draftState!.officialVersion}
+          baseContent={draftState!.baseContent}
+          initialDraft={draftState!.draft}
+          reviewRequired={node.reviewRequired}
+          wikiIndex={wiki}
+        />
+      )}
     </main>
   );
 }

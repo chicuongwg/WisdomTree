@@ -4,6 +4,7 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { normalizeTitle } from "@/lib/wikilink";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
+import { users } from "../auth/schema";
 import { recordAudit } from "../audit/service";
 import {
   branches,
@@ -146,7 +147,35 @@ export async function getMyNodeDraft(actor: Principal, nodeId: string, locale: D
         eq(nodeDrafts.authorId, actor.userId),
       ),
     );
-  return { draft: draft ?? null, officialVersion: official.version, official: official.snapshot };
+  const baseVersion = draft?.baseVersion ?? official.version;
+  let baseContent = official.snapshot.contentMd;
+  if (baseVersion !== official.version) {
+    if (locale === "vi") {
+      const [version] = await db
+        .select({ contentMd: treeNodeVersions.contentMd })
+        .from(treeNodeVersions)
+        .where(and(eq(treeNodeVersions.nodeId, nodeId), eq(treeNodeVersions.seq, baseVersion)));
+      if (version) baseContent = version.contentMd;
+    } else {
+      const [version] = await db
+        .select({ contentMd: nodeTranslationVersions.contentMd })
+        .from(nodeTranslationVersions)
+        .where(
+          and(
+            eq(nodeTranslationVersions.nodeId, nodeId),
+            eq(nodeTranslationVersions.locale, "en"),
+            eq(nodeTranslationVersions.seq, baseVersion),
+          ),
+        );
+      if (version) baseContent = version.contentMd;
+    }
+  }
+  return {
+    draft: draft ?? null,
+    officialVersion: official.version,
+    official: official.snapshot,
+    baseContent,
+  };
 }
 
 export async function createTeamDraft(
@@ -600,4 +629,57 @@ export async function setNodeProtection(actor: Principal, nodeId: string, review
     });
     return node;
   });
+}
+
+export async function getPendingDraftReviewsForNode(actor: Principal, nodeId: string) {
+  const official = await officialSnapshot(nodeId, "vi");
+  authorize(actor, "knowledge.publish", { spaceId: official.branch.spaceId!, kind: "read" });
+  const [changes, translations] = await Promise.all([
+    db
+      .select({
+        proposalId: nodeProposals.id,
+        authorId: nodeProposals.createdBy,
+        authorName: users.displayName,
+        contentMd: nodeProposals.contentMd,
+        title: nodeProposals.title,
+      })
+      .from(nodeProposals)
+      .innerJoin(users, eq(users.id, nodeProposals.createdBy))
+      .where(
+        and(
+          eq(nodeProposals.nodeId, nodeId),
+          eq(nodeProposals.kind, "change"),
+          eq(nodeProposals.state, "pending"),
+        ),
+      ),
+    db
+      .select({
+        proposalId: nodeTranslationProposals.id,
+        authorId: nodeTranslationProposals.createdBy,
+        authorName: users.displayName,
+        contentMd: nodeTranslationProposals.contentMd,
+        title: nodeTranslationProposals.title,
+      })
+      .from(nodeTranslationProposals)
+      .innerJoin(users, eq(users.id, nodeTranslationProposals.createdBy))
+      .where(
+        and(
+          eq(nodeTranslationProposals.nodeId, nodeId),
+          eq(nodeTranslationProposals.state, "pending"),
+        ),
+      ),
+  ]);
+  const english = await officialSnapshot(nodeId, "en");
+  return [
+    ...changes.map((proposal) => ({
+      ...proposal,
+      kind: "vi" as const,
+      currentContentMd: official.snapshot.contentMd,
+    })),
+    ...translations.map((proposal) => ({
+      ...proposal,
+      kind: "en" as const,
+      currentContentMd: english.snapshot.contentMd,
+    })),
+  ];
 }

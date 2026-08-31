@@ -8,6 +8,7 @@ import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import {
   branches,
+  nodeDrafts,
   nodeTranslationProposals,
   nodeTranslations,
   nodeTranslationVersions,
@@ -31,7 +32,11 @@ function translationSlug(title: string): string {
   );
 }
 
-export async function getNodeTranslation(actor: Principal, nodeId: string, locale: TranslationLocale) {
+export async function getNodeTranslation(
+  actor: Principal,
+  nodeId: string,
+  locale: TranslationLocale,
+) {
   const [row] = await db
     .select({ translation: nodeTranslations })
     .from(treeNodes)
@@ -63,7 +68,8 @@ export async function saveNodeTranslation(
     .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
   if (!row || row.node.verification === "archived") throw notFound();
   const baseVersion = row.translation?.version ?? 0;
-  if (input.expectedVersion !== undefined && input.expectedVersion !== baseVersion) throw versionConflict();
+  if (input.expectedVersion !== undefined && input.expectedVersion !== baseVersion)
+    throw versionConflict();
 
   if (row.branch.scope === "team") {
     authorize(actor, "knowledge.node.edit", { spaceId: row.branch.spaceId!, kind: "write" });
@@ -77,7 +83,12 @@ export async function saveNodeTranslation(
           eq(nodeTranslationProposals.state, "pending"),
         ),
       );
-    if (pending) throw new ApiError(409, "translation_pending", "This translation already has a pending proposal.");
+    if (pending)
+      throw new ApiError(
+        409,
+        "translation_pending",
+        "This translation already has a pending proposal.",
+      );
     const [proposal] = await db
       .insert(nodeTranslationProposals)
       .values({
@@ -179,7 +190,11 @@ export async function listPendingTranslations(actor: Principal) {
 export async function getTranslationProposal(actor: Principal, proposalId: string) {
   authorize(actor, "knowledge.review.list", { kind: "read" });
   const [row] = await db
-    .select({ proposal: nodeTranslationProposals, nodeTitle: treeNodes.title, spaceId: branches.spaceId })
+    .select({
+      proposal: nodeTranslationProposals,
+      nodeTitle: treeNodes.title,
+      spaceId: branches.spaceId,
+    })
     .from(nodeTranslationProposals)
     .innerJoin(treeNodes, eq(treeNodes.id, nodeTranslationProposals.nodeId))
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
@@ -202,10 +217,28 @@ export async function reviewTranslationProposal(
     return db.transaction(async (tx) => {
       const [updated] = await tx
         .update(nodeTranslationProposals)
-        .set({ state: input.decision, decisionNote: input.note?.trim() || null, decidedBy: actor.userId, updatedAt: new Date() })
-        .where(and(eq(nodeTranslationProposals.id, proposalId), eq(nodeTranslationProposals.state, "pending")))
+        .set({
+          state: input.decision,
+          decisionNote: input.note?.trim() || null,
+          decidedBy: actor.userId,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(nodeTranslationProposals.id, proposalId),
+            eq(nodeTranslationProposals.state, "pending"),
+          ),
+        )
         .returning();
       if (!updated) throw versionConflict();
+      if (input.decision === "changes_requested") {
+        await tx
+          .update(nodeDrafts)
+          .set({ state: "editing", submittedProposalId: null, updatedAt: new Date() })
+          .where(eq(nodeDrafts.submittedProposalId, proposalId));
+      } else {
+        await tx.delete(nodeDrafts).where(eq(nodeDrafts.submittedProposalId, proposalId));
+      }
       await recordAudit(tx, actor, {
         accountability: "approver_publisher",
         action: `node.translation.${input.decision}`,
@@ -220,7 +253,12 @@ export async function reviewTranslationProposal(
     const [current] = await tx
       .select()
       .from(nodeTranslations)
-      .where(and(eq(nodeTranslations.nodeId, row.proposal.nodeId), eq(nodeTranslations.locale, row.proposal.locale)));
+      .where(
+        and(
+          eq(nodeTranslations.nodeId, row.proposal.nodeId),
+          eq(nodeTranslations.locale, row.proposal.locale),
+        ),
+      );
     if ((current?.version ?? 0) !== row.proposal.baseVersion) throw versionConflict();
     const version = row.proposal.baseVersion + 1;
     const [translation] = await tx
@@ -257,13 +295,20 @@ export async function reviewTranslationProposal(
       contentMd: translation.contentMd,
       createdBy: row.proposal.createdBy,
       reviewStatus: "approved",
+      snapshotComplete: true,
     });
     const [proposal] = await tx
       .update(nodeTranslationProposals)
       .set({ state: "approved", decidedBy: actor.userId, updatedAt: new Date() })
-      .where(and(eq(nodeTranslationProposals.id, proposalId), eq(nodeTranslationProposals.state, "pending")))
+      .where(
+        and(
+          eq(nodeTranslationProposals.id, proposalId),
+          eq(nodeTranslationProposals.state, "pending"),
+        ),
+      )
       .returning();
     if (!proposal) throw versionConflict();
+    await tx.delete(nodeDrafts).where(eq(nodeDrafts.submittedProposalId, proposalId));
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",
       action: "node.translation.approve",

@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { getNode, getNodeTranslation, wikiIndex } from "@/modules/knowledge/service";
+import {
+  getMyNodeDraft,
+  getNode,
+  getNodeTranslation,
+  wikiIndex,
+} from "@/modules/knowledge/service";
 import { TranslationEditor } from "@/app/components/translation-editor";
+import { DraftEditor } from "@/app/components/draft-editor";
 
 export const metadata = { title: "English translation" };
 
@@ -13,8 +19,42 @@ export default async function TranslateNodePage({ params }: { params: Promise<{ 
   const canTranslate =
     (node.branchScope === "personal" && node.branchOwnerId === user.id) ||
     user.role === "admin_op" ||
-    (user.role === "editor" && user.spaceMemberships.some((membership) => membership.spaceId === node.branchSpaceId && membership.role !== "viewer"));
+    user.spaceMemberships.some(
+      (membership) => membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
+    );
   if (!canTranslate) notFound();
-  const [translation, index] = await Promise.all([getNodeTranslation(actor, id, "en"), wikiIndex(actor)]);
-  return <main className="page"><h1>English · {node.title}</h1><p className="muted">Bản tiếng Việt là nội dung chính. Bản English của trang team phải qua cùng hàng duyệt.</p><TranslationEditor nodeId={id} nodeSlug={node.slug} translation={translation} wikiIndex={index} /></main>;
+  const isPersonal = node.branchScope === "personal";
+  const [translation, index, draftState] = await Promise.all([
+    getNodeTranslation(actor, id, "en"),
+    wikiIndex(actor),
+    isPersonal ? Promise.resolve(null) : getMyNodeDraft(actor, id, "en"),
+  ]);
+  return (
+    <main className="page">
+      <h1>English · {node.title}</h1>
+      <p className="muted">
+        Bản tiếng Việt là nội dung chính. Bản English dùng cùng ranh giới draft/official.
+      </p>
+      {isPersonal ? (
+        <TranslationEditor
+          nodeId={id}
+          nodeSlug={node.slug}
+          translation={translation}
+          wikiIndex={index}
+        />
+      ) : (
+        <DraftEditor
+          nodeId={id}
+          nodeSlug={node.slug}
+          locale="en"
+          official={draftState!.official}
+          officialVersion={draftState!.officialVersion}
+          baseContent={draftState!.baseContent}
+          initialDraft={draftState!.draft}
+          reviewRequired={node.reviewRequired}
+          wikiIndex={index}
+        />
+      )}
+    </main>
+  );
 }

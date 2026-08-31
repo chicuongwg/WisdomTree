@@ -51,7 +51,13 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
   const verified = branch.nodes.filter((n) => n.verification === "verified").length;
   const isOwnPersonalBranch =
     branch.scope === "personal" && (branch.ownerUserId === user.id || branch.createdBy === user.id);
-  const canEdit = isOwnPersonalBranch;
+  const canCreateTeamDraft =
+    branch.scope === "team" &&
+    (user.role === "admin_op" ||
+      user.spaceMemberships.some(
+        (membership) => membership.spaceId === branch.spaceId && membership.role !== "viewer",
+      ));
+  const canEdit = isOwnPersonalBranch || canCreateTeamDraft;
   const canEditMeta =
     isOwnPersonalBranch ||
     user.role === "admin_op" ||
@@ -105,7 +111,9 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
               {branch.nodes.map((n) => (
                 <tr key={n.id}>
                   <td>
-                    <NodeLink nodeId={n.id} slug={n.slug}>{n.title}</NodeLink>
+                    <NodeLink nodeId={n.id} slug={n.slug}>
+                      {n.title}
+                    </NodeLink>
                   </td>
                   <td>
                     <VerificationBadge verification={n.verification} />
@@ -117,8 +125,7 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
           </table>
         </div>
       )}
-      {canEdit && <NodeCreateForm branchId={branch.id} />}
-
+      {canEdit && <NodeCreateForm branchId={branch.id} team={branch.scope === "team"} />}
 
       {canEditMeta && (
         <>
@@ -126,7 +133,10 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
           <div className="panel">
             <BranchForm
               branch={branch}
-              parents={siblingBranches.map((candidate) => ({ id: candidate.id, name: candidate.name }))}
+              parents={siblingBranches.map((candidate) => ({
+                id: candidate.id,
+                name: candidate.name,
+              }))}
             />
           </div>
         </>
