@@ -27,9 +27,10 @@ import { useShellCopy } from "./shell-locale-provider";
 // also what is announced.
 
 type SearchHit = {
+  kind: "node" | "source";
   id: string;
   title: string;
-  branchName: string;
+  context: string;
   verification: string;
 };
 
@@ -81,6 +82,7 @@ export function CommandPalette({ role }: { role: string }) {
       href: "/notifications",
     },
     { key: "account", label: T.account, hint: T.paletteHintGo, href: "/account" },
+    { key: "search", label: T.search, hint: T.paletteHintGo, href: "/search" },
   ];
   screens.push({
     key: "new-branch",
@@ -119,10 +121,10 @@ export function CommandPalette({ role }: { role: string }) {
     : screens;
   const results: Entry[] = [
     ...hits.map((h) => ({
-      key: `node:${h.id}`,
+      key: `${h.kind}:${h.id}`,
       label: h.title,
-      hint: `${h.branchName} · ${verificationStateLabel(h.verification)}`,
-      href: `/wiki/${h.id}`,
+      hint: h.kind === "node" ? `${h.context} · ${verificationStateLabel(h.verification)}` : `${h.context} · ${T.library}`,
+      href: h.kind === "node" ? `/wiki/${h.id}` : `/library/${h.id}`,
     })),
     ...screenMatches,
   ];
@@ -179,7 +181,7 @@ export function CommandPalette({ role }: { role: string }) {
     const mine = ++searchToken.current;
     timer.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/tree/search?q=${encodeURIComponent(term)}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`);
         if (!res.ok) throw new Error("search");
         const rows = ((await res.json()) as SearchHit[]).slice(0, 8);
         if (mine !== searchToken.current) return;

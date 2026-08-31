@@ -7,6 +7,7 @@ import { useMutation } from "@/lib/use-mutation";
 import { Markdown, type WikiIndex } from "@/lib/markdown";
 import { DiffView } from "./diff-view";
 import { SayMutation } from "./say";
+import type { MarkdownIssue } from "@/lib/markdown-validation";
 
 type NodeInput = {
   id: string;
@@ -56,6 +57,7 @@ export function NodeEditor({
   /** Someone else holds the edit lock: their name, or null when we hold it. */
   const [lockedBy, setLockedBy] = useState<string | null>(null);
   const [lockTick, setLockTick] = useState(0); // "Thử lại" re-runs the acquire effect
+  const [validation, setValidation] = useState<MarkdownIssue[] | null>(null);
 
   useEffect(() => {
     if (mode !== "live") return;
@@ -95,6 +97,16 @@ export function NodeEditor({
   }, [mode, node.id, lockTick]);
 
   const locked = mode === "live" && lockedBy !== null;
+
+  async function validateContent() {
+    const response = await fetch("/api/tree/validate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contentMd }),
+    });
+    const result = response.ok ? ((await response.json()) as { issues: MarkdownIssue[] }) : null;
+    setValidation(result?.issues ?? [{ severity: "error", code: "validation_failed", message: "Không thể kiểm tra nội dung." }]);
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -189,6 +201,10 @@ export function NodeEditor({
             disabled={locked}
             required
           />
+          <p><button type="button" className="secondary" onClick={() => void validateContent()}>Kiểm tra nội dung</button></p>
+          {validation && (
+            validation.length ? <ul className="validation-list">{validation.map((issue, index) => <li key={`${issue.code}-${index}`} className={issue.severity}>{issue.message}</li>)}</ul> : <p className="meta">Không phát hiện lỗi liên kết hoặc cú pháp.</p>
+          )}
         </div>
         <div>
           <p className="muted">{T.preview}</p>

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { backlinkContext, buildWikiIndex, normalizeTitle } from "@/lib/wikilink";
@@ -6,7 +6,7 @@ import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
-import { sources, sourceVersions } from "../storage/schema";
+import { sources, sourceVersions, spaces } from "../storage/schema";
 import {
   branches,
   nodeProposals,
@@ -356,6 +356,65 @@ export async function searchTree(actor: Principal, q: string, page = 1) {
     .offset((Math.max(1, page) - 1) * PAGE_SIZE);
 }
 
+export async function searchKnowledge(actor: Principal, q: string, spaceId?: string) {
+  authorize(actor, "knowledge.search", { kind: "read" });
+  const query = q.trim();
+  if (!query) return [];
+  if (spaceId) authorize(actor, "knowledge.space.read", { spaceId, kind: "read" });
+  const visibleSpaces = scopedToSpaces(actor);
+  const sourceScope = spaceId
+    ? eq(sources.spaceId, spaceId)
+    : visibleSpaces === null
+      ? undefined
+      : visibleSpaces.length
+        ? inArray(sources.spaceId, visibleSpaces)
+        : sql`false`;
+  const nodeScope = spaceId ? eq(branches.spaceId, spaceId) : branchVisibilityCondition(actor);
+  const [nodes, sourceRows] = await Promise.all([
+    db
+      .select({
+        kind: sql<"node">`'node'`,
+        id: treeNodes.id,
+        title: treeNodes.title,
+        slug: treeNodes.slug,
+        context: branches.name,
+        verification: treeNodes.verification,
+      })
+      .from(treeNodes)
+      .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+      .where(
+        and(
+          ne(treeNodes.verification, "archived"),
+          nodeScope,
+          sql`${treeNodes}.tsv @@ plainto_tsquery('simple', immutable_unaccent(${query}))`,
+        ),
+      )
+      .orderBy(sql`ts_rank(${treeNodes}.tsv, plainto_tsquery('simple', immutable_unaccent(${query}))) DESC`)
+      .limit(12),
+    db
+      .select({
+        kind: sql<"source">`'source'`,
+        id: sources.id,
+        title: sources.title,
+        slug: sql<string | null>`null`,
+        context: spaces.name,
+        verification: sources.trustStatus,
+      })
+      .from(sources)
+      .innerJoin(spaces, eq(spaces.id, sources.spaceId))
+      .where(
+        and(
+          ne(sources.trustStatus, "archived"),
+          sourceScope,
+          or(ilike(sources.title, `%${query}%`), ilike(sources.description, `%${query}%`)),
+        ),
+      )
+      .orderBy(asc(sources.title))
+      .limit(12),
+  ]);
+  return [...nodes, ...sourceRows];
+}
+
 export async function getNode(actor: Principal, nodeId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const [row] = await db
@@ -499,14 +558,14 @@ export async function getNodeNavigation(actor: Principal, nodeId: string) {
 export async function wikiIndex(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const rows = await db
-    .select({ id: treeNodes.id, title: treeNodes.title, slug: treeNodes.slug, verification: treeNodes.verification })
+    .select({ id: treeNodes.id, title: treeNodes.title, slug: treeNodes.slug, contentMd: treeNodes.contentMd, verification: treeNodes.verification })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
     .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
     .orderBy(asc(treeNodes.updatedAt));
   const nodeIndex: Record<
     string,
-    { id: string; title: string; slug?: string; verification: string; kind: "node" | "source" }
+    { id: string; title: string; slug?: string; contentMd?: string; verification: string; kind: "node" | "source" }
   > = buildWikiIndex(rows.map((r) => ({ ...r, kind: "node" as const })));
 
   const visibleSpaces = scopedToSpaces(actor);

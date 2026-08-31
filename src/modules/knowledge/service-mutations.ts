@@ -2,6 +2,7 @@ import { and, asc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { buildWikiIndex, normalizeTitle, wikiTargetKeys } from "@/lib/wikilink";
+import { validateMarkdown } from "@/lib/markdown-validation";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { assertIndependentReviewer } from "../auth/maker-checker";
@@ -22,6 +23,11 @@ import { branchVisibilityCondition } from "./service-queries";
 // Knowledge node mutation operations.
 
 export type Verification = (typeof treeNodes.$inferSelect)["verification"];
+
+export function assertSafeMarkdown(contentMd: string) {
+  const errors = validateMarkdown(contentMd).filter((issue) => issue.severity === "error");
+  if (errors.length) throw new ApiError(400, "invalid_markdown", errors.map((issue) => issue.message).join(" "));
+}
 
 /** Stable export/publish path: Vietnamese-safe slug, unique per branch via numeric suffix. */
 async function uniqueSlug(tx: Tx, branchId: string, title: string, excludeNodeId?: string): Promise<string> {
@@ -201,6 +207,7 @@ export async function createNode(
     links?: Array<{ toNodeId: string; linkType: string }>;
   },
 ) {
+  assertSafeMarkdown(input.contentMd);
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (!branch || branch.archivedAt) throw notFound();
   if (branch.scope !== "personal") {
@@ -281,6 +288,7 @@ export async function updateNode(
   /** The caller's login-session key; a fresh edit lock held by another session refuses the save. */
   editSessionKey?: string | null,
 ) {
+  if (patch.contentMd !== undefined) assertSafeMarkdown(patch.contentMd);
   const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
   if (!node) throw notFound();
   await assertNotLockedByOther(nodeId, editSessionKey);
@@ -414,6 +422,7 @@ export async function proposeNodeChange(
     expectedVersion?: number;
   },
 ) {
+  if (patch.contentMd !== undefined) assertSafeMarkdown(patch.contentMd);
   const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
   if (!node || node.verification === "archived") throw notFound();
   const [branch] = await db.select().from(branches).where(eq(branches.id, node.branchId));

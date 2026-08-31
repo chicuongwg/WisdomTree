@@ -11,6 +11,7 @@ import {
   wikiTargetKeys,
 } from "@/lib/wikilink";
 import { wikiPath } from "@/lib/wiki-path";
+import { validateMarkdown } from "@/lib/markdown-validation";
 
 export function run() {
   assert.deepEqual(parseBlocks("# Title\n\nFirst\nline\n\n- one\n* two"), [
@@ -51,6 +52,15 @@ export function run() {
   assert.doesNotMatch(markdownToHtml("[x](javascript:alert(1))"), /<a /);
   assert.match(markdownToHtml("![remote](https://example.com/a.png)"), /image-blocked/);
   assert.doesNotMatch(markdownToHtml("![remote](https://example.com/a.png)"), /<img/);
+  assert.deepEqual(parseBlocks("![[Trang nội bộ]]"), [
+    { type: "embed", target: "Trang nội bộ", key: "trang noi bo" },
+  ]);
+  assert.deepEqual(
+    validateMarkdown("[[Có]] [[Thiếu]]\n\n![ảnh](https://example.com/a.png)", ["co"]).map(
+      (issue) => issue.code,
+    ),
+    ["external_image", "broken_wiki_link"],
+  );
 
   assert.equal(normalizeTitle("  Cây   Đời  "), "cay doi");
   assert.deepEqual(parseWikiLinks("[[A]] [[B|Bee]]"), [

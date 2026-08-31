@@ -8,7 +8,7 @@ export { parseBlocks, markdownToHtml } from "./markdown-core";
 
 export type WikiIndex = Record<
   string,
-  { id: string; title: string; slug?: string; verification: string; kind?: "node" | "source" }
+  { id: string; title: string; slug?: string; contentMd?: string; verification: string; kind?: "node" | "source" }
 >;
 
 function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
@@ -54,7 +54,7 @@ function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
   });
 }
 
-function renderBlocks(blocks: Block[], wikiIndex: WikiIndex, prefix = "md"): ReactNode[] {
+function renderBlocks(blocks: Block[], wikiIndex: WikiIndex, prefix = "md", allowEmbeds = true): ReactNode[] {
   return blocks.map((block, key) => {
     const id = `${prefix}-${key}`;
     if (block.type === "heading") {
@@ -91,6 +91,16 @@ function renderBlocks(blocks: Block[], wikiIndex: WikiIndex, prefix = "md"): Rea
     if (block.type === "hr") return <hr key={id} />;
     if (block.type === "admonition") return <aside key={id} className={`admonition ${block.kind}`}>{block.title && <strong className="admonition-title">{block.title}</strong>}{renderBlocks(block.blocks, wikiIndex, id)}</aside>;
     if (block.type === "details") return <details key={id}><summary>{block.title}</summary>{renderBlocks(block.blocks, wikiIndex, id)}</details>;
+    if (block.type === "embed") {
+      const target = wikiIndex[block.key];
+      if (!target || target.kind === "source" || !target.contentMd) return <aside key={id} className="internal-embed missing">{block.target} — {T.wikiMissing}</aside>;
+      return (
+        <aside key={id} className="internal-embed">
+          <strong><NodeLink nodeId={target.id} slug={target.slug}>{target.title}</NodeLink></strong>
+          {allowEmbeds && renderBlocks(parseBlocks(target.contentMd), wikiIndex, id, false)}
+        </aside>
+      );
+    }
     return <div key={id} className="doc-tabs">{block.items.map((item, i) => <details key={i} open={i === 0}><summary>{item.label}</summary>{renderBlocks(item.blocks, wikiIndex, `${id}-${i}`)}</details>)}</div>;
   });
 }

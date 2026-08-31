@@ -8,7 +8,7 @@ import { users } from "../auth/schema";
 import { recordAudit } from "../audit/service";
 import { notifyEvent } from "../notify/fanout";
 import { extractionCandidates, sources, sourceVersions } from "../storage/schema";
-import { syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
+import { assertSafeMarkdown, syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
 import { branchVisibilityCondition } from "./service-queries";
 import {
   branches,
@@ -132,6 +132,7 @@ export async function submitNodePublication(
   ) {
     throw notFound();
   }
+  assertSafeMarkdown(row.node.contentMd);
   const [target] = await db
     .select({ branch: branches })
     .from(branches)

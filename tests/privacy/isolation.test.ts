@@ -10,6 +10,7 @@ import {
   listBranches,
   listNodeVersions,
   searchTree,
+  searchKnowledge,
   treeOutline,
   updateNode,
   wikiIndex,
@@ -88,6 +89,8 @@ export async function run() {
   assert.ok(Object.values(lanWiki).every((node) => node.id !== hiddenNode.id));
   const lanGraph = await createGraphProvider(lan).loadGraph({ scope: "shared" });
   assert.ok(lanGraph.nodes.every((node) => node.id !== hiddenNode.id));
+  const unifiedHits = await searchKnowledge(lan, hiddenNode.title);
+  assert.ok(unifiedHits.every((result) => result.id !== hiddenNode.id && result.id !== hidden.id));
 
   // --- Personal-vault isolation -------------------------------------------
   const [lanBranch] = await db

@@ -22,6 +22,7 @@ export type Block =
       blocks: Block[];
     }
   | { type: "details"; title: string; blocks: Block[] }
+  | { type: "embed"; target: string; key: string }
   | { type: "tabs"; items: Array<{ label: string; blocks: Block[] }> };
 
 function tableCells(line: string): string[] {
@@ -62,8 +63,13 @@ export function parseBlocks(content: string): Block[] {
     const ordered = /^\d+[.)]\s+(.*)$/.exec(line);
     const fence = /^```([^\s]*)?(?:\s+title="([^"]+)")?\s*$/.exec(line);
     const directive = /^:::(note|tip|info|warning|danger|details)(?:\[([^\]]+)\])?\s*$/.exec(line);
+    const embed = /^!\[\[([^[\]|]+)\]\]\s*$/.exec(line);
 
-    if (fence) {
+    if (embed) {
+      flush();
+      const target = embed[1].trim();
+      blocks.push({ type: "embed", target, key: normalizeTitle(target) });
+    } else if (fence) {
       flush();
       const code: string[] = [];
       for (i += 1; i < lines.length && !/^```\s*$/.test(lines[i]); i++) code.push(lines[i]);
@@ -217,6 +223,7 @@ function blocksHtml(blocks: Block[]): string {
     if (block.type === "hr") return "<hr>";
     if (block.type === "admonition") return `<aside class="admonition ${block.kind}">${block.title ? `<strong>${escapeHtml(block.title)}</strong>` : ""}${blocksHtml(block.blocks)}</aside>`;
     if (block.type === "details") return `<details><summary>${escapeHtml(block.title)}</summary>${blocksHtml(block.blocks)}</details>`;
+    if (block.type === "embed") return `<aside class="internal-embed">${escapeHtml(block.target)}</aside>`;
     return `<div class="doc-tabs">${block.items.map((item) => `<details><summary>${escapeHtml(item.label)}</summary>${blocksHtml(item.blocks)}</details>`).join("")}</div>`;
   }).join("\n");
 }
