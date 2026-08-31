@@ -93,6 +93,19 @@ export const run = async () => {
     "forbidden",
   );
   authorize(manager, "storage.space.members.manage", { spaceId: SPACE, kind: "write" });
+  authorize(contributor, "knowledge.draft.write", { spaceId: SPACE, kind: "write" });
+  authorize(contributor, "knowledge.draft.publish", { spaceId: SPACE, kind: "write" });
+  authorize(manager, "knowledge.protect", { spaceId: SPACE, kind: "write" });
+  denied(
+    () => authorize(member, "knowledge.draft.write", { spaceId: SPACE, kind: "write" }),
+    403,
+    "forbidden",
+  );
+  denied(
+    () => authorize(contributor, "knowledge.protect", { spaceId: SPACE, kind: "write" }),
+    403,
+    "forbidden",
+  );
   authorize(manager, "export.space.release", { spaceId: SPACE, kind: "write" });
   authorize(admin, "export.space.release", { spaceId: SPACE, kind: "write" });
   denied(

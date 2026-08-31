@@ -6,7 +6,6 @@ import { validateMarkdown } from "@/lib/markdown-validation";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { assertIndependentReviewer } from "../auth/maker-checker";
-import { assertNotLockedByOther } from "./edit-lock";
 import { recordAudit } from "../audit/service";
 import {
   branches,
@@ -26,11 +25,17 @@ export type Verification = (typeof treeNodes.$inferSelect)["verification"];
 
 export function assertSafeMarkdown(contentMd: string) {
   const errors = validateMarkdown(contentMd).filter((issue) => issue.severity === "error");
-  if (errors.length) throw new ApiError(400, "invalid_markdown", errors.map((issue) => issue.message).join(" "));
+  if (errors.length)
+    throw new ApiError(400, "invalid_markdown", errors.map((issue) => issue.message).join(" "));
 }
 
 /** Stable export/publish path: Vietnamese-safe slug, unique per branch via numeric suffix. */
-async function uniqueSlug(tx: Tx, branchId: string, title: string, excludeNodeId?: string): Promise<string> {
+async function uniqueSlug(
+  tx: Tx,
+  branchId: string,
+  title: string,
+  excludeNodeId?: string,
+): Promise<string> {
   const base =
     title
       .normalize("NFD")
@@ -107,7 +112,11 @@ export async function syncLinks(
   const allowedTargets = await linkTargetCandidates(tx, actor, nodeId);
   const allowedTargetIds = new Set(allowedTargets.map((target) => target.id));
   if (links.some((link) => !allowedTargetIds.has(link.toNodeId))) {
-    throw new ApiError(400, "invalid_link_target", "A link target must be visible in this knowledge scope.");
+    throw new ApiError(
+      400,
+      "invalid_link_target",
+      "A link target must be visible in this knowledge scope.",
+    );
   }
   await tx
     .delete(nodeLinks)
@@ -167,7 +176,13 @@ export async function syncDerivedLinks(
   if (targetIds.length) {
     await tx
       .insert(nodeLinks)
-      .values(targetIds.map((toNodeId) => ({ fromNodeId: nodeId, toNodeId, linkType: "related" as const })))
+      .values(
+        targetIds.map((toNodeId) => ({
+          fromNodeId: nodeId,
+          toNodeId,
+          linkType: "related" as const,
+        })),
+      )
       .onConflictDoNothing();
   }
   return targetIds;
@@ -211,11 +226,7 @@ export async function createNode(
   const [branch] = await db.select().from(branches).where(eq(branches.id, input.branchId));
   if (!branch || branch.archivedAt) throw notFound();
   if (branch.scope !== "personal") {
-    throw new ApiError(
-      403,
-      "submission_required",
-      "Shared content must go through review.",
-    );
+    throw new ApiError(403, "submission_required", "Shared content must go through review.");
   }
   authorize(actor, "knowledge.node.create", {
     ownerIds: [branch.ownerUserId, branch.createdBy],
@@ -285,19 +296,19 @@ export async function updateNode(
     publish?: boolean;
     expectedVersion?: number;
   },
-  /** The caller's login-session key; a fresh edit lock held by another session refuses the save. */
-  editSessionKey?: string | null,
 ) {
   if (patch.contentMd !== undefined) assertSafeMarkdown(patch.contentMd);
   const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, nodeId));
   if (!node) throw notFound();
-  await assertNotLockedByOther(nodeId, editSessionKey);
   const [branch] = await db.select().from(branches).where(eq(branches.id, node.branchId));
   const isOwnPersonalBranch =
     branch?.scope === "personal" &&
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
   if (!isOwnPersonalBranch) {
-    authorize(actor, "knowledge.node.edit", { spaceId: branch?.spaceId ?? undefined, kind: "write" });
+    authorize(actor, "knowledge.node.edit", {
+      spaceId: branch?.spaceId ?? undefined,
+      kind: "write",
+    });
     throw new ApiError(
       403,
       "review_required",
@@ -431,7 +442,11 @@ export async function proposeNodeChange(
     branch.scope === "personal" &&
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
   if (isOwnPersonalBranch) {
-    throw new ApiError(400, "live_editable", "Personal nodes are edited directly; no proposal needed.");
+    throw new ApiError(
+      400,
+      "live_editable",
+      "Personal nodes are edited directly; no proposal needed.",
+    );
   }
   authorize(actor, "knowledge.node.edit", { spaceId: branch.spaceId ?? undefined, kind: "write" });
 
@@ -513,9 +528,7 @@ export async function reviewNodeProposal(
       const [proposal] = await tx
         .update(nodeProposals)
         .set({ state: input.decision })
-        .where(
-          and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")),
-        )
+        .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
         .returning();
       if (!proposal) throw versionConflict();
       await recordAudit(tx, actor, {
@@ -682,12 +695,22 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
     throw new ApiError(400, "invalid_merge", "A node cannot be merged into itself.");
   }
   const [nodeRow] = await db
-    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId, spaceId: branches.spaceId })
+    .select({
+      node: treeNodes,
+      scope: branches.scope,
+      ownerId: branches.ownerUserId,
+      spaceId: branches.spaceId,
+    })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, nodeId));
   const [canonicalRow] = await db
-    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId, spaceId: branches.spaceId })
+    .select({
+      node: treeNodes,
+      scope: branches.scope,
+      ownerId: branches.ownerUserId,
+      spaceId: branches.spaceId,
+    })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, canonicalNodeId));

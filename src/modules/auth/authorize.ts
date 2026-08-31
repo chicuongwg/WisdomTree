@@ -49,6 +49,9 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "knowledge.branch.edit": { roles: EVERYONE, scope: "owned-or-assigned" },
   "knowledge.branch.manage": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
   "knowledge.submit": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "knowledge.draft.write": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "knowledge.draft.publish": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "knowledge.protect": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
   "knowledge.node.create": { roles: EVERYONE, scope: "owned-or-assigned" },
   "knowledge.node.edit": {
     roles: ["editor", "admin_op"],

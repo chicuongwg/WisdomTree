@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/vi";
 import { useMutation } from "@/lib/use-mutation";
@@ -18,10 +18,6 @@ type NodeInput = {
   version: number;
   tags: string[];
 };
-
-// The open editor re-POSTs the lock on this cadence; the server frees a lock
-// whose heartbeat is older than EDIT_LOCK_TTL_MS (default 90s).
-const LOCK_HEARTBEAT_MS = 30_000;
 
 /**
  * Edit Node editor, both tiers of the edit model:
@@ -54,49 +50,7 @@ export function NodeEditor({
   const [sortOrder, setSortOrder] = useState(node.sortOrder);
   const [contentMd, setContentMd] = useState(node.contentMd);
   const [tagsText, setTagsText] = useState(node.tags.join(", "));
-  /** Someone else holds the edit lock: their name, or null when we hold it. */
-  const [lockedBy, setLockedBy] = useState<string | null>(null);
-  const [lockTick, setLockTick] = useState(0); // "Thử lại" re-runs the acquire effect
   const [validation, setValidation] = useState<MarkdownIssue[] | null>(null);
-
-  useEffect(() => {
-    if (mode !== "live") return;
-    let stopped = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
-
-    async function acquire() {
-      try {
-        const res = await fetch(`/api/tree/nodes/${node.id}/lock`, { method: "POST" });
-        if (stopped) return;
-        if (res.ok) {
-          setLockedBy(null);
-        } else if (res.status === 409) {
-          const body = (await res.json().catch(() => null)) as {
-            details?: { holderName?: string };
-          } | null;
-          setLockedBy(body?.details?.holderName ?? "người khác");
-        }
-      } catch {
-        // Network blip: keep the current state; the next heartbeat retries.
-      }
-    }
-
-    void acquire();
-    timer = setInterval(() => void acquire(), LOCK_HEARTBEAT_MS);
-    const release = () => {
-      // keepalive so the DELETE survives the page going away.
-      void fetch(`/api/tree/nodes/${node.id}/lock`, { method: "DELETE", keepalive: true });
-    };
-    window.addEventListener("pagehide", release);
-    return () => {
-      stopped = true;
-      if (timer) clearInterval(timer);
-      window.removeEventListener("pagehide", release);
-      release();
-    };
-  }, [mode, node.id, lockTick]);
-
-  const locked = mode === "live" && lockedBy !== null;
 
   async function validateContent() {
     const response = await fetch("/api/tree/validate", {
@@ -105,12 +59,15 @@ export function NodeEditor({
       body: JSON.stringify({ contentMd }),
     });
     const result = response.ok ? ((await response.json()) as { issues: MarkdownIssue[] }) : null;
-    setValidation(result?.issues ?? [{ severity: "error", code: "validation_failed", message: "Không thể kiểm tra nội dung." }]);
+    setValidation(
+      result?.issues ?? [
+        { severity: "error", code: "validation_failed", message: "Không thể kiểm tra nội dung." },
+      ],
+    );
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (locked) return;
     setConflict(false);
     setLatestContent(null);
     const body = {
@@ -152,14 +109,6 @@ export function NodeEditor({
   return (
     <form onSubmit={onSubmit}>
       <SayMutation m={m} />
-      {locked && (
-        <p className="notice" role="alert">
-          {T.editLockBanner(lockedBy ?? "")}{" "}
-          <button type="button" className="secondary" onClick={() => setLockTick((n) => n + 1)}>
-            {T.retry}
-          </button>
-        </p>
-      )}
       {conflict && (
         <button type="button" className="secondary" onClick={() => router.refresh()}>
           {T.reloadNewVersion}
@@ -173,21 +122,20 @@ export function NodeEditor({
       )}
       <div className="field">
         <label htmlFor="node-title">{T.title}</label>
-        <input
-          id="node-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={locked}
-          required
-        />
+        <input id="node-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </div>
       <div className="field">
         <label htmlFor="node-summary">Tóm tắt</label>
-        <input id="node-summary" value={summary} onChange={(e) => setSummary(e.target.value)} disabled={locked} />
+        <input id="node-summary" value={summary} onChange={(e) => setSummary(e.target.value)} />
       </div>
       <div className="field">
         <label htmlFor="node-order">Thứ tự</label>
-        <input id="node-order" type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} disabled={locked} />
+        <input
+          id="node-order"
+          type="number"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(Number(e.target.value))}
+        />
       </div>
       <div className="split">
         <div className="field wide">
@@ -198,13 +146,25 @@ export function NodeEditor({
             className="editor"
             value={contentMd}
             onChange={(e) => setContentMd(e.target.value)}
-            disabled={locked}
             required
           />
-          <p><button type="button" className="secondary" onClick={() => void validateContent()}>Kiểm tra nội dung</button></p>
-          {validation && (
-            validation.length ? <ul className="validation-list">{validation.map((issue, index) => <li key={`${issue.code}-${index}`} className={issue.severity}>{issue.message}</li>)}</ul> : <p className="meta">Không phát hiện lỗi liên kết hoặc cú pháp.</p>
-          )}
+          <p>
+            <button type="button" className="secondary" onClick={() => void validateContent()}>
+              Kiểm tra nội dung
+            </button>
+          </p>
+          {validation &&
+            (validation.length ? (
+              <ul className="validation-list">
+                {validation.map((issue, index) => (
+                  <li key={`${issue.code}-${index}`} className={issue.severity}>
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="meta">Không phát hiện lỗi liên kết hoặc cú pháp.</p>
+            ))}
         </div>
         <div>
           <p className="muted">{T.preview}</p>
@@ -215,22 +175,15 @@ export function NodeEditor({
       </div>
       <div className="field">
         <label htmlFor="node-tags">{T.tags} (phân cách bằng dấu phẩy)</label>
-        <input
-          id="node-tags"
-          value={tagsText}
-          onChange={(e) => setTagsText(e.target.value)}
-          disabled={locked}
-        />
+        <input id="node-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
       </div>
-      {mode === "propose" && (
-        <p className="muted">{T.proposeModeNote}</p>
-      )}
+      {mode === "propose" && <p className="muted">{T.proposeModeNote}</p>}
       {/* The answer sits with the button, not only at the top of a form whose
           middle is a full-height editor. The one above stays: a version
           conflict is read on the way back UP to the reload button. */}
       <SayMutation m={m} />
       <p>
-        <button type="submit" disabled={m.busy || locked}>
+        <button type="submit" disabled={m.busy}>
           {m.busy ? T.loading : mode === "live" ? T.save : T.sendProposal}
         </button>
       </p>

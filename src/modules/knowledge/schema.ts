@@ -24,30 +24,30 @@ import { sourceVersions, spaces } from "../storage/schema";
 export const branches = pgTable(
   "branches",
   {
-  id: uuid("id").primaryKey().defaultRandom(),
-  parentId: uuid("parent_id").references((): AnyPgColumn => branches.id),
-  // A shared branch belongs to exactly one team space. Personal branches have
-  // no space: ownerUserId remains their complete visibility boundary.
-  spaceId: uuid("space_id").references(() => spaces.id),
-  // Uniqueness is scoped by the partial indexes below: team names per space,
-  // personal names per owner — two people may both hold "Ghi chú".
-  name: text("name").notNull(),
-  description: text("description"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  // scope: 'team' = shared project knowledge (all members); 'personal' = private
-  // note tree visible only to ownerUserId. Defaults to 'team' so all existing
-  // rows stay valid after the 0010 migration.
-  scope: text("scope", { enum: ["team", "personal"] })
-    .notNull()
-    .default("team"),
-  ownerUserId: uuid("owner_user_id").references(() => users.id),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => users.id),
-  archivedAt: timestamp("archived_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
+    id: uuid("id").primaryKey().defaultRandom(),
+    parentId: uuid("parent_id").references((): AnyPgColumn => branches.id),
+    // A shared branch belongs to exactly one team space. Personal branches have
+    // no space: ownerUserId remains their complete visibility boundary.
+    spaceId: uuid("space_id").references(() => spaces.id),
+    // Uniqueness is scoped by the partial indexes below: team names per space,
+    // personal names per owner — two people may both hold "Ghi chú".
+    name: text("name").notNull(),
+    description: text("description"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    // scope: 'team' = shared project knowledge (all members); 'personal' = private
+    // note tree visible only to ownerUserId. Defaults to 'team' so all existing
+    // rows stay valid after the 0010 migration.
+    scope: text("scope", { enum: ["team", "personal"] })
+      .notNull()
+      .default("team"),
+    ownerUserId: uuid("owner_user_id").references(() => users.id),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    version: integer("version").notNull().default(1),
   },
   (t) => [
     uniqueIndex("branches_team_space_name_key")
@@ -62,30 +62,31 @@ export const branches = pgTable(
 export const treeNodes = pgTable(
   "tree_nodes",
   {
-  id: uuid("id").primaryKey().defaultRandom(),
-  branchId: uuid("branch_id")
-    .notNull()
-    .references(() => branches.id),
-  title: text("title").notNull(),
-  summary: text("summary"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  // Stable export/publish path, unique per branch (the export path is
-  // branch-slug/node-slug, so per-branch uniqueness keeps paths unique).
-  slug: text("slug").notNull(),
-  contentMd: text("content_md").notNull(),
-  verification: text("verification", {
-    enum: ["no_source", "unverified", "verified", "archived"],
-  }).notNull(),
-  // May be true only when verification = 'verified' (CHECK in migration).
-  publish: boolean("publish").notNull().default(false),
-  // Merge redirect target; non-null implies verification = 'archived' (CHECK).
-  canonicalNodeId: uuid("canonical_node_id"),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
+    id: uuid("id").primaryKey().defaultRandom(),
+    branchId: uuid("branch_id")
+      .notNull()
+      .references(() => branches.id),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    // Stable export/publish path, unique per branch (the export path is
+    // branch-slug/node-slug, so per-branch uniqueness keeps paths unique).
+    slug: text("slug").notNull(),
+    contentMd: text("content_md").notNull(),
+    verification: text("verification", {
+      enum: ["no_source", "unverified", "verified", "archived"],
+    }).notNull(),
+    // May be true only when verification = 'verified' (CHECK in migration).
+    publish: boolean("publish").notNull().default(false),
+    reviewRequired: boolean("review_required").notNull().default(false),
+    // Merge redirect target; non-null implies verification = 'archived' (CHECK).
+    canonicalNodeId: uuid("canonical_node_id"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    version: integer("version").notNull().default(1),
   },
   (t) => [unique().on(t.branchId, t.slug)],
 );
@@ -109,6 +110,14 @@ export const treeNodeVersions = pgTable(
     })
       .notNull()
       .default("pending"),
+    title: text("title"),
+    summary: text("summary"),
+    sortOrder: integer("sort_order"),
+    tags: jsonb("tags").$type<string[]>(),
+    links: jsonb("links").$type<Array<{ toNodeId: string; linkType: string }>>(),
+    publish: boolean("publish"),
+    reviewRequired: boolean("review_required"),
+    snapshotComplete: boolean("snapshot_complete").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.nodeId, t.seq)],
@@ -153,14 +162,18 @@ export const nodeProposals = pgTable("node_proposals", {
 export const nodeTranslations = pgTable(
   "node_translations",
   {
-    nodeId: uuid("node_id").notNull().references(() => treeNodes.id),
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => treeNodes.id),
     locale: text("locale", { enum: ["en"] }).notNull(),
     title: text("title").notNull(),
     summary: text("summary"),
     contentMd: text("content_md").notNull(),
     slug: text("slug").notNull(),
     version: integer("version").notNull().default(1),
-    updatedBy: uuid("updated_by").notNull().references(() => users.id),
+    updatedBy: uuid("updated_by")
+      .notNull()
+      .references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -177,8 +190,13 @@ export const nodeTranslationVersions = pgTable(
     title: text("title").notNull(),
     summary: text("summary"),
     contentMd: text("content_md").notNull(),
-    createdBy: uuid("created_by").notNull().references(() => users.id),
-    reviewStatus: text("review_status", { enum: ["pending", "approved"] }).notNull().default("pending"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    reviewStatus: text("review_status", { enum: ["pending", "approved"] })
+      .notNull()
+      .default("pending"),
+    snapshotComplete: boolean("snapshot_complete").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [unique().on(table.nodeId, table.locale, table.seq)],
@@ -186,20 +204,64 @@ export const nodeTranslationVersions = pgTable(
 
 export const nodeTranslationProposals = pgTable("node_translation_proposals", {
   id: uuid("id").primaryKey().defaultRandom(),
-  nodeId: uuid("node_id").notNull().references(() => treeNodes.id),
+  nodeId: uuid("node_id")
+    .notNull()
+    .references(() => treeNodes.id),
   locale: text("locale", { enum: ["en"] }).notNull(),
   baseVersion: integer("base_version").notNull(),
   title: text("title").notNull(),
   summary: text("summary"),
   contentMd: text("content_md").notNull(),
-  createdBy: uuid("created_by").notNull().references(() => users.id),
-  state: text("state", { enum: ["pending", "approved", "rejected", "changes_requested"] }).notNull().default("pending"),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
+  state: text("state", { enum: ["pending", "approved", "rejected", "changes_requested"] })
+    .notNull()
+    .default("pending"),
   decisionNote: text("decision_note"),
   decidedBy: uuid("decided_by").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const nodeDrafts = pgTable(
+  "node_drafts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nodeId: uuid("node_id").references(() => treeNodes.id, { onDelete: "cascade" }),
+    branchId: uuid("branch_id")
+      .notNull()
+      .references(() => branches.id, { onDelete: "cascade" }),
+    locale: text("locale", { enum: ["vi", "en"] })
+      .notNull()
+      .default("vi"),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    baseVersion: integer("base_version").notNull().default(0),
+    draftVersion: integer("draft_version").notNull().default(1),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    contentMd: text("content_md").notNull(),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    links: jsonb("links")
+      .$type<Array<{ toNodeId: string; linkType: string }>>()
+      .notNull()
+      .default([]),
+    state: text("state", { enum: ["editing", "in_review"] })
+      .notNull()
+      .default("editing"),
+    submittedProposalId: uuid("submitted_proposal_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("node_drafts_existing_owner_locale_idx")
+      .on(table.nodeId, table.locale, table.authorId)
+      .where(sql`${table.nodeId} IS NOT NULL`),
+  ],
+);
 
 export const nodeLinks = pgTable(
   "node_links",
@@ -257,18 +319,6 @@ export const promotions = pgTable("promotions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-
 // Single-writer editing: one row per node while its editor is open. The
 // session key (not just the user) is the holder, so the same person in a
 // second browser is a different holder; a stale heartbeat frees the lock.
-export const nodeEditLocks = pgTable("node_edit_locks", {
-  nodeId: uuid("node_id")
-    .primaryKey()
-    .references(() => treeNodes.id),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id),
-  sessionKey: text("session_key").notNull(),
-  acquiredAt: timestamp("acquired_at", { withTimezone: true }).notNull().defaultNow(),
-  heartbeatAt: timestamp("heartbeat_at", { withTimezone: true }).notNull().defaultNow(),
-});
