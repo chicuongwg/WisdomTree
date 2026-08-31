@@ -30,7 +30,7 @@ export function assertSafeMarkdown(contentMd: string) {
 }
 
 /** Stable export/publish path: Vietnamese-safe slug, unique per branch via numeric suffix. */
-async function uniqueSlug(
+export async function uniqueSlug(
   tx: Tx,
   branchId: string,
   title: string,

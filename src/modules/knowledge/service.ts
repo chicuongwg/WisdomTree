@@ -3,3 +3,4 @@ export * from "./service-queries";
 export * from "./service-mutations";
 export * from "./publication";
 export * from "./translations";
+export * from "./drafts";
