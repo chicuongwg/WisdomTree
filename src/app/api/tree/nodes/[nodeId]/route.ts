@@ -25,6 +25,8 @@ export async function PATCH(
     const { nodeId } = await params;
     const body = (await request.json().catch(() => ({}))) as {
       title?: string;
+      summary?: string;
+      sortOrder?: number;
       contentMd?: string;
       tags?: string[];
       links?: Array<{ toNodeId: string; linkType: string }>;
@@ -37,6 +39,8 @@ export async function PATCH(
       nodeId,
       {
         title: body.title,
+        summary: body.summary,
+        sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
         contentMd: body.contentMd,
         tags: Array.isArray(body.tags) ? body.tags : undefined,
         links: Array.isArray(body.links) ? body.links : undefined,

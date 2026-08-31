@@ -5,6 +5,7 @@ import {
   getEditLock,
   getNode,
   getLatestPublicationForNode,
+  getNodeNavigation,
   listNodeOptions,
   listPublicationTargets,
   wikiIndex,
@@ -12,6 +13,9 @@ import {
 import { currentSessionKey } from "@/modules/auth/session";
 import { badgeToneClass, day, nodeLinkTypeLabel, T } from "@/lib/vi";
 import { Markdown } from "@/lib/markdown";
+import { parseBlocks } from "@/lib/markdown-core";
+import { wikiPath } from "@/lib/wiki-path";
+import { normalizeTitle } from "@/lib/wikilink";
 import { NodeLink } from "@/app/components/node-link";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeAdminActions } from "@/app/components/node-admin-actions";
@@ -56,6 +60,10 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
     : [[], null];
   const wiki = await wikiIndex(actor);
   const editLock = await getEditLock(actor, node.id, await currentSessionKey());
+  const navigation = await getNodeNavigation(actor, node.id);
+  const headings = parseBlocks(node.contentMd).filter(
+    (block) => block.type === "heading" && block.level >= 2 && block.level <= 3,
+  );
 
   return (
     <main className="page">
@@ -80,6 +88,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           </>
         )}
       </p>
+      {node.summary && <p className="wiki-summary">{node.summary}</p>}
       {/* The same page key as the editor, on purpose: the reader sitting on
           this page is exactly who the editor needs to know about, and the
           editor is exactly who this reader needs to know about before they
@@ -89,6 +98,14 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
       <div className="with-side">
         <div>
           <Markdown content={node.contentMd} wikiIndex={wiki} />
+          <nav className="wiki-pagination" aria-label="Trang trước và trang sau">
+            {navigation.previous ? (
+              <Link href={wikiPath(navigation.previous.id, navigation.previous.slug)}>← {navigation.previous.title}</Link>
+            ) : <span />}
+            {navigation.next && (
+              <Link href={wikiPath(navigation.next.id, navigation.next.slug)}>{navigation.next.title} →</Link>
+            )}
+          </nav>
           {/* A second map lived here: ~600px of settings, zoom buttons, canvas,
               mouse-and-keyboard help and legend, to draw two dots and one line.
               The two link panels in the rail already name those relationships,
@@ -103,6 +120,18 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           />
         </div>
         <div>
+          {headings.length > 0 && (
+            <nav className="panel wiki-toc" aria-label="Mục lục trang">
+              <h2>Mục lục</h2>
+              <ul>
+                {headings.map((heading, index) => heading.type === "heading" && (
+                  <li key={`${heading.text}-${index}`} className={`depth-${heading.level - 2}`}>
+                    <a href={`#${normalizeTitle(heading.text).replace(/\s+/g, "-")}`}>{heading.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
           <div className="panel">
             <h2>{T.provenance}</h2>
             {node.provenance.length === 0 && node.personalOrigins.length === 0 ? (

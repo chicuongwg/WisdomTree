@@ -45,7 +45,7 @@ export function anchorHref(
   if (!anchorId) return null;
   switch (anchorType) {
     case "tree_node":
-      return `/tree/node/${anchorId}`;
+      return `/wiki/${anchorId}`;
     case "source":
       return `/library/${anchorId}`;
     case "deadline":

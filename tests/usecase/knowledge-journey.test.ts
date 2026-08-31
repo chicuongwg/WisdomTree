@@ -7,6 +7,7 @@ import {
   createNode,
   decideNodePublication,
   getNode,
+  getBranch,
   getNodeVersion,
   listNodeVersions,
   proposeNodeChange,
@@ -14,6 +15,7 @@ import {
   searchTree,
   submitNodePublication,
   updateNode,
+  updateBranch,
   wikiIndex,
 } from "@/modules/knowledge/service";
 import { spaces } from "@/modules/storage/schema";
@@ -43,6 +45,8 @@ export async function run() {
   const node = await createNode(lan, {
     branchId: personalBranch.id,
     title,
+    summary: "Tóm tắt kiểm thử.",
+    sortOrder: 20,
     contentMd: "# Ghi chú đầu tiên\n\nBản nháp.",
     tags: ["nghề thủ công"],
   });
@@ -88,6 +92,25 @@ export async function run() {
     scope: "team",
     spaceId: sharedSpace.id,
   });
+  const parentBranch = await createBranch(huong, {
+    name: `Nhóm kiểm thử ${Date.now()}`,
+    scope: "team",
+    spaceId: sharedSpace.id,
+    sortOrder: 10,
+  });
+  const nestedBranch = await updateBranch(huong, teamBranch.id, {
+    parentId: parentBranch.id,
+    sortOrder: 20,
+    expectedVersion: teamBranch.version,
+  });
+  assert.equal((await getBranch(lan, nestedBranch.id)).parentId, parentBranch.id);
+  await assert.rejects(
+    updateBranch(huong, parentBranch.id, {
+      parentId: nestedBranch.id,
+      expectedVersion: parentBranch.version,
+    }),
+    (error: unknown) => error instanceof Error && error.message.includes("cycle"),
+  );
   const submission = await submitNodePublication(lan, node.id, teamBranch.id);
   const promoted = await decideNodePublication(huong, submission.proposalId, {
     decision: "approved",
@@ -96,6 +119,8 @@ export async function run() {
   assert.ok("branchId" in promoted);
   assert.equal(promoted.branchId, teamBranch.id);
   assert.equal(promoted.createdBy, lan.userId, "authorship survives promotion");
+  assert.equal(promoted.summary, "Tóm tắt kiểm thử.");
+  assert.equal(promoted.sortOrder, 20);
 
   // 5. The promoted page is part of the shared tree. Its author can trace the
   // private origin; other members can find the shared page without learning

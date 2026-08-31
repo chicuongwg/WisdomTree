@@ -51,6 +51,8 @@ export async function listBranches(actor: Principal) {
     .select({
       id: branches.id,
       spaceId: branches.spaceId,
+      parentId: branches.parentId,
+      sortOrder: branches.sortOrder,
       name: branches.name,
       description: branches.description,
       scope: branches.scope,
@@ -65,7 +67,7 @@ export async function listBranches(actor: Principal) {
     .leftJoin(treeNodes, eq(treeNodes.branchId, branches.id))
     .where(branchVisibilityCondition(actor))
     .groupBy(branches.id)
-    .orderBy(asc(branches.name));
+    .orderBy(asc(branches.sortOrder), asc(branches.name));
 }
 
 /**
@@ -80,24 +82,28 @@ export async function treeOutline(actor: Principal) {
     .select({
       id: branches.id,
       spaceId: branches.spaceId,
+      parentId: branches.parentId,
+      sortOrder: branches.sortOrder,
       name: branches.name,
       scope: branches.scope,
       ownerUserId: branches.ownerUserId,
     })
     .from(branches)
     .where(branchVisibilityCondition(actor))
-    .orderBy(asc(branches.name));
+    .orderBy(asc(branches.sortOrder), asc(branches.name));
   const nodeRows = await db
     .select({
       id: treeNodes.id,
       title: treeNodes.title,
+      slug: treeNodes.slug,
+      sortOrder: treeNodes.sortOrder,
       branchId: treeNodes.branchId,
       verification: treeNodes.verification,
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
     .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
-    .orderBy(desc(treeNodes.updatedAt));
+    .orderBy(asc(treeNodes.sortOrder), asc(treeNodes.title));
   const withNodes = branchRows.map((b) => ({
     ...b,
     nodes: nodeRows.filter((n) => n.branchId === b.id),
@@ -120,19 +126,28 @@ export async function getBranch(actor: Principal, branchId: string) {
       id: treeNodes.id,
       title: treeNodes.title,
       slug: treeNodes.slug,
+      summary: treeNodes.summary,
+      sortOrder: treeNodes.sortOrder,
       verification: treeNodes.verification,
       publish: treeNodes.publish,
       updatedAt: treeNodes.updatedAt,
     })
     .from(treeNodes)
     .where(and(eq(treeNodes.branchId, branchId), ne(treeNodes.verification, "archived")))
-    .orderBy(desc(treeNodes.updatedAt));
+    .orderBy(asc(treeNodes.sortOrder), asc(treeNodes.title));
   return { ...branch, nodes };
 }
 
 export async function createBranch(
   actor: Principal,
-  input: { name: string; description?: string; scope?: string; spaceId?: string },
+  input: {
+    name: string;
+    description?: string;
+    scope?: string;
+    spaceId?: string;
+    parentId?: string | null;
+    sortOrder?: number;
+  },
 ) {
   const personal = input.scope === "personal";
   if (personal) {
@@ -143,6 +158,13 @@ export async function createBranch(
     }
     authorize(actor, "knowledge.branch.manage", { spaceId: input.spaceId, kind: "write" });
   }
+  await assertValidBranchParent({
+    branchId: null,
+    parentId: input.parentId ?? null,
+    scope: personal ? "personal" : "team",
+    spaceId: personal ? null : input.spaceId!,
+    ownerUserId: personal ? actor.userId : null,
+  });
   return db.transaction(async (tx) => {
     const [dup] = await tx
       .select({ id: branches.id })
@@ -170,6 +192,8 @@ export async function createBranch(
         description: input.description ?? null,
         scope: personal ? "personal" : "team",
         spaceId: personal ? null : input.spaceId!,
+        parentId: input.parentId ?? null,
+        sortOrder: input.sortOrder ?? 0,
         ownerUserId: personal ? actor.userId : null,
         createdBy: actor.userId,
       })
@@ -179,7 +203,7 @@ export async function createBranch(
       action: "branch.create",
       targetType: "branch",
       targetId: created.id,
-      details: { name: input.name, spaceId: input.spaceId ?? null },
+      details: { name: input.name, spaceId: input.spaceId ?? null, parentId: input.parentId ?? null },
     });
     return created;
   });
@@ -188,7 +212,13 @@ export async function createBranch(
 export async function updateBranch(
   actor: Principal,
   branchId: string,
-  patch: { name?: string; description?: string; expectedVersion?: number },
+  patch: {
+    name?: string;
+    description?: string;
+    parentId?: string | null;
+    sortOrder?: number;
+    expectedVersion?: number;
+  },
 ) {
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
   if (!branch) throw notFound();
@@ -200,6 +230,15 @@ export async function updateBranch(
   } else {
     authorize(actor, "knowledge.branch.manage", { spaceId: branch.spaceId!, kind: "write" });
   }
+  if (patch.parentId !== undefined) {
+    await assertValidBranchParent({
+      branchId,
+      parentId: patch.parentId,
+      scope: branch.scope,
+      spaceId: branch.spaceId,
+      ownerUserId: branch.ownerUserId,
+    });
+  }
   const expected = patch.expectedVersion ?? branch.version;
   return db.transaction(async (tx) => {
     const [updated] = await tx
@@ -207,6 +246,8 @@ export async function updateBranch(
       .set({
         ...(patch.name !== undefined ? { name: patch.name } : {}),
         ...(patch.description !== undefined ? { description: patch.description } : {}),
+        ...(patch.parentId !== undefined ? { parentId: patch.parentId } : {}),
+        ...(patch.sortOrder !== undefined ? { sortOrder: patch.sortOrder } : {}),
         updatedAt: new Date(),
         version: expected + 1,
       })
@@ -218,10 +259,47 @@ export async function updateBranch(
       action: "branch.update",
       targetType: "branch",
       targetId: branchId,
-      details: { name: patch.name },
+      details: { name: patch.name, parentId: patch.parentId, sortOrder: patch.sortOrder },
     });
     return updated;
   });
+}
+
+async function assertValidBranchParent(input: {
+  branchId: string | null;
+  parentId: string | null;
+  scope: string;
+  spaceId: string | null;
+  ownerUserId: string | null;
+}) {
+  if (!input.parentId) return;
+  if (input.parentId === input.branchId) {
+    throw new ApiError(400, "invalid_branch_parent", "A branch cannot contain itself.");
+  }
+  const [parent] = await db.select().from(branches).where(eq(branches.id, input.parentId));
+  if (
+    !parent ||
+    parent.archivedAt ||
+    parent.scope !== input.scope ||
+    parent.spaceId !== input.spaceId ||
+    parent.ownerUserId !== input.ownerUserId
+  ) {
+    throw new ApiError(400, "invalid_branch_parent", "The parent branch must use the same knowledge scope.");
+  }
+  const seen = new Set<string>();
+  let cursor: string | null = parent.id;
+  while (cursor) {
+    if (cursor === input.branchId) {
+      throw new ApiError(400, "invalid_branch_parent", "A branch hierarchy cannot contain a cycle.");
+    }
+    if (seen.has(cursor)) break;
+    seen.add(cursor);
+    const [row] = await db
+      .select({ parentId: branches.parentId })
+      .from(branches)
+      .where(eq(branches.id, cursor));
+    cursor = row?.parentId ?? null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -403,18 +481,32 @@ export async function getNode(actor: Principal, nodeId: string) {
   };
 }
 
+export async function getNodeNavigation(actor: Principal, nodeId: string) {
+  const node = await getNode(actor, nodeId);
+  const rows = await db
+    .select({ id: treeNodes.id, title: treeNodes.title, slug: treeNodes.slug })
+    .from(treeNodes)
+    .where(and(eq(treeNodes.branchId, node.branchId), ne(treeNodes.verification, "archived")))
+    .orderBy(asc(treeNodes.sortOrder), asc(treeNodes.title));
+  const at = rows.findIndex((row) => row.id === nodeId);
+  return {
+    previous: at > 0 ? rows[at - 1] : null,
+    next: at >= 0 && at < rows.length - 1 ? rows[at + 1] : null,
+  };
+}
+
 /** Title → node index used to resolve `[[wiki-links]]` while rendering. */
 export async function wikiIndex(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   const rows = await db
-    .select({ id: treeNodes.id, title: treeNodes.title, verification: treeNodes.verification })
+    .select({ id: treeNodes.id, title: treeNodes.title, slug: treeNodes.slug, verification: treeNodes.verification })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
     .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)))
     .orderBy(asc(treeNodes.updatedAt));
   const nodeIndex: Record<
     string,
-    { id: string; title: string; verification: string; kind: "node" | "source" }
+    { id: string; title: string; slug?: string; verification: string; kind: "node" | "source" }
   > = buildWikiIndex(rows.map((r) => ({ ...r, kind: "node" as const })));
 
   const visibleSpaces = scopedToSpaces(actor);

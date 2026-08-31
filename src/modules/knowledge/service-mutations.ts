@@ -194,6 +194,8 @@ export async function createNode(
   input: {
     branchId: string;
     title: string;
+    summary?: string;
+    sortOrder?: number;
     contentMd: string;
     tags?: string[];
     links?: Array<{ toNodeId: string; linkType: string }>;
@@ -220,6 +222,8 @@ export async function createNode(
       .values({
         branchId: input.branchId,
         title: input.title,
+        summary: input.summary?.trim() || null,
+        sortOrder: input.sortOrder ?? 0,
         slug,
         contentMd: input.contentMd,
         verification: "no_source",
@@ -265,6 +269,8 @@ export async function updateNode(
   nodeId: string,
   patch: {
     title?: string;
+    summary?: string;
+    sortOrder?: number;
     contentMd?: string;
     tags?: string[];
     links?: Array<{ toNodeId: string; linkType: string }>;
@@ -325,6 +331,8 @@ export async function updateNode(
       .update(treeNodes)
       .set({
         ...(patch.title !== undefined ? { title: patch.title, slug } : {}),
+        ...(patch.summary !== undefined ? { summary: patch.summary.trim() || null } : {}),
+        ...(patch.sortOrder !== undefined ? { sortOrder: patch.sortOrder } : {}),
         ...(patch.contentMd !== undefined ? { contentMd: patch.contentMd } : {}),
         verification: nextVerification,
         publish: nextPublish && nextVerification === "verified",
@@ -398,6 +406,8 @@ export async function proposeNodeChange(
   nodeId: string,
   patch: {
     title?: string;
+    summary?: string;
+    sortOrder?: number;
     contentMd?: string;
     tags?: string[];
     links?: Array<{ toNodeId: string; linkType: string }>;
@@ -429,6 +439,8 @@ export async function proposeNodeChange(
   ]);
   const snapshot = {
     title: patch.title ?? node.title,
+    summary: patch.summary !== undefined ? patch.summary.trim() || null : node.summary,
+    sortOrder: patch.sortOrder ?? node.sortOrder,
     contentMd: patch.contentMd ?? node.contentMd,
     tags: [...(patch.tags ?? currentTags.map((tag) => tag.name))].sort(),
     links: [...(patch.links ?? currentLinks)].sort(
@@ -512,6 +524,8 @@ export async function reviewNodeProposal(
       .update(treeNodes)
       .set({
         title: row.proposal.title,
+        summary: row.proposal.summary,
+        sortOrder: row.proposal.sortOrder,
         contentMd: row.proposal.contentMd,
         verification: input.verification,
         publish: input.verification === "verified",

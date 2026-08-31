@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { orNotFound, requireUser, toPrincipal } from "@/lib/page";
-import { getBranch } from "@/modules/knowledge/service";
+import { getBranch, listBranches } from "@/modules/knowledge/service";
 import { T, when } from "@/lib/vi";
 import { VerificationBadge } from "@/app/components/verification-badge";
 import { NodeCreateForm } from "@/app/components/node-create-form";
 import { BranchArchiveButton, BranchForm } from "@/app/components/branch-form";
 import { Empty } from "@/app/components/empty";
+import { NodeLink } from "@/app/components/node-link";
 import { authorize } from "@/modules/auth/authorize";
 import type { Principal } from "@/modules/auth/principal";
 
@@ -48,7 +48,6 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
   const actor = toPrincipal(user);
   const { id } = await params;
   const branch = await orNotFound(() => getBranch(actor, id));
-
   const verified = branch.nodes.filter((n) => n.verification === "verified").length;
   const isOwnPersonalBranch =
     branch.scope === "personal" && (branch.ownerUserId === user.id || branch.createdBy === user.id);
@@ -59,6 +58,15 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
     user.spaceMemberships.some(
       (membership) => membership.spaceId === branch.spaceId && membership.role === "manager",
     );
+  const siblingBranches = canEditMeta
+    ? (await listBranches(actor)).filter(
+        (candidate) =>
+          candidate.id !== branch.id &&
+          candidate.scope === branch.scope &&
+          candidate.spaceId === branch.spaceId &&
+          candidate.ownerUserId === branch.ownerUserId,
+      )
+    : [];
 
   return (
     <main className="page">
@@ -97,7 +105,7 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
               {branch.nodes.map((n) => (
                 <tr key={n.id}>
                   <td>
-                    <Link href={`/tree/node/${n.id}`}>{n.title}</Link>
+                    <NodeLink nodeId={n.id} slug={n.slug}>{n.title}</NodeLink>
                   </td>
                   <td>
                     <VerificationBadge verification={n.verification} />
@@ -116,7 +124,10 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
         <>
           <h2>Chỉnh sửa chuyên đề</h2>
           <div className="panel">
-            <BranchForm branch={branch} />
+            <BranchForm
+              branch={branch}
+              parents={siblingBranches.map((candidate) => ({ id: candidate.id, name: candidate.name }))}
+            />
           </div>
         </>
       )}

@@ -201,6 +201,8 @@ export async function submitNodePublication(
         sourceVersionId: sourceCandidate[0]?.sourceVersionId ?? null,
         targetBranchId,
         title: row.node.title,
+        summary: row.node.summary,
+        sortOrder: row.node.sortOrder,
         contentMd: row.node.contentMd,
         tags: tagRows.map((tag) => tag.name),
         links: linkRows,
@@ -397,6 +399,8 @@ export async function decideNodePublication(
       .values({
         branchId: targetBranchId,
         title: row.proposal.title,
+        summary: row.proposal.summary,
+        sortOrder: row.proposal.sortOrder,
         slug,
         contentMd: row.proposal.contentMd,
         verification: input.verification!,

@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
       description?: string;
       scope?: string;
       spaceId?: string;
+      parentId?: string | null;
+      sortOrder?: number;
     } | null;
     if (!body?.name?.trim()) {
       throw new ApiError(400, "invalid_branch", "Branch name must not be empty.");
@@ -21,6 +23,8 @@ export async function POST(request: NextRequest) {
       description: body.description?.trim() || undefined,
       scope: body.scope,
       spaceId: body.spaceId,
+      parentId: typeof body.parentId === "string" ? body.parentId : null,
+      sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
     });
     return NextResponse.json(branch, { status: 201 });
   });

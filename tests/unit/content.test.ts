@@ -10,6 +10,7 @@ import {
   parseWikiLinks,
   wikiTargetKeys,
 } from "@/lib/wikilink";
+import { wikiPath } from "@/lib/wiki-path";
 
 export function run() {
   assert.deepEqual(parseBlocks("# Title\n\nFirst\nline\n\n- one\n* two"), [
@@ -73,6 +74,7 @@ export function run() {
   assert.equal(foldName("Phạm Thu Hương"), "pham thu huong");
   assert.equal(foldName("Đặng"), "dang");
   assert.equal(foldName("Hương").length, "Hương".length);
+  assert.equal(wikiPath("node-id", "tieu-de"), "/wiki/node-id/tieu-de");
 
   assert.deepEqual(extractionDisplay("processed", false), {
     label: "Chưa đọc được nội dung",

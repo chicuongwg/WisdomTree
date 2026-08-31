@@ -4,6 +4,7 @@ import { listBranches, recentNodes, searchTree } from "@/modules/knowledge/servi
 import { T } from "@/lib/vi";
 import { VerificationBadge } from "../components/verification-badge";
 import { Empty } from "@/app/components/empty";
+import { NodeLink } from "@/app/components/node-link";
 
 export const metadata = { title: T.tree };
 
@@ -69,7 +70,7 @@ export default async function TreeBrowsePage({
                   {results.map((r) => (
                     <tr key={r.id}>
                       <td>
-                        <Link href={`/tree/node/${r.id}`}>{r.title}</Link>
+                        <NodeLink nodeId={r.id} slug={r.slug}>{r.title}</NodeLink>
                         <div className="meta">{r.snippet}…</div>
                       </td>
                       <td>
@@ -162,7 +163,7 @@ export default async function TreeBrowsePage({
           <ul>
             {recent.map((n) => (
               <li key={n.id}>
-                <Link href={`/tree/node/${n.id}`}>{n.title}</Link>{" "}
+                <NodeLink nodeId={n.id} slug={n.slug}>{n.title}</NodeLink>{" "}
                 <VerificationBadge verification={n.verification} />
               </li>
             ))}

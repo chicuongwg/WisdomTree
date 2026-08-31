@@ -122,7 +122,7 @@ export function CommandPalette({ role }: { role: string }) {
       key: `node:${h.id}`,
       label: h.title,
       hint: `${h.branchName} · ${verificationStateLabel(h.verification)}`,
-      href: `/tree/node/${h.id}`,
+      href: `/wiki/${h.id}`,
     })),
     ...screenMatches,
   ];

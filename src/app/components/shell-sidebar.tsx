@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useShortcutKey } from "@/lib/platform";
@@ -13,11 +13,12 @@ import { useShellCopy } from "./shell-locale-provider";
 
 export type OutlineBranch = {
   id: string;
+  parentId: string | null;
   name: string;
-  nodes: { id: string; title: string; verification: string }[];
+  nodes: { id: string; title: string; slug: string; verification: string }[];
 };
 
-export type RecentNode = { id: string; title: string; branchName: string };
+export type RecentNode = { id: string; title: string; slug: string; branchName: string };
 
 function BranchSection({ branch, pathname }: { branch?: OutlineBranch; pathname: string }) {
   const T = useShellCopy();
@@ -25,7 +26,7 @@ function BranchSection({ branch, pathname }: { branch?: OutlineBranch; pathname:
   const currentBranch = Boolean(
     branch &&
     (pathname === `/tree/branch/${branch.id}` ||
-      nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`))),
+      nodes.some((n) => pathname.startsWith(`/tree/node/${n.id}`) || pathname.startsWith(`/wiki/${n.id}`))),
   );
 
   const [open, setOpen] = useState(currentBranch);
@@ -65,9 +66,10 @@ function BranchSection({ branch, pathname }: { branch?: OutlineBranch; pathname:
             <NodeLink
               key={n.id}
               nodeId={n.id}
+              slug={n.slug}
               verification={n.verification}
-              className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
-              aria-current={pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined}
+              className={`tree-item node-item depth-1${pathname.startsWith(`/tree/node/${n.id}`) || pathname.startsWith(`/wiki/${n.id}`) ? " active" : ""}`}
+              aria-current={pathname.startsWith(`/tree/node/${n.id}`) || pathname.startsWith(`/wiki/${n.id}`) ? "page" : undefined}
             >
               <span className="item-label">{n.title}</span>
             </NodeLink>
@@ -76,6 +78,22 @@ function BranchSection({ branch, pathname }: { branch?: OutlineBranch; pathname:
       )}
     </div>
   );
+}
+
+function BranchTree({ branches, pathname }: { branches: OutlineBranch[]; pathname: string }) {
+  const ids = new Set(branches.map((branch) => branch.id));
+  const children = new Map<string | null, OutlineBranch[]>();
+  for (const branch of branches) {
+    const parentId = branch.parentId && ids.has(branch.parentId) ? branch.parentId : null;
+    children.set(parentId, [...(children.get(parentId) ?? []), branch]);
+  }
+  const render = (branch: OutlineBranch, depth: number): ReactNode => (
+    <div key={branch.id} style={depth ? { paddingLeft: `${Math.min(depth, 4) * 0.65}rem` } : undefined}>
+      <BranchSection branch={branch} pathname={pathname} />
+      {(children.get(branch.id) ?? []).map((child) => render(child, depth + 1))}
+    </div>
+  );
+  return <>{(children.get(null) ?? []).map((branch) => render(branch, 0))}</>;
 }
 
 function SidebarContent({
@@ -118,7 +136,7 @@ function SidebarContent({
       safePersonalBranches.some(
         (b) =>
           path === `/tree/branch/${b.id}` ||
-          b.nodes.some((n) => path.startsWith(`/tree/node/${n.id}`)),
+          b.nodes.some((n) => path.startsWith(`/tree/node/${n.id}`) || path.startsWith(`/wiki/${n.id}`)),
       )
     ) {
       return "personal";
@@ -237,9 +255,7 @@ function SidebarContent({
                   </Link>
                 )}
               </div>
-              {safeTeamBranches.map((b) => (
-                <BranchSection key={b.id} branch={b} pathname={pathname} />
-              ))}
+              <BranchTree branches={safeTeamBranches} pathname={pathname} />
               {safeTeamBranches.length === 0 && <p className="pal-empty">{T.empty}</p>}
             </div>
 
@@ -296,9 +312,7 @@ function SidebarContent({
                   +
                 </Link>
               </div>
-              {safePersonalBranches.map((b) => (
-                <BranchSection key={b.id} branch={b} pathname={pathname} />
-              ))}
+              <BranchTree branches={safePersonalBranches} pathname={pathname} />
               {safePersonalBranches.length === 0 && (
                 <p className="side-hint">{T.personalBranchEmpty}</p>
               )}
@@ -330,9 +344,10 @@ function SidebarContent({
               <NodeLink
                 key={n.id}
                 nodeId={n.id}
-                className={`tree-item node-item${pathname.startsWith(`/tree/node/${n.id}`) ? " active" : ""}`}
+                slug={n.slug}
+                className={`tree-item node-item${pathname.startsWith(`/tree/node/${n.id}`) || pathname.startsWith(`/wiki/${n.id}`) ? " active" : ""}`}
                 title={`${n.title} — ${n.branchName}`}
-                aria-current={pathname.startsWith(`/tree/node/${n.id}`) ? "page" : undefined}
+                aria-current={pathname.startsWith(`/tree/node/${n.id}`) || pathname.startsWith(`/wiki/${n.id}`) ? "page" : undefined}
               >
                 <span className="item-label">{n.title}</span>
               </NodeLink>

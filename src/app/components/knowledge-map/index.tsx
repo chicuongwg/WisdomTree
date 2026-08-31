@@ -191,7 +191,7 @@ export function KnowledgeMap({
     setPeek(null);
   }, []);
 
-  const open = useCallback((id: string) => router.push(`/tree/node/${id}`), [router]);
+  const open = useCallback((id: string) => router.push(`/wiki/${id}`), [router]);
   const openLocal = useCallback(
     (id: string) =>
       router.push(`/graph?node=${id}${scope === "personal" ? "&scope=personal" : ""}`),

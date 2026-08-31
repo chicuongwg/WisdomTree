@@ -14,10 +14,19 @@ export function BranchForm({
   branch,
   scope,
   spaces = [],
+  parents = [],
 }: {
-  branch?: { id: string; name: string; description: string | null; version: number };
+  branch?: {
+    id: string;
+    name: string;
+    description: string | null;
+    parentId: string | null;
+    sortOrder: number;
+    version: number;
+  };
   scope?: "team" | "personal";
   spaces?: Array<{ id: string; name: string }>;
+  parents?: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
   const m = useMutation();
@@ -34,6 +43,8 @@ export function BranchForm({
           description: String(form.get("description") ?? ""),
           ...(scope ? { scope } : {}),
           ...(scope === "team" ? { spaceId: String(form.get("spaceId") ?? "") } : {}),
+          parentId: String(form.get("parentId") ?? "") || null,
+          sortOrder: Number(form.get("sortOrder") ?? 0),
           ...(branch ? { expectedVersion: branch.version } : {}),
         },
       },
@@ -63,6 +74,19 @@ export function BranchForm({
       <div className="field">
         <label htmlFor="name">{T.branchName}</label>
         <input id="name" name="name" type="text" required defaultValue={branch?.name ?? ""} />
+      </div>
+      <div className="field">
+        <label htmlFor="parentId">Chuyên đề cha</label>
+        <select id="parentId" name="parentId" defaultValue={branch?.parentId ?? ""}>
+          <option value="">Không có</option>
+          {parents.map((parent) => (
+            <option key={parent.id} value={parent.id}>{parent.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="sortOrder">Thứ tự</label>
+        <input id="sortOrder" name="sortOrder" type="number" defaultValue={branch?.sortOrder ?? 0} />
       </div>
       <div className="field">
         <label htmlFor="description">{T.description}</label>

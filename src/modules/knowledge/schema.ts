@@ -10,6 +10,7 @@ import {
   unique,
   uuid,
   uniqueIndex,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
 import { sourceVersions, spaces } from "../storage/schema";
@@ -24,7 +25,7 @@ export const branches = pgTable(
   "branches",
   {
   id: uuid("id").primaryKey().defaultRandom(),
-  parentId: uuid("parent_id"),
+  parentId: uuid("parent_id").references((): AnyPgColumn => branches.id),
   // A shared branch belongs to exactly one team space. Personal branches have
   // no space: ownerUserId remains their complete visibility boundary.
   spaceId: uuid("space_id").references(() => spaces.id),
@@ -32,6 +33,7 @@ export const branches = pgTable(
   // personal names per owner — two people may both hold "Ghi chú".
   name: text("name").notNull(),
   description: text("description"),
+  sortOrder: integer("sort_order").notNull().default(0),
   // scope: 'team' = shared project knowledge (all members); 'personal' = private
   // note tree visible only to ownerUserId. Defaults to 'team' so all existing
   // rows stay valid after the 0010 migration.
@@ -65,6 +67,8 @@ export const treeNodes = pgTable(
     .notNull()
     .references(() => branches.id),
   title: text("title").notNull(),
+  summary: text("summary"),
+  sortOrder: integer("sort_order").notNull().default(0),
   // Stable export/publish path, unique per branch (the export path is
   // branch-slug/node-slug, so per-branch uniqueness keeps paths unique).
   slug: text("slug").notNull(),
@@ -126,6 +130,8 @@ export const nodeProposals = pgTable("node_proposals", {
   sourceVersionId: uuid("source_version_id").references(() => sourceVersions.id),
   targetBranchId: uuid("target_branch_id").references(() => branches.id),
   title: text("title").notNull(),
+  summary: text("summary"),
+  sortOrder: integer("sort_order").notNull().default(0),
   contentMd: text("content_md").notNull(),
   tags: jsonb("tags").notNull().default([]),
   links: jsonb("links").notNull().default([]),

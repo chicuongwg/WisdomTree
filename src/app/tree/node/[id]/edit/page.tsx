@@ -53,6 +53,8 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
         node={{
           id: node.id,
           title: node.title,
+          summary: node.summary,
+          sortOrder: node.sortOrder,
           contentMd: node.contentMd,
           version: node.version,
           tags: node.tags,

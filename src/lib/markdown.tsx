@@ -8,7 +8,7 @@ export { parseBlocks, markdownToHtml } from "./markdown-core";
 
 export type WikiIndex = Record<
   string,
-  { id: string; title: string; verification: string; kind?: "node" | "source" }
+  { id: string; title: string; slug?: string; verification: string; kind?: "node" | "source" }
 >;
 
 function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
@@ -50,7 +50,7 @@ function inline(text: string, wikiIndex: WikiIndex): ReactNode[] {
         </a>
       );
     }
-    return <NodeLink key={i} nodeId={target.id} className="wiki-link" verification={target.verification}>{token.label}</NodeLink>;
+    return <NodeLink key={i} nodeId={target.id} slug={target.slug} className="wiki-link" verification={target.verification}>{token.label}</NodeLink>;
   });
 }
 

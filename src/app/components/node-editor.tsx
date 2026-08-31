@@ -11,6 +11,8 @@ import { SayMutation } from "./say";
 type NodeInput = {
   id: string;
   title: string;
+  summary: string | null;
+  sortOrder: number;
   contentMd: string;
   version: number;
   tags: string[];
@@ -47,6 +49,8 @@ export function NodeEditor({
   const [conflict, setConflict] = useState(false);
   const [latestContent, setLatestContent] = useState<string | null>(null);
   const [title, setTitle] = useState(node.title);
+  const [summary, setSummary] = useState(node.summary ?? "");
+  const [sortOrder, setSortOrder] = useState(node.sortOrder);
   const [contentMd, setContentMd] = useState(node.contentMd);
   const [tagsText, setTagsText] = useState(node.tags.join(", "));
   /** Someone else holds the edit lock: their name, or null when we hold it. */
@@ -99,6 +103,8 @@ export function NodeEditor({
     setLatestContent(null);
     const body = {
       title,
+      summary,
+      sortOrder,
       contentMd,
       tags: tagsText
         .split(",")
@@ -162,6 +168,14 @@ export function NodeEditor({
           disabled={locked}
           required
         />
+      </div>
+      <div className="field">
+        <label htmlFor="node-summary">Tóm tắt</label>
+        <input id="node-summary" value={summary} onChange={(e) => setSummary(e.target.value)} disabled={locked} />
+      </div>
+      <div className="field">
+        <label htmlFor="node-order">Thứ tự</label>
+        <input id="node-order" type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} disabled={locked} />
       </div>
       <div className="split">
         <div className="field wide">

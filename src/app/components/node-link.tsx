@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { T, verificationStateLabel } from "@/lib/vi";
+import { wikiPath } from "@/lib/wiki-path";
 
 // The one node link in the app. Every place a page is named — sidebar
 // outline, graph, backlinks, outgoing links, wiki-links inside content,
@@ -197,6 +198,7 @@ export function NodeLink({
   className,
   title,
   verification,
+  slug,
   "aria-current": ariaCurrent,
 }: {
   nodeId: string;
@@ -205,6 +207,7 @@ export function NodeLink({
   title?: string;
   /** rendered as a leading state dot when given (outline / wiki-link rows) */
   verification?: string;
+  slug?: string;
   /** the sidebar marks the open page; without this the row says "current" in colour only */
   "aria-current"?: "page";
 }) {
@@ -212,7 +215,7 @@ export function NodeLink({
   return (
     <>
       <Link
-        href={`/tree/node/${nodeId}`}
+        href={wikiPath(nodeId, slug)}
         className={className}
         title={title}
         aria-current={ariaCurrent}

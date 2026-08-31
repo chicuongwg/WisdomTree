@@ -15,12 +15,17 @@ export async function PATCH(
     const body = (await request.json().catch(() => ({}))) as {
       name?: string;
       description?: string;
+      parentId?: string | null;
+      sortOrder?: number;
       expectedVersion?: number;
     };
     return NextResponse.json(
       await updateBranch(actor, branchId, {
         name: body.name,
         description: body.description,
+        parentId:
+          body.parentId === null || typeof body.parentId === "string" ? body.parentId : undefined,
+        sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
         expectedVersion:
           typeof body.expectedVersion === "number" ? body.expectedVersion : undefined,
       }),

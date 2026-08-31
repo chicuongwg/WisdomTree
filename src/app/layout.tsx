@@ -122,7 +122,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <ShellSidebar
             teamBranches={teamBranches}
             personalBranches={personalBranches}
-            recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
+            recent={recent.map((n) => ({ id: n.id, title: n.title, slug: n.slug, branchName: n.branchName }))}
             role={user.role}
             canManageTeamKnowledge={
               user.role === "admin_op" ||

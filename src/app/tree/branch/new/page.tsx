@@ -2,6 +2,7 @@ import { requireUser, toPrincipal } from "@/lib/page";
 import { T } from "@/lib/vi";
 import { BranchForm } from "@/app/components/branch-form";
 import { listMemberSpaces } from "@/modules/storage/service";
+import { listBranches } from "@/modules/knowledge/service";
 
 export const metadata = { title: T.createBranch };
 
@@ -12,6 +13,7 @@ export default async function CreateBranchPage({
   searchParams: Promise<{ scope?: string }>;
 }) {
   const user = await requireUser();
+  const actor = toPrincipal(user);
   const sp = await searchParams;
   const canManageTeam =
     user.role === "admin_op" || user.spaceMemberships.some((membership) => membership.role === "manager");
@@ -31,9 +33,12 @@ export default async function CreateBranchPage({
       <div className="panel">
         <BranchForm
           scope={defaultScope}
+          parents={(await listBranches(actor))
+            .filter((branch) => branch.scope === defaultScope)
+            .map((branch) => ({ id: branch.id, name: branch.name }))}
           spaces={
             defaultScope === "team"
-              ? (await listMemberSpaces(toPrincipal(user))).filter(
+              ? (await listMemberSpaces(actor)).filter(
                   (space) =>
                     user.role === "admin_op" ||
                     user.spaceMemberships.some(

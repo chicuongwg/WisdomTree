@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => null)) as {
       branchId?: string;
       title?: string;
+      summary?: string;
+      sortOrder?: number;
       contentMd?: string;
       tags?: string[];
       links?: Array<{ toNodeId: string; linkType: string }>;
@@ -20,6 +22,8 @@ export async function POST(request: NextRequest) {
     const node = await createNode(actor, {
       branchId: body.branchId,
       title: body.title.trim(),
+      summary: body.summary,
+      sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : undefined,
       contentMd: body.contentMd,
       tags: Array.isArray(body.tags) ? body.tags : undefined,
       links: Array.isArray(body.links) ? body.links : undefined,

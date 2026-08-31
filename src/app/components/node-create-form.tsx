@@ -21,6 +21,8 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
       body: {
         branchId,
         title: String(form.get("title") ?? ""),
+        summary: String(form.get("summary") ?? ""),
+        sortOrder: Number(form.get("sortOrder") ?? 0),
         contentMd: String(form.get("contentMd") ?? ""),
       },
     });
@@ -41,6 +43,14 @@ export function NodeCreateForm({ branchId }: { branchId: string }) {
       <div className="field">
         <label htmlFor="new-node-title">{T.title}</label>
         <input id="new-node-title" name="title" type="text" required />
+      </div>
+      <div className="field">
+        <label htmlFor="new-node-summary">Tóm tắt</label>
+        <input id="new-node-summary" name="summary" type="text" />
+      </div>
+      <div className="field">
+        <label htmlFor="new-node-order">Thứ tự</label>
+        <input id="new-node-order" name="sortOrder" type="number" defaultValue={0} />
       </div>
       <div className="split">
         <div className="field wide">
