@@ -7,6 +7,9 @@ import { getDownloadToken, getSourceDetail, listLibrary } from "@/modules/storag
 import {
   createNode,
   getNode,
+  getNodeTranslation,
+  listPendingTranslations,
+  saveNodeTranslation,
   listBranches,
   listNodeVersions,
   searchTree,
@@ -36,6 +39,7 @@ const notFound404 = (err: unknown) => {
 export async function run() {
   const lan = await principalFor("lan@wisdomtree.local"); // library only
   const duc = await principalFor("duc@wisdomtree.local"); // library only
+  const minh = await principalFor("minh@wisdomtree.local"); // restricted-space editor
 
   // --- Space isolation -----------------------------------------------------
   const [restricted] = await db
@@ -62,6 +66,12 @@ export async function run() {
     .where(eq(treeNodes.branchId, hiddenBranch.id))
     .limit(1);
   assert.ok(hiddenNode, "seed premise: the restricted branch holds a node");
+  const hiddenTranslation = await saveNodeTranslation(minh, hiddenNode.id, "en", {
+    title: `Hidden translation ${Date.now()}`,
+    contentMd: "Private to the restricted space.",
+    expectedVersion: 0,
+  });
+  assert.equal(hiddenTranslation.state, "pending");
 
   // Detail and download both answer 404 — indistinguishable from "no such id".
   await assert.rejects(getSourceDetail(lan, hidden.id), notFound404);
@@ -78,6 +88,7 @@ export async function run() {
 
   // Knowledge uses the same space boundary on every read surface.
   await assert.rejects(getNode(lan, hiddenNode.id), notFound404);
+  await assert.rejects(getNodeTranslation(lan, hiddenNode.id, "en"), notFound404);
   await assert.rejects(listNodeVersions(lan, hiddenNode.id), notFound404);
   const lanBranches = await listBranches(lan);
   assert.ok(lanBranches.every((branch) => branch.id !== hiddenBranch.id));
@@ -91,6 +102,8 @@ export async function run() {
   assert.ok(lanGraph.nodes.every((node) => node.id !== hiddenNode.id));
   const unifiedHits = await searchKnowledge(lan, hiddenNode.title);
   assert.ok(unifiedHits.every((result) => result.id !== hiddenNode.id && result.id !== hidden.id));
+  const outsideEditor = { ...lan, role: "editor" as const };
+  assert.ok((await listPendingTranslations(outsideEditor)).every((proposal) => proposal.nodeId !== hiddenNode.id));
 
   // --- Personal-vault isolation -------------------------------------------
   const [lanBranch] = await db

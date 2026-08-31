@@ -13,12 +13,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function CanonicalWikiPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; slug?: string[] }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const user = await requireUser();
   const { id, slug } = await params;
   const node = await getNode(toPrincipal(user), id);
   if (slug?.length !== 1 || slug[0] !== node.slug) permanentRedirect(wikiPath(node.id, node.slug));
-  return NodeDetailPage({ params: Promise.resolve({ id }) });
+  return NodeDetailPage({ params: Promise.resolve({ id }), searchParams });
 }

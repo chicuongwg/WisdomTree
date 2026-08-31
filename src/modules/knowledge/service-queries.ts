@@ -10,6 +10,7 @@ import { sources, sourceVersions, spaces } from "../storage/schema";
 import {
   branches,
   nodeProposals,
+  nodeTranslations,
   nodeLinks,
   nodeTags,
   promotions,
@@ -370,7 +371,7 @@ export async function searchKnowledge(actor: Principal, q: string, spaceId?: str
         ? inArray(sources.spaceId, visibleSpaces)
         : sql`false`;
   const nodeScope = spaceId ? eq(branches.spaceId, spaceId) : branchVisibilityCondition(actor);
-  const [nodes, sourceRows] = await Promise.all([
+  const [nodes, translatedNodes, sourceRows] = await Promise.all([
     db
       .select({
         kind: sql<"node">`'node'`,
@@ -393,6 +394,31 @@ export async function searchKnowledge(actor: Principal, q: string, spaceId?: str
       .limit(12),
     db
       .select({
+        kind: sql<"node">`'node'`,
+        id: treeNodes.id,
+        title: nodeTranslations.title,
+        slug: treeNodes.slug,
+        context: sql<string>`${branches.name} || ' · EN'`,
+        verification: treeNodes.verification,
+      })
+      .from(nodeTranslations)
+      .innerJoin(treeNodes, eq(treeNodes.id, nodeTranslations.nodeId))
+      .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+      .where(
+        and(
+          ne(treeNodes.verification, "archived"),
+          nodeScope,
+          or(
+            ilike(nodeTranslations.title, `%${query}%`),
+            ilike(nodeTranslations.summary, `%${query}%`),
+            ilike(nodeTranslations.contentMd, `%${query}%`),
+          ),
+        ),
+      )
+      .orderBy(asc(nodeTranslations.title))
+      .limit(12),
+    db
+      .select({
         kind: sql<"source">`'source'`,
         id: sources.id,
         title: sources.title,
@@ -412,7 +438,8 @@ export async function searchKnowledge(actor: Principal, q: string, spaceId?: str
       .orderBy(asc(sources.title))
       .limit(12),
   ]);
-  return [...nodes, ...sourceRows];
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  return [...nodes, ...translatedNodes.filter((node) => !nodeIds.has(node.id)), ...sourceRows];
 }
 
 export async function getNode(actor: Principal, nodeId: string) {
@@ -567,6 +594,22 @@ export async function wikiIndex(actor: Principal) {
     string,
     { id: string; title: string; slug?: string; contentMd?: string; verification: string; kind: "node" | "source" }
   > = buildWikiIndex(rows.map((r) => ({ ...r, kind: "node" as const })));
+  const translationRows = await db
+    .select({
+      id: treeNodes.id,
+      title: nodeTranslations.title,
+      slug: treeNodes.slug,
+      contentMd: nodeTranslations.contentMd,
+      verification: treeNodes.verification,
+    })
+    .from(nodeTranslations)
+    .innerJoin(treeNodes, eq(treeNodes.id, nodeTranslations.nodeId))
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(and(ne(treeNodes.verification, "archived"), branchVisibilityCondition(actor)));
+  for (const translation of translationRows) {
+    const key = normalizeTitle(translation.title);
+    if (!(key in nodeIndex)) nodeIndex[key] = { ...translation, kind: "node" };
+  }
 
   const visibleSpaces = scopedToSpaces(actor);
   const spaceFilter =

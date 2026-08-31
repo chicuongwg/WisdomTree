@@ -16,6 +16,9 @@ import {
   submitNodePublication,
   updateNode,
   updateBranch,
+  getNodeTranslation,
+  reviewTranslationProposal,
+  saveNodeTranslation,
   wikiIndex,
 } from "@/modules/knowledge/service";
 import { spaces } from "@/modules/storage/schema";
@@ -51,6 +54,14 @@ export async function run() {
     tags: ["nghề thủ công"],
   });
   assert.equal(node.verification, "no_source");
+  const personalTranslation = await saveNodeTranslation(lan, node.id, "en", {
+    title: "Basket weaving",
+    summary: "A test translation.",
+    contentMd: "# First English draft",
+    expectedVersion: 0,
+  });
+  assert.equal(personalTranslation.state, "saved");
+  assert.equal((await getNodeTranslation(lan, node.id, "en"))?.title, "Basket weaving");
 
   // 2. Live edit twice — each save appends a version, no review anywhere.
   const v2 = await updateNode(lan, node.id, {
@@ -154,6 +165,19 @@ export async function run() {
     .limit(1);
   assert.ok(minhTeamNode, "seed provides a team node authored by the editor");
   const target = minhTeamNode.tree_nodes;
+  const translationProposal = await saveNodeTranslation(minh, target.id, "en", {
+    title: `Shared English ${Date.now()}`,
+    contentMd: "# Reviewed translation",
+    expectedVersion: 0,
+  });
+  assert.equal(translationProposal.state, "pending");
+  if (translationProposal.state !== "pending") throw new Error("translation proposal expected");
+  await assert.rejects(
+    reviewTranslationProposal(minh, translationProposal.proposalId, { decision: "approved" }),
+    /cannot review their own change/,
+  );
+  await reviewTranslationProposal(huong, translationProposal.proposalId, { decision: "approved" });
+  assert.match((await getNodeTranslation(minh, target.id, "en"))?.contentMd ?? "", /Reviewed/);
   const proposal = await proposeNodeChange(minh, target.id, {
     contentMd: `${target.contentMd}\n\nBổ sung ${Date.now()}.`,
     expectedVersion: target.version,

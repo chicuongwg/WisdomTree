@@ -4,8 +4,12 @@ import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/modules/auth/session";
 import { unreadCount } from "@/modules/notify/service";
-import { recentNodes, treeOutline } from "@/modules/knowledge/service";
-import { listPendingProposals } from "@/modules/knowledge/service";
+import {
+  listPendingProposals,
+  listPendingTranslations,
+  recentNodes,
+  treeOutline,
+} from "@/modules/knowledge/service";
 import { shellCopy } from "@/lib/shell-locale";
 import { LogoutButton } from "./components/logout-button";
 import { ShellRail } from "./components/shell-rail";
@@ -81,15 +85,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     spaceMemberships: user.spaceMemberships,
   };
   const canReview = user.role === "editor" || user.role === "admin_op";
-  const [unread, outline, recent, pendingProposals] = await Promise.all([
+  const [unread, outline, recent, pendingProposals, pendingTranslations] = await Promise.all([
     unreadCount(principal),
     treeOutline(principal),
     recentNodes(principal, 6),
     canReview
       ? listPendingProposals(principal)
       : Promise.resolve({ publications: [], changes: [] }),
+    canReview ? listPendingTranslations(principal) : Promise.resolve([]),
   ]);
-  const reviewOpen = pendingProposals.publications.length + pendingProposals.changes.length;
+  const reviewOpen =
+    pendingProposals.publications.length +
+    pendingProposals.changes.length +
+    pendingTranslations.length;
 
   // Defensively handle HMR / cached server bundles where treeOutline might still
   // return an array instead of { team, personal }.

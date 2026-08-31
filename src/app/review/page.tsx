@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, toPrincipal } from "@/lib/page";
-import { listPendingProposals } from "@/modules/knowledge/service";
+import { listPendingProposals, listPendingTranslations } from "@/modules/knowledge/service";
 import { T, when } from "@/lib/vi";
 import { Empty } from "@/app/components/empty";
 
@@ -14,8 +14,12 @@ export const metadata = { title: T.reviewQueue };
 export default async function ReviewQueuePage() {
   const user = await requireUser();
   if (user.role === "user") notFound();
-  const { publications, changes } = await listPendingProposals(toPrincipal(user));
-  const total = publications.length + changes.length;
+  const actor = toPrincipal(user);
+  const [{ publications, changes }, translations] = await Promise.all([
+    listPendingProposals(actor),
+    listPendingTranslations(actor),
+  ]);
+  const total = publications.length + changes.length + translations.length;
 
   return (
     <main className="page">
@@ -103,6 +107,12 @@ export default async function ReviewQueuePage() {
                   </tbody>
                 </table>
               </div>
+            )}
+          </section>
+          <section aria-labelledby="review-translations">
+            <h2 id="review-translations">Bản dịch English</h2>
+            {translations.length === 0 ? <p className="muted">Không có bản dịch chờ duyệt.</p> : (
+              <div className="record-scroll"><table className="list"><thead><tr><th>Tiêu đề</th><th>Người gửi</th><th>Thời điểm</th><th /></tr></thead><tbody>{translations.map((item) => <tr key={item.id}><td>{item.title}</td><td>{item.authorName}</td><td>{when(item.createdAt)}</td><td><Link className="button" href={`/review/translation/${item.id}`}>Duyệt</Link></td></tr>)}</tbody></table></div>
             )}
           </section>
         </>

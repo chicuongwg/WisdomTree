@@ -6,6 +6,7 @@ import {
   getNode,
   getLatestPublicationForNode,
   getNodeNavigation,
+  getNodeTranslation,
   listNodeOptions,
   listPublicationTargets,
   wikiIndex,
@@ -33,11 +34,20 @@ export const metadata = { title: T.node };
 
 // Screen: Node Detail (`/tree/node/:id`) — the primary reading surface with
 // verification badge and provenance summary (user-screen-specs.md).
-export default async function NodeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NodeDetailPage({
+  params,
+  searchParams = Promise.resolve({}),
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ lang?: string }>;
+}) {
   const user = await requireUser();
   const actor = toPrincipal(user);
   const { id } = await params;
   const node = await orNotFound(() => getNode(actor, id));
+  const requestedLanguage = (await searchParams).lang === "en" ? "en" : "vi";
+  const translation = await getNodeTranslation(actor, id, "en");
+  const display = requestedLanguage === "en" && translation ? translation : node;
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
@@ -61,7 +71,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const wiki = await wikiIndex(actor);
   const editLock = await getEditLock(actor, node.id, await currentSessionKey());
   const navigation = await getNodeNavigation(actor, node.id);
-  const headings = parseBlocks(node.contentMd).filter(
+  const headings = parseBlocks(display.contentMd).filter(
     (block) => block.type === "heading" && block.level >= 2 && block.level <= 3,
   );
 
@@ -75,7 +85,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
         </p>
       )}
       <h1>
-        {node.title} <VerificationBadge verification={node.verification} />
+        {display.title} <VerificationBadge verification={node.verification} />
         {/* Published is an outcome, not an enum row of its own: `done` tone. */}
         {node.publish && <span className={badgeToneClass("done")}>{T.publish}</span>}
       </h1>
@@ -88,7 +98,12 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
           </>
         )}
       </p>
-      {node.summary && <p className="wiki-summary">{node.summary}</p>}
+      <p className="wiki-languages">
+        <Link href={wikiPath(node.id, node.slug)} aria-current={requestedLanguage === "vi" ? "page" : undefined}>VI</Link>{" · "}
+        {translation ? <Link href={`${wikiPath(node.id, node.slug)}?lang=en`} aria-current={requestedLanguage === "en" ? "page" : undefined}>EN</Link> : <span className="muted">EN chưa có</span>}
+      </p>
+      {requestedLanguage === "en" && !translation && <p className="notice">Trang này chưa có bản English; đang hiển thị bản tiếng Việt.</p>}
+      {display.summary && <p className="wiki-summary">{display.summary}</p>}
       {/* The same page key as the editor, on purpose: the reader sitting on
           this page is exactly who the editor needs to know about, and the
           editor is exactly who this reader needs to know about before they
@@ -97,7 +112,7 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
 
       <div className="with-side">
         <div>
-          <Markdown content={node.contentMd} wikiIndex={wiki} />
+          <Markdown content={display.contentMd} wikiIndex={wiki} />
           <nav className="wiki-pagination" aria-label="Trang trước và trang sau">
             {navigation.previous ? (
               <Link href={wikiPath(navigation.previous.id, navigation.previous.slug)}>← {navigation.previous.title}</Link>
@@ -209,6 +224,9 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
                 {T.editNode}
               </Link>
             </p>
+          )}
+          {canEdit && node.verification !== "archived" && (
+            <p><Link href={`/tree/node/${node.id}/translate/en`}>Biên soạn bản English</Link></p>
           )}
           <p>
             <Link href={`/tree/node/${node.id}/history`}>{T.nodeHistory}</Link>

@@ -150,6 +150,56 @@ export const nodeProposals = pgTable("node_proposals", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const nodeTranslations = pgTable(
+  "node_translations",
+  {
+    nodeId: uuid("node_id").notNull().references(() => treeNodes.id),
+    locale: text("locale", { enum: ["en"] }).notNull(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    contentMd: text("content_md").notNull(),
+    slug: text("slug").notNull(),
+    version: integer("version").notNull().default(1),
+    updatedBy: uuid("updated_by").notNull().references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.nodeId, table.locale] })],
+);
+
+export const nodeTranslationVersions = pgTable(
+  "node_translation_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nodeId: uuid("node_id").notNull(),
+    locale: text("locale", { enum: ["en"] }).notNull(),
+    seq: integer("seq").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    contentMd: text("content_md").notNull(),
+    createdBy: uuid("created_by").notNull().references(() => users.id),
+    reviewStatus: text("review_status", { enum: ["pending", "approved"] }).notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.nodeId, table.locale, table.seq)],
+);
+
+export const nodeTranslationProposals = pgTable("node_translation_proposals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  nodeId: uuid("node_id").notNull().references(() => treeNodes.id),
+  locale: text("locale", { enum: ["en"] }).notNull(),
+  baseVersion: integer("base_version").notNull(),
+  title: text("title").notNull(),
+  summary: text("summary"),
+  contentMd: text("content_md").notNull(),
+  createdBy: uuid("created_by").notNull().references(() => users.id),
+  state: text("state", { enum: ["pending", "approved", "rejected", "changes_requested"] }).notNull().default("pending"),
+  decisionNote: text("decision_note"),
+  decidedBy: uuid("decided_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 
 export const nodeLinks = pgTable(
   "node_links",
