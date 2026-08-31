@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { T, translateApiError } from "@/lib/vi";
 
 export function ReleaseActions({
   spaceId,
@@ -21,12 +22,19 @@ export function ReleaseActions({
     setMessage("");
     try {
       const response = await fetch(url, { method: "POST" });
-      const body = (await response.json()) as { valid?: boolean; message?: string };
-      if (!response.ok) throw new Error(body.message || "Thao tác thất bại.");
+      const body = (await response.json()) as {
+        valid?: boolean;
+        code?: string;
+        message?: string;
+        details?: Record<string, unknown>;
+      };
+      if (!response.ok) {
+        throw new Error(translateApiError(body.code, body.details, body.message));
+      }
       setMessage(body.valid === false ? "Bản phát hành không khớp." : "Hoàn tất.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Thao tác thất bại.");
+      setMessage(error instanceof Error ? error.message : T.genericError);
     } finally {
       setBusy(false);
     }

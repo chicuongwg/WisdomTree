@@ -5,11 +5,11 @@ modular monolith. No workers, no queues, no second service.
 
 ## Layers (enforced, not aspirational)
 
-| Layer | Path | May do | May not do |
-| --- | --- | --- | --- |
-| Delivery | `src/app/**` | Render, read params, call a service | Touch the DB — no `@/db`, no `*/schema`, no `drizzle-orm` |
-| Business logic | `src/modules/<module>/*` | Authorize, query, transact, audit | Reach into another module's tables (convention — see below) |
-| Data | `src/db/**`, `src/modules/*/schema.ts` | Connection, tables, migrations | Contain business rules |
+| Layer          | Path                                   | May do                              | May not do                                                  |
+| -------------- | -------------------------------------- | ----------------------------------- | ----------------------------------------------------------- |
+| Delivery       | `src/app/**`                           | Render, read params, call a service | Touch the DB — no `@/db`, no `*/schema`, no `drizzle-orm`   |
+| Business logic | `src/modules/<module>/*`               | Authorize, query, transact, audit   | Reach into another module's tables (convention — see below) |
+| Data           | `src/db/**`, `src/modules/*/schema.ts` | Connection, tables, migrations      | Contain business rules                                      |
 
 `scripts/boundaries.test.ts` greps the delivery layer for DB imports on
 every `npm test`; it has caught a real cross-space leak. That is the one
@@ -30,7 +30,8 @@ by eye — modules call each other's services freely and share transactions
   (`requested → approved → borrowed → returned`, + declined/overdue) over
   physical items; one active loan per item enforced by a partial unique
   index.
-- **knowledge** — branches, tree nodes with markdown content,
+- **knowledge** — space-scoped hierarchical branches, ordered tree nodes with
+  safe Markdown content and optional English translations,
   append-only `tree_node_versions`, wiki/typed links, tags, the one
   proposal table (`node_proposals`, kind = change | publication),
   promotions (provenance), `edit-lock.ts`, and the graph read-side
@@ -39,9 +40,12 @@ by eye — modules call each other's services freely and share transactions
   calendar tokens/ICS.
 - **notify** — comments with inline `@mentions`, the in-app notification
   center, per-event opt-out, and the fan-out (`fanout.ts`).
-- **export** — synchronous one-way markdown tree export into the local
-  bare git repo `data/content-repo.git` (plain files + front-matter),
-  plus the admin health report.
+- **export** — the legacy full-tree Admin/Op export plus official per-space
+  wiki releases. A release selects only non-archived team content marked
+  `verified + publish`, validates links and Markdown, writes deterministic
+  `topics/<node-id>/<locale>.md`, `vault.xml`, and `links.xml`, then verifies
+  the exact Git tree. PostgreSQL remains authoritative; released snapshots
+  are immutable and can rebuild `data/vault-repos/<space-id>.git`.
 - **audit** — the `recordAudit` helper; `audit_events` is
   append-only (DB trigger) and read back on `/admin`.
 
@@ -56,9 +60,19 @@ viewer<contributor<manager ladder over `space_members`), `self`, and
 writes throw 403.
 
 Branch visibility derives from the branch row itself: a `team` branch
-is visible to every member, a `personal` branch only to its owner
-(`branchVisibilityCondition` — scope + owner_user_id, no container
-table in between).
+is visible only to members of its `space_id`, while a `personal` branch is
+visible only to its owner (`branchVisibilityCondition`). Team edits and
+reviews require both the appropriate global role and space membership;
+cross-space node links are refused.
+
+## Wiki projection and recovery
+
+PostgreSQL owns editable content and authorization. A release stores its exact
+file snapshot and SHA-256 manifest in `wiki_releases`; a database trigger
+rejects updates or deletion after status becomes `released`. The Git mirror is
+a recoverable projection, not an input. Verify compares every path and byte
+against the stored snapshot; rebuild rewrites the mirror from that snapshot
+without changing the release row.
 
 ## Sessions, timeout, traffic cap
 
@@ -93,7 +107,7 @@ table in between).
   same table, decided the same way, applied under the proposal's
   base-version check.
 - **Single-writer edit locks.** Opening the live editor takes the node's
-  lock (`node_edit_locks`, keyed by *login session*, so the same person
+  lock (`node_edit_locks`, keyed by _login session_, so the same person
   in a second browser is also refused). Re-POSTing the lock is the
   heartbeat; a heartbeat older than `EDIT_LOCK_TTL_MS` (90 s) frees it.
   The lock is enforced in `updateNode`, shown as 🔒 with the holder's
@@ -129,7 +143,7 @@ owns product behavior — verification shapes (circle/diamond/square),
 label LOD, per-link-type colors/arrows, hover preview cards, context
 menu, keyboard navigation with aria-live, the filter pipeline, ego mode
 (`?node=&depth=`), and the settings panel whose seven sliders map to
-d3 forces with the invariant *slider midpoint = shipped default*
+d3 forces with the invariant _slider midpoint = shipped default_
 (unit-tested). Client-only: no SSR graph markup.
 
 ## Extraction (OCR)

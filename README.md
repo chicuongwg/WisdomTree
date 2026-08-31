@@ -7,10 +7,11 @@ Documentation for the system as built lives under [docs/](docs/README.md). The p
 three things and deliberately no more (refactor 2026-08-22 removed the rest):
 
 1. **Task & project management** — Kanban board, deadlines, calendar/ICS.
-2. **Markdown knowledge storage** — Library (files + physical books with a
-   loan desk), OCR extraction, personal note branches with live edit and
-   version history, ONE review boundary at promotion onto the shared tree,
-   Obsidian-style graph view, manual markdown export to a local git repo.
+2. **Secure internal wiki** — space-scoped team knowledge plus private notes,
+   safe Markdown, hierarchy, version history, search, VI/EN pages, one review
+   boundary for shared content, graph navigation, and immutable per-space
+   Markdown/XML releases mirrored to Git. The Library stores source files and
+   physical books alongside the wiki.
 3. **User management** — Google OIDC sign-in (invite-only), DB-backed
    sessions with an inactivity timeout, a per-account traffic cap, and a
    3-role model (thành viên / biên tập / quản trị).
@@ -185,20 +186,21 @@ stays the database-only path the npm scripts use. Compose refuses to start
 without `SESSION_SECRET` rather than letting the published dev default sign
 real sessions.
 
-| Concern               | Where it is handled                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| Uploads + export repo | `appdata` volume on `/app/data` — without it, a redeploy deletes every uploaded file |
-| Migrations            | `migrate` service, runs to completion before `app` starts                            |
-| Health                | `GET /api/health` (unauthenticated, `SELECT 1`), wired to the container healthcheck  |
-| Backups               | `scripts/backup.sh` — `pg_dump` plus a tarball of the object store, on cron          |
+| Concern              | Where it is handled                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| Uploads + wiki repos | `appdata` volume on `/app/data` — without it, a redeploy deletes uploaded files and Git mirrors |
+| Migrations           | `migrate` service, runs to completion before `app` starts                                       |
+| Health               | `GET /api/health` (unauthenticated, `SELECT 1`), wired to the container healthcheck             |
+| Backups              | `scripts/backup.sh` — `pg_dump` plus object-store and wiki-repo tarballs, on cron               |
 
-The image carries `git` (content-repo export), `pandoc`, Poppler, and
+The image carries `git` (wiki release mirrors), `pandoc`, Poppler, and
 Tesseract with Vietnamese language data — PDF/image text extraction and OCR.
 (The docx/pdf document-render pipeline was removed with the 2026-08-22
 refactor.)
 
-Back up **both** halves or neither: a database row whose file is missing is not
-a restorable source.
+Back up the database, uploaded objects, and wiki Git mirrors together: a
+database row whose file or projection is missing is not a complete recovery
+set.
 
 ```sh
 ./scripts/backup.sh /srv/backups        # nightly, via cron — see the script header
@@ -223,16 +225,16 @@ the stub dispatcher produced in-app notifications.
 
 ## Layout
 
-| Path                                  | What it is                                                                                                              |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `docs/`                               | Documentation for the system as built (start at `docs/README.md`)                                                       |
-| `drizzle/`                            | Forward-only SQL migrations (tracked in `schema_migrations`)                                                            |
-| `src/modules/<module>/`               | Module boundaries (see `docs/architecture.md`); large services use a thin facade plus cohesive internal slices          |
-| `src/modules/*/schema.ts`             | Drizzle table definitions owned by that module                                                                          |
-| `src/app/components/knowledge-map/`   | Graph renderer model, responsive media hook, and component implementation                                               |
-| `src/lib/vi/`                         | Vietnamese copy and state-label implementation behind the `src/lib/vi.ts` facade                                        |
-| `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1                                                                                |
-| `src/modules/storage/extraction.ts`   | In-process OCR/pandoc extraction (tesseract with Vietnamese data)                                                       |
-| `src/db/`                             | Drizzle client, aggregated schema, cross-cutting outbox table                                                           |
-| `scripts/db/`                         | Migration runner and seed script                                                                                        |
-| `tests/`                              | Unit, integration, and Playwright suites; module, contract, and UI audits are wired through package scripts             |
+| Path                                  | What it is                                                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `docs/`                               | Documentation for the system as built (start at `docs/README.md`)                                              |
+| `drizzle/`                            | Forward-only SQL migrations (tracked in `schema_migrations`)                                                   |
+| `src/modules/<module>/`               | Module boundaries (see `docs/architecture.md`); large services use a thin facade plus cohesive internal slices |
+| `src/modules/*/schema.ts`             | Drizzle table definitions owned by that module                                                                 |
+| `src/app/components/knowledge-map/`   | Graph renderer model, responsive media hook, and component implementation                                      |
+| `src/lib/vi/`                         | Vietnamese copy and state-label implementation behind the `src/lib/vi.ts` facade                               |
+| `src/modules/storage/object-store.ts` | Dev substitution: local FS now, S3 in V1                                                                       |
+| `src/modules/storage/extraction.ts`   | In-process OCR/pandoc extraction (tesseract with Vietnamese data)                                              |
+| `src/db/`                             | Drizzle client, aggregated schema, cross-cutting outbox table                                                  |
+| `scripts/db/`                         | Migration runner and seed script                                                                               |
+| `tests/`                              | Unit, integration, and Playwright suites; module, contract, and UI audits are wired through package scripts    |

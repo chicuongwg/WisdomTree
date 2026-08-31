@@ -78,6 +78,10 @@ const STATIC: Record<string, string> = {
   missing_verification: "Thiếu mức thẩm định.",
   source_required: "Trang không có tư liệu nguồn chỉ được xuất bản ở mức chưa thẩm định.",
   branch_exists: "Tên chuyên đề đã tồn tại trong kho này.",
+  release_empty: "Kho này chưa có trang đã thẩm định và cho phép xuất bản.",
+  release_validation_failed: "Nội dung chưa đạt kiểm tra để phát hành.",
+  release_verification_failed: "Không thể xác minh bản phát hành trong kho Git.",
+  release_not_ready: "Bản phát hành chưa sẵn sàng.",
   // comments / notifications / presence
   invalid_anchor: "Mục này không nhận thảo luận.",
   invalid_comment: "Vui lòng nhập nội dung thảo luận.",

@@ -35,6 +35,9 @@ behind a proxy that rewrites forwarding headers, the Google OIDC
 triple, and the tunables `SESSION_IDLE_MS`, `USER_RATE_LIMIT`,
 `EDIT_LOCK_TTL_MS`.
 
+`VAULT_GIT_DIR` optionally changes the directory containing per-space bare Git
+mirrors (default `./data/vault-repos`).
+
 ## Deploy
 
 ```sh
@@ -57,14 +60,29 @@ Cron, on the host:
   `Authorization: Bearer $CRON_SECRET` — deadline reminders (the one
   time-driven notification producer; everything else is written by its
   mutation) plus the stale-session purge.
-- Backups: `scripts/backup.sh [dest]` — `pg_dump` plus a tarball of the
-  object store (suggested crontab inside the script).
+- Backups: `scripts/backup.sh [dest]` — `pg_dump` plus separate verified
+  tarballs of the object store and `VAULT_GIT_DIR` (suggested crontab inside
+  the script). Keep all artifacts from the same run together.
+
+## Wiki releases
+
+Managers use `/wiki/releases` to create, verify, or rebuild a space release;
+Admin/Op has cross-space knowledge access. The equivalent endpoints are:
+
+- `GET|POST /api/spaces/{spaceId}/wiki/releases`
+- `POST /api/wiki/releases/{releaseId}/verify`
+- `POST /api/wiki/releases/{releaseId}/rebuild`
+
+Creation fails rather than publishing when a wiki link is unresolved or the
+safe-Markdown validator reports an error. Verify checks the current Git tree
+against both the immutable database snapshot and its manifest hash. Rebuild
+restores that exact snapshot; it never regenerates from today's editable wiki.
 
 ## Tests
 
-`npm test` = lint + typecheck + unit + boundaries + sign/time contracts
-+ contrast audit. `npm run test:integration` needs the seeded local DB.
-`npm run test:e2e` builds on a standalone build; its global-setup signs
-in by inserting a session row (no in-app backdoor). On NixOS the
-bundled Playwright chromium lacks system libs — point
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at a system chromium.
+`npm test` = lint + typecheck + unit + boundaries + sign/time contracts and
+contrast audit. `npm run test:integration` needs the seeded local DB.
+`npm run test:e2e` builds on a standalone build; its global-setup signs in by
+inserting a session row (no in-app backdoor). On NixOS the bundled Playwright
+chromium lacks system libs — point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at a
+system chromium.
