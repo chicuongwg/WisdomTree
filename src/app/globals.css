@@ -1132,11 +1132,80 @@ button.danger:disabled:hover {
 }
 .md-content table {
   border-collapse: collapse;
+  width: 100%;
 }
 .md-content th,
 .md-content td {
   border: 1px solid var(--color-line);
   padding: 0.35rem 0.6rem;
+}
+.md-content .table-scroll {
+  overflow-x: auto;
+  margin: 0.8rem 0;
+}
+.md-content .code-title {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--color-line);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-size: 0.82rem;
+}
+.md-content .code-title + pre {
+  margin-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.md-content .admonition {
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-line-strong);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.md-content .admonition.tip {
+  border-left-color: var(--color-success);
+}
+.md-content .admonition.warning,
+.md-content .admonition.danger {
+  border-left-color: var(--color-danger);
+}
+.md-content .admonition-title {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+.md-content .admonition > :last-child,
+.md-content details > :last-child {
+  margin-bottom: 0;
+}
+.md-content details {
+  margin: 0.8rem 0;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+}
+.md-content summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.md-content .doc-tabs {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.md-content .doc-tabs details {
+  margin: 0;
+}
+.md-content .image-blocked {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border: 1px dashed var(--color-line-strong);
+  color: var(--color-ink-muted);
+}
+.md-content img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* Extracted/corrected source text: also reading matter */

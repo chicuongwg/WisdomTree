@@ -13,9 +13,9 @@ import {
 
 export function run() {
   assert.deepEqual(parseBlocks("# Title\n\nFirst\nline\n\n- one\n* two"), [
-    { type: "h1", text: "Title" },
+    { type: "heading", level: 1, text: "Title" },
     { type: "p", text: "First line" },
-    { type: "ul", items: ["one", "two"] },
+    { type: "ul", items: [{ text: "one" }, { text: "two" }] },
   ]);
   assert.deepEqual(inlineTokens("See **bold** and [[Cây tri thức|the tree]]."), [
     { kind: "text", text: "See " },
@@ -26,9 +26,30 @@ export function run() {
   ]);
   assert.equal(
     markdownToHtml('# <script>alert("x")</script>\n\n**safe & sound**'),
-    "<h1>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;</h1>\n" +
+    "<h1 id=\"&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;\">&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;</h1>\n" +
       "<p><strong>safe &amp; sound</strong></p>",
   );
+  const docs = parseBlocks(
+    "## Cài đặt\n\n1. Một\n2. Hai\n\n- [x] Xong\n- [ ] Chờ\n\n```ts title=\"demo.ts\"\nconst ok = true;\n```\n\n:::warning[Chú ý]\nKhông chạy tùy ý.\n:::\n\n| A | B |\n| --- | --- |\n| 1 | 2 |",
+  );
+  assert.equal(docs[0].type, "heading");
+  assert.equal(docs[1].type, "ol");
+  assert.deepEqual(docs[2], {
+    type: "ul",
+    items: [{ text: "Xong", checked: true }, { text: "Chờ", checked: false }],
+  });
+  assert.deepEqual(docs[3], {
+    type: "code",
+    code: "const ok = true;",
+    language: "ts",
+    title: "demo.ts",
+  });
+  assert.equal(docs[4].type, "admonition");
+  assert.equal(docs[5].type, "table");
+  assert.match(markdownToHtml("[x](javascript:alert(1))"), /javascript:alert/);
+  assert.doesNotMatch(markdownToHtml("[x](javascript:alert(1))"), /<a /);
+  assert.match(markdownToHtml("![remote](https://example.com/a.png)"), /image-blocked/);
+  assert.doesNotMatch(markdownToHtml("![remote](https://example.com/a.png)"), /<img/);
 
   assert.equal(normalizeTitle("  Cây   Đời  "), "cay doi");
   assert.deepEqual(parseWikiLinks("[[A]] [[B|Bee]]"), [
