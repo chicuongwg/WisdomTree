@@ -22,7 +22,7 @@ export default async function TreeBrowsePage({
     recentNodes(actor),
     q?.trim() ? searchTree(actor, q) : Promise.resolve(null),
   ]);
-  const canEdit = user.role === "editor" || user.role === "admin_op";
+  const canCreateBranch = true;
   const teamBranches = branches.filter((b) => b.scope === "team" || !b.scope);
   const personalBranches = branches.filter((b) => b.scope === "personal");
 
@@ -38,7 +38,7 @@ export default async function TreeBrowsePage({
           aria-label={T.search}
         />
         <button type="submit">{T.search}</button>
-        {canEdit && (
+        {canCreateBranch && (
           <Link className="button" href="/tree/branch/new">
             {T.createBranch}
           </Link>
@@ -97,7 +97,9 @@ export default async function TreeBrowsePage({
               panel={false}
               title={T.branchesEmptyTitle}
               hint={T.branchesEmptyHint}
-              action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
+              action={
+                canCreateBranch ? { label: T.createBranch, href: "/tree/branch/new" } : undefined
+              }
             />
           ) : (
             <>
@@ -152,7 +154,9 @@ export default async function TreeBrowsePage({
               panel={false}
               title={T.nodesEmptyTitle}
               hint={T.nodesEmptyHint}
-              action={canEdit ? { label: T.navBranches, href: "/tree/branches" } : undefined}
+              action={
+                canCreateBranch ? { label: T.navBranches, href: "/tree/branches" } : undefined
+              }
             />
           )}
           <ul>

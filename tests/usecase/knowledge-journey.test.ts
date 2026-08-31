@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { branches, treeNodes } from "@/modules/knowledge/schema";
 import {
+  createBranch,
   createNode,
   decideNodePublication,
   getNode,
@@ -15,6 +16,7 @@ import {
   updateNode,
   wikiIndex,
 } from "@/modules/knowledge/service";
+import { spaces } from "@/modules/storage/schema";
 import { createGraphProvider } from "@/modules/knowledge/graph-provider";
 import { diffLines } from "@/lib/diff";
 import { principalFor } from "../setup";
@@ -75,12 +77,17 @@ export async function run() {
 
   // 4. Promote through the single review boundary: the submitter cannot be
   // the decider; an independent reviewer approves it onto a team branch.
-  const [teamBranch] = await db
-    .select()
-    .from(branches)
-    .where(eq(branches.scope, "team"))
+  const [sharedSpace] = await db
+    .select({ id: spaces.id })
+    .from(spaces)
+    .where(and(eq(spaces.type, "team"), inArray(spaces.id, lan.spaceIds)))
     .limit(1);
-  assert.ok(teamBranch);
+  assert.ok(sharedSpace);
+  const teamBranch = await createBranch(huong, {
+    name: `Chuyên đề kiểm thử ${Date.now()}`,
+    scope: "team",
+    spaceId: sharedSpace.id,
+  });
   const submission = await submitNodePublication(lan, node.id, teamBranch.id);
   const promoted = await decideNodePublication(huong, submission.proposalId, {
     decision: "approved",
@@ -90,11 +97,13 @@ export async function run() {
   assert.equal(promoted.branchId, teamBranch.id);
   assert.equal(promoted.createdBy, lan.userId, "authorship survives promotion");
 
-  // 5. The promoted page is part of the shared tree: readable with
-  // provenance back to the personal origin, findable in search, resolvable
-  // as a wiki-link target, present on the graph for another member.
+  // 5. The promoted page is part of the shared tree. Its author can trace the
+  // private origin; other members can find the shared page without learning
+  // that private node id.
+  const authorRead = await getNode(lan, promoted.id);
+  assert.equal(authorRead.personalOrigins[0]?.sourceNodeId, node.id);
   const read = await getNode(minh, promoted.id);
-  assert.equal(read.personalOrigins[0]?.sourceNodeId, node.id);
+  assert.equal(read.personalOrigins.length, 0);
   const hits = await searchTree(minh, title.split(" ")[0]);
   assert.ok(hits.some((h) => h.id === promoted.id));
   const wiki = await wikiIndex(minh);

@@ -37,9 +37,15 @@ export default async function NodeDetailPage({ params }: { params: Promise<{ id:
   const isOwnPersonalNode =
     node.branchScope === "personal" &&
     (node.branchOwnerId === user.id || node.createdBy === user.id);
-  const canManageShared = user.role === "editor";
-  const canEdit =
-    isOwnPersonalNode || (canManageShared && node.createdBy === user.id);
+  const canManageShared =
+    node.branchScope === "team" &&
+    (user.role === "admin_op" ||
+      (user.role === "editor" &&
+        user.spaceMemberships.some(
+          (membership) =>
+            membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
+        )));
+  const canEdit = isOwnPersonalNode || canManageShared;
   const candidates =
     canManageShared && node.verification !== "archived" ? await listNodeOptions(actor) : [];
   const [publicationTargets, pendingPublication] = isOwnPersonalNode

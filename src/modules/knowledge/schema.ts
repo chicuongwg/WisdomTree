@@ -12,7 +12,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
-import { sourceVersions } from "../storage/schema";
+import { sourceVersions, spaces } from "../storage/schema";
 
 // Module: knowledge — branches, tree nodes, versions, links, tags,
 // proposals and promotions.
@@ -25,8 +25,11 @@ export const branches = pgTable(
   {
   id: uuid("id").primaryKey().defaultRandom(),
   parentId: uuid("parent_id"),
-  // Uniqueness is scoped by the partial indexes below: team names among team
-  // branches, personal names per owner — two people may both hold "Ghi chú".
+  // A shared branch belongs to exactly one team space. Personal branches have
+  // no space: ownerUserId remains their complete visibility boundary.
+  spaceId: uuid("space_id").references(() => spaces.id),
+  // Uniqueness is scoped by the partial indexes below: team names per space,
+  // personal names per owner — two people may both hold "Ghi chú".
   name: text("name").notNull(),
   description: text("description"),
   // scope: 'team' = shared project knowledge (all members); 'personal' = private
@@ -45,7 +48,9 @@ export const branches = pgTable(
   version: integer("version").notNull().default(1),
   },
   (t) => [
-    uniqueIndex("branches_team_name_key").on(t.name).where(sql`${t.scope} = 'team'`),
+    uniqueIndex("branches_team_space_name_key")
+      .on(t.spaceId, t.name)
+      .where(sql`${t.scope} = 'team'`),
     uniqueIndex("branches_personal_owner_name_key")
       .on(t.ownerUserId, t.name)
       .where(sql`${t.scope} = 'personal'`),

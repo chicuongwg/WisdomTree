@@ -25,7 +25,14 @@ export default async function EditNodePage({ params }: { params: Promise<{ id: s
     (node.branchOwnerId === user.id || node.createdBy === user.id);
   // Two-tier model: own personal node saves live; a promoted node opens the
   // same editor in propose mode (mirrors proposeNodeChange's authorize).
-  const canPropose = user.role === "editor" && node.createdBy === user.id;
+  const canPropose =
+    node.branchScope === "team" &&
+    (user.role === "admin_op" ||
+      (user.role === "editor" &&
+        user.spaceMemberships.some(
+          (membership) =>
+            membership.spaceId === node.branchSpaceId && membership.role !== "viewer",
+        )));
   if ((!isOwnPersonalNode && !canPropose) || node.verification === "archived") notFound();
 
   return (

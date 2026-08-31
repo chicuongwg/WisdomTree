@@ -89,17 +89,23 @@ export async function syncTags(tx: Tx, actor: Principal, nodeId: string, names: 
  */
 export async function syncLinks(
   tx: Tx,
+  actor: Principal,
   nodeId: string,
   links: Array<{ toNodeId: string; linkType: string }>,
 ) {
-  await tx
-    .delete(nodeLinks)
-    .where(and(eq(nodeLinks.fromNodeId, nodeId), ne(nodeLinks.linkType, "related")));
   for (const link of links) {
     if (!["related", "supports", "contrasts", "part_of"].includes(link.linkType)) {
       throw new ApiError(400, "invalid_link_type", "Invalid link type.");
     }
   }
+  const allowedTargets = await linkTargetCandidates(tx, actor, nodeId);
+  const allowedTargetIds = new Set(allowedTargets.map((target) => target.id));
+  if (links.some((link) => !allowedTargetIds.has(link.toNodeId))) {
+    throw new ApiError(400, "invalid_link_target", "A link target must be visible in this knowledge scope.");
+  }
+  await tx
+    .delete(nodeLinks)
+    .where(and(eq(nodeLinks.fromNodeId, nodeId), ne(nodeLinks.linkType, "related")));
   if (links.length) {
     await tx
       .insert(nodeLinks)
@@ -123,6 +129,7 @@ export async function syncLinks(
  */
 export async function syncDerivedLinks(
   tx: Tx,
+  actor: Principal,
   nodeId: string,
   title: string,
   contentMd: string,
@@ -130,10 +137,7 @@ export async function syncDerivedLinks(
   const keys = wikiTargetKeys(contentMd);
   let targetIds: string[] = [];
   if (keys.length) {
-    const candidates = await tx
-      .select({ id: treeNodes.id, title: treeNodes.title })
-      .from(treeNodes)
-      .where(ne(treeNodes.verification, "archived"));
+    const candidates = await linkTargetCandidates(tx, actor, nodeId);
     const index = buildWikiIndex(candidates);
     const selfKey = normalizeTitle(title);
     targetIds = [
@@ -161,6 +165,27 @@ export async function syncDerivedLinks(
       .onConflictDoNothing();
   }
   return targetIds;
+}
+
+async function linkTargetCandidates(tx: Tx, actor: Principal, sourceNodeId: string) {
+  const [source] = await tx
+    .select({ scope: branches.scope, spaceId: branches.spaceId })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(eq(treeNodes.id, sourceNodeId));
+  if (!source) throw notFound();
+
+  return tx
+    .select({ id: treeNodes.id, title: treeNodes.title })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(
+      and(
+        ne(treeNodes.verification, "archived"),
+        branchVisibilityCondition(actor),
+        source.scope === "team" ? eq(branches.spaceId, source.spaceId!) : undefined,
+      ),
+    );
 }
 
 /** Manual personal-node creation: enters `no_source` (state-machines.md). */
@@ -210,10 +235,10 @@ export async function createNode(
       changeSummary: "manual_create",
     });
     if (input.tags) await syncTags(tx, actor, node.id, input.tags);
-    if (input.links) await syncLinks(tx, node.id, input.links);
+    if (input.links) await syncLinks(tx, actor, node.id, input.links);
     // Same transaction as the node row: wiki-links in the content become
     // node_links or the save does not happen at all.
-    await syncDerivedLinks(tx, node.id, input.title, input.contentMd);
+    await syncDerivedLinks(tx, actor, node.id, input.title, input.contentMd);
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "node.create",
@@ -258,7 +283,7 @@ export async function updateNode(
     branch?.scope === "personal" &&
     (branch.ownerUserId === actor.userId || branch.createdBy === actor.userId);
   if (!isOwnPersonalBranch) {
-    authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
+    authorize(actor, "knowledge.node.edit", { spaceId: branch?.spaceId ?? undefined, kind: "write" });
     throw new ApiError(
       403,
       "review_required",
@@ -269,7 +294,7 @@ export async function updateNode(
   if (patch.verification !== undefined || patch.publish !== undefined) {
     // Verification transitions and the Quartz publish flag ride on
     // knowledge.publish (Admin/Op only).
-    authorize(actor, "knowledge.publish", { kind: "write" });
+    authorize(actor, "knowledge.publish", { spaceId: branch?.spaceId ?? undefined, kind: "write" });
   }
   if (patch.verification !== undefined) {
     const allowed: Record<Verification, Verification[]> = {
@@ -327,7 +352,7 @@ export async function updateNode(
     // Derived wiki-links ride the same transaction as the node row (also on
     // a title-only change: the self-link guard keys off the title).
     if (patch.contentMd !== undefined || patch.title !== undefined) {
-      await syncDerivedLinks(tx, nodeId, updated.title, updated.contentMd);
+      await syncDerivedLinks(tx, actor, nodeId, updated.title, updated.contentMd);
     }
     await recordAudit(tx, actor, {
       accountability: actor.role === "admin_op" ? "approver_publisher" : "editor_updater",
@@ -356,7 +381,7 @@ export async function updateNode(
   if (patch.tags || patch.links) {
     await db.transaction(async (tx) => {
       if (patch.tags) await syncTags(tx, actor, nodeId, patch.tags);
-      if (patch.links) await syncLinks(tx, nodeId, patch.links);
+      if (patch.links) await syncLinks(tx, actor, nodeId, patch.links);
     });
   }
   return result;
@@ -389,7 +414,7 @@ export async function proposeNodeChange(
   if (isOwnPersonalBranch) {
     throw new ApiError(400, "live_editable", "Personal nodes are edited directly; no proposal needed.");
   }
-  authorize(actor, "knowledge.node.edit", { ownerIds: [node.createdBy], kind: "write" });
+  authorize(actor, "knowledge.node.edit", { spaceId: branch.spaceId ?? undefined, kind: "write" });
 
   const [currentTags, currentLinks] = await Promise.all([
     db
@@ -441,11 +466,12 @@ export async function reviewNodeProposal(
     verification?: "unverified" | "verified";
   },
 ) {
-  authorize(actor, "knowledge.publish", { kind: "write" });
+  authorize(actor, "knowledge.review.list", { kind: "write" });
   const [row] = await db
-    .select({ proposal: nodeProposals, node: treeNodes })
+    .select({ proposal: nodeProposals, node: treeNodes, spaceId: branches.spaceId })
     .from(nodeProposals)
     .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(
       and(
         eq(nodeProposals.kind, "change"),
@@ -454,6 +480,7 @@ export async function reviewNodeProposal(
       ),
     );
   if (!row || row.proposal.state !== "pending") throw notFound();
+  authorize(actor, "knowledge.publish", { spaceId: row.spaceId ?? undefined, kind: "write" });
   // Proposer cannot approve their own change; the node's original author may
   // review someone else's proposal — the separation is on this proposal.
   assertIndependentReviewer(actor.userId, { submittedBy: row.proposal.createdBy });
@@ -519,10 +546,11 @@ export async function reviewNodeProposal(
     await syncTags(tx, actor, nodeId, row.proposal.tags as string[]);
     await syncLinks(
       tx,
+      actor,
       nodeId,
       row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
     );
-    await syncDerivedLinks(tx, nodeId, node.title, node.contentMd);
+    await syncDerivedLinks(tx, actor, nodeId, node.title, node.contentMd);
     const [proposal] = await tx
       .update(nodeProposals)
       .set({ state: "approved" })
@@ -541,13 +569,20 @@ export async function reviewNodeProposal(
 }
 
 export async function archiveNode(actor: Principal, nodeId: string) {
-  authorize(actor, "knowledge.archive", { kind: "write" });
   const [row] = await db
-    .select({ node: treeNodes })
+    .select({ node: treeNodes, branch: branches })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, nodeId));
   if (!row) throw notFound();
+  if (row.branch.scope === "personal") {
+    authorize(actor, "knowledge.branch.edit", {
+      ownerIds: [row.branch.ownerUserId, row.branch.createdBy],
+      kind: "write",
+    });
+  } else {
+    authorize(actor, "knowledge.archive", { spaceId: row.branch.spaceId!, kind: "write" });
+  }
   const node = row.node;
   if (node.verification === "archived") return node;
 
@@ -588,9 +623,16 @@ export async function archiveNode(actor: Principal, nodeId: string) {
  * connection cannot produce a conflict a person has to think about.
  */
 export async function archiveBranch(actor: Principal, branchId: string) {
-  authorize(actor, "knowledge.archive", { kind: "write" });
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
   if (!branch) throw notFound();
+  if (branch.scope === "personal") {
+    authorize(actor, "knowledge.branch.edit", {
+      ownerIds: [branch.ownerUserId, branch.createdBy],
+      kind: "write",
+    });
+  } else {
+    authorize(actor, "knowledge.branch.manage", { spaceId: branch.spaceId!, kind: "write" });
+  }
   if (branch.archivedAt) return branch;
 
   return db.transaction(async (tx) => {
@@ -613,17 +655,16 @@ export async function archiveBranch(actor: Principal, branchId: string) {
 
 /** Merge: this node archives and redirects to the canonical node (audited). */
 export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeId: string) {
-  authorize(actor, "knowledge.node.merge", { kind: "write" });
   if (nodeId === canonicalNodeId) {
     throw new ApiError(400, "invalid_merge", "A node cannot be merged into itself.");
   }
   const [nodeRow] = await db
-    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId })
+    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId, spaceId: branches.spaceId })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, nodeId));
   const [canonicalRow] = await db
-    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId })
+    .select({ node: treeNodes, scope: branches.scope, ownerId: branches.ownerUserId, spaceId: branches.spaceId })
     .from(treeNodes)
     .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .where(eq(treeNodes.id, canonicalNodeId));
@@ -632,9 +673,18 @@ export async function mergeNode(actor: Principal, nodeId: string, canonicalNodeI
     !nodeRow ||
     !canonicalRow ||
     nodeRow.scope !== canonicalRow.scope ||
-    nodeRow.ownerId !== canonicalRow.ownerId
+    nodeRow.ownerId !== canonicalRow.ownerId ||
+    nodeRow.spaceId !== canonicalRow.spaceId
   )
     throw notFound();
+  if (nodeRow.scope === "personal") {
+    authorize(actor, "knowledge.branch.edit", {
+      ownerIds: [nodeRow.ownerId],
+      kind: "write",
+    });
+  } else {
+    authorize(actor, "knowledge.node.merge", { spaceId: nodeRow.spaceId!, kind: "write" });
+  }
   const node = nodeRow.node;
   const canonical = canonicalRow.node;
   if (canonical.verification === "archived") {

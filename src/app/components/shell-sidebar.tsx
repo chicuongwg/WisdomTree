@@ -83,13 +83,14 @@ function SidebarContent({
   personalBranches = [],
   recent = [],
   role = "user",
-
+  canManageTeamKnowledge = false,
   spaceCount = 0,
 }: {
   teamBranches?: OutlineBranch[];
   personalBranches?: OutlineBranch[];
   recent?: RecentNode[];
   role?: string;
+  canManageTeamKnowledge?: boolean;
   spaceCount?: number;
 }) {
   const T = useShellCopy();
@@ -230,7 +231,7 @@ function SidebarContent({
             <div className="side-sec">
               <div className="side-label side-label--team">
                 {T.branch}
-                {(role === "editor" || role === "admin_op") && (
+                {canManageTeamKnowledge && (
                   <Link href="/tree/branch/new" title={T.createBranch} aria-label={T.createBranch}>
                     +
                   </Link>
@@ -348,6 +349,7 @@ export function ShellSidebar(props: {
   personalBranches?: OutlineBranch[];
   recent?: RecentNode[];
   role?: string;
+  canManageTeamKnowledge?: boolean;
   spaceCount?: number;
 }) {
   const T = useShellCopy();

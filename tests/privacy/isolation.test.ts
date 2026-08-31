@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { spaces, sources } from "@/modules/storage/schema";
-import { branches } from "@/modules/knowledge/schema";
+import { branches, treeNodes } from "@/modules/knowledge/schema";
 import { getDownloadToken, getSourceDetail, listLibrary } from "@/modules/storage/service";
 import {
   createNode,
@@ -49,6 +49,18 @@ export async function run() {
     .where(eq(sources.spaceId, restricted.id))
     .limit(1);
   assert.ok(hidden, "seed premise: the restricted space holds at least one source");
+  const [hiddenBranch] = await db
+    .select({ id: branches.id })
+    .from(branches)
+    .where(and(eq(branches.scope, "team"), eq(branches.spaceId, restricted.id)))
+    .limit(1);
+  assert.ok(hiddenBranch, "seed premise: the restricted space holds a knowledge branch");
+  const [hiddenNode] = await db
+    .select({ id: treeNodes.id, title: treeNodes.title })
+    .from(treeNodes)
+    .where(eq(treeNodes.branchId, hiddenBranch.id))
+    .limit(1);
+  assert.ok(hiddenNode, "seed premise: the restricted branch holds a node");
 
   // Detail and download both answer 404 — indistinguishable from "no such id".
   await assert.rejects(getSourceDetail(lan, hidden.id), notFound404);
@@ -63,6 +75,20 @@ export async function run() {
     "asking for the space by id must read as not-found",
   );
 
+  // Knowledge uses the same space boundary on every read surface.
+  await assert.rejects(getNode(lan, hiddenNode.id), notFound404);
+  await assert.rejects(listNodeVersions(lan, hiddenNode.id), notFound404);
+  const lanBranches = await listBranches(lan);
+  assert.ok(lanBranches.every((branch) => branch.id !== hiddenBranch.id));
+  const lanTeamOutline = await treeOutline(lan);
+  assert.ok(lanTeamOutline.team.every((branch) => branch.id !== hiddenBranch.id));
+  const hiddenHits = await searchTree(lan, hiddenNode.title);
+  assert.ok(hiddenHits.every((node) => node.id !== hiddenNode.id));
+  const lanWiki = await wikiIndex(lan);
+  assert.ok(Object.values(lanWiki).every((node) => node.id !== hiddenNode.id));
+  const lanGraph = await createGraphProvider(lan).loadGraph({ scope: "shared" });
+  assert.ok(lanGraph.nodes.every((node) => node.id !== hiddenNode.id));
+
   // --- Personal-vault isolation -------------------------------------------
   const [lanBranch] = await db
     .select()
@@ -75,6 +101,15 @@ export async function run() {
     title: `Ghi chú riêng tư ${Date.now()}`,
     contentMd: "Chỉ của Lan.",
   });
+  await assert.rejects(
+    createNode(lan, {
+      branchId: lanBranch.id,
+      title: `Liên kết ngoài phạm vi ${Date.now()}`,
+      contentMd: "Không được lưu target ẩn.",
+      links: [{ toNodeId: hiddenNode.id, linkType: "supports" }],
+    }),
+    (err: unknown) => err instanceof ApiError && err.code === "invalid_link_target",
+  );
 
   // Another member: node detail and history are 404.
   await assert.rejects(getNode(duc, secret.id), notFound404);

@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
       name?: string;
       description?: string;
       scope?: string;
+      spaceId?: string;
     } | null;
     if (!body?.name?.trim()) {
       throw new ApiError(400, "invalid_branch", "Branch name must not be empty.");
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
       name: body.name.trim(),
       description: body.description?.trim() || undefined,
       scope: body.scope,
+      spaceId: body.spaceId,
     });
     return NextResponse.json(branch, { status: 201 });
   });

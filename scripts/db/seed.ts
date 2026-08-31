@@ -222,10 +222,10 @@ async function main() {
     const branchFolk = randomUUID();
     const branchHistory = randomUUID();
     await client.query(
-      `INSERT INTO branches (id, name, description, scope, created_by) VALUES
-         ($1,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.','team',$3),
-         ($2,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.','team',$3)`,
-      [branchFolk, branchHistory, minh.id],
+      `INSERT INTO branches (id, name, description, scope, space_id, created_by) VALUES
+         ($1,'Văn Hóa Dân Gian','Tập quán, lễ hội và tri thức truyền miệng của cộng đồng.','team',$3,$4),
+         ($2,'Lịch Sử Địa Phương','Các sự kiện, nhân vật và địa danh của khu vực khảo sát.','team',$3,$4)`,
+      [branchFolk, branchHistory, teamCommunity, minh.id],
     );
 
     // Personal branches — one per user, empty by default (user fills them in).

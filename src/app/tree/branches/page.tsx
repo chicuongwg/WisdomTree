@@ -30,7 +30,7 @@ function BranchCard({ b }: { b: BranchItem }) {
 export default async function BranchListPage() {
   const user = await requireUser();
   const branches = await listBranches(toPrincipal(user));
-  const canEdit = user.role === "editor" || user.role === "admin_op";
+  const canCreateBranch = true;
 
   const teamBranches = branches.filter((b) => b.scope === "team" || !b.scope);
   const personalBranches = branches.filter((b) => b.scope === "personal");
@@ -38,7 +38,7 @@ export default async function BranchListPage() {
   return (
     <main className="page">
       <h1>{T.navBranches}</h1>
-      {canEdit && branches.length > 0 && (
+      {canCreateBranch && branches.length > 0 && (
         <p>
           <Link className="button" href="/tree/branch/new">
             {T.createBranch}
@@ -49,7 +49,9 @@ export default async function BranchListPage() {
         <Empty
           title={T.branchesEmptyTitle}
           hint={T.branchesEmptyHint}
-          action={canEdit ? { label: T.createBranch, href: "/tree/branch/new" } : undefined}
+          action={
+            canCreateBranch ? { label: T.createBranch, href: "/tree/branch/new" } : undefined
+          }
         />
       ) : (
         <>

@@ -38,6 +38,7 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "circulation.loan.manage": { roles: ADMIN, scope: "global" },
   // --- Knowledge ---
   "knowledge.node.read": { roles: EVERYONE, scope: "global" },
+  "knowledge.space.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
   "knowledge.search": { roles: EVERYONE, scope: "global" },
   "knowledge.graph.read": { roles: EVERYONE, scope: "global" },
   // Growing your own personal tree: the gate is ownership, not a global
@@ -45,13 +46,16 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   // content never enters here; it goes through the proposal pipeline
   // (submission_required).
   "knowledge.branch.create": { roles: EVERYONE, scope: "owned-or-assigned" },
-  "knowledge.branch.edit": { roles: ["editor"], scope: "owned-or-assigned" },
+  "knowledge.branch.edit": { roles: EVERYONE, scope: "owned-or-assigned" },
+  "knowledge.branch.manage": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
+  "knowledge.submit": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
   "knowledge.node.create": { roles: EVERYONE, scope: "owned-or-assigned" },
-  "knowledge.node.edit": { roles: ["editor"], scope: "owned-or-assigned" },
+  "knowledge.node.edit": { roles: ["editor", "admin_op"], scope: "space", spaceRole: "contributor" },
   // The single review boundary: promotion decisions and verification levers.
-  "knowledge.publish": { roles: REVIEWERS, scope: "global" },
-  "knowledge.node.merge": { roles: ["editor"], scope: "global" },
-  "knowledge.archive": { roles: ["editor"], scope: "global" },
+  "knowledge.publish": { roles: REVIEWERS, scope: "space", spaceRole: "contributor" },
+  "knowledge.review.list": { roles: REVIEWERS, scope: "global" },
+  "knowledge.node.merge": { roles: REVIEWERS, scope: "space", spaceRole: "contributor" },
+  "knowledge.archive": { roles: REVIEWERS, scope: "space", spaceRole: "contributor" },
   // --- Export ---
   "export.tree.trigger": { roles: ADMIN, scope: "global" },
   // --- Admin console ---
@@ -109,6 +113,9 @@ export function authorize(
     case "global":
       return actor;
     case "space": {
+      // Admin/Op is the break-glass operator across knowledge spaces. Other
+      // modules retain their existing explicit-membership boundary.
+      if (actor.role === "admin_op" && permission.startsWith("knowledge.")) return actor;
       if (!resource.spaceId) throw denial;
       const membership = actor.spaceMemberships.find((item) => item.spaceId === resource.spaceId);
       if (!membership) throw denial;
@@ -129,6 +136,6 @@ export function authorize(
  * The one query-layer scoping helper (no per-endpoint ad hoc filtering):
  * returns the space ids a list query may see.
  */
-export function scopedToSpaces(actor: Principal): string[] {
-  return actor.spaceIds;
+export function scopedToSpaces(actor: Principal): string[] | null {
+  return actor.role === "admin_op" ? null : actor.spaceIds;
 }

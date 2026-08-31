@@ -82,14 +82,12 @@ export function CommandPalette({ role }: { role: string }) {
     },
     { key: "account", label: T.account, hint: T.paletteHintGo, href: "/account" },
   ];
-  if (role === "editor" || role === "admin_op") {
-    screens.push({
-      key: "new-branch",
-      label: T.createBranch,
-      hint: T.paletteHintGo,
-      href: "/tree/branch/new",
-    });
-  }
+  screens.push({
+    key: "new-branch",
+    label: T.createBranch,
+    hint: T.paletteHintGo,
+    href: "/tree/branch/new",
+  });
   if (role === "editor" || role === "admin_op") {
     screens.push({ key: "review", label: T.reviewQueue, hint: T.paletteHintGo, href: "/review" });
   }

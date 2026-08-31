@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../src/db";
-import { users } from "../../src/modules/auth/schema";
-import type { Principal } from "../../src/modules/auth/principal";
+import { spaces } from "../../src/modules/storage/schema";
 import {
   branches,
   nodeProposals,
@@ -11,6 +10,7 @@ import {
 } from "../../src/modules/knowledge/schema";
 import {
   createNode,
+  createBranch,
   decideNodePublication,
   listPendingProposals,
   proposeNodeChange,
@@ -18,6 +18,7 @@ import {
   submitNodePublication,
   updateNode,
 } from "../../src/modules/knowledge/service";
+import { principalFor } from "../setup";
 
 // The two surviving review boundaries of the two-tier model:
 //   1. a change to a promoted (team-scope) node needs an independent reviewer;
@@ -25,20 +26,10 @@ import {
 // Everything else — personal-branch edits — saves live and is covered by the
 // direct updateNode path below.
 
-async function principal(email: string): Promise<Principal> {
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  assert.ok(user);
-  return {
-    userId: user.id,
-    role: user.role,
-    spaceIds: [],
-    spaceMemberships: [],
-  };
-}
-
 export async function run() {
-  const editor = await principal("minh@wisdomtree.local");
-  const reviewer = await principal("huong@wisdomtree.local");
+  const editor = await principalFor("minh@wisdomtree.local");
+  const reviewer = await principalFor("huong@wisdomtree.local");
+  const user = await principalFor("lan@wisdomtree.local");
 
   const [sharedNode] = await db
     .select({ node: treeNodes })
@@ -102,14 +93,18 @@ export async function run() {
     }),
   );
 
-  const [targetBranch] = await db
-    .select()
-    .from(branches)
-    .where(eq(branches.scope, "team"))
+  const [sharedSpace] = await db
+    .select({ id: spaces.id })
+    .from(spaces)
+    .where(and(eq(spaces.type, "team"), inArray(spaces.id, user.spaceIds)))
     .limit(1);
-  assert.ok(targetBranch);
+  assert.ok(sharedSpace);
+  const targetBranch = await createBranch(reviewer, {
+    name: `Maker-checker ${Date.now()}`,
+    scope: "team",
+    spaceId: sharedSpace.id,
+  });
 
-  const user = await principal("lan@wisdomtree.local");
   await assert.rejects(
     createNode(user, {
       branchId: targetBranch.id,

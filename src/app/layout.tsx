@@ -124,6 +124,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             personalBranches={personalBranches}
             recent={recent.map((n) => ({ id: n.id, title: n.title, branchName: n.branchName }))}
             role={user.role}
+            canManageTeamKnowledge={
+              user.role === "admin_op" ||
+              user.spaceMemberships.some((membership) => membership.role === "manager")
+            }
             spaceCount={user.spaceIds.length}
           />
           {/* ponytail: tabIndex 0, not -1. The skip link only needs a

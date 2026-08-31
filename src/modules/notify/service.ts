@@ -7,7 +7,7 @@ import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { sources, sourcePhysical, spaceMembers } from "../storage/schema";
-import { treeNodes } from "../knowledge/schema";
+import { branches, treeNodes } from "../knowledge/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
 import { comments, notificationPreferences, notifications, presence } from "./schema";
@@ -47,9 +47,17 @@ async function authorizeAnchorRead(
       return;
     }
     case "tree_node": {
-      const [node] = await db.select().from(treeNodes).where(eq(treeNodes.id, anchorId));
+      const [node] = await db
+        .select({ scope: branches.scope, ownerUserId: branches.ownerUserId, spaceId: branches.spaceId })
+        .from(treeNodes)
+        .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+        .where(eq(treeNodes.id, anchorId));
       if (!node) throw notFound();
-      authorize(actor, "knowledge.node.read", { kind: "read" });
+      if (node.scope === "personal") {
+        if (node.ownerUserId !== actor.userId) throw notFound();
+      } else {
+        authorize(actor, "knowledge.space.read", { spaceId: node.spaceId!, kind: "read" });
+      }
       return;
     }
     case "deadline": {
@@ -75,26 +83,35 @@ async function authorizeAnchorRead(
 // It is never an error: refusing to save a comment because a name was typed
 // loosely would be a worse product than quietly not notifying anyone.
 
-/** The space whose members can see this anchor; null = readable app-wide. */
-async function anchorSpaceId(anchorType: AnchorType, anchorId: string): Promise<string | null> {
+type AnchorAudience = { spaceId: string | null; ownerUserId: string | null };
+
+/** The exact audience boundary inherited by comments and @mention choices. */
+async function anchorAudience(anchorType: AnchorType, anchorId: string): Promise<AnchorAudience> {
   switch (anchorType) {
     case "source": {
       const [row] = await db
         .select({ spaceId: sources.spaceId })
         .from(sources)
         .where(eq(sources.id, anchorId));
-      return row?.spaceId ?? null;
+      return { spaceId: row?.spaceId ?? null, ownerUserId: null };
     }
     case "deadline": {
       const [row] = await db
         .select({ spaceId: deadlines.spaceId })
         .from(deadlines)
         .where(eq(deadlines.id, anchorId));
-      return row?.spaceId ?? null;
+      return { spaceId: row?.spaceId ?? null, ownerUserId: null };
     }
-    case "tree_node":
-      // knowledge.node.read is global scope: every enabled member can see it.
-      return null;
+    case "tree_node": {
+      const [row] = await db
+        .select({ scope: branches.scope, spaceId: branches.spaceId, ownerUserId: branches.ownerUserId })
+        .from(treeNodes)
+        .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+        .where(eq(treeNodes.id, anchorId));
+      return row?.scope === "personal"
+        ? { spaceId: null, ownerUserId: row.ownerUserId }
+        : { spaceId: row?.spaceId ?? null, ownerUserId: null };
+    }
   }
 }
 
@@ -149,16 +166,17 @@ function matchMentions(
  * space when it has one (Admin/Op reads every space, so they stay in).
  */
 async function mentionCandidates(anchorType: AnchorType, anchorId: string) {
-  const spaceId = await anchorSpaceId(anchorType, anchorId);
+  const audience = await anchorAudience(anchorType, anchorId);
   const enabled = await db
     .select({ id: users.id, displayName: users.displayName, role: users.role })
     .from(users)
     .where(isNull(users.disabledAt));
-  if (!spaceId) return enabled;
+  if (audience.ownerUserId) return enabled.filter((user) => user.id === audience.ownerUserId);
+  if (!audience.spaceId) return enabled;
   const members = await db
     .select({ userId: spaceMembers.userId })
     .from(spaceMembers)
-    .where(eq(spaceMembers.spaceId, spaceId));
+    .where(eq(spaceMembers.spaceId, audience.spaceId));
   const inSpace = new Set(members.map((m) => m.userId));
   return enabled.filter((u) => u.role === "admin_op" || inSpace.has(u.id));
 }

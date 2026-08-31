@@ -1,10 +1,11 @@
 import { and, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { ApiError } from "@/lib/errors";
+import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { users } from "../auth/schema";
-import { nodeEditLocks } from "./schema";
+import { branches, nodeEditLocks, treeNodes } from "./schema";
+import { branchVisibilityCondition } from "./service-queries";
 
 // Single-writer editing for the node editor: the open editor acquires the
 // lock, re-acquires it every ~30s as a heartbeat, and releases it on leave.
@@ -15,6 +16,15 @@ import { nodeEditLocks } from "./schema";
 export const EDIT_LOCK_TTL_MS = Number(process.env.EDIT_LOCK_TTL_MS ?? 90_000);
 
 const freshCutoff = () => new Date(Date.now() - EDIT_LOCK_TTL_MS);
+
+async function assertNodeVisible(actor: Principal, nodeId: string): Promise<void> {
+  const [node] = await db
+    .select({ id: treeNodes.id })
+    .from(treeNodes)
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
+    .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
+  if (!node) throw notFound();
+}
 
 export type EditLockState =
   | { locked: false }
@@ -27,6 +37,7 @@ export async function getEditLock(
   sessionKey?: string | null,
 ): Promise<EditLockState> {
   authorize(actor, "knowledge.node.read", { kind: "read" });
+  await assertNodeVisible(actor, nodeId);
   const [row] = await db
     .select({
       userId: nodeEditLocks.userId,
@@ -57,6 +68,7 @@ export async function acquireEditLock(
   sessionKey: string,
 ): Promise<EditLockState> {
   authorize(actor, "knowledge.node.read", { kind: "read" });
+  await assertNodeVisible(actor, nodeId);
   const [won] = await db
     .insert(nodeEditLocks)
     .values({ nodeId, userId: actor.userId, sessionKey })

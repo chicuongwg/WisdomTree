@@ -36,7 +36,8 @@ export const run = async () => {
   const member = actor("user", [{ spaceId: SPACE, role: "viewer" }]);
   const contributor = actor("user", [{ spaceId: SPACE, role: "contributor" }]);
   const manager = actor("user", [{ spaceId: SPACE, role: "manager" }]);
-  const editor = actor("editor");
+  const editor = actor("editor", [{ spaceId: SPACE, role: "contributor" }]);
+  const outsideEditor = actor("editor");
   const admin = actor("admin_op");
 
   // Role gates: admin-only keys refuse members and editors.
@@ -55,9 +56,15 @@ export const run = async () => {
     denied(() => authorize(editor, key, { kind: "write" }), 403, "forbidden");
   }
 
-  // The review boundary: editors and admins, never plain members.
-  authorize(editor, "knowledge.publish", { kind: "write" });
-  authorize(admin, "knowledge.publish", { kind: "write" });
+  // The review boundary: an editor must contribute to the target space;
+  // Admin/Op remains the cross-space break-glass role.
+  authorize(editor, "knowledge.publish", { spaceId: SPACE, kind: "write" });
+  authorize(admin, "knowledge.publish", { spaceId: SPACE, kind: "write" });
+  denied(
+    () => authorize(outsideEditor, "knowledge.publish", { spaceId: SPACE, kind: "write" }),
+    403,
+    "forbidden",
+  );
   denied(() => authorize(member, "knowledge.publish", { kind: "write" }), 403, "forbidden");
 
   // Denial rule: a denied READ is a 404 (no existence leak), a denied WRITE
@@ -105,11 +112,16 @@ export const run = async () => {
     "forbidden",
   );
 
-  // Deliberately-empty role lists: NOBODY passes these gates (the personal
-  // branch/node create paths check branch ownership in the service instead).
+  // Personal branch/node creation is owned, so every role passes only for its
+  // own resource.
   for (const key of ["knowledge.branch.create", "knowledge.node.create"] as const) {
-    denied(() => authorize(admin, key, { kind: "write" }), 403, "forbidden");
-    denied(() => authorize(member, key, { kind: "write" }), 403, "forbidden");
+    authorize(admin, key, { ownerIds: [admin.userId], kind: "write" });
+    authorize(member, key, { ownerIds: [member.userId], kind: "write" });
+    denied(
+      () => authorize(member, key, { ownerIds: ["someone-else"], kind: "write" }),
+      403,
+      "forbidden",
+    );
   }
 
   // No principal at all → 401.

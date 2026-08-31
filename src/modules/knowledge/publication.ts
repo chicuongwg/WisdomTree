@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
@@ -9,6 +9,7 @@ import { recordAudit } from "../audit/service";
 import { notifyEvent } from "../notify/fanout";
 import { extractionCandidates, sources, sourceVersions } from "../storage/schema";
 import { syncDerivedLinks, syncLinks, syncTags } from "./service-mutations";
+import { branchVisibilityCondition } from "./service-queries";
 import {
   branches,
   nodeProposals,
@@ -47,13 +48,21 @@ async function uniqueSlug(tx: Tx, branchId: string, title: string): Promise<stri
 
 export async function listPublicationTargets(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
+  const writable = actor.spaceMemberships
+    .filter((membership) => membership.role !== "viewer")
+    .map((membership) => membership.spaceId);
   return db
-    .select({ id: branches.id, name: branches.name })
+    .select({ id: branches.id, name: branches.name, spaceId: branches.spaceId })
     .from(branches)
     .where(
       and(
         eq(branches.scope, "team"),
         sql`${branches.archivedAt} IS NULL`,
+        actor.role === "admin_op"
+          ? undefined
+          : writable.length
+            ? inArray(branches.spaceId, writable)
+            : sql`false`,
       ),
     )
     .orderBy(asc(branches.name));
@@ -79,6 +88,7 @@ export async function getLatestPublicationForNode(actor: Principal, nodeId: stri
       state: nodeProposals.state,
       targetBranchId: nodeProposals.targetBranchId,
       targetBranchName: branches.name,
+      targetSpaceId: branches.spaceId,
       decisionNote: nodeProposals.decisionNote,
       approvedNodeId: treeNodeVersions.nodeId,
       sourceNodeVersion: nodeProposals.baseVersion,
@@ -92,7 +102,13 @@ export async function getLatestPublicationForNode(actor: Principal, nodeId: stri
       eq(treeNodeVersions.id, nodeProposals.approvedNodeVersionId),
     )
     .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
-    .where(and(eq(nodeProposals.kind, "publication"), eq(nodeProposals.nodeId, nodeId)))
+    .where(
+      and(
+        eq(nodeProposals.kind, "publication"),
+        eq(nodeProposals.nodeId, nodeId),
+        branchVisibilityCondition(actor),
+      ),
+    )
     .orderBy(sql`${nodeProposals.createdAt} DESC`)
     .limit(1);
   return proposal ?? null;
@@ -123,6 +139,7 @@ export async function submitNodePublication(
   if (!target || target.branch.archivedAt || target.branch.scope !== "team") {
     throw new ApiError(400, "invalid_target_branch", "Invalid target team branch.");
   }
+  authorize(actor, "knowledge.submit", { spaceId: target.branch.spaceId!, kind: "write" });
   const [pending] = await db
     .select({ id: nodeProposals.id })
     .from(nodeProposals)
@@ -204,7 +221,16 @@ export async function submitNodePublication(
 
 /** Pending proposals of both kinds, for the review surface. */
 export async function listPendingProposals(actor: Principal) {
-  authorize(actor, "knowledge.publish", { kind: "read" });
+  authorize(actor, "knowledge.review.list", { kind: "read" });
+  const reviewSpaces = actor.spaceMemberships
+    .filter((membership) => membership.role !== "viewer")
+    .map((membership) => membership.spaceId);
+  const reviewScope =
+    actor.role === "admin_op"
+      ? undefined
+      : reviewSpaces.length
+        ? inArray(branches.spaceId, reviewSpaces)
+        : sql`false`;
   const [publications, changes] = await Promise.all([
     db
       .select({
@@ -218,7 +244,14 @@ export async function listPendingProposals(actor: Principal) {
       .from(nodeProposals)
       .innerJoin(branches, eq(branches.id, nodeProposals.targetBranchId))
       .innerJoin(users, eq(users.id, nodeProposals.createdBy))
-      .where(and(eq(nodeProposals.kind, "publication"), eq(nodeProposals.state, "pending")))
+      .where(
+        and(
+          eq(nodeProposals.kind, "publication"),
+          eq(nodeProposals.state, "pending"),
+          branchVisibilityCondition(actor),
+          reviewScope,
+        ),
+      )
       .orderBy(asc(nodeProposals.createdAt)),
     db
       .select({
@@ -230,19 +263,29 @@ export async function listPendingProposals(actor: Principal) {
         createdAt: nodeProposals.createdAt,
       })
       .from(nodeProposals)
+      .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+      .innerJoin(branches, eq(branches.id, treeNodes.branchId))
       .innerJoin(users, eq(users.id, nodeProposals.createdBy))
-      .where(and(eq(nodeProposals.kind, "change"), eq(nodeProposals.state, "pending")))
+      .where(
+        and(
+          eq(nodeProposals.kind, "change"),
+          eq(nodeProposals.state, "pending"),
+          branchVisibilityCondition(actor),
+          reviewScope,
+        ),
+      )
       .orderBy(asc(nodeProposals.createdAt)),
   ]);
   return { publications, changes };
 }
 
 export async function getNodePublicationReview(actor: Principal, proposalId: string) {
-  authorize(actor, "knowledge.publish", { kind: "read" });
+  authorize(actor, "knowledge.review.list", { kind: "read" });
   const [row] = await db
     .select({
       proposal: nodeProposals,
       targetBranchName: branches.name,
+      targetSpaceId: branches.spaceId,
       authorName: users.displayName,
       sourceNodeCreatedBy: treeNodes.createdBy,
       currentSourceVersion: treeNodes.version,
@@ -253,6 +296,7 @@ export async function getNodePublicationReview(actor: Principal, proposalId: str
     .innerJoin(users, eq(users.id, nodeProposals.createdBy))
     .where(and(eq(nodeProposals.kind, "publication"), eq(nodeProposals.id, proposalId)));
   if (!row) throw notFound();
+  authorize(actor, "knowledge.publish", { spaceId: row.targetSpaceId!, kind: "read" });
   const source = row.proposal.sourceVersionId
     ? (
         await db
@@ -279,15 +323,17 @@ export async function decideNodePublication(
     note?: string;
   },
 ) {
-  authorize(actor, "knowledge.publish", { kind: "write" });
+  authorize(actor, "knowledge.review.list", { kind: "write" });
   const [row] = await db
     .select({
       proposal: nodeProposals,
       sourceNodeCreatedBy: treeNodes.createdBy,
       sourceNodeVersion: treeNodes.version,
+      targetSpaceId: branches.spaceId,
     })
     .from(nodeProposals)
     .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .innerJoin(branches, eq(branches.id, nodeProposals.targetBranchId))
     .where(
       and(
         eq(nodeProposals.kind, "publication"),
@@ -296,6 +342,7 @@ export async function decideNodePublication(
       ),
     );
   if (!row) throw notFound();
+  authorize(actor, "knowledge.publish", { spaceId: row.targetSpaceId!, kind: "write" });
   assertIndependentReviewer(actor.userId, { submittedBy: row.proposal.createdBy });
   const note = input.note?.trim() || null;
   if (input.decision !== "approved" && !note) {
@@ -371,10 +418,11 @@ export async function decideNodePublication(
     await syncTags(tx, actor, node.id, row.proposal.tags as string[]);
     await syncLinks(
       tx,
+      actor,
       node.id,
       row.proposal.links as Array<{ toNodeId: string; linkType: string }>,
     );
-    await syncDerivedLinks(tx, node.id, node.title, node.contentMd);
+    await syncDerivedLinks(tx, actor, node.id, node.title, node.contentMd);
     if (row.proposal.sourceVersionId) {
       await tx.insert(promotions).values({
         sourceVersionId: row.proposal.sourceVersionId,

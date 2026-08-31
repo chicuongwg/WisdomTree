@@ -32,9 +32,16 @@ const PAGE_SIZE = 20;
  * whole rule (scope + owner_user_id).
  */
 export function branchVisibilityCondition(actor: Principal) {
+  const visibleSpaces = scopedToSpaces(actor);
+  const visibleTeam =
+    visibleSpaces === null
+      ? eq(branches.scope, "team")
+      : visibleSpaces.length
+        ? and(eq(branches.scope, "team"), inArray(branches.spaceId, visibleSpaces))
+        : sql`false`;
   return and(
     sql`${branches.archivedAt} IS NULL`,
-    or(eq(branches.scope, "team"), eq(branches.ownerUserId, actor.userId)),
+    or(visibleTeam, eq(branches.ownerUserId, actor.userId)),
   );
 }
 
@@ -43,6 +50,7 @@ export async function listBranches(actor: Principal) {
   return db
     .select({
       id: branches.id,
+      spaceId: branches.spaceId,
       name: branches.name,
       description: branches.description,
       scope: branches.scope,
@@ -71,6 +79,7 @@ export async function treeOutline(actor: Principal) {
   const branchRows = await db
     .select({
       id: branches.id,
+      spaceId: branches.spaceId,
       name: branches.name,
       scope: branches.scope,
       ownerUserId: branches.ownerUserId,
@@ -101,9 +110,11 @@ export async function treeOutline(actor: Principal) {
 
 export async function getBranch(actor: Principal, branchId: string) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
-  const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
-  if (!branch || branch.archivedAt) throw notFound();
-  if (branch.scope !== "team" && branch.ownerUserId !== actor.userId) throw notFound();
+  const [branch] = await db
+    .select()
+    .from(branches)
+    .where(and(eq(branches.id, branchId), branchVisibilityCondition(actor)));
+  if (!branch) throw notFound();
   const nodes = await db
     .select({
       id: treeNodes.id,
@@ -121,27 +132,33 @@ export async function getBranch(actor: Principal, branchId: string) {
 
 export async function createBranch(
   actor: Principal,
-  input: { name: string; description?: string; scope?: string },
+  input: { name: string; description?: string; scope?: string; spaceId?: string },
 ) {
-  if (input.scope !== "personal") {
-    throw new ApiError(
-      403,
-      "submission_required",
-      "Team branches start from a member proposal.",
-    );
+  const personal = input.scope === "personal";
+  if (personal) {
+    authorize(actor, "knowledge.branch.create", { ownerIds: [actor.userId], kind: "write" });
+  } else {
+    if (!input.spaceId) {
+      throw new ApiError(400, "space_required", "A team branch requires a space.");
+    }
+    authorize(actor, "knowledge.branch.manage", { spaceId: input.spaceId, kind: "write" });
   }
-  // The personal vault is the actor's own ground, whatever their global role.
-  authorize(actor, "knowledge.branch.create", { ownerIds: [actor.userId], kind: "write" });
   return db.transaction(async (tx) => {
     const [dup] = await tx
       .select({ id: branches.id })
       .from(branches)
       .where(
-        and(
-          eq(branches.scope, "personal"),
-          eq(branches.ownerUserId, actor.userId),
-          eq(branches.name, input.name),
-        ),
+        personal
+          ? and(
+              eq(branches.scope, "personal"),
+              eq(branches.ownerUserId, actor.userId),
+              eq(branches.name, input.name),
+            )
+          : and(
+              eq(branches.scope, "team"),
+              eq(branches.spaceId, input.spaceId!),
+              eq(branches.name, input.name),
+            ),
       );
     if (dup) {
       throw new ApiError(409, "branch_exists", "A branch with this name already exists here.");
@@ -151,8 +168,9 @@ export async function createBranch(
       .values({
         name: input.name,
         description: input.description ?? null,
-        scope: "personal",
-        ownerUserId: actor.userId,
+        scope: personal ? "personal" : "team",
+        spaceId: personal ? null : input.spaceId!,
+        ownerUserId: personal ? actor.userId : null,
         createdBy: actor.userId,
       })
       .returning();
@@ -161,7 +179,7 @@ export async function createBranch(
       action: "branch.create",
       targetType: "branch",
       targetId: created.id,
-      details: { name: input.name },
+      details: { name: input.name, spaceId: input.spaceId ?? null },
     });
     return created;
   });
@@ -174,7 +192,14 @@ export async function updateBranch(
 ) {
   const [branch] = await db.select().from(branches).where(eq(branches.id, branchId));
   if (!branch) throw notFound();
-  authorize(actor, "knowledge.branch.edit", { ownerIds: [branch.createdBy], kind: "write" });
+  if (branch.scope === "personal") {
+    authorize(actor, "knowledge.branch.edit", {
+      ownerIds: [branch.ownerUserId, branch.createdBy],
+      kind: "write",
+    });
+  } else {
+    authorize(actor, "knowledge.branch.manage", { spaceId: branch.spaceId!, kind: "write" });
+  }
   const expected = patch.expectedVersion ?? branch.version;
   return db.transaction(async (tx) => {
     const [updated] = await tx
@@ -260,12 +285,14 @@ export async function getNode(actor: Principal, nodeId: string) {
       node: treeNodes,
       branchName: branches.name,
       branchScope: branches.scope,
+      branchSpaceId: branches.spaceId,
       branchOwnerId: branches.ownerUserId,
     })
     .from(treeNodes)
     .innerJoin(branches, eq(treeNodes.branchId, branches.id))
     .where(and(eq(treeNodes.id, nodeId), branchVisibilityCondition(actor)));
   if (!row) throw notFound();
+  const visibleSpaces = scopedToSpaces(actor);
 
   const [tagRows, linkRows, backlinkRows, provenance, personalOrigins] = await Promise.all([
     db
@@ -281,7 +308,8 @@ export async function getNode(actor: Principal, nodeId: string) {
       })
       .from(nodeLinks)
       .innerJoin(treeNodes, eq(nodeLinks.toNodeId, treeNodes.id))
-      .where(eq(nodeLinks.fromNodeId, nodeId)),
+      .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+      .where(and(eq(nodeLinks.fromNodeId, nodeId), branchVisibilityCondition(actor))),
     // Backlinks — the incoming half of the graph (WHERE to_node_id = :id).
     // Kept apart from provenance on purpose: provenance answers "what source
     // backs this page", backlinks answer "which pages point here".
@@ -295,7 +323,14 @@ export async function getNode(actor: Principal, nodeId: string) {
       })
       .from(nodeLinks)
       .innerJoin(treeNodes, eq(nodeLinks.fromNodeId, treeNodes.id))
-      .where(and(eq(nodeLinks.toNodeId, nodeId), ne(treeNodes.verification, "archived")))
+      .innerJoin(branches, eq(treeNodes.branchId, branches.id))
+      .where(
+        and(
+          eq(nodeLinks.toNodeId, nodeId),
+          ne(treeNodes.verification, "archived"),
+          branchVisibilityCondition(actor),
+        ),
+      )
       .orderBy(asc(treeNodes.title)),
     // Provenance backbone: promotions → source version → source (Flow 2 NFR).
     db
@@ -313,7 +348,16 @@ export async function getNode(actor: Principal, nodeId: string) {
       .innerJoin(sourceVersions, eq(promotions.sourceVersionId, sourceVersions.id))
       .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
       .innerJoin(users, eq(promotions.approvedBy, users.id))
-      .where(eq(treeNodeVersions.nodeId, nodeId))
+      .where(
+        and(
+          eq(treeNodeVersions.nodeId, nodeId),
+          visibleSpaces === null
+            ? undefined
+            : visibleSpaces.length
+              ? inArray(sources.spaceId, visibleSpaces)
+              : sql`false`,
+        ),
+      )
       .orderBy(desc(promotions.createdAt)),
     db
       .select({
@@ -328,13 +372,20 @@ export async function getNode(actor: Principal, nodeId: string) {
         eq(nodeProposals.approvedNodeVersionId, treeNodeVersions.id),
       )
       .innerJoin(users, eq(nodeProposals.decidedBy, users.id))
-      .where(and(eq(nodeProposals.kind, "publication"), eq(treeNodeVersions.nodeId, nodeId))),
+      .where(
+        and(
+          eq(nodeProposals.kind, "publication"),
+          eq(treeNodeVersions.nodeId, nodeId),
+          eq(nodeProposals.createdBy, actor.userId),
+        ),
+      ),
   ]);
 
   return {
     ...row.node,
     branchName: row.branchName,
     branchScope: row.branchScope,
+    branchSpaceId: row.branchSpaceId,
     branchOwnerId: row.branchOwnerId,
     tags: tagRows.map((t) => t.name),
     links: linkRows,
@@ -446,7 +497,7 @@ export async function getNodeVersion(actor: Principal, nodeId: string, seq: numb
 
 /** A change proposal beside the node's current text, for the review surface. */
 export async function getNodeChangeProposal(actor: Principal, proposalId: string) {
-  authorize(actor, "knowledge.publish", { kind: "read" });
+  authorize(actor, "knowledge.review.list", { kind: "read" });
   const [row] = await db
     .select({
       proposal: nodeProposals,
@@ -454,12 +505,15 @@ export async function getNodeChangeProposal(actor: Principal, proposalId: string
       nodeContentMd: treeNodes.contentMd,
       nodeVersion: treeNodes.version,
       authorName: users.displayName,
+      spaceId: branches.spaceId,
     })
     .from(nodeProposals)
     .innerJoin(treeNodes, eq(treeNodes.id, nodeProposals.nodeId))
+    .innerJoin(branches, eq(branches.id, treeNodes.branchId))
     .innerJoin(users, eq(users.id, nodeProposals.createdBy))
     .where(and(eq(nodeProposals.kind, "change"), eq(nodeProposals.id, proposalId)));
   if (!row) throw notFound();
+  authorize(actor, "knowledge.publish", { spaceId: row.spaceId ?? undefined, kind: "read" });
   return {
     ...row,
     canReview: actor.userId !== row.proposal.createdBy,

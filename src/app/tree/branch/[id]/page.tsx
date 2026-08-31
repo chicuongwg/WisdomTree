@@ -22,9 +22,19 @@ export const metadata = { title: T.branch };
  * "would this be allowed" into a boolean. The service enforces it again on the
  * POST — this only decides whether to offer a button that would be refused.
  */
-function mayArchive(actor: Principal): boolean {
+function mayArchive(
+  actor: Principal,
+  branch: { scope: string; spaceId: string | null; ownerUserId: string | null; createdBy: string },
+): boolean {
   try {
-    authorize(actor, "knowledge.archive", { kind: "write" });
+    if (branch.scope === "personal") {
+      authorize(actor, "knowledge.branch.edit", {
+        ownerIds: [branch.ownerUserId, branch.createdBy],
+        kind: "write",
+      });
+    } else {
+      authorize(actor, "knowledge.branch.manage", { spaceId: branch.spaceId!, kind: "write" });
+    }
     return true;
   } catch {
     return false;
@@ -42,9 +52,13 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
   const verified = branch.nodes.filter((n) => n.verification === "verified").length;
   const isOwnPersonalBranch =
     branch.scope === "personal" && (branch.ownerUserId === user.id || branch.createdBy === user.id);
-  const canEdit = user.role === "editor" || user.role === "admin_op" || isOwnPersonalBranch;
+  const canEdit = isOwnPersonalBranch;
   const canEditMeta =
-    user.role === "admin_op" || branch.createdBy === user.id || isOwnPersonalBranch;
+    isOwnPersonalBranch ||
+    user.role === "admin_op" ||
+    user.spaceMemberships.some(
+      (membership) => membership.spaceId === branch.spaceId && membership.role === "manager",
+    );
 
   return (
     <main className="page">
@@ -109,7 +123,7 @@ export default async function BranchHubPage({ params }: { params: Promise<{ id: 
 
       {/* Last on the page on purpose: finishing a chuyên đề is the rarest act
           here, and it should not sit next to the everyday edits. */}
-      {mayArchive(actor) && (
+      {mayArchive(actor, branch) && (
         <>
           <h2>{T.branchDone}</h2>
           <div className="panel">

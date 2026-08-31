@@ -1,6 +1,7 @@
-import { requireUser } from "@/lib/page";
+import { requireUser, toPrincipal } from "@/lib/page";
 import { T } from "@/lib/vi";
 import { BranchForm } from "@/app/components/branch-form";
+import { listMemberSpaces } from "@/modules/storage/service";
 
 export const metadata = { title: T.createBranch };
 
@@ -12,8 +13,9 @@ export default async function CreateBranchPage({
 }) {
   const user = await requireUser();
   const sp = await searchParams;
-  const isEditorOrAdmin = user.role === "editor" || user.role === "admin_op";
-  const defaultScope = isEditorOrAdmin
+  const canManageTeam =
+    user.role === "admin_op" || user.spaceMemberships.some((membership) => membership.role === "manager");
+  const defaultScope = canManageTeam
     ? sp.scope === "personal"
       ? "personal"
       : "team"
@@ -27,7 +29,20 @@ export default async function CreateBranchPage({
         hoặc xuất bản từ tư liệu đã hiệu đính.
       </p>
       <div className="panel">
-        <BranchForm scope={defaultScope} />
+        <BranchForm
+          scope={defaultScope}
+          spaces={
+            defaultScope === "team"
+              ? (await listMemberSpaces(toPrincipal(user))).filter(
+                  (space) =>
+                    user.role === "admin_op" ||
+                    user.spaceMemberships.some(
+                      (membership) => membership.spaceId === space.id && membership.role === "manager",
+                    ),
+                )
+              : []
+          }
+        />
       </div>
     </main>
   );

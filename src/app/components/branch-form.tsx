@@ -13,9 +13,11 @@ import { ConfirmButton } from "./confirm-button";
 export function BranchForm({
   branch,
   scope,
+  spaces = [],
 }: {
   branch?: { id: string; name: string; description: string | null; version: number };
   scope?: "team" | "personal";
+  spaces?: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
   const m = useMutation();
@@ -31,6 +33,7 @@ export function BranchForm({
           name: String(form.get("name") ?? ""),
           description: String(form.get("description") ?? ""),
           ...(scope ? { scope } : {}),
+          ...(scope === "team" ? { spaceId: String(form.get("spaceId") ?? "") } : {}),
           ...(branch ? { expectedVersion: branch.version } : {}),
         },
       },
@@ -42,6 +45,21 @@ export function BranchForm({
   return (
     <form onSubmit={onSubmit}>
       <SayMutation m={m} />
+      {!branch && scope === "team" && (
+        <div className="field">
+          <label htmlFor="spaceId">{T.space}</label>
+          <select id="spaceId" name="spaceId" required defaultValue="">
+            <option value="" disabled>
+              Chọn không gian
+            </option>
+            {spaces.map((space) => (
+              <option key={space.id} value={space.id}>
+                {space.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="field">
         <label htmlFor="name">{T.branchName}</label>
         <input id="name" name="name" type="text" required defaultValue={branch?.name ?? ""} />
