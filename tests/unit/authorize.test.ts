@@ -81,7 +81,11 @@ export const run = async () => {
     404,
     "not_found",
   );
-  denied(() => authorize(member, "storage.upload", { spaceId: SPACE, kind: "write" }), 403, "forbidden");
+  denied(
+    () => authorize(member, "storage.upload", { spaceId: SPACE, kind: "write" }),
+    403,
+    "forbidden",
+  );
   authorize(contributor, "storage.upload", { spaceId: SPACE, kind: "write" });
   denied(
     () => authorize(contributor, "storage.space.members.manage", { spaceId: SPACE, kind: "write" }),
@@ -89,6 +93,13 @@ export const run = async () => {
     "forbidden",
   );
   authorize(manager, "storage.space.members.manage", { spaceId: SPACE, kind: "write" });
+  authorize(manager, "export.space.release", { spaceId: SPACE, kind: "write" });
+  authorize(admin, "export.space.release", { spaceId: SPACE, kind: "write" });
+  denied(
+    () => authorize(contributor, "export.space.release", { spaceId: SPACE, kind: "write" }),
+    403,
+    "forbidden",
+  );
   // Admin role alone does not bypass a space scope it has no membership in.
   denied(
     () => authorize(admin, "storage.library.browse", { spaceId: SPACE, kind: "read" }),

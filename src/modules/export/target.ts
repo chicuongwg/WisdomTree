@@ -5,7 +5,7 @@
 
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -36,8 +36,11 @@ const git = (cwd: string, ...args: string[]) => exec("git", [...AUTHOR, ...args]
 export async function publishToContentRepo(
   files: ExportFile[],
   message: string,
+  repoDirectory?: string,
 ): Promise<PublishResult> {
-  const repo = path.resolve(process.env.EXPORT_REPO_DIR ?? "./data/content-repo.git");
+  const repo = path.resolve(
+    repoDirectory ?? process.env.EXPORT_REPO_DIR ?? "./data/content-repo.git",
+  );
   if (!existsSync(path.join(repo, "HEAD"))) {
     await mkdir(repo, { recursive: true });
     await exec("git", ["init", "--bare", "--initial-branch=main", repo]);
@@ -54,8 +57,7 @@ export async function publishToContentRepo(
     }
     for (const file of files) {
       const target = path.normalize(path.join(work, file.path));
-      if (!target.startsWith(work + path.sep))
-        throw new Error(`invalid export path: ${file.path}`);
+      if (!target.startsWith(work + path.sep)) throw new Error(`invalid export path: ${file.path}`);
       await mkdir(path.dirname(target), { recursive: true });
       await writeFile(target, file.content, "utf8");
     }
@@ -75,6 +77,41 @@ export async function publishToContentRepo(
     await git(work, "push", "origin", "HEAD:main");
     const { stdout } = await git(work, "rev-parse", "HEAD");
     return { commitSha: stdout.trim(), changed: true };
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}
+
+async function listFiles(root: string, dir = root): Promise<string[]> {
+  const files: string[] = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.name === ".git") continue;
+    const absolute = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...(await listFiles(root, absolute)));
+    else files.push(path.relative(root, absolute).split(path.sep).join("/"));
+  }
+  return files.sort();
+}
+
+export async function verifyContentRepo(
+  files: ExportFile[],
+  repoDirectory: string,
+): Promise<boolean> {
+  const repo = path.resolve(repoDirectory);
+  if (!existsSync(path.join(repo, "HEAD"))) return false;
+  const tmp = await mkdtemp(path.join(tmpdir(), "wt-verify-"));
+  const work = path.join(tmp, "work");
+  try {
+    await exec("git", [...AUTHOR, "clone", repo, work]);
+    const actualPaths = await listFiles(work);
+    const expected = [...files].sort((left, right) => left.path.localeCompare(right.path));
+    if (actualPaths.length !== expected.length) return false;
+    for (let i = 0; i < expected.length; i++) {
+      if (actualPaths[i] !== expected[i].path) return false;
+      if ((await readFile(path.join(work, actualPaths[i]), "utf8")) !== expected[i].content)
+        return false;
+    }
+    return true;
   } finally {
     await rm(tmp, { recursive: true, force: true });
   }

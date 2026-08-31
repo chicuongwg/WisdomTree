@@ -44,6 +44,7 @@ export default async function TreeBrowsePage({
             {T.createBranch}
           </Link>
         )}
+        <Link href="/wiki/releases">Bản phát hành</Link>
       </form>
 
       {results && (
@@ -70,7 +71,9 @@ export default async function TreeBrowsePage({
                   {results.map((r) => (
                     <tr key={r.id}>
                       <td>
-                        <NodeLink nodeId={r.id} slug={r.slug}>{r.title}</NodeLink>
+                        <NodeLink nodeId={r.id} slug={r.slug}>
+                          {r.title}
+                        </NodeLink>
                         <div className="meta">{r.snippet}…</div>
                       </td>
                       <td>
@@ -163,7 +166,9 @@ export default async function TreeBrowsePage({
           <ul>
             {recent.map((n) => (
               <li key={n.id}>
-                <NodeLink nodeId={n.id} slug={n.slug}>{n.title}</NodeLink>{" "}
+                <NodeLink nodeId={n.id} slug={n.slug}>
+                  {n.title}
+                </NodeLink>{" "}
                 <VerificationBadge verification={n.verification} />
               </li>
             ))}

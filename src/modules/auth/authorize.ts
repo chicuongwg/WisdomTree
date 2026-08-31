@@ -50,7 +50,11 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "knowledge.branch.manage": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
   "knowledge.submit": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
   "knowledge.node.create": { roles: EVERYONE, scope: "owned-or-assigned" },
-  "knowledge.node.edit": { roles: ["editor", "admin_op"], scope: "space", spaceRole: "contributor" },
+  "knowledge.node.edit": {
+    roles: ["editor", "admin_op"],
+    scope: "space",
+    spaceRole: "contributor",
+  },
   // The single review boundary: promotion decisions and verification levers.
   "knowledge.publish": { roles: REVIEWERS, scope: "space", spaceRole: "contributor" },
   "knowledge.review.list": { roles: REVIEWERS, scope: "global" },
@@ -58,6 +62,7 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "knowledge.archive": { roles: REVIEWERS, scope: "space", spaceRole: "contributor" },
   // --- Export ---
   "export.tree.trigger": { roles: ADMIN, scope: "global" },
+  "export.space.release": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
   // --- Admin console ---
   "admin.health.read": { roles: ADMIN, scope: "global" },
   "admin.users.manage": { roles: ADMIN, scope: "global" },
@@ -115,7 +120,11 @@ export function authorize(
     case "space": {
       // Admin/Op is the break-glass operator across knowledge spaces. Other
       // modules retain their existing explicit-membership boundary.
-      if (actor.role === "admin_op" && permission.startsWith("knowledge.")) return actor;
+      if (
+        actor.role === "admin_op" &&
+        (permission.startsWith("knowledge.") || permission === "export.space.release")
+      )
+        return actor;
       if (!resource.spaceId) throw denial;
       const membership = actor.spaceMemberships.find((item) => item.spaceId === resource.spaceId);
       if (!membership) throw denial;
