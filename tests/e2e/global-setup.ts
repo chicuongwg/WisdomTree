@@ -2,14 +2,15 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Client } from "pg";
+import { configureIsolatedTestDatabase } from "../db-safety";
 
 // Sign the E2E run in the way production signs anyone in: a sessions row for
 // the seeded admin, its raw token written into a Playwright storageState as
 // the session cookie. No in-app backdoor — the dev-login endpoint is gone.
 export default async function globalSetup() {
+  configureIsolatedTestDatabase();
   const client = new Client({
-    connectionString:
-      process.env.DATABASE_URL ?? "postgres://wisdomtree:wisdomtree@localhost:5432/wisdomtree",
+    connectionString: process.env.DATABASE_URL,
   });
   await client.connect();
   try {
