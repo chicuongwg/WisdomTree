@@ -1,0 +1,287 @@
+{
+  "generatedAt": "2026-08-31T20:31:58.473743Z",
+  "database": {
+    "environment": "local Docker PostgreSQL",
+    "databaseName": "wisdomtree",
+    "readOnlyInventory": true
+  },
+  "fingerprintBefore": {
+    "spaces": 11,
+    "projects": 2,
+    "treeNodes": 34,
+    "sources": 36,
+    "tasks": 2
+  },
+  "fingerprintAfter": {
+    "verifiedAt": "2026-08-31T20:43:32.377402Z",
+    "spaces": 11,
+    "projects": 2,
+    "treeNodes": 34,
+    "sources": 36,
+    "tasks": 2,
+    "matchesBefore": true
+  },
+  "summary": {
+    "confirmedProjects": 2,
+    "legacyTeamSpaces": 5,
+    "personalSpaces": 4,
+    "teamBranches": 2,
+    "personalBranches": 4,
+    "tasks": 2
+  },
+  "projects": [
+    {
+      "projectId": "d1dbca51-1dc7-4125-b6fe-cc79a3530252",
+      "spaceName": "Project foundation 1788206959313-c81730d7",
+      "researchLens": "How Project identity remains stable during migration",
+      "description": "Stage 3 integration fixture",
+      "status": "active",
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-31T20:09:19.321292Z",
+      "updatedAt": "2026-08-31T20:09:19.321292Z",
+      "version": 1,
+      "registrationDecision": "ALREADY_REGISTERED"
+    },
+    {
+      "projectId": "48e2f318-0c78-442f-831f-c0b8fa208f88",
+      "spaceName": "Project foundation 1788206992920-ca6c7064",
+      "researchLens": "Updated research lens",
+      "description": null,
+      "status": "completed",
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-31T20:09:52.928674Z",
+      "updatedAt": "2026-08-31T20:09:52.981000Z",
+      "version": 2,
+      "registrationDecision": "ALREADY_REGISTERED"
+    }
+  ],
+  "teamSpaces": [
+    {
+      "spaceId": "1f66cc2e-b970-4574-88d5-bccc0b89b0b3",
+      "name": "Kho Dự Án Cộng Đồng",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-23T04:52:16.435464Z",
+      "updatedAt": "2026-08-23T04:52:16.435464Z",
+      "archivedAt": null,
+      "hasProjectExtension": false,
+      "members": [
+        { "displayName": "Lê Văn Minh", "role": "contributor" },
+        { "displayName": "Phạm Thu Hương", "role": "manager" }
+      ],
+      "counts": { "folders": 0, "sources": 3, "deadlines": 1, "teamBranches": 0, "treeNodes": 0, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 0, "pendingExtractions": 0, "loanTickets": 0, "activeLoans": 0 },
+      "sampleSourceTitles": ["Bản đồ khu vực khảo sát", "Danh sách nhà tài trợ", "Kế hoạch dự án cộng đồng 2026"],
+      "branches": [],
+      "registrationDecision": "NEEDS_HUMAN_DECISION",
+      "researchLens": null,
+      "initialStatus": null
+    },
+    {
+      "spaceId": "a202b3c5-a331-4dce-8d8f-0c91d5e9ee71",
+      "name": "Kho tri thức chung",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Lê Văn Minh",
+      "createdAt": "2026-08-31T02:45:35.254939Z",
+      "updatedAt": "2026-08-31T02:45:35.254939Z",
+      "archivedAt": null,
+      "hasProjectExtension": false,
+      "migrationEvidence": "drizzle/0031_knowledge_space_scope.sql created this compatibility Space for pre-existing Team Branches",
+      "members": [
+        { "displayName": "Lê Văn Minh", "role": "viewer" },
+        { "displayName": "Phạm Thu Hương", "role": "viewer" },
+        { "displayName": "Thành viên mới", "role": "viewer" },
+        { "displayName": "Thành viên mới", "role": "viewer" },
+        { "displayName": "Tiến Đức", "role": "viewer" },
+        { "displayName": "Trần Thị Lan", "role": "viewer" }
+      ],
+      "counts": { "folders": 0, "sources": 0, "deadlines": 0, "teamBranches": 2, "treeNodes": 14, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 0, "pendingExtractions": 0, "loanTickets": 0, "activeLoans": 0 },
+      "sampleSourceTitles": [],
+      "branches": [
+        { "branchId": "a48052db-3c13-4067-a5e5-0d55c42c10b8", "name": "Lịch Sử Địa Phương", "nodeCount": 2, "createdAt": "2026-08-23T04:52:16.435464Z", "updatedAt": "2026-08-23T04:52:16.435464Z" },
+        { "branchId": "105951e5-cc5b-4235-bedb-57d3b1866867", "name": "Văn Hóa Dân Gian", "nodeCount": 12, "createdAt": "2026-08-23T04:52:16.435464Z", "updatedAt": "2026-08-23T04:52:16.435464Z" }
+      ],
+      "registrationDecision": "NEEDS_HUMAN_DECISION",
+      "researchLens": null,
+      "initialStatus": null
+    },
+    {
+      "spaceId": "09b1a031-30f5-4237-90f3-328342002612",
+      "name": "Legacy Space 1788206959313-c81730d7",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-31T20:09:19.346024Z",
+      "updatedAt": "2026-08-31T20:09:19.346024Z",
+      "archivedAt": null,
+      "hasProjectExtension": false,
+      "members": [{ "displayName": "Phạm Thu Hương", "role": "manager" }],
+      "counts": { "folders": 0, "sources": 0, "deadlines": 0, "teamBranches": 0, "treeNodes": 0, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 0, "pendingExtractions": 0, "loanTickets": 0, "activeLoans": 0 },
+      "sampleSourceTitles": [],
+      "branches": [],
+      "registrationDecision": "NEEDS_HUMAN_DECISION",
+      "researchLens": null,
+      "initialStatus": null
+    },
+    {
+      "spaceId": "47cb8ad1-a0f1-493b-9bdd-8632a92a396f",
+      "name": "Legacy Space 1788206992920-ca6c7064",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-31T20:09:52.957044Z",
+      "updatedAt": "2026-08-31T20:09:52.957044Z",
+      "archivedAt": null,
+      "hasProjectExtension": false,
+      "members": [{ "displayName": "Phạm Thu Hương", "role": "manager" }],
+      "counts": { "folders": 0, "sources": 0, "deadlines": 0, "teamBranches": 0, "treeNodes": 0, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 0, "pendingExtractions": 0, "loanTickets": 0, "activeLoans": 0 },
+      "sampleSourceTitles": [],
+      "branches": [],
+      "registrationDecision": "NEEDS_HUMAN_DECISION",
+      "researchLens": null,
+      "initialStatus": null
+    },
+    {
+      "spaceId": "d1dbca51-1dc7-4125-b6fe-cc79a3530252",
+      "name": "Project foundation 1788206959313-c81730d7",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-31T20:09:19.321292Z",
+      "updatedAt": "2026-08-31T20:09:19.321292Z",
+      "archivedAt": null,
+      "hasProjectExtension": true,
+      "members": [{ "displayName": "Phạm Thu Hương", "role": "manager" }],
+      "counts": { "folders": 0, "sources": 0, "deadlines": 0, "teamBranches": 0, "treeNodes": 0, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 0, "pendingExtractions": 0, "loanTickets": 0, "activeLoans": 0 },
+      "sampleSourceTitles": [],
+      "branches": [],
+      "registrationDecision": "ALREADY_REGISTERED",
+      "researchLens": "How Project identity remains stable during migration",
+      "initialStatus": "active"
+    },
+    {
+      "spaceId": "48e2f318-0c78-442f-831f-c0b8fa208f88",
+      "name": "Project foundation 1788206992920-ca6c7064",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-31T20:09:52.928674Z",
+      "updatedAt": "2026-08-31T20:09:52.928674Z",
+      "archivedAt": null,
+      "hasProjectExtension": true,
+      "members": [
+        { "displayName": "Phạm Thu Hương", "role": "manager" },
+        { "displayName": "Trần Thị Lan", "role": "viewer" }
+      ],
+      "counts": { "folders": 1, "sources": 0, "deadlines": 0, "teamBranches": 0, "treeNodes": 0, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 0, "pendingExtractions": 0, "loanTickets": 0, "activeLoans": 0 },
+      "sampleFolders": ["Project folder 1788206992920-ca6c7064"],
+      "sampleSourceTitles": [],
+      "branches": [],
+      "registrationDecision": "ALREADY_REGISTERED",
+      "researchLens": "Updated research lens",
+      "initialStatus": "completed"
+    },
+    {
+      "spaceId": "c1bb5bc6-54c2-44f2-9e66-b60de956ddc8",
+      "name": "Thư Viện Cộng Đồng",
+      "type": "team",
+      "ownerUserId": null,
+      "createdBy": "Phạm Thu Hương",
+      "createdAt": "2026-08-23T04:52:16.435464Z",
+      "updatedAt": "2026-08-23T04:52:16.435464Z",
+      "archivedAt": null,
+      "hasProjectExtension": false,
+      "members": [
+        { "displayName": "Lê Văn Minh", "role": "contributor" },
+        { "displayName": "Phạm Thu Hương", "role": "manager" },
+        { "displayName": "Tiến Đức", "role": "contributor" },
+        { "displayName": "Trần Thị Lan", "role": "contributor" }
+      ],
+      "counts": { "folders": 0, "sources": 32, "deadlines": 2, "teamBranches": 0, "treeNodes": 0, "wikiReleases": 0, "calendarTokens": 0, "physicalItems": 26, "pendingExtractions": 0, "loanTickets": 16, "activeLoans": 1 },
+      "loanStates": { "borrowed": 1, "declined": 4, "returned": 11 },
+      "sampleSourceTitles": ["Biên bản họp nhóm tháng 6", "Báo cáo khảo sát thực địa 2025", "Bí Mật Của Naoko", "Bản scan sổ ghi chép cũ", "Chí Phèo — Tuyển Tập", "Cẩm Nang Sơ Cấp Cứu", "Danh mục tài liệu tham khảo", "Dế Mèn Phiêu Lưu Ký"],
+      "branches": [],
+      "tempoRecognition": "CANDIDATE_FOR_HUMAN_RECOGNITION_ONLY",
+      "registrationDecision": "NEEDS_HUMAN_DECISION",
+      "researchLens": null,
+      "initialStatus": null
+    }
+  ],
+  "personalSpaces": [
+    { "spaceId": "add43bcb-3ace-4a09-a7ff-39769f3add55", "name": "Không gian cá nhân — Lê Văn Minh", "owner": "Lê Văn Minh", "createdBy": "Lê Văn Minh", "createdAt": "2026-08-23T04:52:16.435464Z", "archivedAt": null, "folderCount": 0, "sourceCount": 0, "sourceVersionCount": 0, "deadlineCount": 0, "physicalCount": 0, "extractionCandidateCount": 0, "pendingExtractionCount": 0 },
+    { "spaceId": "4caac612-916b-4d47-9a36-c08d4f1d36a5", "name": "Không gian cá nhân — Phạm Thu Hương", "owner": "Phạm Thu Hương", "createdBy": "Phạm Thu Hương", "createdAt": "2026-08-23T04:52:16.435464Z", "archivedAt": null, "folderCount": 0, "sourceCount": 0, "sourceVersionCount": 0, "deadlineCount": 0, "physicalCount": 0, "extractionCandidateCount": 0, "pendingExtractionCount": 0 },
+    { "spaceId": "76616171-de7d-4ef8-891c-832d61a68e1b", "name": "Không gian cá nhân — Tiến Đức", "owner": "Tiến Đức", "createdBy": "Tiến Đức", "createdAt": "2026-08-23T04:52:16.435464Z", "archivedAt": null, "folderCount": 0, "sourceCount": 0, "sourceVersionCount": 0, "deadlineCount": 0, "physicalCount": 0, "extractionCandidateCount": 0, "pendingExtractionCount": 0 },
+    { "spaceId": "03d3381c-777c-4f88-a830-5aa2509e7ead", "name": "Không gian cá nhân — Trần Thị Lan", "owner": "Trần Thị Lan", "createdBy": "Trần Thị Lan", "createdAt": "2026-08-23T04:52:16.435464Z", "archivedAt": null, "folderCount": 0, "sourceCount": 1, "sourceVersionCount": 1, "deadlineCount": 0, "physicalCount": 0, "extractionCandidateCount": 0, "pendingExtractionCount": 0 }
+  ],
+  "personalBranches": [
+    { "owner": "Lê Văn Minh", "branchId": "009ff678-e96f-4aa6-9179-75851c1bfbf8", "name": "Ghi chú cá nhân — Lê Văn Minh", "nodeCount": 4, "pendingProposals": 0, "createdAt": "2026-08-23T04:52:16.435464Z", "updatedAt": "2026-08-23T04:52:16.435464Z" },
+    { "owner": "Phạm Thu Hương", "branchId": "19cb209f-dead-4453-8a01-19498e656c4d", "name": "Ghi chú cá nhân — Phạm Thu Hương", "nodeCount": 0, "pendingProposals": 0, "createdAt": "2026-08-23T04:52:16.435464Z", "updatedAt": "2026-08-23T04:52:16.435464Z" },
+    { "owner": "Tiến Đức", "branchId": "f8d41e53-686a-4427-afd1-d66f5fd7bf4a", "name": "Ghi chú cá nhân — Tiến Đức", "nodeCount": 0, "pendingProposals": 0, "createdAt": "2026-08-23T04:52:16.435464Z", "updatedAt": "2026-08-23T04:52:16.435464Z" },
+    { "owner": "Trần Thị Lan", "branchId": "10e025be-9586-495e-90d9-23a87ddea91e", "name": "Ghi chú cá nhân — Trần Thị Lan", "nodeCount": 16, "pendingProposals": 0, "createdAt": "2026-08-23T04:52:16.435464Z", "updatedAt": "2026-08-23T04:52:16.435464Z" }
+  ],
+  "tasks": [
+    {
+      "taskId": "0c2bd456-cd73-4dbb-b9c1-8fef660b94a8",
+      "title": "Số hóa sổ ghi chép cũ trước mùa mưa",
+      "state": "doing",
+      "creator": "Phạm Thu Hương",
+      "assignee": "Lê Văn Minh",
+      "startAt": null,
+      "dueAt": null,
+      "targetType": null,
+      "targetId": null,
+      "linkedDeadlines": [{ "deadlineId": "e25799fa-e01d-4a20-8bf6-5a19be1969fe", "title": "Báo cáo tổng kết quý III", "spaceId": "c1bb5bc6-54c2-44f2-9e66-b60de956ddc8", "spaceName": "Thư Viện Cộng Đồng" }],
+      "possibleContexts": [{ "spaceId": "c1bb5bc6-54c2-44f2-9e66-b60de956ddc8", "spaceName": "Thư Viện Cộng Đồng", "basis": "linked deadline", "authority": "NON-AUTHORITATIVE" }]
+    },
+    {
+      "taskId": "7e70ffdb-a65d-4389-a89b-5e87fc076e02",
+      "title": "Soạn danh mục sách bổ sung cho thư viện",
+      "state": "todo",
+      "creator": "Phạm Thu Hương",
+      "assignee": null,
+      "startAt": null,
+      "dueAt": null,
+      "targetType": null,
+      "targetId": null,
+      "linkedDeadlines": [],
+      "possibleContexts": []
+    }
+  ],
+  "roleContext": {
+    "globalRoleCounts": { "user": 2, "editor": 3, "admin_op": 1 },
+    "editorsAndAdmins": [
+      { "userId": "6a8b2f02-acb7-458f-b06a-5fa4075589d2", "displayName": "Phạm Thu Hương", "role": "admin_op" },
+      { "userId": "046fa604-c437-4df7-bb23-2ea03e829da3", "displayName": "Lê Văn Minh", "role": "editor" },
+      { "userId": "7a93e3f9-215f-4a8d-85e8-9800d744942c", "displayName": "Thành viên mới", "role": "editor" },
+      { "userId": "d669a67a-3b1f-4a7b-88b6-c717ac19c088", "displayName": "Thành viên mới", "role": "editor" }
+    ],
+    "multiTeamSpaceManagers": [{ "userId": "6a8b2f02-acb7-458f-b06a-5fa4075589d2", "displayName": "Phạm Thu Hương", "managedTeamSpaces": 6 }],
+    "safeCompatibilityAssumption": "Core capability does not grant Project access without explicit membership"
+  },
+  "anomalies": [
+    {
+      "severity": "review_required",
+      "type": "likely_stage_3_test_fixture_data",
+      "classification": "INFERRED",
+      "summary": "Two confirmed Projects, two legacy Team Spaces, and one folder match the exact Stage 3 integration-test naming and metadata patterns. This is not an integrity violation and no data was changed."
+    },
+    {
+      "severity": "review_required",
+      "type": "duplicate_display_name",
+      "classification": "OBSERVED",
+      "summary": "Two distinct editor user IDs share the display name 'Thành viên mới'; future Core decisions must use stable user IDs."
+    }
+  ],
+  "integrityChecks": {
+    "projectExtensionsOnNonTeamSpaces": 0,
+    "teamBranchesOnNonTeamSpaces": 0,
+    "teamBranchBoundaryMismatches": 0,
+    "personalBranchBoundaryMismatches": 0,
+    "wikiReleasesOnNonTeamSpaces": 0,
+    "duplicateNormalizedSpaceNames": 0,
+    "unresolvedDeadlineLinks": 0,
+    "unresolvedOrUnknownTaskTargets": 0,
+    "personalSpacesWithUnexpectedSharedRecords": 0
+  }
+}

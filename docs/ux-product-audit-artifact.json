@@ -1,0 +1,472 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "WisdomTree UX and Product Audit",
+    "description": "Repository-grounded reconstruction of the current product surface, workflows, information architecture, domain model, UX friction, and redesign constraints at HEAD c60620f.",
+    "generatedAt": "2026-08-31T00:00:00+07:00",
+    "tables": [
+      {
+        "id": "surface_map",
+        "title": "Product surface map",
+        "subtitle": "All implemented page routes and their user-facing responsibilities at HEAD c60620f.",
+        "dataset": "surface_map",
+        "sourceId": "route_inventory",
+        "defaultSort": { "field": "route", "direction": "asc" },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          { "field": "route", "label": "Route", "type": "text" },
+          { "field": "screen", "label": "Screen / views", "type": "text" },
+          { "field": "purpose", "label": "Purpose and entities", "type": "text" },
+          { "field": "primary", "label": "Primary actions", "type": "text" },
+          { "field": "secondary_next", "label": "Secondary actions / next", "type": "text" },
+          { "field": "evidence", "label": "Implementation evidence", "type": "text" }
+        ]
+      },
+      {
+        "id": "domain_model",
+        "title": "Domain entity inventory",
+        "subtitle": "Major persisted and user-visible entities, lifecycle states, relationships, and surfaces.",
+        "dataset": "domain_model",
+        "sourceId": "domain_schemas",
+        "defaultSort": { "field": "domain", "direction": "asc" },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          { "field": "domain", "label": "Domain", "type": "text" },
+          { "field": "entity", "label": "Entity", "type": "text" },
+          { "field": "purpose_fields", "label": "Purpose / important fields", "type": "text" },
+          { "field": "lifecycle", "label": "Lifecycle / statuses", "type": "text" },
+          { "field": "relationships", "label": "Relationships", "type": "text" },
+          { "field": "surfaces_actions", "label": "Created, configured, inspected, actions", "type": "text" }
+        ]
+      },
+      {
+        "id": "friction_register",
+        "title": "Implementation-grounded UX friction register",
+        "subtitle": "Observed implementation facts are kept separate from the UX inference they support.",
+        "dataset": "friction_register",
+        "sourceId": "ui_pattern_scan",
+        "defaultSort": { "field": "severity", "direction": "asc" },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          { "field": "severity", "label": "Likely severity", "type": "text" },
+          { "field": "issue", "label": "Issue", "type": "text" },
+          { "field": "observed_fact", "label": "Observed implementation fact", "type": "text" },
+          { "field": "ux_inference", "label": "UX inference", "type": "text" },
+          { "field": "evidence", "label": "Evidence", "type": "text" }
+        ]
+      },
+      {
+        "id": "dependency_matrix",
+        "title": "Screen-to-screen dependency matrix",
+        "subtitle": "Read/write responsibilities and navigation dependencies reveal workflow clusters.",
+        "dataset": "dependency_matrix",
+        "sourceId": "route_inventory",
+        "defaultSort": { "field": "screen", "direction": "asc" },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          { "field": "screen", "label": "Screen / feature", "type": "text" },
+          { "field": "reads", "label": "Reads", "type": "text" },
+          { "field": "creates", "label": "Creates", "type": "text" },
+          { "field": "updates", "label": "Updates", "type": "text" },
+          { "field": "navigates", "label": "Navigates to", "type": "text" },
+          { "field": "depends", "label": "Depends on", "type": "text" }
+        ]
+      },
+      {
+        "id": "technical_constraints",
+        "title": "Frontend and architecture constraints",
+        "subtitle": "Current implementation choices and likely redesign treatment.",
+        "dataset": "technical_constraints",
+        "sourceId": "architecture_docs",
+        "defaultSort": { "field": "area", "direction": "asc" },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          { "field": "area", "label": "Area", "type": "text" },
+          { "field": "current", "label": "Current implementation", "type": "text" },
+          { "field": "reuse", "label": "Reuse / refactor assessment", "type": "text" },
+          { "field": "evidence", "label": "Evidence", "type": "text" }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "friction_severity_chart",
+        "title": "Audit findings by likely severity",
+        "subtitle": "Counts reflect repository-derived audit classifications, not observed user frequency.",
+        "type": "bar",
+        "dataset": "friction_summary",
+        "sourceId": "friction_summary_query",
+        "encodings": {
+          "x": { "field": "severity", "type": "nominal" },
+          "y": { "field": "count", "type": "quantitative" }
+        }
+      }
+    ],
+    "sources": [
+      {
+        "id": "friction_summary_query",
+        "label": "Derived friction classification counts",
+        "path": "docs/ux-product-audit-artifact.json",
+        "query": {
+          "engine": "artifact-derived",
+          "sql": "SELECT severity, COUNT(*) AS count FROM friction_register GROUP BY severity",
+          "description": "Groups the reviewed friction register by the audit-assigned likely severity. This is not product telemetry."
+        }
+      },
+      {
+        "id": "route_inventory",
+        "label": "App Router page inventory",
+        "path": "src/app",
+        "query": {
+          "engine": "repository",
+          "language": "shell",
+          "sql": "SELECT * FROM surface_map",
+          "description": "Enumerates implemented user-facing Next.js page routes."
+        }
+      },
+      {
+        "id": "shell_navigation",
+        "label": "Authenticated shell and navigation",
+        "path": "src/app/layout.tsx",
+        "query": {
+          "engine": "repository",
+          "language": "typescript",
+          "sql": "SELECT * FROM shell_navigation",
+          "description": "Root layout, authentication split, rail, sidebar, status bar, and command palette composition."
+        }
+      },
+      {
+        "id": "domain_schemas",
+        "label": "Drizzle domain schemas",
+        "path": "src/modules",
+        "query": {
+          "engine": "repository",
+          "language": "shell",
+          "sql": "SELECT * FROM domain_model",
+          "description": "Enumerates persisted entities and declared lifecycle/status enums."
+        }
+      },
+      {
+        "id": "workflow_tests",
+        "label": "End-to-end use-case tests",
+        "path": "tests/usecase",
+        "query": {
+          "engine": "repository",
+          "language": "typescript",
+          "sql": "SELECT * FROM workflow_tests",
+          "description": "Service-level journeys for knowledge, library/circulation, and account administration."
+        }
+      },
+      {
+        "id": "ui_pattern_scan",
+        "label": "UI interaction and mutation pattern scan",
+        "path": "src/app/components",
+        "query": {
+          "engine": "repository",
+          "language": "shell",
+          "sql": "SELECT * FROM friction_register",
+          "description": "Finds dialogs, disclosures, disabled controls, mutation calls, redirects, and refresh patterns."
+        }
+      },
+      {
+        "id": "architecture_docs",
+        "label": "Current architecture contract",
+        "path": "docs/architecture.md",
+        "query": {
+          "engine": "repository",
+          "language": "markdown",
+          "sql": "SELECT * FROM technical_constraints",
+          "description": "Documents module boundaries, authorization, editing lifecycles, extraction, notifications, graph behavior, and release projection."
+        }
+      },
+      {
+        "id": "package_manifest",
+        "label": "Frontend dependency manifest",
+        "path": "package.json",
+        "query": {
+          "engine": "repository",
+          "language": "json",
+          "sql": "SELECT * FROM package_manifest",
+          "description": "Framework, runtime, dependencies, and verification commands."
+        }
+      },
+      {
+        "id": "vocabulary_contract",
+        "label": "Vietnamese UI vocabulary",
+        "path": "docs/vocabulary-vi.md",
+        "query": {
+          "engine": "repository",
+          "language": "markdown",
+          "sql": "SELECT * FROM vocabulary_contract",
+          "description": "Approved product terminology and governance, cross-checked against src/lib/vi/copy.ts."
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# WisdomTree UX and Product Audit"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "body": "## Executive Summary\n\n- **WisdomTree is three products sharing one shell:** project work, a space-scoped knowledge system, and a digital/physical library, with identity and governance layered across all three. The repository implements 33 page routes plus multiple query-driven views.\n- **The strongest implementation is the domain and safety model, not the user journey.** Authorization, drafts, provenance, optimistic concurrency, immutable versions, and role boundaries are explicit and reusable.\n- **The main UX risk is fragmentation.** Closely related work is split between rail icons, an auto-switching Team/Personal sidebar, command-palette-only destinations, and separate task/deadline, source/candidate/node, and author/reviewer screens.\n- **This is a repository audit, not usability validation.** It establishes what the product does and where implementation creates likely friction; frequency, severity, user vocabulary, and business priority still require user and product evidence."
+      },
+      {
+        "id": "scope_method",
+        "type": "markdown",
+        "body": "## Audit boundary and evidence standard\n\nThe audit covers the repository at **HEAD `c60620f`**. It inspected page routes, the root shell, client interaction components, API mutations, Drizzle schemas, architecture/product documentation, and use-case tests. No database was seeded and no live usability session was run.\n\nIn the friction register, **Observed fact** means directly implemented behavior. **UX inference** means a plausible user consequence that still needs validation. No colors, visual language, layouts, or replacement screens are proposed."
+      },
+      {
+        "id": "surface_intro",
+        "type": "markdown",
+        "body": "## 1. The product surface spans work, knowledge, library, governance, and identity\n\nThe root layout has two modes. Signed-out users receive a small topbar and login surface. Signed-in users receive a fixed-height grid containing an icon rail, contextual sidebar, scrollable main area, status bar, command palette, and global validation messages (`src/app/layout.tsx:55-174`).\n\nMajor overlays and in-page views are: the global command-palette dialog; reusable confirmation dialogs; a library drop-zone space picker; the board task side panel controlled by `?task=`; graph settings disclosures and canvas context menu; node/source hover previews; board create-task disclosure; and extraction-candidate preview disclosures. There is no evidence of nested modal flows."
+      },
+      { "id": "surface_table", "type": "table", "tableId": "surface_map", "layout": "full" },
+      {
+        "id": "navigation_inventory",
+        "type": "markdown",
+        "body": "### Navigation elements\n\n- **Global rail:** Home seal; collapse/search; Library, Tree, Graph; Board, Deadlines; role-gated Review and Admin; Notifications; theme; Account (`src/app/components/shell-rail.tsx:275-337`).\n- **Contextual sidebar:** search trigger; Team/Personal tab; branches; context-specific shortcuts; recent nodes (`src/app/components/shell-sidebar.tsx:181-355`).\n- **Command palette:** searches nodes and sources and also lists screen destinations; on narrow screens it is the documented fallback for destinations hidden with the sidebar (`src/app/components/command-palette.tsx:56-113`).\n- **Local navigation:** breadcrumbs on selected detail pages; Board view tabs; Graph scope tabs; Library filters/folders/sort/pager; Tree search and branch hierarchy; Wiki VI/EN and previous/next; History comparison query; Release space selector.\n- **Utility navigation:** status bar account, space count, notifications and logout; canonical `/wiki/:id/:slug` redirects; notification deep links; browser Back is intentionally relied on for returning from full task detail."
+      },
+      {
+        "id": "workflows",
+        "type": "markdown",
+        "body": "## 2. End-to-end workflows reveal where context breaks\n\n### 1. Sign in and gain access\n\n**Goal** → enter an invite-only workspace → `/login` → Google OIDC start/callback → invited account claims identity → `/` home. In non-production, a seeded user picker posts to the dev-login endpoint. **Completion:** authenticated shell appears. **Friction:** repository cannot show what invitation email or onboarding communication users receive before this screen.\n\n### 2. Find and consume knowledge\n\n**Goal** → locate a trusted page → enter via rail Tree, sidebar branch, Graph, command palette, `/search`, notification, or direct canonical link → search/browse branch/map → open `/wiki/:id/:slug` or `/tree/node/:id` → read Markdown, verification, provenance, links, comments, languages, previous/next. **Completion:** user has read the official page. **Friction:** four search surfaces have different scopes; graph/tree/canonical URLs represent the same node differently; secondary metadata and authoring actions share the reading page.\n\n### 3. Create and maintain a personal note\n\n**Goal** → write private knowledge → personal sidebar → create/open personal branch → create node on branch page → personal node detail → Edit → change title/summary/order/Markdown/tags → Save → node detail → optionally History/restore or translate. **Completion:** live personal node and append-only version exist. **Friction:** creation requires choosing/creating a branch first; the create form asks for full Markdown before the dedicated editor; sort order is manually entered; edit and promotion controls live far down the detail page.\n\n### 4. Create or update shared team knowledge\n\n**Goal** → contribute to official knowledge → shared branch → create new team node draft or open an official node and choose Edit → `/tree/draft/:id` or `/tree/node/:id/edit` → autosave private draft → self-publish normal page or submit protected page → official page remains visible during editing → reviewer may decide inline or through Review → official node updates. **Completion:** official page updated, or draft remains explicitly `in_review`. **Friction:** new and existing team drafts use different routes; protected vs self-publish behavior is decided late; an in-review draft becomes read-only and the author must rely on another actor.\n\n### 5. Promote private knowledge into the shared tree\n\n**Goal** → share a personal node → personal node detail → scroll to “Đề cử lên cây chung” → choose target team branch → submit immutable snapshot → editor/admin opens Review → publication review → approve/reject/request changes → approval creates a separate shared node. **Completion:** shared node link appears on the personal node; rejection/changes note appears there. **Friction:** the submitter must know the target branch; author status and reviewer queue are on different screens; the resulting entity is a new node rather than the same record.\n\n### 6. Upload a file and turn extraction into knowledge\n\n**Goal** → preserve a source and reuse extracted text → `/source/intake` or Library drag/drop → select files and space → sequential upload → one file opens `/library/:id`, many return to `/library` → extraction polls on detail → when processed, user follows “view extracted Markdown” → `/vault/review` → inspect immutable Markdown → choose a personal branch → evolve candidate into a personal node → find/open that node → edit if needed → optionally promote through Workflow 5. **Completion:** source stays stored; optional personal/shared knowledge is created. **Friction:** the journey crosses Source, Library, Vault, Tree, and Review concepts; extracted text cannot be corrected before evolution; completion after evolve is only a refresh of the candidate list, not navigation to the created node.\n\n### 7. Manage tasks and schedule\n\n**Goal** → create and complete work → `/board` → open “Add task” disclosure → enter title/assignee/start/due → task card → move todo/doing/done, claim or archive → open `?task=` side panel or `/board/task/:id` → update dates and notes → calendar views via `?view=month|week`. **Completion:** task reaches done or archived. **Friction:** assignment cannot be changed after creation by design; state actions, schedule, and notes are split between card and detail; full-page close always returns to plain Board and does not preserve calendar view.\n\n### 8. Manage project deadlines and linked work\n\n**Goal** → track a project milestone → `/deadlines` → filter by space or create deadline → open `/deadlines/:id` → inspect linked tasks/sources/nodes, edit date/type/reminders, comment. **Completion:** saved deadline and reminders. **Critical gap:** backend accepts links, but the form does not expose them and no task/source/node UI was found that writes deadline links. The screen tells users to link from another object, making the visible linked-item workflow unreachable from the current UI.\n\n### 9. Borrow and circulate a physical book\n\n**Goal (member)** → Library → category/search → item detail → request loan → wait → revisit detail/home or notification → receive/return offline. **Goal (operator)** → Library or Team sidebar → Loan desk → approve or decline → set due date and mark handed over → later confirm return. **Completion:** ticket is returned/declined and the item register retains history. **Friction:** member and operator use separate surfaces; request can be disabled without an adjacent reason; physical and digital items share the Library entity but have different actions.\n\n### 10. Review contributions\n\n**Goal** → independently decide pending knowledge → rail/sidebar Review badge → `/review` → choose publication, change, or translation row → dedicated review page or inline node review → inspect snapshot/diff/responsibility → approve/reject/request changes, sometimes choose verification → redirect to node or queue. **Completion:** proposal state changes and author is notified. **Friction:** three review types use different components, page structures, labels, and post-decision destinations.\n\n### 11. Administer users, spaces, and operations\n\n**Goal** → configure organization → `/admin` → create space → select space → load/add/remove/change membership → invite user/change global role/disable → inspect audit → follow health link → `/admin/health`. **Completion:** mutation success message and refreshed data. **Friction:** global role and per-space role are edited in separate sections on one long page; health is separate; audit links can target obsolete routes.\n\n### 12. Publish and verify an immutable wiki release\n\n**Goal** → freeze approved shared knowledge → Tree → “Bản phát hành” → `/wiki/releases` → choose team space → create release → for released rows verify or rebuild. **Completion:** released snapshot with Git commit. **Friction:** entry is buried on `/tree`; raw status and commit SHA are exposed; eligibility failures are known only after release action unless the service error explains them."
+      },
+      {
+        "id": "workflow_crosscuts",
+        "type": "markdown",
+        "body": "### Cross-workflow context switching and memory burden\n\n- **Source-to-knowledge** requires remembering which personal branch should receive an extraction and which team branch should later receive the publication proposal.\n- **Deadline linking** requires a screen that is not implemented; users are instructed to leave the deadline context anyway.\n- **Team/Personal navigation state** auto-switches by route. Library starts in the Team tab, while Upload, My submissions, Candidate review, and Board are forced into Personal (`shell-sidebar.tsx:125-173`).\n- **Search scope must be relearned:** command palette, `/search`, `/tree?q=`, and `/library?q=` do not present one consistent result model.\n- **Review requires actor switching:** author submits and then must wait for a different user, but status is split between the source node/draft and reviewer queue.\n- **No repeated identifier typing was found in normal end-user forms.** The exception is backend-only polymorphic link IDs, which currently lack UI. The user-facing burden is mostly remembering names/branches and navigating back, not copying UUIDs."
+      },
+      {
+        "id": "ia",
+        "type": "markdown",
+        "body": "## 3. Current information architecture follows modules and scopes more than goals\n\n### Global hierarchy\n\n```text\nSigned out\n└─ Login\n\nSigned in shell\n├─ Rail: Library | Tree | Graph | Board | Deadlines | Review* | Admin*\n├─ Sidebar tab: Team | Personal\n│  ├─ Team: graph/tree/branches → team branch tree → project/admin shortcuts\n│  └─ Personal: graph → personal branch tree → candidate/board/upload/submissions\n├─ Main route content\n├─ Status bar: account | space count | notifications | logout\n└─ Command palette: node/source search + screen launcher\n* role-gated\n```\n\n### Entity hierarchy\n\n```text\nUser ─ membership ─ Space\nSpace ─ folders ─ Sources ─ Versions ─ Extraction Candidate\nSpace ─ team Branches ─ Nodes ─ Versions / Drafts / Translations\nUser ─ personal Branches ─ Nodes ─ Publication Proposal ─ team Branch\nSpace ─ Deadlines ─ links ─ Task | Source | Node\nPhysical Source ─ Loan Tickets\nSpace ─ Wiki Releases\n```\n\n### Backend-shaped organization\n\n- Route families mirror modules: `/source`, `/library`, `/vault`, `/tree`, `/wiki`, `/review`, `/board`, `/deadlines`, even when one user journey crosses all of them.\n- “Candidate review” exposes extraction pipeline state; “branch/node/version/proposal/promotion” closely follow persistence concepts.\n- Digital files and books are one `sources` entity in storage, but the user-facing name “Tư liệu số” also contains physical books.\n- Global roles (`user/editor/admin_op`) and space roles (`viewer/contributor/manager`) are independent authorization axes but appear in separate admin controls and are not explained together.\n- The same knowledge node appears as a Tree detail route, canonical Wiki route, graph node, sidebar item, search result, and publication output.\n- The same task appears as a Kanban card, month/week calendar item, query-driven side panel, full page, deadline link, notification target, and audit target.\n\n### Duplicated or inconsistent concepts\n\n- **Search:** command palette, global Search page, Tree search, Library search.\n- **Knowledge browsing:** Tree overview, Branch list, branch tree sidebar, Graph.\n- **Review:** Review queue, inline protected-draft review, candidate review, publication review, change review, translation review.\n- **Naming:** approved vocabulary says “Bảng việc” and “Hạn chót”, while live copy uses “Bảng phân công” and “Lịch dự án”; approved “Quầy phiếu mượn” differs from live “Bàn thủ thư”; UI mixes Vietnamese with “English”, “graph”, “Markdown”, SHA-256, Git commit and raw release status. Many live strings are marked `NEW` pending humanities review (`docs/vocabulary-vi.md`; `src/lib/vi/copy.ts`).\n- **Scope:** “Kho”, “không gian”, “Kho dự án”, “Việc chung”, “cây chung”, “team”, and `space` describe overlapping boundaries.\n- **Status representation:** domain statuses are translated into tone badges in most screens, but release status is rendered raw and extraction candidates show raw method/hash."
+      },
+      {
+        "id": "domain_intro",
+        "type": "markdown",
+        "body": "## 4. The domain model is rich, explicit, and mostly reusable\n\nThe persisted model has clear ownership, authorization and lifecycle boundaries. The redesign should not assume that a screen maps one-to-one to an entity: several critical workflows intentionally create snapshots, drafts, proposals, versions, or projections rather than mutating the visible object directly."
+      },
+      { "id": "domain_table", "type": "table", "tableId": "domain_model", "layout": "full" },
+      {
+        "id": "er_diagram",
+        "type": "markdown",
+        "body": "### Simplified entity relationship diagram\n\n```text\nUser ──< Session\n  │\n  ├──< SpaceMembership >── Space ──< Folder ──< Source\n  │                            │                    ├──< SourceVersion ──< TextChunk\n  │                            │                    │                      └── 0..1 ExtractionCandidate\n  │                            │                    └── 0..1 PhysicalItem ──< LoanTicket\n  │                            │\n  │                            ├──< TeamBranch ──< Node ──< NodeVersion\n  │                            │                       ├──< Draft\n  │                            │                       ├──< Translation / TranslationVersion\n  │                            │                       ├──< NodeLink >── Node\n  │                            │                       └──< Proposal\n  │                            │\n  │                            ├──< Deadline ──< DeadlineLink >── Task | Source | Node\n  │                            └──< WikiRelease\n  │\n  ├──< PersonalBranch ──< Node ──< PublicationProposal >── TeamBranch\n  ├──< Task (creator / assignee)\n  ├──< Notification\n  └──< Comment / Presence\n\nPromotion joins SourceVersion evidence to an approved NodeVersion.\nAuditEvent records mutations across domains.\n```"
+      },
+      {
+        "id": "friction_intro",
+        "type": "markdown",
+        "body": "## 5. UX friction is concentrated in navigation, unreachable relationships, and long mixed-purpose pages\n\nThe repository also contains many friction-reducing safeguards: localized native validation, actionable empty states, upload progress, autosave state, optimistic conflict handling, stable error-code translation, focus-safe confirmation dialogs, route-level skeletons, and role-aware hiding. The chart only summarizes this audit classification; it is not product telemetry or evidence of encounter frequency. The register below reports remaining or structural risks rather than treating every form or confirmation as a defect."
+      },
+      { "id": "friction_severity_chart_block", "type": "chart", "chartId": "friction_severity_chart", "layout": "full" },
+      { "id": "friction_table", "type": "table", "tableId": "friction_register", "layout": "full" },
+      {
+        "id": "pattern_findings",
+        "type": "markdown",
+        "body": "### Pattern-specific findings\n\n- **Long forms:** personal/team editors contain title, summary, numeric order, Markdown, preview and comma-separated tags; upload adds file, space, extraction method, title and description; Admin combines multiple management forms and tables.\n- **Dialogs:** one reusable confirmation dialog is used for irreversible actions; the library drop-zone uses one additional space-selection dialog. No nested modals or forced sequential-dialog chain was found.\n- **Confirmations:** irreversible archive/merge/reject/return/remove/disable/regenerate actions are confirmed. Routine approve, save, claim and state changes generally are not. Confirmation use appears deliberate rather than excessive.\n- **Mutation loading/error:** `useMutation` disables the trigger across request and server refresh and translates stable API error codes. Bespoke fetch flows vary: some use generic fallback text, some do not catch network rejection.\n- **Empty/loading states:** major route groups have generic two-block skeletons and generic retry screens. Most list empties are actionable, but candidate review uses a plain sentence and deadline linked-item empty state points to an absent workflow.\n- **Validation:** native constraints are localized globally, upload handles hidden-file validation itself, Markdown validation is manual in the personal editor, and several disabled controls do not explain eligibility adjacent to the control."
+      },
+      {
+        "id": "architecture",
+        "type": "markdown",
+        "body": "## 6. Frontend constraints favor incremental UI replacement over domain rewrites\n\nWisdomTree is a **Next.js 15.3.4 App Router + React 19.1 + TypeScript 5.8** modular monolith. Pages are predominantly async Server Components that call business services directly; interactive controls are local Client Components. There is no global state library, UI kit, form library, or table/grid library. Styling is a large global CSS token/component file with custom fonts and native HTML controls."
+      },
+      { "id": "architecture_table", "type": "table", "tableId": "technical_constraints", "layout": "full" },
+      {
+        "id": "coupling",
+        "type": "markdown",
+        "body": "### Business logic currently coupled to UI\n\n- Page components calculate many capability flags from global roles and space memberships (`tree/node`, `tree/branch`, releases, admin pages). Services re-enforce authorization, but UI composition knows policy details.\n- `DraftEditor` implements autosave timing, draft creation, version conflict interpretation, rebase, publish/review routing, and post-action navigation.\n- `KnowledgeMap` owns filtering, ego mode, settings persistence, force configuration, keyboard interaction, context menu and navigation.\n- Board URL construction owns view/task preservation; Library page owns filter and folder query serialization; sidebar owns route-to-Team/Personal classification.\n- Vietnamese copy is partly centralized, but several pages/components still contain hard-coded user-facing strings.\n\n**Likely reusable:** service layer, API contracts, schemas/migrations, authorization, draft/version/review state machines, Markdown renderer/validation, graph provider/renderer core, upload/extraction, notifications, audit, reusable mutation/error primitives.\n\n**Likely refactor candidates:** shell/navigation composition, route-to-scope classification, duplicated editor/form shells, search entry points, page-owned capability derivation, mixed-purpose page composition, deadline-link UI contract, and hard-coded copy."
+      },
+      {
+        "id": "dependency_intro",
+        "type": "markdown",
+        "body": "## 7. Screen dependencies cluster into five workflow systems\n\nThe matrix shows five natural clusters: Identity/Admin; Library/Extraction/Circulation; Knowledge Authoring/Review/Release; Work/Deadlines/Calendar; and cross-cutting Search/Notifications/Comments. Screens in one cluster often sit in different global navigation areas."
+      },
+      { "id": "dependency_table", "type": "table", "tableId": "dependency_matrix", "layout": "full" },
+      {
+        "id": "redesign_inputs",
+        "type": "markdown",
+        "body": "## 8. UX redesign inputs derived from the repository\n\n### A. Most important supported workflows\n\n1. Find, read and navigate official knowledge.\n2. Create/edit a personal note with history.\n3. Draft and publish or review shared knowledge.\n4. Promote a personal node into the shared tree.\n5. Upload a source and convert extracted text into knowledge.\n6. Create, claim, schedule, update and complete tasks.\n7. Create and monitor project deadlines and reminders.\n8. Discover, borrow, hand over and return physical books.\n9. Review publications, protected changes and translations.\n10. Administer accounts, spaces, memberships, health, audit and wiki releases.\n\n### B. Largest likely friction points\n\n1. Deadline-linked-item workflow is visible but not writable from the UI.\n2. Source-to-knowledge journey crosses five route families and does not navigate to the evolved node.\n3. Rail + auto-switching Team/Personal sidebar + command palette create competing navigation models.\n4. Mobile hides the sidebar and makes the palette the only route to several destinations.\n5. Four search surfaces expose different scopes and results.\n6. Knowledge detail pages combine reading, metadata, collaboration, history, authoring, publication and admin actions.\n7. Task and deadline concepts are separated despite shared schedule semantics.\n8. Vocabulary is still partly pending, inconsistent, or implementation-facing.\n9. Library pagination can lose the category filter; task full-page return loses board view state.\n10. Some disabled actions and post-mutation outcomes do not explain the next step.\n\n### C. Core domain entities\n\nUser, Session, Space, Space Membership, Folder, Source, Source Version, Extraction Candidate, Physical Item, Loan Ticket, Branch, Node, Node Version, Draft, Translation, Proposal, Promotion, Link, Tag, Task, Deadline, Deadline Link, Calendar Token, Comment, Notification, Presence, Wiki Release and Audit Event.\n\n### D. Current navigation model\n\nAuthenticated icon rail + contextual Team/Personal sidebar + status bar + command palette, supplemented by route-specific tabs, filters, breadcrumbs, previous/next links and query-parameter views.\n\n### E. Technical constraints affecting redesign\n\nServer Components and service calls are the default read path; interactions use local React state and fetch; permissions are dual-axis; many routes are dynamic; drafts/proposals/versions are real domain boundaries; no component/form/table library constrains markup; global CSS and centralized copy are reusable but broad; the graph is canvas-based and client-only; PostgreSQL remains authoritative."
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "body": "## Audit next steps before designing\n\n1. Validate the ten workflows above with representative users from each role and space role.\n2. Measure task completion, abandonment, backtracking and help requests by workflow; the repository contains no product analytics.\n3. Confirm which product pillar is primary in daily work: knowledge, project work, or library operations.\n4. Resolve vocabulary ownership and approve the still-pending Vietnamese terms.\n5. Decide whether the deadline-link feature is required product behavior or unfinished backend capability.\n6. Define the intended mobile use cases and supported device/browser matrix.\n\nThese are research and product-definition steps, not visual-design proposals."
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## 9. Questions the repository cannot answer\n\n- Who are the primary personas, and what proportion are member, editor, operator, contributor, viewer or manager?\n- Which workflows happen daily, weekly or rarely, and which generate the most support questions?\n- Do users think in projects/spaces, shared vs personal knowledge, documents, tasks, or organizational roles?\n- Is the physical library core, secondary, or operated by a separate persona?\n- Why are Board tasks global while Deadlines and Sources are space-scoped? Is that intentional product behavior?\n- Should a task be assignable/reassignable after creation, despite the current “conversation” rule?\n- Who decides verification and publication eligibility, and what evidence do reviewers need beyond the current snapshot/diff?\n- What is the intended end state after extraction: searchable source, private note, shared page, or all three?\n- Which notification events are important enough to interrupt users, and is in-app-only delivery sufficient?\n- Are VI/EN translations common enough to remain first-class in the main workflow?\n- Do users understand branches, verification levels, protected pages, immutable releases and Git-oriented verification?\n- What accessibility, mobile, offline, latency, browser and deployment requirements are contractual?\n- What analytics, support logs, usability recordings or research findings exist outside this repository?\n- Which current screens are known to work well and must retain behavioral familiarity?"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "body": "## Caveats and assumptions\n\n- This report infers behavior from implementation and tests; it does not prove how often users encounter any issue or whether they perceive it as severe.\n- Role-gated and data-dependent branches mean one user never sees the full surface described here.\n- No live database was started because the demo seed is destructive; runtime visuals and latency were not revalidated in this audit.\n- Route existence, component behavior and schema lifecycles are current at HEAD `c60620f`; product intent in comments may be stale.\n- No quantitative product telemetry is present. The severity chart counts this audit's classified findings only; exact implementation evidence remains in the friction table."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-31T00:00:00+07:00",
+    "status": "ready",
+    "datasets": {
+      "friction_summary": [
+        { "severity": "Critical", "count": 1, "scope": "Repository-derived audit classifications", "example": "Deadline relationships visible but not editable" },
+        { "severity": "High", "count": 6, "scope": "Repository-derived audit classifications", "example": "Cross-route workflows and competing navigation" },
+        { "severity": "Medium", "count": 7, "scope": "Repository-derived audit classifications", "example": "State loss, manual entry and vocabulary" },
+        { "severity": "Low", "count": 2, "scope": "Repository-derived audit classifications", "example": "Visual state and bespoke error handling" }
+      ],
+      "surface_map": [
+        { "route": "/", "screen": "Home", "purpose": "Greeting; recent Library items, user's loan tickets, five notifications", "primary": "Open a recent source or notification", "secondary_next": "Library, source detail, notifications; empty-state upload or browse", "evidence": "src/app/page.tsx" },
+        { "route": "/login", "screen": "Login gate; OIDC and optional dev picker", "purpose": "Invite-only authentication; shows login errors", "primary": "Sign in with Google or choose seeded demo user", "secondary_next": "Redirects authenticated users to Home", "evidence": "src/app/login/page.tsx" },
+        { "route": "/account", "screen": "Account settings", "purpose": "Profile, memberships, notification preferences, ICS token, submissions link", "primary": "Update name/avatar/preferences; regenerate calendar link", "secondary_next": "My submissions; calendar client via copied ICS URL", "evidence": "src/app/account/page.tsx; components/account-*; notification-prefs.tsx" },
+        { "route": "/admin", "screen": "Admin console", "purpose": "Spaces, memberships, users, audit log, health doorway", "primary": "Create space; manage members; invite/change/disable users", "secondary_next": "Load more audit; open target links; System health", "evidence": "src/app/admin/page.tsx; components/space-admin.tsx; user-admin.tsx; audit-log.tsx" },
+        { "route": "/admin/health", "screen": "System health", "purpose": "Database, review backlog, overdue loans, backup, uptime", "primary": "Inspect readings; browser refresh", "secondary_next": "Back to Admin", "evidence": "src/app/admin/health/page.tsx" },
+        { "route": "/board", "screen": "Kanban, month, week; optional task side panel", "purpose": "Create, assign, claim, schedule and move tasks", "primary": "Create task; change state; open task; edit dates/notes", "secondary_next": "Archive; claim; switch views; open full task page", "evidence": "src/app/board/page.tsx; components/board-actions.tsx; board-calendar.tsx; task-detail.tsx" },
+        { "route": "/board/task/:taskId", "screen": "Full task detail", "purpose": "Readable task metadata and long-form notes/date editing", "primary": "Save start/due/notes; state actions where authorized", "secondary_next": "Back to plain Board", "evidence": "src/app/board/task/[taskId]/page.tsx; components/task-detail.tsx" },
+        { "route": "/deadlines", "screen": "Deadline list/filter + create form", "purpose": "Space-scoped milestones and reminders", "primary": "Filter project; create deadline; open detail", "secondary_next": "Clear filter", "evidence": "src/app/deadlines/page.tsx; components/deadline-form.tsx" },
+        { "route": "/deadlines/:id", "screen": "Deadline detail/edit", "purpose": "Deadline metadata, linked tasks/sources/nodes, comments", "primary": "Edit title/type/date/reminders; comment", "secondary_next": "Open linked source/node; back breadcrumb", "evidence": "src/app/deadlines/[id]/page.tsx" },
+        { "route": "/graph", "screen": "Shared/personal graph; optional ego depth", "purpose": "Canvas exploration of visible node/link graph", "primary": "Filter, pan/zoom, open node, open local graph", "secondary_next": "Switch scope; settings; pin; Tree; Branch list", "evidence": "src/app/graph/page.tsx; components/knowledge-map/**" },
+        { "route": "/library", "screen": "Library list, folder browser, search/filter/archive views", "purpose": "Digital sources and physical books across spaces", "primary": "Search/filter/sort/open; browse folders; drag-drop upload", "secondary_next": "Create folder; archived view; admin add book; loan desk; paginate", "evidence": "src/app/library/page.tsx; components/library-dropzone.tsx; folder-create.tsx; catalog-item-form.tsx" },
+        { "route": "/library/:id", "screen": "Stored item / physical book detail", "purpose": "Source metadata/version/extraction/preview/download; physical facts/loans", "primary": "Download; request loan; inspect extraction", "secondary_next": "Retry extraction; move/version/rename/withdraw/restore; cover/copies/archive; candidate review; comments", "evidence": "src/app/library/[id]/page.tsx; source-*-actions.tsx; loan-*; catalog-*" },
+        { "route": "/library/loans", "screen": "Loan desk", "purpose": "Operator queue grouped by requested/approved/borrowed/done", "primary": "Approve/decline; hand over with due date; confirm return", "secondary_next": "Open item; back to Library", "evidence": "src/app/library/loans/page.tsx; components/loan-actions.tsx" },
+        { "route": "/notifications", "screen": "Notification center", "purpose": "Up to configured limit of in-app events with read state", "primary": "Open subject; mark read", "secondary_next": "Account notification preferences", "evidence": "src/app/notifications/page.tsx; components/notification-actions.tsx" },
+        { "route": "/review", "screen": "Review queue", "purpose": "Pending publication, protected change and translation proposals", "primary": "Open a review item", "secondary_next": "Open current node from change row", "evidence": "src/app/review/page.tsx" },
+        { "route": "/review/change/:id", "screen": "Change proposal review", "purpose": "Diff proposed snapshot against current node; stale/independence status", "primary": "Approve/reject/request changes when allowed", "secondary_next": "Open current node; return via breadcrumb", "evidence": "src/app/review/change/[id]/page.tsx; components/proposal-decision.tsx" },
+        { "route": "/review/node-publication/:id", "screen": "Personal-to-team publication review", "purpose": "Responsibility chain, evidence source and immutable Markdown snapshot", "primary": "Approve with verification; reject/request changes with note", "secondary_next": "Open personal source node or source item", "evidence": "src/app/review/node-publication/[id]/page.tsx" },
+        { "route": "/review/translation/:id", "screen": "English translation review", "purpose": "Translation snapshot and decision", "primary": "Approve/request changes/reject with optional note", "secondary_next": "Decision redirects to Review", "evidence": "src/app/review/translation/[id]/page.tsx; components/translation-decision.tsx" },
+        { "route": "/search", "screen": "Global search page", "purpose": "Search nodes and source text within optional space", "primary": "Enter term/scope; open result", "secondary_next": "Wiki canonical page or source detail", "evidence": "src/app/search/page.tsx" },
+        { "route": "/source/intake", "screen": "File intake", "purpose": "Upload one or many files into a space with extraction choice", "primary": "Select files/space and upload", "secondary_next": "One file → detail; many → Library", "evidence": "src/app/source/intake/page.tsx; components/upload-form.tsx" },
+        { "route": "/source/mine", "screen": "My submissions", "purpose": "Uploader-owned sources with computed next action", "primary": "Open source", "secondary_next": "Upload from empty state", "evidence": "src/app/source/mine/page.tsx; lib/source-status.ts" },
+        { "route": "/tree", "screen": "Tree browse and tree-specific search", "purpose": "Team/personal branch overview and recent nodes", "primary": "Search; open branch/node; create branch", "secondary_next": "Branch list; Wiki releases", "evidence": "src/app/tree/page.tsx" },
+        { "route": "/tree/branches", "screen": "Branch list", "purpose": "Team and personal branch cards with node/verification counts", "primary": "Open or create branch", "secondary_next": "None beyond shell", "evidence": "src/app/tree/branches/page.tsx" },
+        { "route": "/tree/branch/new", "screen": "Create team/personal branch", "purpose": "Choose scope context, space, parent, name/order/description", "primary": "Create branch", "secondary_next": "Created branch detail", "evidence": "src/app/tree/branch/new/page.tsx; components/branch-form.tsx" },
+        { "route": "/tree/branch/:id", "screen": "Branch hub", "purpose": "Node list/progress plus create, edit metadata and archive", "primary": "Open node; create node/draft", "secondary_next": "Edit branch; choose parent/order; archive", "evidence": "src/app/tree/branch/[id]/page.tsx" },
+        { "route": "/tree/draft/:id", "screen": "New team page draft", "purpose": "Private autosaved draft before first official node exists", "primary": "Edit and publish/submit review", "secondary_next": "Conflict/rebase handling", "evidence": "src/app/tree/draft/[id]/page.tsx; components/draft-editor.tsx" },
+        { "route": "/tree/node/:id", "screen": "Node detail / reading surface", "purpose": "Markdown, language, verification, provenance, links, comments, actions", "primary": "Read/navigate/comment; edit when allowed", "secondary_next": "Graph; history; translation; admin/protection; proposal; branch", "evidence": "src/app/tree/node/[id]/page.tsx" },
+        { "route": "/tree/node/:id/edit", "screen": "Personal live editor or team draft editor", "purpose": "Edit title/summary/order/Markdown/tags with preview and concurrency", "primary": "Save personal node or autosave/publish team draft", "secondary_next": "Validate; resolve conflict; return to canonical node", "evidence": "src/app/tree/node/[id]/edit/page.tsx; node-editor.tsx; draft-editor.tsx" },
+        { "route": "/tree/node/:id/history", "screen": "Version history and compare", "purpose": "Select two versions, diff, restore through append/draft", "primary": "Choose comparison; restore eligible old version", "secondary_next": "Back to node; restore opens editor/detail", "evidence": "src/app/tree/node/[id]/history/page.tsx" },
+        { "route": "/tree/node/:id/translate/en", "screen": "English translation editor", "purpose": "Personal direct translation or team translation draft", "primary": "Save/publish/submit translation", "secondary_next": "Canonical EN node or Review", "evidence": "src/app/tree/node/[id]/translate/en/page.tsx; translation-editor.tsx; draft-editor.tsx" },
+        { "route": "/vault/review", "screen": "Extraction candidate review", "purpose": "Immutable extracted Markdown waiting for personal-tree decision", "primary": "Choose personal branch and evolve; reject", "secondary_next": "Preview raw Markdown; stays on list after action", "evidence": "src/app/vault/review/page.tsx; components/candidate-review-list.tsx" },
+        { "route": "/wiki/:id/:slug", "screen": "Canonical wiki URL", "purpose": "Stable, slug-correct public-within-app route for Node detail", "primary": "Read same Node detail surface", "secondary_next": "Permanent redirect corrects stale/missing slug", "evidence": "src/app/wiki/[id]/[[...slug]]/page.tsx" },
+        { "route": "/wiki/releases", "screen": "Space wiki releases", "purpose": "Immutable verified Markdown/XML/Git snapshots", "primary": "Select space; create release; verify/rebuild released snapshot", "secondary_next": "None beyond shell", "evidence": "src/app/wiki/releases/page.tsx; release-actions.tsx" }
+      ],
+      "domain_model": [
+        { "domain": "Identity", "entity": "User", "purpose_fields": "Invite-only person: googleSub, email, displayName, role, avatar, locale, disabledAt", "lifecycle": "Invited sentinel → claimed/active ↔ disabled", "relationships": "Owns sessions/personal content; member of spaces; creator/assignee/reviewer", "surfaces_actions": "Created/invited and configured in Admin; profile in Account; identity shown across shell/audit" },
+        { "domain": "Identity", "entity": "Session", "purpose_fields": "Server session: token hash, expiry, revocation, last seen", "lifecycle": "Active → expired/revoked", "relationships": "Belongs to User", "surfaces_actions": "Created by login; revoked by logout/disable; not directly inspected in UI" },
+        { "domain": "Scope", "entity": "Space", "purpose_fields": "Membership boundary: name, team/personal type, owner, archive/version", "lifecycle": "Active → archived (schema; no visible archive UI found)", "relationships": "Members, folders, sources, team branches, deadlines, releases", "surfaces_actions": "Created/membership-configured in Admin; selected in Library, upload, deadlines, releases; listed in Account" },
+        { "domain": "Scope", "entity": "Space Membership", "purpose_fields": "User-space join with viewer/contributor/manager role", "lifecycle": "Added → role changed → removed", "relationships": "Joins User and Space; second authorization axis", "surfaces_actions": "Configured in Admin; affects visibility/actions everywhere; not summarized alongside global role" },
+        { "domain": "Library", "entity": "Folder", "purpose_fields": "Space-scoped hierarchy: parentId, name", "lifecycle": "Created; API supports rename/delete", "relationships": "Contains child folders and Sources", "surfaces_actions": "Created/browsed in Library; Source detail moves items; no dedicated folder page" },
+        { "domain": "Library", "entity": "Source", "purpose_fields": "Stored item metadata: space/folder/category, title, description, submitter, assignee, currentVersion", "lifecycle": "Visible/active → withdrawn/archived → admin restore; trustStatus exists but is not shown", "relationships": "Has versions/comments; optional physical item; may evidence promotions/deadlines", "surfaces_actions": "Created by upload or admin physical-item form; listed/searched in Library/My submissions; managed on detail" },
+        { "domain": "Library", "entity": "Source Version", "purpose_fields": "File snapshot: filename/MIME/size/checksum/object key; storage and extraction state", "lifecycle": "uploaded → stored/quarantined/archived; extraction pending → processed/unprocessable", "relationships": "Belongs to Source; has chunks; optional candidate; can support Promotion", "surfaces_actions": "Created on upload/new version; inspected/downloaded/retried on source detail" },
+        { "domain": "Library", "entity": "Extraction Candidate", "purpose_fields": "Immutable extracted Markdown, hash, method", "lifecycle": "pending_review → evolved or rejected", "relationships": "One per Source Version; evolve creates personal Node", "surfaces_actions": "Created by extraction; decided on /vault/review; resulting node not linked from completion UI" },
+        { "domain": "Library", "entity": "Physical Item", "purpose_fields": "1:1 Source extension: item code, author, cover, shelf, copies, available/borrowed/lost/repair", "lifecycle": "available ↔ borrowed; available/lost/repair; archived terminal in UI", "relationships": "Belongs to Source; has Loan Tickets", "surfaces_actions": "Created in Library admin form; configured/inspected on source detail; discovered through Library" },
+        { "domain": "Circulation", "entity": "Loan Ticket", "purpose_fields": "Borrower, handler, request/approve/borrow/due/return timestamps", "lifecycle": "requested → approved → borrowed → returned; requested → declined; borrowed → overdue", "relationships": "Belongs to Physical Item and borrower User", "surfaces_actions": "Requested on item detail; managed in Loan desk; inspected in item register/Home" },
+        { "domain": "Knowledge", "entity": "Branch", "purpose_fields": "Hierarchical topic: parent, space or owner, scope, name, description, order", "lifecycle": "Active → archived", "relationships": "Contains Nodes; team branch belongs to Space; personal branch belongs to User", "surfaces_actions": "Created on branch-new; configured on branch hub; browsed in sidebar/Tree/Graph" },
+        { "domain": "Knowledge", "entity": "Node", "purpose_fields": "Page: branch, title/slug, summary/order, Markdown, verification, publish/protection/canonical flags", "lifecycle": "no_source/unverified/verified → archived; optional merge redirect; publish only if verified", "relationships": "Versions, drafts, translations, links, tags, comments, proposals, provenance", "surfaces_actions": "Created in branch or from candidate/promotion; read via Tree/Wiki/Graph/Search; edited/administered on node routes" },
+        { "domain": "Knowledge", "entity": "Node Version", "purpose_fields": "Append-only complete snapshot, sequence, verification/review/change summary", "lifecycle": "Immutable history; restore appends another version/draft", "relationships": "Belongs to Node; may be referenced by Promotion", "surfaces_actions": "Created by saves/publications; compared/restored on History" },
+        { "domain": "Knowledge", "entity": "Draft", "purpose_fields": "Per-author private snapshot with baseVersion/draftVersion, locale, state", "lifecycle": "editing → published/deleted; editing → in_review → approved/deleted or changes_requested/editing", "relationships": "Belongs to Branch, optional existing Node, author; may create Proposal", "surfaces_actions": "Created from branch or Edit; configured in DraftEditor; reviewed inline/queue" },
+        { "domain": "Knowledge", "entity": "Translation", "purpose_fields": "English title/summary/Markdown/slug/version", "lifecycle": "Personal direct save; team draft/proposal → approved", "relationships": "1 locale per Node plus versions/proposals", "surfaces_actions": "Created on translate route; viewed with `?lang=en`; reviewed separately" },
+        { "domain": "Knowledge", "entity": "Proposal", "purpose_fields": "Immutable change/publication snapshot, base version, target branch/evidence, decision note", "lifecycle": "pending → approved/rejected/changes_requested", "relationships": "References source Node; publication targets Branch; change applies to Node; independent reviewer", "surfaces_actions": "Created by protected draft or personal publication action; reviewed in Review/inline; status shown on source node/draft" },
+        { "domain": "Knowledge", "entity": "Promotion", "purpose_fields": "Append-only provenance: sourceVersion, approved nodeVersion, reviewer, excerpts", "lifecycle": "Immutable", "relationships": "Joins source evidence to approved knowledge version", "surfaces_actions": "Created by approved sourced publication; inspected as provenance on Node" },
+        { "domain": "Knowledge", "entity": "Node Link / Tag", "purpose_fields": "Typed edge related/supports/contrasts/part_of; normalized tag", "lifecycle": "Replaced as node snapshot changes", "relationships": "Node-to-node graph; many-to-many tags", "surfaces_actions": "Wiki links typed in Markdown; inspected on node and Graph; tags comma-entered in editors" },
+        { "domain": "Work", "entity": "Task", "purpose_fields": "Title, todo/doing/done/archive state, assignee, start/due, notes, optional target", "lifecycle": "todo ↔ doing ↔ done → archived", "relationships": "Creator/assignee User; optional domain target; may be linked to Deadline", "surfaces_actions": "Created/managed on Board; scheduled in month/week; detail side/full page; deadline link read-only" },
+        { "domain": "Work", "entity": "Deadline", "purpose_fields": "Space, title, kind, dueAt, reminder offsets, version", "lifecycle": "Created/updated; no archive/delete UI found", "relationships": "Belongs to Space; links Tasks/Sources/Nodes; comments/reminders", "surfaces_actions": "Created/listed on Deadlines; edited/inspected on detail; subscribed through Calendar token" },
+        { "domain": "Work", "entity": "Deadline Link", "purpose_fields": "Polymorphic targetType + targetId", "lifecycle": "Replaced as a set by deadline update API", "relationships": "Deadline to Task/Source/Node", "surfaces_actions": "Read on deadline detail; no implemented creation/edit UI found" },
+        { "domain": "Work", "entity": "Calendar Token", "purpose_fields": "Opaque token, User, optional Space, revokedAt", "lifecycle": "Active → revoked/regenerated", "relationships": "Exposes user's deadline/task schedule as ICS", "surfaces_actions": "Inspected/regenerated in Account; consumed by /calendar/:token.ics" },
+        { "domain": "Collaboration", "entity": "Comment", "purpose_fields": "Anchor type/id, parent, author, body, mentions", "lifecycle": "Append-only", "relationships": "Anchors Source, Node or Deadline; mentions Users", "surfaces_actions": "Created/read on those detail pages; reply/mention UI" },
+        { "domain": "Collaboration", "entity": "Notification / Preference", "purpose_fields": "User event payload/readAt; per-event enabled channels", "lifecycle": "Unread → read; preference absent=default", "relationships": "Targets a User and may deep-link to domain object", "surfaces_actions": "Read/opened in Home/Notifications; configured in Account" },
+        { "domain": "Governance", "entity": "Wiki Release", "purpose_fields": "Space/release number, building/released/failed, immutable files, manifest and commit", "lifecycle": "building → released or failed; released immutable", "relationships": "Belongs to team Space; snapshot of eligible Nodes", "surfaces_actions": "Created/listed/verified/rebuilt on /wiki/releases" },
+        { "domain": "Governance", "entity": "Audit Event", "purpose_fields": "Actor, action, accountability, target, outcome, details, time", "lifecycle": "Append-only", "relationships": "Cross-domain mutation record", "surfaces_actions": "Created by services; inspected/paginated in Admin" }
+      ],
+      "friction_register": [
+        { "severity_rank": 1, "severity": "Critical", "issue": "Deadline relationships are visible but not editable", "observed_fact": "DeadlineInput and service accept links, but DeadlineForm submits only space/title/type/due/reminders/version. Detail says linking happens from task/document side; no UI writes deadline links.", "ux_inference": "Users encounter a dead end and cannot complete the advertised checklist/document workflow.", "evidence": "components/deadline-form.tsx:58-70; deadlines/[id]/page.tsx:43-51; modules/pm/service.ts:80-99" },
+        { "severity_rank": 2, "severity": "High", "issue": "Source-to-knowledge flow is split across route families", "observed_fact": "Upload → Library detail → Vault candidate review → personal Branch/Node → publication Review. Candidate evolve only refreshes the list.", "ux_inference": "Users must reconstruct progress and find the newly created node themselves; completion is ambiguous.", "evidence": "upload-form.tsx:180-209; library/[id]/page.tsx:254-263; candidate-review-list.tsx:26-45" },
+        { "severity_rank": 3, "severity": "High", "issue": "Competing global navigation models", "observed_fact": "A rail, an auto-switching Team/Personal sidebar, status bar and command palette all expose overlapping destinations.", "ux_inference": "Users may not know which navigation layer is authoritative or why context changes between adjacent workflow steps.", "evidence": "layout.tsx:118-174; shell-rail.tsx; shell-sidebar.tsx; command-palette.tsx" },
+        { "severity_rank": 4, "severity": "High", "issue": "Mobile hides contextual navigation", "observed_fact": "At max-width 56rem the sidebar is display:none; code documents palette as the only doorway to six screens.", "ux_inference": "Discoverability depends on opening a search dialog and knowing destination labels.", "evidence": "globals.css:1731-1738; shell-rail.tsx:300-313; command-palette.tsx:56-60" },
+        { "severity_rank": 5, "severity": "High", "issue": "Search is fragmented", "observed_fact": "Command palette calls /api/search; /search calls searchKnowledge; /tree uses searchTree; /library has its own q/space/category/folder semantics.", "ux_inference": "The same query can produce different result types and scope behavior depending on entry point.", "evidence": "command-palette.tsx:184; search/page.tsx; tree/page.tsx; library/page.tsx" },
+        { "severity_rank": 6, "severity": "High", "issue": "Knowledge reading page mixes many jobs", "observed_fact": "Node detail renders reading, language, presence, draft review, TOC, provenance, outgoing/backlinks, edit, translation, history, admin, protection and publication controls.", "ux_inference": "Primary reading and next action can be obscured; role-specific actions lengthen the page.", "evidence": "tree/node/[id]/page.tsx:95-292" },
+        { "severity_rank": 7, "severity": "High", "issue": "Live navigation contains obsolete audit targets", "observed_fact": "Audit target mapping links sources to /source/:id and catalog items to /catalog/:id, but no page routes exist there; implemented detail is /library/:id.", "ux_inference": "Clicking some audit objects can land on Not Found.", "evidence": "components/audit-log.tsx:45-51; route inventory" },
+        { "severity_rank": 8, "severity": "Medium", "issue": "Library pagination loses category filter", "observed_fact": "Library reads categoryId and preserves it in its local href helper, but does not pass categoryId to Pager params.", "ux_inference": "Moving to the next page silently broadens results and makes filtering appear unreliable.", "evidence": "library/page.tsx:55,119-131,297-308; components/pager.tsx:24-36" },
+        { "severity_rank": 9, "severity": "Medium", "issue": "Full task detail loses board view state", "observed_fact": "Task full page always closes to /board; code explicitly relies on browser Back to preserve prior view.", "ux_inference": "Using the visible return action from month/week loses calendar context.", "evidence": "board/task/[taskId]/page.tsx:18-30" },
+        { "severity_rank": 10, "severity": "Medium", "issue": "Disabled loan request has no adjacent reason", "observed_fact": "Item detail disables request for lost/repair/no copies; LoanRequestButton only renders the disabled button and mutation messages.", "ux_inference": "Users may not understand why borrowing is unavailable or what to do next.", "evidence": "library/[id]/page.tsx:190-198; components/loan-request-button.tsx:14-27" },
+        { "severity_rank": 11, "severity": "Medium", "issue": "Manual structure entry in editors", "observed_fact": "Node editors ask for numeric sort order, comma-separated tags and Markdown/wiki-link syntax. Candidate content cannot be edited before evolve.", "ux_inference": "Non-technical users must learn storage-oriented conventions and remember exact page titles/branch choices.", "evidence": "node-editor.tsx:101-161; draft-editor.tsx:250-310; candidate-review-list.tsx:61-90" },
+        { "severity_rank": 12, "severity": "Medium", "issue": "Long mixed-purpose admin and branch pages", "observed_fact": "Admin stacks spaces, membership, account management, audit and health entry; branch hub stacks browse/create/edit/archive.", "ux_inference": "Rare/destructive actions compete with frequent work and create long scanning paths.", "evidence": "admin/page.tsx:25-69; tree/branch/[id]/page.tsx:76-156" },
+        { "severity_rank": 13, "severity": "Medium", "issue": "Vocabulary is not fully governed", "observed_fact": "Many live strings are marked NEW; approved docs differ from live Board/Deadline/Loan desk names; raw English/technical labels appear.", "ux_inference": "Support questions may reflect terminology inconsistency rather than missing functionality.", "evidence": "docs/vocabulary-vi.md; src/lib/vi/copy.ts; review/translation; wiki/releases; vault/review" },
+        { "severity_rank": 14, "severity": "Medium", "issue": "Generic route loading and errors hide task context", "observed_fact": "Nine route groups repeat the same two skeleton blocks and same generic retry screen.", "ux_inference": "During waits/failures, users cannot tell which data or action is affected.", "evidence": "src/app/{account,admin,board,deadlines,graph,library,login,notifications,review,source,tree}/{loading,error}.tsx" },
+        { "severity_rank": 15, "severity": "Low", "issue": "Undefined active-tab CSS token", "observed_fact": "side-switch-btn.active uses var(--color-panel); no definition exists in src.", "ux_inference": "The active Team/Personal tab background can fall back to transparent, weakening location feedback.", "evidence": "globals.css:2009-2014" },
+        { "severity_rank": 16, "severity": "Low", "issue": "Some bespoke fetch flows have weaker network handling", "observed_fact": "useMutation catches rejected fetches, but CandidateReviewList and DraftEditor directly await fetch without an outer network-error catch.", "ux_inference": "Offline failures can produce no localized recovery message or an unhandled rejection in these workflows.", "evidence": "lib/use-mutation.ts:50-97; candidate-review-list.tsx:26-45; draft-editor.tsx:103-148" }
+      ],
+      "dependency_matrix": [
+        { "screen": "Home /", "reads": "Sources, my loan tickets, notifications", "creates": "—", "updates": "Notification read on click", "navigates": "Library/item/notifications/upload", "depends": "Session, storage, circulation, notify" },
+        { "screen": "Login /login", "reads": "OIDC config, optional demo candidates", "creates": "Session via auth endpoints", "updates": "Last-seen after login", "navigates": "Home or error state", "depends": "Auth/OIDC/invitation" },
+        { "screen": "Account /account", "reads": "Profile, spaces, preferences, calendar token", "creates": "Calendar token if regenerated", "updates": "Profile/avatar/preferences/token", "navigates": "My submissions, external calendar", "depends": "Auth, storage, notify, pm" },
+        { "screen": "Admin /admin", "reads": "Spaces, members, accounts, audit", "creates": "Space, invitation, membership", "updates": "Roles, enabled state, memberships", "navigates": "Health, audit targets", "depends": "admin auth, storage, audit" },
+        { "screen": "Health /admin/health", "reads": "DB, export health, proposals, overdue loans, uptime", "creates": "—", "updates": "—", "navigates": "Admin", "depends": "admin auth, export, knowledge, circulation" },
+        { "screen": "Board /board", "reads": "Tasks, schedule, users, optional task", "creates": "Task", "updates": "Task state/claim/archive/dates/notes", "navigates": "Task full page, board views", "depends": "pm, notify users, query params" },
+        { "screen": "Task detail /board/task/:id", "reads": "Task", "creates": "—", "updates": "Dates, notes, state/archive", "navigates": "Plain Board", "depends": "pm authorization/version" },
+        { "screen": "Deadlines /deadlines", "reads": "Deadlines, member spaces", "creates": "Deadline", "updates": "—", "navigates": "Deadline detail", "depends": "pm, storage membership" },
+        { "screen": "Deadline detail /deadlines/:id", "reads": "Deadline and linked tasks/sources/nodes, comments", "creates": "Comment", "updates": "Deadline fields/reminders", "navigates": "Linked source/node, deadline list", "depends": "pm links, storage, knowledge, notify" },
+        { "screen": "Graph /graph", "reads": "Visible nodes/edges/tags", "creates": "Client-only pins/groups/settings", "updates": "URL center/depth and local settings", "navigates": "Wiki node, Tree, branches", "depends": "graph provider, force-graph, client canvas" },
+        { "screen": "Library /library", "reads": "Sources, folders, spaces, categories", "creates": "Folder, uploaded source, physical item", "updates": "—", "navigates": "Source detail, folder, loans, upload", "depends": "storage/physical, query filters" },
+        { "screen": "Source detail /library/:id", "reads": "Source/version/physical/loans/folders/comments", "creates": "New version, loan request, comment", "updates": "Metadata, folder, extraction, cover, copies, archive/restore", "navigates": "Library, candidate review", "depends": "storage, extraction, circulation, notify" },
+        { "screen": "Loan desk /library/loans", "reads": "All tickets/items/users", "creates": "—", "updates": "Ticket state and due date", "navigates": "Source detail, Library", "depends": "admin role, circulation" },
+        { "screen": "Notifications /notifications", "reads": "Notification rows and resolved links", "creates": "—", "updates": "readAt", "navigates": "Domain targets, Account", "depends": "notify link resolver" },
+        { "screen": "Review queue /review", "reads": "Publication/change/translation proposals", "creates": "—", "updates": "—", "navigates": "Three review details, node", "depends": "editor/admin role, knowledge" },
+        { "screen": "Change review", "reads": "Proposal/current node/diff", "creates": "Approved Node version", "updates": "Proposal state; Node on approval", "navigates": "Node or Review", "depends": "independent reviewer, version freshness" },
+        { "screen": "Publication review", "reads": "Proposal/personal node/source/target branch", "creates": "Shared Node, version, promotion", "updates": "Proposal state", "navigates": "Personal/shared node, source, Review", "depends": "independent reviewer, snapshot freshness" },
+        { "screen": "Translation review", "reads": "Translation proposal", "creates": "Approved translation/version", "updates": "Proposal state", "navigates": "Review", "depends": "independent reviewer" },
+        { "screen": "Global search /search", "reads": "Nodes and source text; spaces", "creates": "—", "updates": "URL query", "navigates": "Wiki node/source detail", "depends": "knowledge search, storage scope" },
+        { "screen": "File intake /source/intake", "reads": "Member spaces", "creates": "Sources/versions/candidates asynchronously", "updates": "Upload progress", "navigates": "Source detail or Library", "depends": "storage/object store/extraction" },
+        { "screen": "My submissions /source/mine", "reads": "Uploader sources/status", "creates": "—", "updates": "—", "navigates": "Source detail/upload", "depends": "storage, source-status mapping" },
+        { "screen": "Tree /tree", "reads": "Branches, recent nodes, tree search", "creates": "—", "updates": "URL query", "navigates": "Branch/node/new branch/releases", "depends": "knowledge" },
+        { "screen": "Branches /tree/branches", "reads": "Branch counts/verification", "creates": "—", "updates": "—", "navigates": "Branch/new branch", "depends": "knowledge scope" },
+        { "screen": "Branch create", "reads": "Branches and eligible spaces", "creates": "Branch", "updates": "—", "navigates": "Created branch", "depends": "knowledge/storage permissions" },
+        { "screen": "Branch hub", "reads": "Branch/nodes/sibling branches", "creates": "Personal node or team draft", "updates": "Branch metadata/archive", "navigates": "Node/draft/branch list", "depends": "knowledge and space role" },
+        { "screen": "New team draft", "reads": "Draft/wiki index", "creates": "Official Node or Proposal", "updates": "Draft autosave/rebase/state", "navigates": "Wiki node", "depends": "draft lifecycle" },
+        { "screen": "Node detail / Wiki", "reads": "Node/translation/navigation/links/provenance/comments/presence/proposals", "creates": "Comment/publication proposal", "updates": "Protection/admin actions/review decision", "navigates": "Branch, neighbor, Graph, edit, translation, history, sources", "depends": "knowledge, notify, role/space policy" },
+        { "screen": "Node edit", "reads": "Node/draft/wiki index", "creates": "Draft/version/proposal", "updates": "Node or draft", "navigates": "Canonical node", "depends": "personal vs team lifecycle, optimistic version" },
+        { "screen": "Node history", "reads": "Versions and selected snapshots", "creates": "Restored version or draft", "updates": "—", "navigates": "Node/editor", "depends": "append-only versions, permissions" },
+        { "screen": "English editor", "reads": "Node/translation/draft/wiki index", "creates": "Translation/version/proposal", "updates": "Translation/draft", "navigates": "EN wiki or Review", "depends": "personal/team translation lifecycle" },
+        { "screen": "Candidate review /vault/review", "reads": "Personal candidates/branches", "creates": "Personal Node", "updates": "Candidate evolved/rejected", "navigates": "No automatic next screen", "depends": "processed Source Version, personal branch" },
+        { "screen": "Wiki releases", "reads": "Team spaces/releases", "creates": "Release/Git snapshot", "updates": "Mirror rebuild only; release immutable", "navigates": "Space tabs", "depends": "verified+publish nodes, manager/admin, export target" }
+      ],
+      "technical_constraints": [
+        { "area": "Framework", "current": "Next.js 15.3.4 App Router, React 19.1, TypeScript 5.8", "reuse": "Keep routing/runtime unless product requirements demand otherwise; page composition can change independently", "evidence": "package.json; src/app" },
+        { "area": "Rendering/data reads", "current": "Dynamic async Server Components call module services directly", "reuse": "Reuse services and server reads; regroup screens without adding a client data layer", "evidence": "layout.tsx dynamic=force-dynamic; docs/architecture.md" },
+        { "area": "Client state", "current": "Local useState/useEffect/useTransition/useSyncExternalStore; URL params; localStorage for shell/theme/graph", "reuse": "Good for bounded interactions; shared workflow/navigation state may need explicit ownership", "evidence": "src/app/components; no state dependency in package.json" },
+        { "area": "UI/component library", "current": "No third-party UI kit; native elements and custom components", "reuse": "No vendor lock-in; primitives need consolidation if redesign changes interaction patterns", "evidence": "package.json; src/app/components" },
+        { "area": "Styling", "current": "One large globals.css with semantic tokens, themes, component classes and container/media queries; custom CDA font", "reuse": "Tokens/accessibility work reusable; shell/page rules are tightly global and likely need controlled refactor", "evidence": "src/app/globals.css; public/fonts" },
+        { "area": "Forms", "current": "Native forms/constraints plus bespoke controlled components; no form library", "reuse": "Simple forms reusable; duplicated node/draft/translation and admin forms need shared product-level patterns, not necessarily a library", "evidence": "package.json; components/*form*.tsx" },
+        { "area": "Tables/grids", "current": "Native HTML tables and CSS overflow; force-graph for graph canvas only", "reuse": "Accessible simple tables reusable; large admin/audit/library tables lack shared sorting/filter state", "evidence": "package.json; globals.css; knowledge-map" },
+        { "area": "Authentication", "current": "Google OIDC invite-only; server DB sessions; 30m idle default, 7d absolute; dev picker outside production", "reuse": "Keep; redesign must retain redirects, invite errors and session-expiry behavior", "evidence": "modules/auth; docs/architecture.md; login/page.tsx" },
+        { "area": "Authorization", "current": "Global role plus per-space role; denied reads 404, writes 403; services are final gate", "reuse": "Strong reusable core; UI capability derivation should be centralized to avoid policy duplication", "evidence": "modules/auth/authorize.ts; docs/architecture.md; page-level can* logic" },
+        { "area": "API interactions", "current": "Server reads call services; client mutations use fetch/useMutation then router.refresh/push; upload uses XHR for progress", "reuse": "Keep contracts/progress/error translation; standardize bespoke flows and post-action navigation", "evidence": "lib/use-mutation.ts; upload-form.tsx; API routes" },
+        { "area": "Business modules", "current": "Auth, storage, circulation, knowledge, pm, notify, export, audit with enforced delivery→service→data boundary", "reuse": "Preserve module boundaries; redesign should compose them around workflows rather than merge persistence", "evidence": "docs/architecture.md; scripts/boundaries.test.ts" },
+        { "area": "Knowledge editing", "current": "Personal live save; team private autosaved drafts; protected independent review; append-only history", "reuse": "Lifecycle is product-critical; redesign must surface, not flatten, these states", "evidence": "docs/architecture.md; draft-editor.tsx; knowledge schemas" },
+        { "area": "Graph", "current": "Client-only canvas force-graph with rich interactions and persisted settings", "reuse": "Graph provider/renderer core reusable; shell/settings/navigation can be recomposed", "evidence": "package.json; components/knowledge-map/**; graph-provider.ts" },
+        { "area": "Localization", "current": "Central Vietnamese copy/state/error facades plus many hard-coded and NEW strings", "reuse": "Translation/error infrastructure reusable; vocabulary and hard-coded copy require cleanup", "evidence": "src/lib/vi/**; docs/vocabulary-vi.md" },
+        { "area": "Verification", "current": "Lint, typecheck, unit, boundaries, contrast, integration, use-case, privacy, build, Playwright", "reuse": "Existing checks support incremental redesign; E2E UI coverage is currently minimal", "evidence": "package.json; tests/e2e/homepage.spec.ts" }
+      ]
+    }
+  },
+  "sources": [
+    { "id": "friction_summary_query", "label": "Derived friction classification counts", "path": "docs/ux-product-audit-artifact.json", "query": { "engine": "artifact-derived", "sql": "SELECT severity, COUNT(*) AS count FROM friction_register GROUP BY severity", "description": "Groups reviewed audit findings; not product telemetry." } },
+    { "id": "route_inventory", "label": "App Router page inventory", "path": "src/app" },
+    { "id": "shell_navigation", "label": "Authenticated shell and navigation", "path": "src/app/layout.tsx" },
+    { "id": "domain_schemas", "label": "Drizzle domain schemas", "path": "src/modules" },
+    { "id": "workflow_tests", "label": "End-to-end use-case tests", "path": "tests/usecase" },
+    { "id": "ui_pattern_scan", "label": "UI interaction and mutation pattern scan", "path": "src/app/components" },
+    { "id": "architecture_docs", "label": "Current architecture contract", "path": "docs/architecture.md" },
+    { "id": "package_manifest", "label": "Frontend dependency manifest", "path": "package.json" },
+    { "id": "vocabulary_contract", "label": "Vietnamese UI vocabulary", "path": "docs/vocabulary-vi.md" }
+  ]
+}
