@@ -76,29 +76,33 @@ export const categories = pgTable("categories", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const sources = pgTable("sources", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  spaceId: uuid("space_id")
-    .notNull()
-    .references(() => spaces.id),
-  folderId: uuid("folder_id").references(() => folders.id),
-  categoryId: uuid("category_id").references(() => categories.id),
-  title: text("title").notNull(),
-  description: text("description"),
-  trustStatus: text("trust_status", {
-    enum: ["unknown", "candidate", "trusted", "rejected", "archived"],
-  })
-    .notNull()
-    .default("unknown"),
-  submittedBy: uuid("submitted_by")
-    .notNull()
-    .references(() => users.id),
-  assignedTo: uuid("assigned_to").references(() => users.id),
-  currentVersionId: uuid("current_version_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  version: integer("version").notNull().default(1),
-});
+export const sources = pgTable(
+  "sources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    spaceId: uuid("space_id")
+      .notNull()
+      .references(() => spaces.id),
+    folderId: uuid("folder_id").references(() => folders.id),
+    categoryId: uuid("category_id").references(() => categories.id),
+    title: text("title").notNull(),
+    description: text("description"),
+    trustStatus: text("trust_status", {
+      enum: ["unknown", "candidate", "trusted", "rejected", "archived"],
+    })
+      .notNull()
+      .default("unknown"),
+    submittedBy: uuid("submitted_by")
+      .notNull()
+      .references(() => users.id),
+    assignedTo: uuid("assigned_to").references(() => users.id),
+    currentVersionId: uuid("current_version_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    version: integer("version").notNull().default(1),
+  },
+  (table) => [unique("sources_id_space_id_key").on(table.id, table.spaceId)],
+);
 
 export const sourceVersions = pgTable(
   "source_versions",
@@ -170,6 +174,8 @@ export const extractionCandidates = pgTable("extraction_candidates", {
   reviewedBy: uuid("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   evolvedNodeId: uuid("evolved_node_id"),
+  // The SQL migration owns this cross-module FK to avoid a schema import cycle.
+  evolvedDraftId: uuid("evolved_draft_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

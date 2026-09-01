@@ -3,9 +3,12 @@ import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
+import { requireProjectResearchRead } from "../auth/core";
 import { recordAudit } from "../audit/service";
+import { createProjectNoteInTransaction } from "../knowledge/drafts";
 import { branches, treeNodes, treeNodeVersions } from "../knowledge/schema";
 import { nodeAssociations } from "../knowledge/service-mutations";
+import { projects } from "../project/schema";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { extractionCandidates, sources, sourceVersions } from "./schema";
 
@@ -224,6 +227,116 @@ export async function evolveCandidate(
     });
     return node;
   });
+}
+
+/** Target handoff: derive Project from Material ownership and create one private working Note. */
+export async function evolveCandidateIntoProjectNote(
+  actor: Principal,
+  input: { candidateId?: string; title?: string },
+) {
+  if (!input.candidateId) {
+    throw new ApiError(400, "invalid_candidate", "Extraction candidate is required.");
+  }
+  const candidateId = input.candidateId;
+
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({
+        candidate: extractionCandidates,
+        sourceVersionId: sourceVersions.id,
+        sourceId: sources.id,
+        projectId: projects.projectId,
+        sourceTitle: sources.title,
+      })
+      .from(extractionCandidates)
+      .innerJoin(sourceVersions, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
+      .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
+      .innerJoin(projects, eq(sources.spaceId, projects.projectId))
+      .where(eq(extractionCandidates.id, candidateId))
+      .for("update");
+    if (!row) throw notFound();
+
+    // A Project outsider must not learn whether a candidate exists. A viewer
+    // may see the Project but still cannot perform the contributor mutation.
+    authorize(actor, "project.note.read", { spaceId: row.projectId, kind: "read" });
+    if (row.candidate.state !== "pending_review") {
+      throw new ApiError(409, "invalid_state", "This extraction candidate has already been handled.");
+    }
+
+    const draft = await createProjectNoteInTransaction(tx, actor, {
+      projectId: row.projectId,
+      title: input.title?.trim() || row.sourceTitle,
+      contentMd: row.candidate.contentMd,
+    });
+    const [evolved] = await tx
+      .update(extractionCandidates)
+      .set({
+        state: "evolved",
+        reviewedBy: actor.userId,
+        reviewedAt: new Date(),
+        evolvedDraftId: draft.id,
+      })
+      .where(
+        and(
+          eq(extractionCandidates.id, row.candidate.id),
+          eq(extractionCandidates.state, "pending_review"),
+        ),
+      )
+      .returning();
+    if (!evolved) {
+      throw new ApiError(
+        409,
+        "invalid_state",
+        "The extraction candidate has already been handled.",
+      );
+    }
+    await recordAudit(tx, actor, {
+      accountability: "editor_updater",
+      action: "candidate.evolve_project",
+      targetType: "node_draft",
+      targetId: draft.id,
+      details: {
+        candidateId: row.candidate.id,
+        sourceVersionId: row.sourceVersionId,
+        sourceId: row.sourceId,
+        projectId: row.projectId,
+        draftId: draft.id,
+      },
+    });
+    return {
+      ...draft,
+      candidateId: row.candidate.id,
+      sourceVersionId: row.sourceVersionId,
+      sourceId: row.sourceId,
+    };
+  });
+}
+
+/** Target Material extraction state without legacy Personal evolution controls. */
+export async function getProjectMaterialExtraction(
+  actor: Principal,
+  input: { projectId: string; sourceId: string },
+) {
+  await requireProjectResearchRead(actor, input.projectId);
+  const [row] = await db
+    .select({
+      sourceId: sources.id,
+      projectId: projects.projectId,
+      sourceVersionId: sourceVersions.id,
+      extractionStatus: sourceVersions.extractionStatus,
+      candidateId: extractionCandidates.id,
+      candidateState: extractionCandidates.state,
+      method: extractionCandidates.method,
+      evolvedDraftId: extractionCandidates.evolvedDraftId,
+      evolvedNodeId: extractionCandidates.evolvedNodeId,
+    })
+    .from(sources)
+    .innerJoin(projects, eq(projects.projectId, sources.spaceId))
+    .leftJoin(sourceVersions, eq(sourceVersions.id, sources.currentVersionId))
+    .leftJoin(extractionCandidates, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
+    .where(and(eq(sources.id, input.sourceId), eq(projects.projectId, input.projectId)));
+  if (!row) throw notFound();
+  return row;
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

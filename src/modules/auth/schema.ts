@@ -29,3 +29,15 @@ export const sessions = pgTable("sessions", {
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Explicit research-curation membership for the single implicit TMKT context.
+// This is neither a global auth role nor a Project membership.
+export const tmktCoreMembers = pgTable("tmkt_core_members", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "restrict" }),
+  grantedBy: uuid("granted_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -9,3 +9,7 @@ export * from "../modules/pm/schema";
 export * from "../modules/notify/schema";
 export * from "../modules/audit/schema";
 export * from "../modules/export/schema";
+export * from "../modules/project/schema";
+export * from "../modules/person/schema";
+export * from "../modules/activity/schema";
+export * from "../modules/publication/schema";

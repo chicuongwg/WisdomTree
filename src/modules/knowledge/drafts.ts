@@ -1,11 +1,14 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ne, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { normalizeTitle } from "@/lib/wikilink";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
+import { requireProjectResearchRead } from "../auth/core";
 import { users } from "../auth/schema";
 import { recordAudit } from "../audit/service";
+import { projects } from "../project/schema";
+import { extractionCandidates } from "../storage/schema";
 import {
   branches,
   nodeDrafts,
@@ -28,8 +31,10 @@ import {
   syncTags,
   uniqueSlug,
 } from "./service-mutations";
+import { copyOfficialSupportToDraft, replaceOfficialSupportFromDraft } from "./support";
 
 export type DraftLocale = "vi" | "en";
+export type ResearchPurpose = "evidence" | "synthesis";
 export type DraftSnapshot = {
   title: string;
   summary?: string | null;
@@ -54,6 +59,199 @@ const cleanSnapshot = (input: DraftSnapshot): DraftSnapshot => ({
 function assertDraftSnapshot(snapshot: DraftSnapshot) {
   if (!snapshot.title) throw new ApiError(400, "invalid_draft", "Draft title is required.");
   assertSafeMarkdown(snapshot.contentMd);
+}
+
+const PROJECT_NOTES_BRANCH_NAME = "Ghi chú dự án";
+
+function assertResearchPurpose(value: ResearchPurpose | null | undefined) {
+  if (value !== undefined && value !== null && value !== "evidence" && value !== "synthesis") {
+    throw new ApiError(400, "invalid_research_purpose", "Research purpose is invalid.");
+  }
+}
+
+async function requireConfirmedProject(runner: Tx | typeof db, projectId: string | undefined) {
+  if (!projectId) throw new ApiError(400, "invalid_project_note", "Project is required.");
+  const [project] = await runner
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, projectId));
+  if (!project) throw notFound();
+  return project;
+}
+
+/**
+ * Start a Project-owned Note as an author-private draft. Branch is an internal
+ * compatibility container; the caller supplies Project context, never scope.
+ */
+export async function createProjectNote(
+  actor: Principal,
+  input: {
+    projectId?: string;
+    title?: string;
+    contentMd?: string;
+    summary?: string | null;
+    tags?: string[];
+    researchPurpose?: ResearchPurpose | null;
+  },
+) {
+  return db.transaction((tx) => createProjectNoteInTransaction(tx, actor, input));
+}
+
+/** Transaction seam for workflows that must commit a Project draft with their own state. */
+export async function createProjectNoteInTransaction(
+  tx: Tx,
+  actor: Principal,
+  input: {
+    projectId?: string;
+    title?: string;
+    contentMd?: string;
+    summary?: string | null;
+    tags?: string[];
+    researchPurpose?: ResearchPurpose | null;
+  },
+) {
+  const project = await requireConfirmedProject(tx, input.projectId);
+  authorize(actor, "project.note.create", { spaceId: project.projectId, kind: "write" });
+  const snapshot = cleanSnapshot({
+    title: input.title ?? "",
+    summary: input.summary,
+    sortOrder: 0,
+    contentMd: input.contentMd ?? "",
+    tags: input.tags ?? [],
+    links: [],
+  });
+  assertDraftSnapshot(snapshot);
+  assertResearchPurpose(input.researchPurpose);
+
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${project.projectId}, 1))`);
+  let [branch] = await tx
+    .select()
+    .from(branches)
+    .where(
+      and(
+        eq(branches.scope, "team"),
+        eq(branches.spaceId, project.projectId),
+        eq(branches.name, PROJECT_NOTES_BRANCH_NAME),
+        sql`${branches.archivedAt} IS NULL`,
+      ),
+    );
+  if (!branch) {
+    [branch] = await tx
+      .insert(branches)
+      .values({
+        name: PROJECT_NOTES_BRANCH_NAME,
+        scope: "team",
+        spaceId: project.projectId,
+        createdBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "editor_updater",
+      action: "branch.create",
+      targetType: "branch",
+      targetId: branch.id,
+      details: { scope: "team", spaceId: project.projectId, compatibility: "project_notes" },
+    });
+  }
+
+  const [draft] = await tx
+    .insert(nodeDrafts)
+    .values({
+      branchId: branch.id,
+      projectId: project.projectId,
+      locale: "vi",
+      authorId: actor.userId,
+      researchPurpose: input.researchPurpose ?? null,
+      ...snapshot,
+    })
+    .returning();
+  await recordAudit(tx, actor, {
+    accountability: "editor_updater",
+    action: "node.draft.create",
+    targetType: "node_draft",
+    targetId: draft.id,
+    details: { projectId: project.projectId, branchId: branch.id, locale: "vi" },
+  });
+  return { ...draft, workingVisibility: "author_private" as const };
+}
+
+/** Official Project Notes plus only the caller's private working drafts. */
+export async function listProjectNotes(actor: Principal, projectId: string) {
+  const project = await requireConfirmedProject(db, projectId);
+  await requireProjectResearchRead(actor, project.projectId);
+  const notes = await db
+    .select({
+      id: treeNodes.id,
+      projectId: treeNodes.projectId,
+      researchPurpose: treeNodes.researchPurpose,
+      title: treeNodes.title,
+      summary: treeNodes.summary,
+      verification: treeNodes.verification,
+      createdBy: treeNodes.createdBy,
+      createdAt: treeNodes.createdAt,
+      updatedAt: treeNodes.updatedAt,
+      version: treeNodes.version,
+    })
+    .from(treeNodes)
+    .where(and(eq(treeNodes.projectId, project.projectId), ne(treeNodes.verification, "archived")))
+    .orderBy(asc(treeNodes.title));
+  const drafts = actor.spaceIds.includes(project.projectId)
+    ? await db
+        .select({
+          id: nodeDrafts.id,
+          nodeId: nodeDrafts.nodeId,
+          projectId: nodeDrafts.projectId,
+          researchPurpose: nodeDrafts.researchPurpose,
+          title: nodeDrafts.title,
+          summary: nodeDrafts.summary,
+          state: nodeDrafts.state,
+          authorId: nodeDrafts.authorId,
+          draftVersion: nodeDrafts.draftVersion,
+          createdAt: nodeDrafts.createdAt,
+          updatedAt: nodeDrafts.updatedAt,
+        })
+        .from(nodeDrafts)
+        .where(
+          and(eq(nodeDrafts.projectId, project.projectId), eq(nodeDrafts.authorId, actor.userId)),
+        )
+        .orderBy(desc(nodeDrafts.updatedAt))
+    : [];
+  return { notes, drafts };
+}
+
+/** One authoritative Project Note without exposing its compatibility Branch. */
+export async function getProjectNote(actor: Principal, projectId: string, nodeId: string) {
+  const project = await requireConfirmedProject(db, projectId);
+  await requireProjectResearchRead(actor, project.projectId);
+  const [note] = await db
+    .select({
+      id: treeNodes.id,
+      projectId: treeNodes.projectId,
+      title: treeNodes.title,
+      summary: treeNodes.summary,
+      contentMd: treeNodes.contentMd,
+      researchPurpose: treeNodes.researchPurpose,
+      verification: treeNodes.verification,
+      currentVersion: treeNodes.version,
+      createdAt: treeNodes.createdAt,
+      updatedAt: treeNodes.updatedAt,
+    })
+    .from(treeNodes)
+    .where(
+      and(
+        eq(treeNodes.id, nodeId),
+        eq(treeNodes.projectId, project.projectId),
+        ne(treeNodes.verification, "archived"),
+      ),
+    );
+  if (!note) throw notFound();
+  const tagRows = await db
+    .select({ name: tags.name })
+    .from(nodeTags)
+    .innerJoin(tags, eq(tags.id, nodeTags.tagId))
+    .where(eq(nodeTags.nodeId, note.id))
+    .orderBy(asc(tags.name));
+  return { ...note, tags: tagRows.map((row) => row.name) };
 }
 
 const translationSlug = (title: string) =>
@@ -224,18 +422,26 @@ export async function saveNodeDraft(
   assertDraftSnapshot(snapshot);
   if (input.expectedDraftVersion === 0) {
     if (official.version !== input.baseVersion) throw officialConflict(input.baseVersion, official);
-    const [created] = await db
-      .insert(nodeDrafts)
-      .values({
-        nodeId,
-        branchId: official.branch.id,
-        locale,
-        authorId: actor.userId,
-        baseVersion: input.baseVersion,
-        ...snapshot,
-      })
-      .onConflictDoNothing()
-      .returning();
+    const created = await db.transaction(async (tx) => {
+      const [draft] = await tx
+        .insert(nodeDrafts)
+        .values({
+          nodeId,
+          branchId: official.branch.id,
+          projectId: official.node.projectId,
+          researchPurpose: official.node.researchPurpose,
+          locale,
+          authorId: actor.userId,
+          baseVersion: input.baseVersion,
+          ...snapshot,
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (draft && locale === "vi" && draft.projectId) {
+        await copyOfficialSupportToDraft(tx, nodeId, draft.id);
+      }
+      return draft;
+    });
     if (created) return created;
   }
   const [updated] = await db
@@ -287,6 +493,51 @@ export async function updateDraft(
     .returning();
   if (!updated) throw versionConflict();
   return updated;
+}
+
+export async function updateProjectDraftPurpose(
+  actor: Principal,
+  input: {
+    draftId: string;
+    researchPurpose: ResearchPurpose | null;
+    expectedDraftVersion: number;
+  },
+) {
+  assertResearchPurpose(input.researchPurpose);
+  const row = await ownedDraft(actor, input.draftId);
+  if (!row.draft.projectId || row.draft.locale !== "vi") throw notFound();
+  if (row.draft.state !== "editing") {
+    throw new ApiError(409, "draft_in_review", "The draft is currently in review.");
+  }
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(nodeDrafts)
+      .set({
+        researchPurpose: input.researchPurpose,
+        draftVersion: input.expectedDraftVersion + 1,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(nodeDrafts.id, input.draftId),
+          eq(nodeDrafts.draftVersion, input.expectedDraftVersion),
+        ),
+      )
+      .returning();
+    if (!updated) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "editor_updater",
+      action: "node.draft.research_purpose.change",
+      targetType: "node_draft",
+      targetId: input.draftId,
+      details: {
+        projectId: row.draft.projectId,
+        from: row.draft.researchPurpose,
+        to: input.researchPurpose,
+      },
+    });
+    return updated;
+  });
 }
 
 function officialConflict(
@@ -350,6 +601,8 @@ export async function publishDraft(actor: Principal, draftId: string) {
         .insert(treeNodes)
         .values({
           branchId: row.branch.id,
+          projectId: row.draft.projectId,
+          researchPurpose: row.draft.researchPurpose,
           title: snapshot.title,
           summary: snapshot.summary,
           sortOrder: snapshot.sortOrder,
@@ -364,13 +617,18 @@ export async function publishDraft(actor: Principal, draftId: string) {
       await syncLinks(tx, actor, node.id, snapshot.links);
       await syncDerivedLinks(tx, actor, node.id, snapshot.title, snapshot.contentMd);
       await appendNodeVersion(tx, actor, node, snapshot, "draft_published");
+      await replaceOfficialSupportFromDraft(tx, node.id, draftId);
+      await tx
+        .update(extractionCandidates)
+        .set({ evolvedDraftId: null, evolvedNodeId: node.id })
+        .where(eq(extractionCandidates.evolvedDraftId, draftId));
       await tx.delete(nodeDrafts).where(eq(nodeDrafts.id, draftId));
       await recordAudit(tx, actor, {
         accountability: "editor_updater",
         action: "node.draft.publish",
         targetType: "tree_node",
         targetId: node.id,
-        details: { draftId, created: true },
+        details: { draftId, projectId: node.projectId, created: true },
       });
       return { nodeId: node.id, version: node.version, locale: "vi" as const };
     }
@@ -391,6 +649,7 @@ export async function publishDraft(actor: Principal, draftId: string) {
           sortOrder: snapshot.sortOrder,
           slug,
           contentMd: snapshot.contentMd,
+          researchPurpose: row.draft.researchPurpose,
           verification: "unverified",
           publish: false,
           updatedAt: new Date(),
@@ -403,6 +662,7 @@ export async function publishDraft(actor: Principal, draftId: string) {
       await syncLinks(tx, actor, node.id, snapshot.links);
       await syncDerivedLinks(tx, actor, node.id, snapshot.title, snapshot.contentMd);
       await appendNodeVersion(tx, actor, node, snapshot, "draft_published");
+      await replaceOfficialSupportFromDraft(tx, node.id, draftId);
       await tx.delete(nodeDrafts).where(eq(nodeDrafts.id, draftId));
       await recordAudit(tx, actor, {
         accountability: "editor_updater",
@@ -635,6 +895,8 @@ export async function restoreNodeVersionToDraft(actor: Principal, nodeId: string
           .values({
             nodeId,
             branchId: official.branch.id,
+            projectId: official.node.projectId,
+            researchPurpose: official.node.researchPurpose,
             locale: "vi",
             authorId: actor.userId,
             baseVersion: official.version,
@@ -643,6 +905,9 @@ export async function restoreNodeVersionToDraft(actor: Principal, nodeId: string
           .onConflictDoNothing()
           .returning();
     if (!draft) throw versionConflict();
+    if (!existing && draft.projectId) {
+      await copyOfficialSupportToDraft(tx, nodeId, draft.id);
+    }
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "node.version.restore_to_draft",

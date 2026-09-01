@@ -6,8 +6,10 @@ import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { loanTickets } from "../circulation/schema";
 import { ACTIVE_LOAN_STATES, activeLoanCount } from "../circulation/service";
+import { requireProjectLibraryOperator } from "../project/capabilities";
 import { getObject, putObject } from "./object-store";
 import { categories, sources, sourcePhysical } from "./schema";
+import { requireProjectMaterial } from "./service";
 
 // Physical items ("sách giấy") inside the Library: a source row carries the
 // title/space/category, source_physical carries the shelf facts, and the loan
@@ -101,6 +103,72 @@ export async function createPhysicalItem(
       targetType: "source_physical",
       targetId: item.id,
       details: { itemCode: item.itemCode, sourceId: source.id, spaceId: source.spaceId, copies },
+    });
+    return { ...item, sourceId: source.id, title: source.title };
+  });
+}
+
+/** Attach shelf facts to an existing Project Material without creating a second Source. */
+export async function addProjectMaterialPhysical(
+  actor: Principal,
+  input: {
+    projectId: string;
+    sourceId: string;
+    author?: string;
+    location?: string;
+    copies?: unknown;
+  },
+) {
+  const source = await requireProjectMaterial(input.projectId, input.sourceId);
+  await requireProjectLibraryOperator(actor, input.projectId);
+  const copies = parseCopies(input.copies);
+
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: sourcePhysical.id })
+      .from(sourcePhysical)
+      .where(eq(sourcePhysical.sourceId, source.id));
+    if (existing) {
+      throw new ApiError(409, "physical_exists", "This Material already has physical details.");
+    }
+    const [category] = await tx
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.name, BOOK_CATEGORY_NAME));
+    const [{ maxCode }] = await tx
+      .select({ maxCode: sql<string | null>`max(${sourcePhysical.itemCode})` })
+      .from(sourcePhysical);
+    const next = Number(maxCode?.replace(/^LIB-/, "") ?? 0) + 1;
+    const [item] = await tx
+      .insert(sourcePhysical)
+      .values({
+        sourceId: source.id,
+        itemCode: `LIB-${String(next).padStart(6, "0")}`,
+        author: input.author?.trim() || null,
+        location: input.location?.trim() || null,
+        copies,
+        createdBy: actor.userId,
+      })
+      .returning();
+    await tx
+      .update(sources)
+      .set({
+        categoryId: category?.id ?? source.categoryId,
+        updatedAt: new Date(),
+        version: source.version + 1,
+      })
+      .where(eq(sources.id, source.id));
+    await recordAudit(tx, actor, {
+      accountability: "operator",
+      action: "catalog.item.attach",
+      targetType: "source_physical",
+      targetId: item.id,
+      details: {
+        projectId: input.projectId,
+        itemCode: item.itemCode,
+        sourceId: source.id,
+        copies,
+      },
     });
     return { ...item, sourceId: source.id, title: source.title };
   });

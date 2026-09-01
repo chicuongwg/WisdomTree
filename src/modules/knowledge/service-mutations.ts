@@ -21,6 +21,7 @@ import {
 } from "./schema";
 
 import { branchVisibilityCondition } from "./service-queries";
+import { replaceOfficialSupportFromDraft } from "./support";
 
 // Knowledge node mutation operations.
 
@@ -609,6 +610,10 @@ export async function reviewNodeProposal(
     }
     if (!input.verification)
       throw new ApiError(400, "missing_verification", "A verification level is required.");
+    const [reviewDraft] = await tx
+      .select()
+      .from(nodeDrafts)
+      .where(eq(nodeDrafts.submittedProposalId, proposalId));
     await assertUniqueWikiTitle(tx, row.spaceId!, row.proposal.title, nodeId);
     const [node] = await tx
       .update(treeNodes)
@@ -617,6 +622,7 @@ export async function reviewNodeProposal(
         summary: row.proposal.summary,
         sortOrder: row.proposal.sortOrder,
         contentMd: row.proposal.contentMd,
+        researchPurpose: reviewDraft?.researchPurpose ?? row.node.researchPurpose,
         verification: input.verification,
         publish: input.verification === "verified",
         updatedAt: new Date(),
@@ -670,6 +676,9 @@ export async function reviewNodeProposal(
       .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
       .returning();
     if (!proposal) throw versionConflict();
+    if (reviewDraft?.locale === "vi" && reviewDraft.projectId) {
+      await replaceOfficialSupportFromDraft(tx, nodeId, reviewDraft.id);
+    }
     await tx.delete(nodeDrafts).where(eq(nodeDrafts.submittedProposalId, proposalId));
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",

@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { db } from "@/db";
+import { db, type Tx } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import { signDownload } from "@/lib/sign";
 import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
+import { requireProjectResearchRead } from "../auth/core";
 import { recordAudit } from "../audit/service";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { putObject } from "./object-store";
@@ -19,6 +20,7 @@ import {
   textChunks,
 } from "./schema";
 import { promotions } from "../knowledge/schema";
+import { projects } from "../project/schema";
 import { users } from "../auth/schema";
 
 const MAX_SIZE_BYTES = 104_857_600; // 100 MB, intake-constraints.md
@@ -34,24 +36,19 @@ const FORMAT_DENYLIST = new Set([
   "application/x-sh",
 ]);
 
-export async function uploadSource(
-  actor: Principal,
-  input: {
-    spaceId: string;
-    title: string;
-    description?: string;
-    file: File;
-    extractionMethod?: ExtractionMethod;
-  },
-) {
+type DigitalSourceInput = {
+  spaceId: string;
+  title: string;
+  description?: string;
+  file: File;
+  extractionMethod?: ExtractionMethod;
+};
+
+async function storeDigitalSource(actor: Principal, input: DigitalSourceInput, projectId?: string) {
   authorize(actor, "storage.upload", { spaceId: input.spaceId, kind: "write" });
 
   if (input.file.size > MAX_SIZE_BYTES) {
-    throw new ApiError(
-      413,
-      "file_too_large",
-      "File exceeds the 100 MB limit.",
-    );
+    throw new ApiError(413, "file_too_large", "File exceeds the 100 MB limit.");
   }
   const mimeType = input.file.type || "application/octet-stream";
   if (FORMAT_DENYLIST.has(mimeType)) {
@@ -96,12 +93,97 @@ export async function uploadSource(
       action: "source.upload",
       targetType: "source",
       targetId: sourceId,
-      details: { spaceId: input.spaceId, versionId, filename: input.file.name },
+      details: {
+        spaceId: input.spaceId,
+        ...(projectId ? { projectId } : {}),
+        versionId,
+        filename: input.file.name,
+      },
     });
   });
 
   extractionWorker.enqueue(versionId, input.extractionMethod ?? "auto");
   return getSourceDetail(actor, sourceId);
+}
+
+/** Legacy Space-oriented upload boundary retained for current routes/UI. */
+export async function uploadSource(actor: Principal, input: DigitalSourceInput) {
+  return storeDigitalSource(actor, input);
+}
+
+async function requireConfirmedProject(projectId: string | undefined) {
+  if (!projectId) throw new ApiError(400, "invalid_project_material", "Project is required.");
+  const [project] = await db
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, projectId));
+  if (!project) throw notFound();
+  return project;
+}
+
+/** Confirmed Project research uses Hybrid read; legacy Spaces keep old scoping. */
+async function requireMaterialResearchRead(actor: Principal, spaceId: string) {
+  const [project] = await db
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, spaceId));
+  if (project) {
+    await requireProjectResearchRead(actor, project.projectId);
+    return;
+  }
+  authorize(actor, "storage.library.browse", { spaceId, kind: "read" });
+}
+
+/** Target intake: one Material in one confirmed Project, with or without a file. */
+export async function createProjectMaterial(
+  actor: Principal,
+  input: {
+    projectId?: string;
+    title?: string;
+    description?: string | null;
+    file?: File;
+    extractionMethod?: ExtractionMethod;
+  },
+) {
+  const project = await requireConfirmedProject(input.projectId);
+  authorize(actor, "storage.upload", { spaceId: project.projectId, kind: "write" });
+  const title = input.title?.trim();
+  if (!title) throw new ApiError(400, "invalid_material", "Material title is required.");
+
+  if (input.file) {
+    return storeDigitalSource(
+      actor,
+      {
+        spaceId: project.projectId,
+        title,
+        description: input.description?.trim() || undefined,
+        file: input.file,
+        extractionMethod: input.extractionMethod,
+      },
+      project.projectId,
+    );
+  }
+
+  const source = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(sources)
+      .values({
+        spaceId: project.projectId,
+        title,
+        description: input.description?.trim() || null,
+        submittedBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "uploader",
+      action: "source.create",
+      targetType: "source",
+      targetId: created.id,
+      details: { projectId: project.projectId, versionId: null },
+    });
+    return created;
+  });
+  return getSourceDetail(actor, source.id);
 }
 
 /**
@@ -121,11 +203,12 @@ export async function listLibrary(
     sort?: "title" | "storedAt";
     dir?: "asc" | "desc";
     archived?: boolean;
+    includeMetadataOnly?: boolean;
   },
 ) {
   const visible = scopedToSpaces(actor);
   if (opts.spaceId) {
-    authorize(actor, "storage.library.browse", { spaceId: opts.spaceId, kind: "read" });
+    await requireMaterialResearchRead(actor, opts.spaceId);
   }
   if (opts.archived) {
     authorize(actor, "storage.source.read_all", { kind: "read" }); // admin_op
@@ -199,7 +282,8 @@ export async function listLibrary(
           : // A row belongs on the shelf if its file is stored, or it is a
             // book (physical, no file) that is not retired.
             sql`(${sourceVersions.storageState} = 'stored'
-                 OR (${sources.currentVersionId} IS NULL AND ${sourcePhysical.id} IS NOT NULL))`,
+                 OR (${sources.currentVersionId} IS NULL
+                     AND (${sourcePhysical.id} IS NOT NULL OR ${opts.includeMetadataOnly ?? false})))`,
         spaceFilter,
         folderFilter,
         opts.categoryId ? eq(sources.categoryId, opts.categoryId) : undefined,
@@ -211,6 +295,21 @@ export async function listLibrary(
     .offset((page - 1) * PAGE_SIZE);
 }
 
+/** Project-validated wrapper over the existing paginated Library query. */
+export async function listProjectMaterials(
+  actor: Principal,
+  projectId: string,
+  opts: Omit<Parameters<typeof listLibrary>[1], "spaceId"> = {},
+) {
+  const project = await requireConfirmedProject(projectId);
+  const rows = await listLibrary(actor, {
+    ...opts,
+    spaceId: project.projectId,
+    includeMetadataOnly: true,
+  });
+  return rows.map((row) => ({ ...row, projectId: row.spaceId }));
+}
+
 export async function getSourceDetail(actor: Principal, sourceId: string) {
   const [row] = await db
     .select({ source: sources, version: sourceVersions, spaceName: spaces.name })
@@ -220,7 +319,7 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
     .where(eq(sources.id, sourceId));
   if (!row) throw notFound();
   // Out-of-scope read → 404, never 403.
-  authorize(actor, "storage.library.browse", { spaceId: row.source.spaceId, kind: "read" });
+  await requireMaterialResearchRead(actor, row.source.spaceId);
 
   const [{ chunkCount }] = row.version
     ? await db
@@ -291,7 +390,15 @@ export async function getDownloadToken(actor: Principal, sourceId: string) {
     .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
     .where(eq(sources.id, sourceId));
   if (!row || row.version.storageState !== "stored") throw notFound();
-  authorize(actor, "storage.download", { spaceId: row.spaceId, kind: "read" });
+  const [project] = await db
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, row.spaceId));
+  if (project) {
+    await requireProjectResearchRead(actor, project.projectId);
+  } else {
+    authorize(actor, "storage.download", { spaceId: row.spaceId, kind: "read" });
+  }
   return signDownload(row.version.originalObjectKey, row.version.originalFilename);
 }
 
@@ -310,7 +417,7 @@ async function loadOwnedSource(actor: Principal, sourceId: string, kind: "read" 
   const [row] = await db
     .select({ source: sources, version: sourceVersions })
     .from(sources)
-    .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .leftJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
     .where(eq(sources.id, sourceId));
   if (!row) throw notFound();
   authorize(actor, "storage.source.manage", {
@@ -372,14 +479,15 @@ export async function renameSource(
  */
 export async function withdrawSource(actor: Principal, sourceId: string) {
   const row = await loadOwnedSource(actor, sourceId, "write");
-  if (row.version.storageState !== "stored") {
+  if (!row.version || row.version.storageState !== "stored") {
     throw new ApiError(409, "not_stored", "This item is not in a withdrawable state.");
   }
+  const version = row.version;
 
   const [published] = await db
     .select({ id: promotions.id })
     .from(promotions)
-    .where(eq(promotions.sourceVersionId, row.version.id));
+    .where(eq(promotions.sourceVersionId, version.id));
   if (published) {
     throw new ApiError(
       409,
@@ -392,7 +500,7 @@ export async function withdrawSource(actor: Principal, sourceId: string) {
     await tx
       .update(sourceVersions)
       .set({ storageState: "archived" })
-      .where(eq(sourceVersions.id, row.version.id));
+      .where(eq(sourceVersions.id, version.id));
     await tx
       .update(sources)
       .set({ updatedAt: new Date(), version: row.source.version + 1 })
@@ -402,7 +510,7 @@ export async function withdrawSource(actor: Principal, sourceId: string) {
       action: "source.withdraw",
       targetType: "source",
       targetId: sourceId,
-      details: { spaceId: row.source.spaceId, versionId: row.version.id },
+      details: { spaceId: row.source.spaceId, versionId: version.id },
     });
   });
 }
@@ -479,17 +587,19 @@ export async function moveSource(actor: Principal, sourceId: string, folderId: s
  * The new version becomes current; extraction re-runs; the old versions stay,
  * which is the entire point of having them.
  */
-export async function addSourceVersion(actor: Principal, sourceId: string, file: File) {
+async function addStoredSourceVersion(
+  actor: Principal,
+  sourceId: string,
+  file: File,
+  projectId?: string,
+  extractionMethod: ExtractionMethod = "auto",
+) {
   const row = await loadOwnedSource(actor, sourceId, "write");
-  if (row.version.storageState !== "stored") {
+  if (row.version && row.version.storageState !== "stored") {
     throw new ApiError(409, "not_stored", "New versions can only be added to a stored item.");
   }
   if (file.size > MAX_SIZE_BYTES) {
-    throw new ApiError(
-      413,
-      "file_too_large",
-      "File exceeds the 100 MB limit.",
-    );
+    throw new ApiError(413, "file_too_large", "File exceeds the 100 MB limit.");
   }
   const mimeType = file.type || "application/octet-stream";
   if (FORMAT_DENYLIST.has(mimeType)) {
@@ -532,12 +642,62 @@ export async function addSourceVersion(actor: Principal, sourceId: string, file:
       action: "source.version.add",
       targetType: "source",
       targetId: sourceId,
-      details: { versionId, seq: max + 1, filename: file.name },
+      details: {
+        ...(projectId ? { projectId } : {}),
+        versionId,
+        seq: max + 1,
+        filename: file.name,
+      },
     });
   });
 
-  extractionWorker.enqueue(versionId);
+  extractionWorker.enqueue(versionId, extractionMethod);
   return getSourceDetail(actor, sourceId);
+}
+
+/** Legacy Source-oriented version boundary retained for current routes/UI. */
+export async function addSourceVersion(actor: Principal, sourceId: string, file: File) {
+  return addStoredSourceVersion(actor, sourceId, file);
+}
+
+/** Add a digital scan/version without allowing Project ownership to move. */
+export async function addProjectMaterialVersion(
+  actor: Principal,
+  input: {
+    projectId?: string;
+    sourceId?: string;
+    file?: File;
+    extractionMethod?: ExtractionMethod;
+  },
+) {
+  const project = await requireConfirmedProject(input.projectId);
+  if (!input.sourceId || !input.file) {
+    throw new ApiError(400, "invalid_material_version", "Material and file are required.");
+  }
+  authorize(actor, "storage.upload", { spaceId: project.projectId, kind: "write" });
+  const [source] = await db
+    .select({ id: sources.id })
+    .from(sources)
+    .where(and(eq(sources.id, input.sourceId), eq(sources.spaceId, project.projectId)));
+  if (!source) throw notFound();
+  return addStoredSourceVersion(
+    actor,
+    source.id,
+    input.file,
+    project.projectId,
+    input.extractionMethod,
+  );
+}
+
+/** Shared Project/Material assertion for representation-specific boundaries. */
+export async function requireProjectMaterial(projectId: string, sourceId: string) {
+  const project = await requireConfirmedProject(projectId);
+  const [source] = await db
+    .select()
+    .from(sources)
+    .where(and(eq(sources.id, sourceId), eq(sources.spaceId, project.projectId)));
+  if (!source) throw notFound();
+  return source;
 }
 
 /** The member's own uploads, newest first. */
@@ -557,8 +717,7 @@ export async function mySubmissions(actor: Principal) {
   return sourceRows
     .map((r) => ({ itemType: "source" as const, ...r }))
     .sort(
-      (a, b) =>
-        new Date(b.lastUpdatedAt ?? 0).getTime() - new Date(a.lastUpdatedAt ?? 0).getTime(),
+      (a, b) => new Date(b.lastUpdatedAt ?? 0).getTime() - new Date(a.lastUpdatedAt ?? 0).getTime(),
     );
 }
 
@@ -577,28 +736,29 @@ export async function createSpace(actor: Principal, input: { name?: string }) {
   const name = input.name?.trim();
   if (!name) throw new ApiError(400, "invalid_space", "Space name must not be empty.");
 
-  return db.transaction(async (tx) => {
-    const [space] = await tx
-      .insert(spaces)
-      .values({ name, type: "team", createdBy: actor.userId })
-      .returning({ id: spaces.id, name: spaces.name, type: spaces.type });
-    await tx
-      .insert(spaceMembers)
-      .values({
-        spaceId: space.id,
-        userId: actor.userId,
-        memberRole: "manager",
-        addedBy: actor.userId,
-      });
-    await recordAudit(tx, actor, {
-      accountability: "operator",
-      action: "space.create",
-      targetType: "space",
-      targetId: space.id,
-      details: { name: space.name },
-    });
-    return space;
+  return db.transaction((tx) => createTeamSpaceInTransaction(tx, actor, name));
+}
+
+/** Shared by createSpace and createProject so identity, membership and audit commit together. */
+export async function createTeamSpaceInTransaction(tx: Tx, actor: Principal, name: string) {
+  const [space] = await tx
+    .insert(spaces)
+    .values({ name, type: "team", createdBy: actor.userId })
+    .returning({ id: spaces.id, name: spaces.name, type: spaces.type });
+  await tx.insert(spaceMembers).values({
+    spaceId: space.id,
+    userId: actor.userId,
+    memberRole: "manager",
+    addedBy: actor.userId,
   });
+  await recordAudit(tx, actor, {
+    accountability: "operator",
+    action: "space.create",
+    targetType: "space",
+    targetId: space.id,
+    details: { name: space.name },
+  });
+  return space;
 }
 
 export async function listMemberSpaces(actor: Principal) {

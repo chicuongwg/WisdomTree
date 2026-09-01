@@ -4,3 +4,4 @@ export * from "./service-mutations";
 export * from "./publication";
 export * from "./translations";
 export * from "./drafts";
+export * from "./support";

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -13,6 +14,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
+import { projects } from "../project/schema";
 import { sourceVersions, spaces } from "../storage/schema";
 
 // Module: knowledge — branches, tree nodes, versions, links, tags,
@@ -66,6 +68,9 @@ export const treeNodes = pgTable(
     branchId: uuid("branch_id")
       .notNull()
       .references(() => branches.id),
+    /** NULL is reserved for demo/legacy compatibility during Project migration. */
+    projectId: uuid("project_id").references(() => projects.projectId, { onDelete: "restrict" }),
+    researchPurpose: text("research_purpose", { enum: ["evidence", "synthesis"] }),
     title: text("title").notNull(),
     summary: text("summary"),
     sortOrder: integer("sort_order").notNull().default(0),
@@ -88,7 +93,11 @@ export const treeNodes = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     version: integer("version").notNull().default(1),
   },
-  (t) => [unique().on(t.branchId, t.slug)],
+  (t) => [
+    unique().on(t.branchId, t.slug),
+    unique("tree_nodes_id_project_id_key").on(t.id, t.projectId),
+    index("tree_nodes_project_id_idx").on(t.projectId),
+  ],
 );
 
 export const treeNodeVersions = pgTable(
@@ -232,6 +241,9 @@ export const nodeDrafts = pgTable(
     branchId: uuid("branch_id")
       .notNull()
       .references(() => branches.id, { onDelete: "cascade" }),
+    /** Project context while the author's working copy is still private. */
+    projectId: uuid("project_id").references(() => projects.projectId, { onDelete: "restrict" }),
+    researchPurpose: text("research_purpose", { enum: ["evidence", "synthesis"] }),
     locale: text("locale", { enum: ["vi", "en"] })
       .notNull()
       .default("vi"),
@@ -260,6 +272,87 @@ export const nodeDrafts = pgTable(
     uniqueIndex("node_drafts_existing_owner_locale_idx")
       .on(table.nodeId, table.locale, table.authorId)
       .where(sql`${table.nodeId} IS NOT NULL`),
+    index("node_drafts_project_author_idx").on(table.projectId, table.authorId),
+  ],
+);
+
+export const draftSupportSourceVersions = pgTable(
+  "draft_support_source_versions",
+  {
+    draftId: uuid("draft_id")
+      .notNull()
+      .references(() => nodeDrafts.id, { onDelete: "cascade" }),
+    sourceVersionId: uuid("source_version_id")
+      .notNull()
+      .references(() => sourceVersions.id, { onDelete: "restrict" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.draftId, table.sourceVersionId] }),
+    index("draft_support_source_versions_source_idx").on(table.sourceVersionId),
+  ],
+);
+
+export const draftSupportNoteVersions = pgTable(
+  "draft_support_note_versions",
+  {
+    draftId: uuid("draft_id")
+      .notNull()
+      .references(() => nodeDrafts.id, { onDelete: "cascade" }),
+    noteVersionId: uuid("note_version_id")
+      .notNull()
+      .references(() => treeNodeVersions.id, { onDelete: "restrict" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.draftId, table.noteVersionId] }),
+    index("draft_support_note_versions_version_idx").on(table.noteVersionId),
+  ],
+);
+
+export const noteSupportSourceVersions = pgTable(
+  "note_support_source_versions",
+  {
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => treeNodes.id, { onDelete: "cascade" }),
+    sourceVersionId: uuid("source_version_id")
+      .notNull()
+      .references(() => sourceVersions.id, { onDelete: "restrict" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.nodeId, table.sourceVersionId] }),
+    index("note_support_source_versions_source_idx").on(table.sourceVersionId),
+  ],
+);
+
+export const noteSupportNoteVersions = pgTable(
+  "note_support_note_versions",
+  {
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => treeNodes.id, { onDelete: "cascade" }),
+    noteVersionId: uuid("note_version_id")
+      .notNull()
+      .references(() => treeNodeVersions.id, { onDelete: "restrict" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.nodeId, table.noteVersionId] }),
+    index("note_support_note_versions_version_idx").on(table.noteVersionId),
   ],
 );
 

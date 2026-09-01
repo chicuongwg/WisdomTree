@@ -6,6 +6,8 @@ import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
+import { activities } from "../activity/schema";
+import { projects } from "../project/schema";
 import { sources, spaceMembers } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
 import { calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
@@ -88,8 +90,7 @@ type DeadlineInput = {
 
 function parseLinks(links: DeadlineInput["links"]) {
   if (links === undefined) return undefined;
-  if (!Array.isArray(links))
-    throw new ApiError(400, "invalid_links", "Invalid links payload.");
+  if (!Array.isArray(links)) throw new ApiError(400, "invalid_links", "Invalid links payload.");
   return links.map((l) => {
     if (!l?.targetId || !LINK_TARGETS.includes(l.targetType as LinkTarget)) {
       throw new ApiError(400, "invalid_links", "Each link needs a valid type and id.");
@@ -126,11 +127,7 @@ async function assertLinksVisibleFrom(
     .from(sources)
     .where(and(inArray(sources.id, wanted), eq(sources.spaceId, spaceId)));
   if (found.length !== wanted.length) {
-    throw new ApiError(
-      400,
-      "invalid_links",
-      "Linked sources must belong to the deadline's space.",
-    );
+    throw new ApiError(400, "invalid_links", "Linked sources must belong to the deadline's space.");
   }
 }
 
@@ -280,6 +277,8 @@ export async function listBoard(actor: Principal) {
       id: tasks.id,
       title: tasks.title,
       state: tasks.state,
+      projectId: tasks.projectId,
+      activityId: tasks.activityId,
       assignedTo: tasks.assignedTo,
       assigneeName: users.displayName, // additive over the contract Task shape
       dueAt: tasks.dueAt,
@@ -333,6 +332,8 @@ export async function getTask(actor: Principal, taskId: string) {
       id: tasks.id,
       title: tasks.title,
       state: tasks.state,
+      projectId: tasks.projectId,
+      activityId: tasks.activityId,
       assignedTo: tasks.assignedTo,
       assigneeName: users.displayName,
       dueAt: tasks.dueAt,
@@ -459,6 +460,8 @@ export async function listSchedule(actor: Principal, range: { from: Date; to: Da
 }
 
 export async function createTask(actor: Principal, input: TaskInput) {
+  // Compatibility path for the global Board. Target-product callers use
+  // createProjectTask, which requires authoritative Project ownership.
   // Creation is board management of one's own task: the creator is the owner.
   authorize(actor, "pm.board.manage", { ownerIds: [actor.userId], kind: "write" });
   if (!input.title?.trim()) {
@@ -493,6 +496,204 @@ export async function createTask(actor: Principal, input: TaskInput) {
     return row;
   });
   return created;
+}
+
+type ProjectTaskInput = {
+  projectId?: string;
+  activityId?: string | null;
+  title?: string;
+  assigneeId?: string | null;
+  dueAt?: string | null;
+  startAt?: string | null;
+  notes?: string | null;
+};
+
+async function requireConfirmedProject(projectId: string | undefined) {
+  if (!projectId) {
+    throw new ApiError(400, "invalid_project_task", "Project is required.");
+  }
+  const [project] = await db
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, projectId));
+  if (!project) throw notFound();
+  return project;
+}
+
+/** Create a target-product Task with one authoritative confirmed Project. */
+export async function createProjectTask(actor: Principal, input: ProjectTaskInput) {
+  const project = await requireConfirmedProject(input.projectId);
+  authorize(actor, "pm.project_task.create", { spaceId: project.projectId, kind: "write" });
+  if (!input.title?.trim()) {
+    throw new ApiError(400, "invalid_task", "Task title must not be empty.");
+  }
+  if (input.activityId) {
+    const [activity] = await db
+      .select({ id: activities.id })
+      .from(activities)
+      .where(and(eq(activities.id, input.activityId), eq(activities.projectId, project.projectId)));
+    if (!activity) {
+      throw new ApiError(
+        400,
+        "invalid_task_activity",
+        "Task Activity must belong to the same Project.",
+      );
+    }
+  }
+
+  if (input.assigneeId) {
+    const [membership] = await db
+      .select({ userId: spaceMembers.userId })
+      .from(spaceMembers)
+      .innerJoin(users, and(eq(spaceMembers.userId, users.id), isNull(users.disabledAt)))
+      .where(
+        and(eq(spaceMembers.spaceId, project.projectId), eq(spaceMembers.userId, input.assigneeId)),
+      );
+    if (!membership) {
+      throw new ApiError(
+        400,
+        "invalid_project_assignee",
+        "Task assignee must be an active Project member.",
+      );
+    }
+  }
+
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(tasks)
+      .values({
+        projectId: project.projectId,
+        activityId: input.activityId || null,
+        title: input.title!.trim(),
+        state: "todo",
+        assignedTo: input.assigneeId || null,
+        dueAt: parseDueAt(input.dueAt),
+        startAt: parseStartAt(input.startAt),
+        notes: input.notes?.trim() || null,
+        createdBy: actor.userId,
+      })
+      .returning();
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "task.create",
+      targetType: "task",
+      targetId: row.id,
+      details: {
+        projectId: row.projectId,
+        title: row.title,
+        state: row.state,
+        assignedTo: row.assignedTo,
+        ...(row.activityId ? { activityId: row.activityId } : {}),
+      },
+    });
+    return row;
+  });
+}
+
+/** Project-scoped Task read model; legacy-unassigned Tasks cannot enter it. */
+export async function listProjectTasks(actor: Principal, projectId: string) {
+  const project = await requireConfirmedProject(projectId);
+  authorize(actor, "pm.project_task.read", { spaceId: project.projectId, kind: "read" });
+  return db
+    .select({
+      id: tasks.id,
+      projectId: tasks.projectId,
+      activityId: tasks.activityId,
+      title: tasks.title,
+      state: tasks.state,
+      assignedTo: tasks.assignedTo,
+      assigneeName: users.displayName,
+      dueAt: tasks.dueAt,
+      startAt: tasks.startAt,
+      notes: tasks.notes,
+      targetType: tasks.targetType,
+      targetId: tasks.targetId,
+      createdBy: tasks.createdBy,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+      version: tasks.version,
+    })
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedTo, users.id))
+    .where(eq(tasks.projectId, project.projectId))
+    .orderBy(desc(tasks.updatedAt));
+}
+
+export async function attachTaskToActivity(
+  actor: Principal,
+  input: { taskId: string; activityId: string; expectedVersion?: number },
+) {
+  const [task] = await db.select().from(tasks).where(eq(tasks.id, input.taskId));
+  if (!task) throw notFound();
+  if (!task.projectId) {
+    throw new ApiError(400, "invalid_project_task", "Legacy-unassigned Task has no Project.");
+  }
+  authorize(actor, "project.activity.read", { spaceId: task.projectId, kind: "read" });
+  authorize(actor, "project.activity.manage", { spaceId: task.projectId, kind: "write" });
+  const [activity] = await db
+    .select({ id: activities.id })
+    .from(activities)
+    .where(and(eq(activities.id, input.activityId), eq(activities.projectId, task.projectId)));
+  if (!activity) {
+    throw new ApiError(
+      400,
+      "invalid_task_activity",
+      "Task Activity must belong to the same Project.",
+    );
+  }
+  if (typeof input.expectedVersion !== "number") throw versionConflict();
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(tasks)
+      .set({
+        activityId: activity.id,
+        updatedAt: new Date(),
+        version: task.version + 1,
+      })
+      .where(and(eq(tasks.id, task.id), eq(tasks.version, input.expectedVersion!)))
+      .returning();
+    if (!updated) throw versionConflict();
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "task.activity.attach",
+      targetType: "task",
+      targetId: task.id,
+      details: { projectId: task.projectId, activityId: activity.id },
+    });
+    return updated;
+  });
+}
+
+export async function detachTaskFromActivity(
+  actor: Principal,
+  input: { taskId: string; expectedVersion?: number },
+) {
+  const [task] = await db.select().from(tasks).where(eq(tasks.id, input.taskId));
+  if (!task) throw notFound();
+  if (!task.projectId) {
+    throw new ApiError(400, "invalid_project_task", "Legacy-unassigned Task has no Project.");
+  }
+  authorize(actor, "project.activity.read", { spaceId: task.projectId, kind: "read" });
+  authorize(actor, "project.activity.manage", { spaceId: task.projectId, kind: "write" });
+  if (typeof input.expectedVersion !== "number") throw versionConflict();
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(tasks)
+      .set({ activityId: null, updatedAt: new Date(), version: task.version + 1 })
+      .where(and(eq(tasks.id, task.id), eq(tasks.version, input.expectedVersion!)))
+      .returning();
+    if (!updated) throw versionConflict();
+    if (task.activityId) {
+      await recordAudit(tx, actor, {
+        accountability: "member",
+        action: "task.activity.detach",
+        targetType: "task",
+        targetId: task.id,
+        details: { projectId: task.projectId, activityId: task.activityId },
+      });
+    }
+    return updated;
+  });
 }
 
 export async function updateTask(actor: Principal, taskId: string, input: TaskInput) {

@@ -5,6 +5,10 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
+import {
+  requireProjectCapability,
+  requireProjectLibraryOperator,
+} from "../project/capabilities";
 import { sources, sourcePhysical } from "../storage/schema";
 import { users } from "../auth/schema";
 import { loanTickets } from "./schema";
@@ -41,8 +45,15 @@ async function loadItemBySource(runner: Tx | typeof db, sourceId: string) {
   return row;
 }
 
-export async function requestLoan(actor: Principal, sourceId: string) {
+async function requestLoanWithMode(
+  actor: Principal,
+  sourceId: string,
+  mode: "legacy" | "project",
+) {
   const { item, spaceId } = await loadItemBySource(db, sourceId);
+  if (mode === "project") {
+    await requireProjectCapability(spaceId, "library_circulation");
+  }
   authorize(actor, "circulation.loan.request", { spaceId, kind: "write" });
 
   // A retired title cannot be borrowed; archivePhysicalItem guards the other
@@ -97,7 +108,11 @@ export async function requestLoan(actor: Principal, sourceId: string) {
       action: "loan.request",
       targetType: "loan_ticket",
       targetId: created.id,
-      details: { itemId: item.id, sourceId },
+      details: {
+        itemId: item.id,
+        sourceId,
+        ...(mode === "project" ? { projectId: spaceId } : {}),
+      },
     });
     // Requesting the last copy takes the title off the shelf immediately.
     await syncItemStatus(tx, item.id);
@@ -106,6 +121,14 @@ export async function requestLoan(actor: Principal, sourceId: string) {
 
   return ticket;
 }
+
+/** Legacy Space-scoped request used by the archived Library delivery path. */
+export const requestLoan = (actor: Principal, sourceId: string) =>
+  requestLoanWithMode(actor, sourceId, "legacy");
+
+/** Target request: Project is derived from the physical Material. */
+export const requestProjectMaterialLoan = (actor: Principal, sourceId: string) =>
+  requestLoanWithMode(actor, sourceId, "project");
 
 type TicketRow = typeof loanTickets.$inferSelect;
 
@@ -165,11 +188,23 @@ async function librarianTransition(
   ticketId: string,
   action: "approve" | "decline" | "borrow" | "return",
   dueAt?: Date,
+  mode: "legacy" | "project" = "legacy",
 ): Promise<TicketRow> {
-  authorize(actor, "circulation.loan.manage", { kind: "write" });
+  if (mode === "legacy") {
+    authorize(actor, "circulation.loan.manage", { kind: "write" });
+  }
 
   const result = await db.transaction(async (tx) => {
     const ticket = await loadTicket(tx, ticketId);
+    const [ownership] = await tx
+      .select({ sourceId: sources.id, projectId: sources.spaceId })
+      .from(sourcePhysical)
+      .innerJoin(sources, eq(sourcePhysical.sourceId, sources.id))
+      .where(eq(sourcePhysical.id, ticket.itemId));
+    if (!ownership) throw notFound();
+    if (mode === "project") {
+      await requireProjectLibraryOperator(actor, ownership.projectId, tx);
+    }
     let updated: TicketRow;
     switch (action) {
       case "approve":
@@ -210,16 +245,17 @@ async function librarianTransition(
         await syncItemStatus(tx, ticket.itemId);
         break;
     }
-    const [itemRow] = await tx
-      .select({ sourceId: sourcePhysical.sourceId })
-      .from(sourcePhysical)
-      .where(eq(sourcePhysical.id, ticket.itemId));
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: `loan.${action}`,
       targetType: "loan_ticket",
       targetId: ticket.id,
-      details: { itemId: ticket.itemId, from: ticket.state, to: updated.state },
+      details: {
+        itemId: ticket.itemId,
+        from: ticket.state,
+        to: updated.state,
+        ...(mode === "project" ? { projectId: ownership.projectId } : {}),
+      },
     });
     const eventByAction = {
       approve: "loan.approved",
@@ -230,7 +266,7 @@ async function librarianTransition(
     await notifyEvent(tx, eventByAction[action], {
       ticketId: ticket.id,
       itemId: ticket.itemId,
-      sourceId: itemRow?.sourceId ?? null,
+      sourceId: ownership.sourceId,
       borrowerId: ticket.borrowerId,
     });
     return updated;
@@ -248,6 +284,15 @@ export const borrowLoan = (actor: Principal, ticketId: string, dueAt: Date) =>
 export const returnLoan = (actor: Principal, ticketId: string) =>
   librarianTransition(actor, ticketId, "return");
 
+export const approveProjectLoan = (actor: Principal, ticketId: string) =>
+  librarianTransition(actor, ticketId, "approve", undefined, "project");
+export const declineProjectLoan = (actor: Principal, ticketId: string) =>
+  librarianTransition(actor, ticketId, "decline", undefined, "project");
+export const handoverProjectLoan = (actor: Principal, ticketId: string, dueAt: Date) =>
+  librarianTransition(actor, ticketId, "borrow", dueAt, "project");
+export const returnProjectLoan = (actor: Principal, ticketId: string) =>
+  librarianTransition(actor, ticketId, "return", undefined, "project");
+
 /** Loan-desk queue: all tickets, newest first, with item and borrower. */
 export async function listTickets(actor: Principal, states?: TicketRow["state"][]) {
   authorize(actor, "circulation.loan.manage", { kind: "read" });
@@ -264,6 +309,34 @@ export async function listTickets(actor: Principal, states?: TicketRow["state"][
     .innerJoin(sources, eq(sourcePhysical.sourceId, sources.id))
     .innerJoin(users, eq(loanTickets.borrowerId, users.id))
     .where(states?.length ? inArray(loanTickets.state, states) : undefined)
+    .orderBy(desc(loanTickets.updatedAt));
+}
+
+/** Target operational queue, isolated to one capability-enabled Project. */
+export async function listProjectLoans(
+  actor: Principal,
+  projectId: string,
+  states?: TicketRow["state"][],
+) {
+  await requireProjectLibraryOperator(actor, projectId);
+  return db
+    .select({
+      ticket: loanTickets,
+      sourceId: sourcePhysical.sourceId,
+      itemTitle: sources.title,
+      itemCode: sourcePhysical.itemCode,
+      borrowerName: users.displayName,
+    })
+    .from(loanTickets)
+    .innerJoin(sourcePhysical, eq(loanTickets.itemId, sourcePhysical.id))
+    .innerJoin(sources, eq(sourcePhysical.sourceId, sources.id))
+    .innerJoin(users, eq(loanTickets.borrowerId, users.id))
+    .where(
+      and(
+        eq(sources.spaceId, projectId),
+        ...(states?.length ? [inArray(loanTickets.state, states)] : []),
+      ),
+    )
     .orderBy(desc(loanTickets.updatedAt));
 }
 

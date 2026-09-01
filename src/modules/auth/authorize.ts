@@ -51,6 +51,14 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "knowledge.submit": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
   "knowledge.draft.write": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
   "knowledge.draft.publish": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  // Project Note access intentionally uses a non-knowledge prefix so the
+  // current knowledge Admin/Op break-glass rule does not imply future Core.
+  "project.note.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "project.note.create": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "project.person.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "project.person.manage": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "project.activity.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "project.activity.manage": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
   "knowledge.protect": { roles: EVERYONE, scope: "space", spaceRole: "manager" },
   "knowledge.node.create": { roles: EVERYONE, scope: "owned-or-assigned" },
   "knowledge.node.edit": {
@@ -69,6 +77,7 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   // --- Admin console ---
   "admin.health.read": { roles: ADMIN, scope: "global" },
   "admin.users.manage": { roles: ADMIN, scope: "global" },
+  "admin.tmkt_core.manage": { roles: ADMIN, scope: "global" },
   "admin.audit.read": { roles: ADMIN, scope: "global" },
   // --- Notify + PM ---
   // notify.comment.create's scope is "anchor (delegates to the anchor's read
@@ -78,6 +87,8 @@ const CATALOG: Record<string, { roles: Role[]; scope: Scope; spaceRole?: SpaceRo
   "notify.preferences.manage": { roles: EVERYONE, scope: "self" },
   "pm.deadline.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
   "pm.deadline.edit": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
+  "pm.project_task.read": { roles: EVERYONE, scope: "space", spaceRole: "viewer" },
+  "pm.project_task.create": { roles: EVERYONE, scope: "space", spaceRole: "contributor" },
   // pm.board.manage: owned-or-assigned task updates for every member. The
   // guild-board model (owner decision 2026-07-21): whoever holds a task works
   // it, whatever their role.
