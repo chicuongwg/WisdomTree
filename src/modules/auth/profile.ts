@@ -17,6 +17,12 @@ import { getObject, putObject } from "../storage/object-store";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+export const SUPPORTED_UI_LOCALES = ["vi", "en"] as const;
+export type UiLocale = (typeof SUPPORTED_UI_LOCALES)[number];
+
+export function normalizeUiLocale(value: string | null | undefined): UiLocale {
+  return value === "en" ? "en" : "vi";
+}
 
 export async function getProfile(actor: Principal) {
   const [row] = await db
@@ -26,6 +32,7 @@ export async function getProfile(actor: Principal) {
       displayName: users.displayName,
       role: users.role,
       avatarKey: users.avatarKey,
+      locale: users.locale,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -64,6 +71,29 @@ export async function updateProfile(
       // name is how every other record refers to this person.
       details: displayName ? { from: before.displayName, to: displayName } : {},
     });
+  });
+}
+
+export async function updateUiLocale(actor: Principal, locale: string) {
+  if (!SUPPORTED_UI_LOCALES.includes(locale as UiLocale)) {
+    throw new ApiError(400, "invalid_ui_locale", "UI locale must be vi or en.");
+  }
+  const normalized = locale as UiLocale;
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(users)
+      .set({ locale: normalized, updatedAt: new Date() })
+      .where(eq(users.id, actor.userId))
+      .returning({ locale: users.locale });
+    if (!updated) throw notFound();
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "user.locale.update",
+      targetType: "user",
+      targetId: actor.userId,
+      details: { locale: normalized },
+    });
+    return { locale: normalizeUiLocale(updated.locale) };
   });
 }
 
