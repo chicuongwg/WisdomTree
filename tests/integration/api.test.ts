@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { GET as health } from "@/app/api/health/route";
 import { POST as dispatch } from "@/app/api/cron/dispatch/route";
+import { assertIsolatedTestDatabase } from "../db-safety";
 
 export const run = async () => {
+  assertIsolatedTestDatabase();
   const healthResponse = await health();
   assert.equal(healthResponse.status, 200);
   assert.deepEqual(await healthResponse.json(), { status: "ok" });

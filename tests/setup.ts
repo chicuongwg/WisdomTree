@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sessions, users } from "@/modules/auth/schema";
 import { spaceMembers } from "@/modules/storage/schema";
+import { assertIsolatedTestDatabase } from "./db-safety";
+
+assertIsolatedTestDatabase();
 
 export function testName(name: string) {
   return name;

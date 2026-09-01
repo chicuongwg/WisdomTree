@@ -28,9 +28,12 @@ This directory contains test files for the WisdomTree repository.
 - `tests/run-all.ts` — simple runner; `tests/setup.ts` provides
   `issueTestSession` and `principalFor`.
 
-Tests are repeatable against one seeded DB without reseeding (fixtures
-they create use unique titles); reseed with
-`ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed` for a clean slate.
+Stateful tests require an explicit isolated database through
+`TEST_DATABASE_URL`. The runner assigns that URL to `DATABASE_URL` before it
+imports application code. Database names must include a distinct `test`
+segment, and direct stateful test-file execution must set both variables to the
+same URL. This prevents test fixtures from reaching the normal application
+database.
 
 Module, contract, and UI checks live under `scripts/` because they validate
 repository-wide structure or generated artifacts rather than one runtime
@@ -51,16 +54,22 @@ module.
 
 Each test file should export a `run()` function and may also run itself when executed directly.
 
-Integration and full tests expect PostgreSQL to be migrated and seeded before
-the command starts. Tests never seed implicitly because the demo seed is
-destructive:
+Integration, use-case, and privacy tests expect an isolated PostgreSQL database
+to be created, migrated, and seeded before the command starts. Tests never seed
+implicitly because the demo seed is destructive. For example, with a temporary
+database named `wisdomtree_test_<run>`:
 
 ```sh
-npm run db:up
-npm run db:migrate
-ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed
-npm run test:all
+export TEST_DATABASE_URL=postgres://.../wisdomtree_test_<run>
+DATABASE_URL="$TEST_DATABASE_URL" npm run db:migrate
+DATABASE_URL="$TEST_DATABASE_URL" ALLOW_DESTRUCTIVE_SEED=1 npm run db:seed
+npm run test:integration
+npm run test:usecase
+npm run test:privacy
 ```
+
+Dispose the temporary database after the run. A bare stateful suite command or
+direct test invocation now fails closed before fixture mutation.
 
 `test:all` runs this gate in order:
 

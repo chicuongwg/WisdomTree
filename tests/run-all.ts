@@ -1,5 +1,6 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
+import { configureIsolatedTestDatabase } from "./db-safety";
 
 const root = path.resolve(process.cwd());
 const target = process.argv[2];
@@ -10,6 +11,13 @@ if (!target) {
 }
 
 const base = path.resolve(root, target);
+const statefulSuites = ["tests/integration", "tests/usecase", "tests/privacy"].map((dir) =>
+  path.resolve(root, dir),
+);
+
+if (statefulSuites.some((dir) => base === dir || base.startsWith(`${dir}${path.sep}`))) {
+  configureIsolatedTestDatabase();
+}
 
 function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true })
