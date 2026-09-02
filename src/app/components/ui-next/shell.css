@@ -1,0 +1,423 @@
+/* The root layout still owns legacy routes. These selectors neutralize its
+   chrome only when the parallel /app shell is present. */
+body:has(.ui-next-app-root) > .skip-link,
+body:has(.ui-next-app-root) > .shell > :is(.rail, .sidebar, .statusbar),
+body:has(.ui-next-app-root) > .palette {
+  display: none;
+}
+
+body:has(.ui-next-app-root) > .shell {
+  display: block;
+  min-block-size: 100dvh;
+}
+
+body:has(.ui-next-app-root) > .shell > .main-area {
+  block-size: auto;
+  min-block-size: 100dvh;
+  overflow: visible;
+  padding: 0;
+}
+
+.ui-next-app-root {
+  min-block-size: 100dvh;
+}
+
+.ui-next-app-shell {
+  min-block-size: 100dvh;
+  display: grid;
+  grid-template-columns: var(--ui-sidebar-expanded) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ui-color-background);
+}
+
+.ui-next-app-sidebar {
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-6);
+  border-inline-end: 1px solid var(--ui-color-border);
+  padding: var(--ui-space-4) var(--ui-space-3);
+  background: var(--ui-color-surface-sunken);
+}
+
+.ui-next-app-sidebar__brand {
+  min-block-size: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  padding-inline: var(--ui-space-2);
+  color: var(--ui-color-text);
+  font-weight: 750;
+}
+
+.ui-next-app-sidebar__mark {
+  inline-size: 2rem;
+  block-size: 2rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-accent);
+  color: var(--ui-color-on-accent);
+  font-size: var(--ui-font-size-xs);
+}
+
+.ui-next-global-nav {
+  display: grid;
+  gap: var(--ui-space-1);
+}
+
+.ui-next-global-nav__link {
+  position: relative;
+  min-block-size: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  color: var(--ui-color-text-secondary);
+  text-decoration: none;
+  font-weight: 620;
+}
+
+.ui-next-global-nav__link:hover {
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+}
+
+.ui-next-global-nav__link[aria-current="page"] {
+  border-color: var(--ui-color-border);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  box-shadow: inset 0.25rem 0 var(--ui-color-accent);
+}
+
+.ui-next-global-nav__icon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.ui-next-global-nav__icon svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.ui-next-app-header {
+  min-block-size: 3.75rem;
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(14rem, 32rem) minmax(12rem, 1fr);
+  align-items: center;
+  gap: var(--ui-space-4);
+  border-block-end: 1px solid var(--ui-color-border);
+  padding: var(--ui-space-2) var(--ui-space-6);
+  background: var(--ui-color-surface);
+}
+
+.ui-next-app-header__context,
+.ui-next-app-header__utilities {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.ui-next-app-header__utilities {
+  justify-content: flex-end;
+}
+
+.ui-next-app-header__identity {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-font-size-sm);
+  font-weight: 700;
+}
+
+.ui-next-mobile-menu-trigger {
+  display: none;
+}
+
+.ui-next-quick-search-trigger {
+  inline-size: 100%;
+  justify-content: space-between;
+  color: var(--ui-color-text-secondary);
+  font-weight: 550;
+}
+
+.ui-next kbd {
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-sm);
+  padding: 0.1rem var(--ui-space-2);
+  background: var(--ui-color-surface-sunken);
+  color: var(--ui-color-text-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-font-size-xs);
+}
+
+.ui-next-app-main {
+  min-inline-size: 0;
+  padding-block: var(--ui-space-8) var(--ui-space-12);
+}
+
+.ui-next-account-menu {
+  position: relative;
+}
+
+.ui-next-account-menu__trigger {
+  min-block-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.ui-next-account-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.ui-next-account-menu__trigger:hover {
+  background: var(--ui-color-surface-sunken);
+}
+
+.ui-next-account-menu__avatar {
+  inline-size: 2rem;
+  block-size: 2rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ui-color-neutral-bg);
+  color: var(--ui-color-text);
+  font-weight: 750;
+}
+
+.ui-next-account-menu__name {
+  max-inline-size: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-next-account-menu__panel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--ui-space-2));
+  inset-inline-end: 0;
+  z-index: 20;
+  inline-size: min(20rem, calc(100vw - 2rem));
+  display: grid;
+  gap: var(--ui-space-4);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-4);
+  background: var(--ui-color-surface-raised);
+  box-shadow: var(--ui-shadow-raised);
+}
+
+.ui-next-account-menu__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+
+.ui-next-account-menu__link {
+  color: var(--ui-color-accent);
+  text-underline-offset: 0.18em;
+}
+
+.ui-next-quick-search {
+  display: grid;
+  gap: var(--ui-space-3);
+}
+
+.ui-next-quick-search__status {
+  min-block-size: 1.25rem;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-font-size-sm);
+}
+
+.ui-next-quick-search__results {
+  max-block-size: min(24rem, 50dvh);
+  overflow-y: auto;
+  display: grid;
+  gap: var(--ui-space-1);
+}
+
+.ui-next-quick-search__result,
+.ui-next-create-dialog__project {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-3);
+  background: transparent;
+  color: var(--ui-color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.ui-next-quick-search__result:hover,
+.ui-next-quick-search__result[aria-selected="true"],
+.ui-next-create-dialog__project:hover,
+.ui-next-create-dialog__project:focus-visible {
+  border-color: var(--ui-color-border);
+  background: var(--ui-color-surface-sunken);
+}
+
+.ui-next-quick-search__result > span:first-child,
+.ui-next-create-dialog__project > span {
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--ui-space-1);
+}
+
+.ui-next-quick-search__result small,
+.ui-next-create-dialog__project small {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size-sm);
+}
+
+.ui-next-quick-search__empty,
+.ui-next-muted {
+  color: var(--ui-color-text-muted);
+}
+
+.ui-next-create-dialog {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+
+.ui-next-create-dialog h3,
+.ui-next-create-dialog p {
+  margin: 0;
+}
+
+.ui-next-create-dialog__projects,
+.ui-next-create-dialog__actions {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+.ui-next-shell-placeholder {
+  min-block-size: 18rem;
+  display: grid;
+  place-items: center;
+}
+
+.ui-next-shell-placeholder > div {
+  max-inline-size: 34rem;
+  text-align: center;
+}
+
+.ui-next-shell-placeholder h2 {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+}
+
+.ui-next-shell-placeholder p {
+  margin: var(--ui-space-2) 0 0;
+  color: var(--ui-color-text-secondary);
+}
+
+@media (max-width: 64rem) {
+  .ui-next-app-shell {
+    grid-template-columns: var(--ui-sidebar-collapsed) minmax(0, 1fr);
+  }
+
+  .ui-next-app-sidebar {
+    padding-inline: var(--ui-space-2);
+  }
+
+  .ui-next-app-sidebar__name,
+  .ui-next-global-nav__label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ui-next-global-nav__link {
+    justify-content: center;
+    padding-inline: var(--ui-space-2);
+  }
+
+  .ui-next-global-nav__link:hover::after,
+  .ui-next-global-nav__link:focus-visible::after {
+    content: attr(data-label);
+    position: absolute;
+    inset-inline-start: calc(100% + var(--ui-space-2));
+    z-index: 30;
+    inline-size: max-content;
+    border: 1px solid var(--ui-color-border);
+    border-radius: var(--ui-radius-sm);
+    padding: var(--ui-space-2) var(--ui-space-3);
+    background: var(--ui-color-surface-raised);
+    color: var(--ui-color-text);
+    box-shadow: var(--ui-shadow-raised);
+  }
+
+  .ui-next-app-header {
+    grid-template-columns: auto minmax(12rem, 1fr) auto;
+  }
+
+  .ui-next-app-header__identity,
+  .ui-next-account-menu__name {
+    display: none;
+  }
+}
+
+@media (max-width: 44rem) {
+  .ui-next-app-shell {
+    display: block;
+  }
+
+  .ui-next-app-sidebar {
+    display: none;
+  }
+
+  .ui-next-app-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 10;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-inline: var(--ui-space-3);
+  }
+
+  .ui-next-mobile-menu-trigger {
+    display: inline-flex;
+  }
+
+  .ui-next-app-header__identity,
+  .ui-next-quick-search-trigger kbd {
+    display: none;
+  }
+
+  .ui-next-app-header__utilities {
+    min-inline-size: 0;
+  }
+
+  .ui-next-app-header__utilities .ui-next-button {
+    inline-size: auto;
+  }
+
+  .ui-next-quick-search-trigger {
+    min-inline-size: 0;
+  }
+
+  .ui-next-quick-search-trigger > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ui-next-app-main {
+    padding-block-start: var(--ui-space-6);
+  }
+}

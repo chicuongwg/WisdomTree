@@ -139,12 +139,15 @@ export function CommandPalette({ role }: { role: string }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (document.querySelector(".ui-next-app-root")) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((v) => !v);
       }
     };
-    const onOpen = () => setOpen(true);
+    const onOpen = () => {
+      if (!document.querySelector(".ui-next-app-root")) setOpen(true);
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener("wt:open-palette", onOpen);
     return () => {

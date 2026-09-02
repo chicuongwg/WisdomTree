@@ -14,4 +14,3 @@ export const getAppRequestContext = cache(async () => {
 
   return { actor, application, projects };
 });
-

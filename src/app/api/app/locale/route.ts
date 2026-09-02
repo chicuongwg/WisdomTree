@@ -13,4 +13,3 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(await setApplicationLocale(actor, body.locale));
   });
 }
-
