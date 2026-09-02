@@ -1,0 +1,131 @@
+.ui-next-overview-section {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+
+.ui-next-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+}
+
+.ui-next-section-heading h2,
+.ui-next-continue-research h2 {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+}
+
+.ui-next-section-heading p,
+.ui-next-continue-research p {
+  margin: var(--ui-space-1) 0 0;
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-section-heading a,
+.ui-next-continue-research a,
+.ui-next-project-card a {
+  color: var(--ui-color-accent);
+  font-weight: 650;
+  text-underline-offset: 0.18em;
+}
+
+.ui-next-work-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-4);
+  margin: 0;
+}
+
+.ui-next-work-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+}
+
+.ui-next-work-summary dt {
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-work-summary dd {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+  font-weight: 750;
+}
+
+.ui-next-project-list {
+  display: grid;
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-next-project-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ui-space-6);
+}
+
+.ui-next-project-card__main {
+  min-inline-size: 0;
+}
+
+.ui-next-project-card__title-row,
+.ui-next-project-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.ui-next-project-card__title-row h3 {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+}
+
+.ui-next-project-card__lens,
+.ui-next-project-card__description {
+  max-inline-size: var(--ui-width-reading);
+  margin: var(--ui-space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-next-project-card__lens {
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-project-card__description {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size-sm);
+}
+
+.ui-next-project-card__meta {
+  justify-content: flex-end;
+}
+
+.ui-next-continue-research {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-6);
+}
+
+@media (max-width: 44rem) {
+  .ui-next-section-heading,
+  .ui-next-continue-research {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ui-next-work-summary,
+  .ui-next-project-card {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-next-project-card__meta {
+    justify-content: flex-start;
+  }
+}
