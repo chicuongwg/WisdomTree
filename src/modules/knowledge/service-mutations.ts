@@ -21,7 +21,7 @@ import {
 } from "./schema";
 
 import { branchVisibilityCondition } from "./service-queries";
-import { replaceOfficialSupportFromDraft } from "./support";
+import { snapshotNoteVersionSupport } from "./support";
 
 // Knowledge node mutation operations.
 
@@ -308,22 +308,27 @@ export async function createNode(
     // node_links or the save does not happen at all.
     await syncDerivedLinks(tx, actor, node.id, input.title, input.contentMd);
     const associations = await nodeAssociations(tx, node.id);
-    await tx.insert(treeNodeVersions).values({
-      nodeId: node.id,
-      seq: 1,
-      contentMd: input.contentMd,
-      verification: "no_source",
-      createdBy: actor.userId,
-      changeSummary: "manual_create",
-      title: node.title,
-      summary: node.summary,
-      sortOrder: node.sortOrder,
-      tags: associations.tags,
-      links: associations.links,
-      publish: node.publish,
-      reviewRequired: node.reviewRequired,
-      snapshotComplete: true,
-    });
+    const [version] = await tx
+      .insert(treeNodeVersions)
+      .values({
+        nodeId: node.id,
+        seq: 1,
+        contentMd: input.contentMd,
+        verification: "no_source",
+        createdBy: actor.userId,
+        changeSummary: "manual_create",
+        title: node.title,
+        summary: node.summary,
+        sortOrder: node.sortOrder,
+        tags: associations.tags,
+        links: associations.links,
+        publish: node.publish,
+        reviewRequired: node.reviewRequired,
+        snapshotComplete: true,
+        supportSnapshotComplete: false,
+      })
+      .returning({ id: treeNodeVersions.id });
+    await snapshotNoteVersionSupport(tx, version.id, { kind: "current", nodeId: node.id });
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "node.create",
@@ -434,22 +439,27 @@ export async function updateNode(
       .from(treeNodeVersions)
       .where(eq(treeNodeVersions.nodeId, nodeId));
     const associations = await nodeAssociations(tx, nodeId);
-    await tx.insert(treeNodeVersions).values({
-      nodeId,
-      seq: maxSeq + 1,
-      contentMd: updated.contentMd,
-      verification: updated.verification,
-      createdBy: actor.userId,
-      changeSummary: contentChanged ? "content_update" : "node_update",
-      title: updated.title,
-      summary: updated.summary,
-      sortOrder: updated.sortOrder,
-      tags: associations.tags,
-      links: associations.links,
-      publish: updated.publish,
-      reviewRequired: updated.reviewRequired,
-      snapshotComplete: true,
-    });
+    const [version] = await tx
+      .insert(treeNodeVersions)
+      .values({
+        nodeId,
+        seq: maxSeq + 1,
+        contentMd: updated.contentMd,
+        verification: updated.verification,
+        createdBy: actor.userId,
+        changeSummary: contentChanged ? "content_update" : "node_update",
+        title: updated.title,
+        summary: updated.summary,
+        sortOrder: updated.sortOrder,
+        tags: associations.tags,
+        links: associations.links,
+        publish: updated.publish,
+        reviewRequired: updated.reviewRequired,
+        snapshotComplete: true,
+        supportSnapshotComplete: false,
+      })
+      .returning({ id: treeNodeVersions.id });
+    await snapshotNoteVersionSupport(tx, version.id, { kind: "current", nodeId });
     await recordAudit(tx, actor, {
       accountability: actor.role === "admin_op" ? "approver_publisher" : "editor_updater",
       action: "node.update",
@@ -668,17 +678,22 @@ export async function reviewNodeProposal(
         publish: node.publish,
         reviewRequired: node.reviewRequired,
         snapshotComplete: true,
+        supportSnapshotComplete: false,
       })
       .returning();
+    await snapshotNoteVersionSupport(
+      tx,
+      version.id,
+      reviewDraft?.locale === "vi" && reviewDraft.projectId
+        ? { kind: "draft", draftId: reviewDraft.id, nodeId }
+        : { kind: "current", nodeId },
+    );
     const [proposal] = await tx
       .update(nodeProposals)
       .set({ state: "approved" })
       .where(and(eq(nodeProposals.id, proposalId), eq(nodeProposals.state, "pending")))
       .returning();
     if (!proposal) throw versionConflict();
-    if (reviewDraft?.locale === "vi" && reviewDraft.projectId) {
-      await replaceOfficialSupportFromDraft(tx, nodeId, reviewDraft.id);
-    }
     await tx.delete(nodeDrafts).where(eq(nodeDrafts.submittedProposalId, proposalId));
     await recordAudit(tx, actor, {
       accountability: "approver_publisher",

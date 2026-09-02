@@ -8,6 +8,7 @@ import { recordAudit } from "../audit/service";
 import { createProjectNoteInTransaction } from "../knowledge/drafts";
 import { branches, treeNodes, treeNodeVersions } from "../knowledge/schema";
 import { nodeAssociations } from "../knowledge/service-mutations";
+import { snapshotNoteVersionSupport } from "../knowledge/support";
 import { projects } from "../project/schema";
 import { extractionWorker, type ExtractionMethod } from "./extraction";
 import { extractionCandidates, sources, sourceVersions } from "./schema";
@@ -181,22 +182,27 @@ export async function evolveCandidate(
       })
       .returning();
     const associations = await nodeAssociations(tx, node.id);
-    await tx.insert(treeNodeVersions).values({
-      nodeId: node.id,
-      seq: 1,
-      contentMd: candidate.candidate.contentMd,
-      verification: "unverified",
-      createdBy: actor.userId,
-      changeSummary: "evolved_from_extraction",
-      title: node.title,
-      summary: node.summary,
-      sortOrder: node.sortOrder,
-      tags: associations.tags,
-      links: associations.links,
-      publish: node.publish,
-      reviewRequired: node.reviewRequired,
-      snapshotComplete: true,
-    });
+    const [version] = await tx
+      .insert(treeNodeVersions)
+      .values({
+        nodeId: node.id,
+        seq: 1,
+        contentMd: candidate.candidate.contentMd,
+        verification: "unverified",
+        createdBy: actor.userId,
+        changeSummary: "evolved_from_extraction",
+        title: node.title,
+        summary: node.summary,
+        sortOrder: node.sortOrder,
+        tags: associations.tags,
+        links: associations.links,
+        publish: node.publish,
+        reviewRequired: node.reviewRequired,
+        snapshotComplete: true,
+        supportSnapshotComplete: false,
+      })
+      .returning({ id: treeNodeVersions.id });
+    await snapshotNoteVersionSupport(tx, version.id, { kind: "current", nodeId: node.id });
     const [evolved] = await tx
       .update(extractionCandidates)
       .set({
@@ -260,7 +266,11 @@ export async function evolveCandidateIntoProjectNote(
     // may see the Project but still cannot perform the contributor mutation.
     authorize(actor, "project.note.read", { spaceId: row.projectId, kind: "read" });
     if (row.candidate.state !== "pending_review") {
-      throw new ApiError(409, "invalid_state", "This extraction candidate has already been handled.");
+      throw new ApiError(
+        409,
+        "invalid_state",
+        "This extraction candidate has already been handled.",
+      );
     }
 
     const draft = await createProjectNoteInTransaction(tx, actor, {

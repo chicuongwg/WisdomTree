@@ -4,6 +4,7 @@ import {
   getDraft,
   getMyNodeDraft,
   getProjectNote,
+  listProjectNoteVersions,
   listProjectNotes,
   publishDraft,
   saveNodeDraft,
@@ -17,6 +18,7 @@ import {
   addDraftSupportingSourceVersion,
   listDraftSupportingResearch,
   listNoteSupportingResearch,
+  listNoteVersionSupportingResearch,
   removeDraftSupportingNoteVersion,
   removeDraftSupportingSourceVersion,
 } from "../knowledge/support";
@@ -81,6 +83,7 @@ export async function getAppProjectNote(actor: Principal, projectId: string, not
     contentMd: note.contentMd,
     researchPurpose: note.researchPurpose,
     currentVersion: note.currentVersion,
+    currentVersionId: note.currentVersionId,
     tags: note.tags,
     publication,
     capabilities: {
@@ -111,7 +114,10 @@ export async function createAppProjectNote(
 export async function updateAppDraft(
   actor: Principal,
   draftId: string,
-  input: DraftSnapshot & { expectedVersion: number },
+  input: DraftSnapshot & {
+    expectedVersion: number;
+    researchPurpose?: ResearchPurpose | null;
+  },
 ) {
   return draftDto(
     await updateDraft(actor, draftId, { ...input, expectedDraftVersion: input.expectedVersion }),
@@ -127,6 +133,7 @@ export async function saveAppNoteDraft(
     summary?: string | null;
     contentMd: string;
     tags?: string[];
+    researchPurpose?: ResearchPurpose | null;
     baseVersion: number;
     expectedVersion: number;
   },
@@ -139,17 +146,14 @@ export async function saveAppNoteDraft(
     sortOrder: 0,
     tags: input.tags ?? [],
     links: [],
+    researchPurpose: input.researchPurpose,
     baseVersion: input.baseVersion,
     expectedDraftVersion: input.expectedVersion,
   });
   return draftDto(draft);
 }
 
-export async function getAppNoteWorkingState(
-  actor: Principal,
-  projectId: string,
-  noteId: string,
-) {
+export async function getAppNoteWorkingState(actor: Principal, projectId: string, noteId: string) {
   await getProjectNote(actor, projectId, noteId);
   const state = await getMyNodeDraft(actor, noteId, "vi");
   return {
@@ -184,3 +188,5 @@ export const removeAppDraftSupportingSourceVersion = removeDraftSupportingSource
 export const removeAppDraftSupportingNoteVersion = removeDraftSupportingNoteVersion;
 export const listAppDraftSupportingResearch = listDraftSupportingResearch;
 export const listAppNoteSupportingResearch = listNoteSupportingResearch;
+export const listAppNoteVersionSupportingResearch = listNoteVersionSupportingResearch;
+export const listAppNoteVersions = listProjectNoteVersions;

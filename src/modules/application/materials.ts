@@ -7,6 +7,7 @@ import {
   getDownloadToken,
   getSourceDetail,
   listProjectMaterials,
+  listSourceVersions,
 } from "../storage/service";
 import { getProject } from "../project/service";
 
@@ -99,3 +100,4 @@ export async function addAppProjectMaterialVersion(
 }
 
 export const getAppMaterialDownloadToken = getDownloadToken;
+export const listAppMaterialVersions = listSourceVersions;

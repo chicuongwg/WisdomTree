@@ -9,10 +9,12 @@ import {
   createProjectNote,
   getDraft,
   listDraftSupportingResearch,
-  listNoteSupportingResearch,
+  listNoteVersionSupportingResearch,
   publishDraft,
   reviewNodeProposal,
+  removeDraftSupportingNoteVersion,
   removeDraftSupportingSourceVersion,
+  restoreNodeVersionToDraft,
   saveNodeDraft,
   setNodeProtection,
   submitDraftForReview,
@@ -24,6 +26,8 @@ import {
   nodeDrafts,
   noteSupportNoteVersions,
   noteSupportSourceVersions,
+  noteVersionSupportNoteVersions,
+  noteVersionSupportSourceVersions,
   treeNodes,
   treeNodeVersions,
 } from "@/modules/knowledge/schema";
@@ -82,6 +86,11 @@ export async function run() {
       projectId: inaccessibleProject.id,
       title: "Inaccessible research",
       file: new File(["private"], "private.txt", { type: "text/plain" }),
+    });
+    const supportingMaterialB = await createProjectMaterial(manager, {
+      projectId: supportProject.id,
+      title: "Supporting archive transcript",
+      file: new File(["archive"], "archive.txt", { type: "text/plain" }),
     });
 
     const evidenceDraft = await createProjectNote(manager, {
@@ -191,6 +200,43 @@ export async function run() {
       .select()
       .from(treeNodes)
       .where(eq(treeNodes.id, synthesisPublished.nodeId));
+    const [synthesisVersionOne] = await db
+      .select()
+      .from(treeNodeVersions)
+      .where(and(eq(treeNodeVersions.nodeId, synthesisNode.id), eq(treeNodeVersions.seq, 1)));
+    assert.equal(synthesisVersionOne.supportSnapshotComplete, true);
+    assert.deepEqual(
+      (
+        await listNoteVersionSupportingResearch(contributor, synthesisVersionOne.id)
+      ).sourceVersions.map((item) => item.sourceVersionId),
+      [supportingMaterial.currentVersion!.id],
+    );
+    assert.deepEqual(
+      (
+        await listNoteVersionSupportingResearch(contributor, synthesisVersionOne.id)
+      ).noteVersions.map((item) => item.noteVersionId),
+      [evidenceVersionOne.id],
+    );
+    assert.equal(
+      await db
+        .select()
+        .from(noteVersionSupportNoteVersions)
+        .where(eq(noteVersionSupportNoteVersions.targetNoteVersionId, synthesisVersionOne.id))
+        .then((rows) => rows[0]?.supportingNoteVersionId),
+      evidenceVersionOne.id,
+    );
+    await assert.rejects(
+      db
+        .delete(noteVersionSupportSourceVersions)
+        .where(eq(noteVersionSupportSourceVersions.targetNoteVersionId, synthesisVersionOne.id)),
+    );
+    await assert.rejects(
+      db.insert(noteVersionSupportSourceVersions).values({
+        targetNoteVersionId: synthesisVersionOne.id,
+        sourceVersionId: supportingMaterialB.currentVersion!.id,
+        createdBy: contributor.userId,
+      }),
+    );
     assert.equal(synthesisNode.researchPurpose, "synthesis");
     assert.equal(
       await db
@@ -235,19 +281,40 @@ export async function run() {
       draftId: editDraft.id,
       sourceVersionId: supportingMaterial.currentVersion!.id,
     });
+    await addDraftSupportingSourceVersion(contributor, {
+      draftId: editDraft.id,
+      sourceVersionId: supportingMaterialB.currentVersion!.id,
+    });
     const purposeDraft = await updateProjectDraftPurpose(contributor, {
       draftId: editDraft.id,
       researchPurpose: null,
       expectedDraftVersion: editDraft.draftVersion,
     });
     await publishDraft(contributor, purposeDraft.id);
+    const [synthesisVersionTwo] = await db
+      .select()
+      .from(treeNodeVersions)
+      .where(and(eq(treeNodeVersions.nodeId, synthesisNode.id), eq(treeNodeVersions.seq, 2)));
+    assert.equal(synthesisVersionTwo.supportSnapshotComplete, true);
+    assert.deepEqual(
+      (
+        await listNoteVersionSupportingResearch(contributor, synthesisVersionOne.id)
+      ).sourceVersions.map((item) => item.sourceVersionId),
+      [supportingMaterial.currentVersion!.id],
+    );
+    assert.deepEqual(
+      (
+        await listNoteVersionSupportingResearch(contributor, synthesisVersionTwo.id)
+      ).sourceVersions.map((item) => item.sourceVersionId),
+      [supportingMaterialB.currentVersion!.id],
+    );
     assert.equal(
       await db
         .select()
         .from(noteSupportSourceVersions)
         .where(eq(noteSupportSourceVersions.nodeId, synthesisNode.id))
         .then((rows) => rows.length),
-      0,
+      1,
     );
     assert.equal(
       await db
@@ -266,6 +333,71 @@ export async function run() {
       null,
     );
 
+    const emptyDraft = await saveNodeDraft(contributor, synthesisNode.id, "vi", {
+      ...snapshot("Cross-project synthesis", "Known empty evidence set."),
+      baseVersion: 2,
+      expectedDraftVersion: 0,
+    });
+    await removeDraftSupportingSourceVersion(contributor, {
+      draftId: emptyDraft.id,
+      sourceVersionId: supportingMaterialB.currentVersion!.id,
+    });
+    await removeDraftSupportingNoteVersion(contributor, {
+      draftId: emptyDraft.id,
+      noteVersionId: evidenceVersionOne.id,
+    });
+    await publishDraft(contributor, emptyDraft.id);
+    const [synthesisVersionThree] = await db
+      .select()
+      .from(treeNodeVersions)
+      .where(and(eq(treeNodeVersions.nodeId, synthesisNode.id), eq(treeNodeVersions.seq, 3)));
+    const emptySupport = await listNoteVersionSupportingResearch(
+      contributor,
+      synthesisVersionThree.id,
+    );
+    assert.equal(emptySupport.snapshotStatus, "complete");
+    assert.deepEqual(emptySupport.sourceVersions, []);
+    assert.deepEqual(emptySupport.noteVersions, []);
+
+    const restored = await restoreNodeVersionToDraft(contributor, synthesisNode.id, 1);
+    const restoredSupport = await listDraftSupportingResearch(contributor, restored.draft.id);
+    assert.deepEqual(
+      restoredSupport.sourceVersions.map((item) => item.sourceVersionId),
+      [supportingMaterial.currentVersion!.id],
+    );
+    assert.deepEqual(
+      restoredSupport.noteVersions.map((item) => item.noteVersionId),
+      [evidenceVersionOne.id],
+    );
+    const [unknownVersion] = await db
+      .insert(treeNodeVersions)
+      .values({
+        nodeId: synthesisNode.id,
+        seq: 0,
+        contentMd: "Legacy content with unknown evidence.",
+        verification: "unverified",
+        createdBy: contributor.userId,
+        changeSummary: "legacy_unknown_fixture",
+        title: "Cross-project synthesis",
+        snapshotComplete: true,
+        supportSnapshotComplete: false,
+      })
+      .returning();
+    assert.equal(
+      (await listNoteVersionSupportingResearch(contributor, unknownVersion.id)).snapshotStatus,
+      "unknown",
+    );
+    await assert.rejects(
+      restoreNodeVersionToDraft(contributor, synthesisNode.id, 0),
+      errorCode("historical_support_unavailable"),
+    );
+    assert.deepEqual(
+      (await listDraftSupportingResearch(contributor, restored.draft.id)).sourceVersions.map(
+        (item) => item.sourceVersionId,
+      ),
+      [supportingMaterial.currentVersion!.id],
+    );
+
     const evidenceEdit = await saveNodeDraft(manager, evidencePublished.nodeId, "vi", {
       ...snapshot("Evidence note", "Evidence version two."),
       baseVersion: 1,
@@ -278,20 +410,16 @@ export async function run() {
       .where(eq(treeNodeVersions.nodeId, evidencePublished.nodeId));
     assert.equal(evidenceVersions.length, 2);
     assert.equal(
-      (await listNoteSupportingResearch(contributor, synthesisNode.id)).noteVersions[0]
+      (await listNoteVersionSupportingResearch(contributor, synthesisVersionTwo.id)).noteVersions[0]
         ?.noteVersionId,
       evidenceVersionOne.id,
     );
     assert.equal(
-      (await listNoteSupportingResearch(viewer, synthesisNode.id)).noteVersions.length,
+      (await listNoteVersionSupportingResearch(viewer, synthesisVersionTwo.id)).noteVersions.length,
       0,
     );
 
-    const selfDraft = await saveNodeDraft(contributor, synthesisNode.id, "vi", {
-      ...snapshot("Cross-project synthesis", "Self-reference check."),
-      baseVersion: 2,
-      expectedDraftVersion: 0,
-    });
+    const selfDraft = restored.draft;
     const [synthesisVersion] = await db
       .select()
       .from(treeNodeVersions)
@@ -336,6 +464,11 @@ export async function run() {
       expectedDraftVersion: 0,
     });
     const submitted = await submitDraftForReview(contributor, reviewedEdit.id);
+    assert.equal(
+      (await listDraftSupportingResearch(contributor, reviewedEdit.id)).sourceVersions[0]
+        ?.sourceVersionId,
+      supportingMaterial.currentVersion!.id,
+    );
     await reviewNodeProposal(manager, protectedPublished.nodeId, submitted.proposalId, {
       decision: "approved",
       verification: "verified",
@@ -345,6 +478,23 @@ export async function run() {
         .select()
         .from(noteSupportSourceVersions)
         .where(eq(noteSupportSourceVersions.nodeId, protectedPublished.nodeId))
+        .then((rows) => rows[0]?.sourceVersionId),
+      supportingMaterial.currentVersion!.id,
+    );
+    const reviewedVersions = await db
+      .select()
+      .from(treeNodeVersions)
+      .where(eq(treeNodeVersions.nodeId, protectedPublished.nodeId));
+    assert.equal(
+      reviewedVersions.every((version) => version.supportSnapshotComplete),
+      true,
+    );
+    const reviewedVersion = reviewedVersions.find((version) => version.seq === 3)!;
+    assert.equal(
+      await db
+        .select()
+        .from(noteVersionSupportSourceVersions)
+        .where(eq(noteVersionSupportSourceVersions.targetNoteVersionId, reviewedVersion.id))
         .then((rows) => rows[0]?.sourceVersionId),
       supportingMaterial.currentVersion!.id,
     );

@@ -379,6 +379,31 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
 }
 
 /**
+ * List exact immutable versions for an authorized Project Material.
+ */
+export async function listSourceVersions(actor: Principal, sourceId: string) {
+  const [source] = await db
+    .select({ id: sources.id, spaceId: sources.spaceId })
+    .from(sources)
+    .innerJoin(projects, eq(projects.projectId, sources.spaceId))
+    .where(eq(sources.id, sourceId));
+  if (!source) throw notFound();
+  await requireProjectResearchRead(actor, source.spaceId);
+
+  return db
+    .select({
+      id: sourceVersions.id,
+      seq: sourceVersions.seq,
+      originalFilename: sourceVersions.originalFilename,
+      storedAt: sourceVersions.storedAt,
+      sizeBytes: sourceVersions.sizeBytes,
+    })
+    .from(sourceVersions)
+    .where(eq(sourceVersions.sourceId, sourceId))
+    .orderBy(desc(sourceVersions.seq));
+}
+
+/**
  * Authorized download: checks scope, then issues the signed-URL substitute
  * (short-lived token for exactly one object key) the route 302-redirects to.
  * Never a public path.

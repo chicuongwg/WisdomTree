@@ -127,6 +127,7 @@ export const treeNodeVersions = pgTable(
     publish: boolean("publish"),
     reviewRequired: boolean("review_required"),
     snapshotComplete: boolean("snapshot_complete").notNull().default(false),
+    supportSnapshotComplete: boolean("support_snapshot_complete").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.nodeId, t.seq)],
@@ -353,6 +354,48 @@ export const noteSupportNoteVersions = pgTable(
   (table) => [
     primaryKey({ columns: [table.nodeId, table.noteVersionId] }),
     index("note_support_note_versions_version_idx").on(table.noteVersionId),
+  ],
+);
+
+/** Canonical immutable support snapshot for one exact official Note version. */
+export const noteVersionSupportSourceVersions = pgTable(
+  "note_version_support_source_versions",
+  {
+    targetNoteVersionId: uuid("target_note_version_id")
+      .notNull()
+      .references(() => treeNodeVersions.id, { onDelete: "restrict" }),
+    sourceVersionId: uuid("source_version_id")
+      .notNull()
+      .references(() => sourceVersions.id, { onDelete: "restrict" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.targetNoteVersionId, table.sourceVersionId] }),
+    index("note_version_support_source_versions_source_idx").on(table.sourceVersionId),
+  ],
+);
+
+/** Canonical immutable Note-version support for one exact official Note version. */
+export const noteVersionSupportNoteVersions = pgTable(
+  "note_version_support_note_versions",
+  {
+    targetNoteVersionId: uuid("target_note_version_id")
+      .notNull()
+      .references(() => treeNodeVersions.id, { onDelete: "restrict" }),
+    supportingNoteVersionId: uuid("supporting_note_version_id")
+      .notNull()
+      .references(() => treeNodeVersions.id, { onDelete: "restrict" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.targetNoteVersionId, table.supportingNoteVersionId] }),
+    index("note_version_support_note_versions_support_idx").on(table.supportingNoteVersionId),
   ],
 );
 

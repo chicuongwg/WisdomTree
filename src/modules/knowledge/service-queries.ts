@@ -4,8 +4,10 @@ import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { backlinkContext, buildWikiIndex, normalizeTitle } from "@/lib/wikilink";
 import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
+import { requireProjectResearchRead } from "../auth/core";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
+import { projects } from "../project/schema";
 import { sources, sourceVersions, spaces } from "../storage/schema";
 import {
   branches,
@@ -680,6 +682,7 @@ export async function listNodeVersions(actor: Principal, nodeId: string) {
       verification: treeNodeVersions.verification,
       changeSummary: treeNodeVersions.changeSummary,
       snapshotComplete: treeNodeVersions.snapshotComplete,
+      supportSnapshotComplete: treeNodeVersions.supportSnapshotComplete,
       createdAt: treeNodeVersions.createdAt,
       authorName: users.displayName,
     })
@@ -688,6 +691,32 @@ export async function listNodeVersions(actor: Principal, nodeId: string) {
     .where(eq(treeNodeVersions.nodeId, nodeId))
     .orderBy(desc(treeNodeVersions.seq));
   return { node, versions };
+}
+
+/**
+ * List exact immutable official versions for an authorized Project Note.
+ * Excludes private drafts, legacy Personal nodes, and translation drafts.
+ */
+export async function listProjectNoteVersions(actor: Principal, nodeId: string) {
+  const [node] = await db
+    .select({ id: treeNodes.id, projectId: treeNodes.projectId })
+    .from(treeNodes)
+    .innerJoin(projects, eq(projects.projectId, treeNodes.projectId))
+    .where(and(eq(treeNodes.id, nodeId), ne(treeNodes.verification, "archived")));
+  if (!node || !node.projectId) throw notFound();
+  await requireProjectResearchRead(actor, node.projectId);
+
+  return db
+    .select({
+      id: treeNodeVersions.id,
+      seq: treeNodeVersions.seq,
+      title: treeNodeVersions.title,
+      supportSnapshotComplete: treeNodeVersions.supportSnapshotComplete,
+      createdAt: treeNodeVersions.createdAt,
+    })
+    .from(treeNodeVersions)
+    .where(and(eq(treeNodeVersions.nodeId, nodeId), ne(treeNodeVersions.verification, "archived")))
+    .orderBy(desc(treeNodeVersions.seq));
 }
 
 export async function getNodeVersion(actor: Principal, nodeId: string, seq: number) {
@@ -706,6 +735,7 @@ export async function getNodeVersion(actor: Principal, nodeId: string, seq: numb
       publish: treeNodeVersions.publish,
       reviewRequired: treeNodeVersions.reviewRequired,
       snapshotComplete: treeNodeVersions.snapshotComplete,
+      supportSnapshotComplete: treeNodeVersions.supportSnapshotComplete,
       createdAt: treeNodeVersions.createdAt,
     })
     .from(treeNodeVersions)

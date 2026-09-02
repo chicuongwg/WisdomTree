@@ -17,6 +17,7 @@ import {
   syncTags,
 } from "./service-mutations";
 import { branchVisibilityCondition } from "./service-queries";
+import { snapshotNoteVersionSupport } from "./support";
 import {
   branches,
   nodeProposals,
@@ -442,8 +443,10 @@ export async function decideNodePublication(
         publish: node.publish,
         reviewRequired: node.reviewRequired,
         snapshotComplete: true,
+        supportSnapshotComplete: false,
       })
       .returning();
+    await snapshotNoteVersionSupport(tx, nodeVersion.id, { kind: "current", nodeId: node.id });
     if (row.proposal.sourceVersionId) {
       await tx.insert(promotions).values({
         sourceVersionId: row.proposal.sourceVersionId,

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError } from "@/lib/errors";
+import { saveAppNoteDraft, updateAppDraft } from "@/modules/application";
 import {
   createNode,
   createProjectNote,
@@ -103,6 +104,59 @@ export async function run() {
   assert.equal(saved.projectId, projectA.id);
   assert.equal(saved.draftVersion, draft.draftVersion + 1);
 
+  const coherentSave = await updateAppDraft(contributor, draft.id, {
+    title: "Coherent synthesis",
+    summary: "All editor fields in one mutation",
+    sortOrder: 0,
+    contentMd: "Atomic content and purpose.",
+    tags: [],
+    links: [],
+    researchPurpose: "synthesis",
+    expectedVersion: saved.draftVersion,
+  });
+  assert.equal(coherentSave.version, saved.draftVersion + 1);
+  assert.equal(coherentSave.title, "Coherent synthesis");
+  assert.equal(coherentSave.summary, "All editor fields in one mutation");
+  assert.equal(coherentSave.contentMd, "Atomic content and purpose.");
+  assert.equal(coherentSave.researchPurpose, "synthesis");
+
+  await assert.rejects(
+    updateAppDraft(contributor, draft.id, {
+      title: "Must not commit",
+      summary: "Must not commit",
+      sortOrder: 0,
+      contentMd: "Must not commit",
+      tags: [],
+      links: [],
+      researchPurpose: "report" as "evidence",
+      expectedVersion: coherentSave.version,
+    }),
+    errorCode("invalid_research_purpose"),
+  );
+  const afterInvalidPurpose = await getDraft(contributor, draft.id);
+  assert.equal(afterInvalidPurpose.title, coherentSave.title);
+  assert.equal(afterInvalidPurpose.contentMd, coherentSave.contentMd);
+  assert.equal(afterInvalidPurpose.researchPurpose, coherentSave.researchPurpose);
+  assert.equal(afterInvalidPurpose.draftVersion, coherentSave.version);
+
+  await assert.rejects(
+    updateAppDraft(contributor, draft.id, {
+      title: "Stale mutation",
+      summary: null,
+      sortOrder: 0,
+      contentMd: "Stale mutation",
+      tags: [],
+      links: [],
+      researchPurpose: "evidence",
+      expectedVersion: saved.draftVersion,
+    }),
+    errorCode("version_conflict"),
+  );
+  const afterStaleMutation = await getDraft(contributor, draft.id);
+  assert.equal(afterStaleMutation.title, coherentSave.title);
+  assert.equal(afterStaleMutation.researchPurpose, "synthesis");
+  assert.equal(afterStaleMutation.draftVersion, coherentSave.version);
+
   await assert.rejects(
     createProjectNote(viewer, {
       projectId: projectA.id,
@@ -131,7 +185,10 @@ export async function run() {
     title: "Other Project Note",
     contentMd: "Separate Project.",
   });
-  const [otherBranch] = await db.select().from(branches).where(eq(branches.id, otherDraft.branchId));
+  const [otherBranch] = await db
+    .select()
+    .from(branches)
+    .where(eq(branches.id, otherDraft.branchId));
   const otherPublished = await publishDraft(manager, otherDraft.id);
 
   // The caller cannot select Branch ownership; extra compatibility input is ignored.
@@ -170,7 +227,10 @@ export async function run() {
     }),
   );
   await assert.rejects(
-    db.update(branches).set({ spaceId: projectB.id }).where(eq(branches.id, compatibilityBranch.id)),
+    db
+      .update(branches)
+      .set({ spaceId: projectB.id })
+      .where(eq(branches.id, compatibilityBranch.id)),
   );
 
   const published = await publishDraft(contributor, draft.id);
@@ -203,10 +263,48 @@ export async function run() {
       .then((rows) => rows.length),
     0,
   );
+
+  await assert.rejects(
+    saveAppNoteDraft(contributor, {
+      projectId: projectA.id,
+      noteId: note.id,
+      title: "Invalid official edit",
+      summary: null,
+      contentMd: "Must not create a partial draft.",
+      researchPurpose: "report" as "evidence",
+      baseVersion: note.version,
+      expectedVersion: 0,
+    }),
+    errorCode("invalid_research_purpose"),
+  );
+  assert.equal(
+    await db
+      .select({ id: nodeDrafts.id })
+      .from(nodeDrafts)
+      .where(and(eq(nodeDrafts.nodeId, note.id), eq(nodeDrafts.authorId, contributor.userId)))
+      .then((rows) => rows.length),
+    0,
+  );
+  const firstOfficialEdit = await saveAppNoteDraft(contributor, {
+    projectId: projectA.id,
+    noteId: note.id,
+    title: "First official edit",
+    summary: "Created atomically",
+    contentMd: "New draft content.",
+    researchPurpose: "evidence",
+    baseVersion: note.version,
+    expectedVersion: 0,
+  });
+  assert.notEqual(firstOfficialEdit.id, note.id);
+  assert.equal(firstOfficialEdit.noteId, note.id);
+  assert.equal(firstOfficialEdit.version, 1);
+  assert.equal(firstOfficialEdit.researchPurpose, "evidence");
   const viewerPublishedList = await listProjectNotes(viewer, projectA.id);
   assert.ok(viewerPublishedList.notes.some((item) => item.id === note.id));
   assert.ok(viewerPublishedList.notes.every((item) => item.projectId === projectA.id));
-  assert.ok(viewerPublishedList.notes.every((item) => !demoNodes.some((demo) => demo.id === item.id)));
+  assert.ok(
+    viewerPublishedList.notes.every((item) => !demoNodes.some((demo) => demo.id === item.id)),
+  );
   assert.ok(viewerPublishedList.notes.every((item) => item.id !== otherPublished.nodeId));
 
   // Existing Personal Node behavior remains owner-only and Project-less.

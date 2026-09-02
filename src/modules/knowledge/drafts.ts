@@ -31,7 +31,11 @@ import {
   syncTags,
   uniqueSlug,
 } from "./service-mutations";
-import { copyOfficialSupportToDraft, replaceOfficialSupportFromDraft } from "./support";
+import {
+  copyOfficialSupportToDraft,
+  replaceDraftSupportFromNoteVersion,
+  snapshotNoteVersionSupport,
+} from "./support";
 
 export type DraftLocale = "vi" | "en";
 export type ResearchPurpose = "evidence" | "synthesis";
@@ -233,10 +237,15 @@ export async function getProjectNote(actor: Principal, projectId: string, nodeId
       researchPurpose: treeNodes.researchPurpose,
       verification: treeNodes.verification,
       currentVersion: treeNodes.version,
+      currentVersionId: treeNodeVersions.id,
       createdAt: treeNodes.createdAt,
       updatedAt: treeNodes.updatedAt,
     })
     .from(treeNodes)
+    .innerJoin(
+      treeNodeVersions,
+      and(eq(treeNodeVersions.nodeId, treeNodes.id), eq(treeNodeVersions.seq, treeNodes.version)),
+    )
     .where(
       and(
         eq(treeNodes.id, nodeId),
@@ -413,13 +422,20 @@ export async function saveNodeDraft(
   actor: Principal,
   nodeId: string,
   locale: DraftLocale,
-  input: DraftSnapshot & { baseVersion: number; expectedDraftVersion: number },
+  input: DraftSnapshot & {
+    baseVersion: number;
+    expectedDraftVersion: number;
+    researchPurpose?: ResearchPurpose | null;
+  },
 ) {
   const official = await officialSnapshot(nodeId, locale);
   authorize(actor, "knowledge.draft.write", { spaceId: official.branch.spaceId!, kind: "write" });
   if (official.node.verification === "archived") throw notFound();
   const snapshot = cleanSnapshot(input);
   assertDraftSnapshot(snapshot);
+  assertResearchPurpose(input.researchPurpose);
+  const researchPurpose =
+    input.researchPurpose === undefined ? official.node.researchPurpose : input.researchPurpose;
   if (input.expectedDraftVersion === 0) {
     if (official.version !== input.baseVersion) throw officialConflict(input.baseVersion, official);
     const created = await db.transaction(async (tx) => {
@@ -429,7 +445,7 @@ export async function saveNodeDraft(
           nodeId,
           branchId: official.branch.id,
           projectId: official.node.projectId,
-          researchPurpose: official.node.researchPurpose,
+          researchPurpose,
           locale,
           authorId: actor.userId,
           baseVersion: input.baseVersion,
@@ -440,25 +456,25 @@ export async function saveNodeDraft(
       if (draft && locale === "vi" && draft.projectId) {
         await copyOfficialSupportToDraft(tx, nodeId, draft.id);
       }
+      if (draft && researchPurpose !== official.node.researchPurpose) {
+        await recordAudit(tx, actor, {
+          accountability: "editor_updater",
+          action: "node.draft.research_purpose.change",
+          targetType: "node_draft",
+          targetId: draft.id,
+          details: {
+            projectId: draft.projectId,
+            from: official.node.researchPurpose,
+            to: researchPurpose,
+          },
+        });
+      }
       return draft;
     });
     if (created) return created;
   }
-  const [updated] = await db
-    .update(nodeDrafts)
-    .set({ ...snapshot, draftVersion: input.expectedDraftVersion + 1, updatedAt: new Date() })
-    .where(
-      and(
-        eq(nodeDrafts.nodeId, nodeId),
-        eq(nodeDrafts.locale, locale),
-        eq(nodeDrafts.authorId, actor.userId),
-        eq(nodeDrafts.state, "editing"),
-        eq(nodeDrafts.draftVersion, input.expectedDraftVersion),
-      ),
-    )
-    .returning();
-  if (!updated) {
-    const [current] = await db
+  return db.transaction(async (tx) => {
+    const [current] = await tx
       .select()
       .from(nodeDrafts)
       .where(
@@ -468,31 +484,100 @@ export async function saveNodeDraft(
           eq(nodeDrafts.authorId, actor.userId),
         ),
       );
-    throw new ApiError(409, "draft_version_conflict", "The draft changed in another session.", {
-      current,
-      yours: snapshot,
-    });
-  }
-  return updated;
+    const [updated] = await tx
+      .update(nodeDrafts)
+      .set({
+        ...snapshot,
+        ...(input.researchPurpose !== undefined ? { researchPurpose } : {}),
+        draftVersion: input.expectedDraftVersion + 1,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(nodeDrafts.nodeId, nodeId),
+          eq(nodeDrafts.locale, locale),
+          eq(nodeDrafts.authorId, actor.userId),
+          eq(nodeDrafts.state, "editing"),
+          eq(nodeDrafts.draftVersion, input.expectedDraftVersion),
+        ),
+      )
+      .returning();
+    if (!updated) {
+      throw new ApiError(409, "draft_version_conflict", "The draft changed in another session.", {
+        current,
+        yours: { ...snapshot, researchPurpose },
+      });
+    }
+    if (
+      input.researchPurpose !== undefined &&
+      current &&
+      current.researchPurpose !== researchPurpose
+    ) {
+      await recordAudit(tx, actor, {
+        accountability: "editor_updater",
+        action: "node.draft.research_purpose.change",
+        targetType: "node_draft",
+        targetId: updated.id,
+        details: {
+          projectId: updated.projectId,
+          from: current.researchPurpose,
+          to: researchPurpose,
+        },
+      });
+    }
+    return updated;
+  });
 }
 
 export async function updateDraft(
   actor: Principal,
   draftId: string,
-  input: DraftSnapshot & { expectedDraftVersion: number },
+  input: DraftSnapshot & {
+    expectedDraftVersion: number;
+    researchPurpose?: ResearchPurpose | null;
+  },
 ) {
   const row = await ownedDraft(actor, draftId);
   if (row.draft.state !== "editing")
     throw new ApiError(409, "draft_in_review", "The draft is currently in review.");
   const snapshot = cleanSnapshot(input);
   assertDraftSnapshot(snapshot);
-  const [updated] = await db
-    .update(nodeDrafts)
-    .set({ ...snapshot, draftVersion: input.expectedDraftVersion + 1, updatedAt: new Date() })
-    .where(and(eq(nodeDrafts.id, draftId), eq(nodeDrafts.draftVersion, input.expectedDraftVersion)))
-    .returning();
-  if (!updated) throw versionConflict();
-  return updated;
+  assertResearchPurpose(input.researchPurpose);
+  if (input.researchPurpose !== undefined && (!row.draft.projectId || row.draft.locale !== "vi")) {
+    throw notFound();
+  }
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(nodeDrafts)
+      .set({
+        ...snapshot,
+        ...(input.researchPurpose !== undefined ? { researchPurpose: input.researchPurpose } : {}),
+        draftVersion: input.expectedDraftVersion + 1,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(nodeDrafts.id, draftId), eq(nodeDrafts.draftVersion, input.expectedDraftVersion)),
+      )
+      .returning();
+    if (!updated) throw versionConflict();
+    if (
+      input.researchPurpose !== undefined &&
+      row.draft.researchPurpose !== input.researchPurpose
+    ) {
+      await recordAudit(tx, actor, {
+        accountability: "editor_updater",
+        action: "node.draft.research_purpose.change",
+        targetType: "node_draft",
+        targetId: draftId,
+        details: {
+          projectId: row.draft.projectId,
+          from: row.draft.researchPurpose,
+          to: input.researchPurpose,
+        },
+      });
+    }
+    return updated;
+  });
 }
 
 export async function updateProjectDraftPurpose(
@@ -557,6 +642,8 @@ async function appendNodeVersion(
   node: typeof treeNodes.$inferSelect,
   snapshot: DraftSnapshot,
   changeSummary: string,
+  supportSource:
+    { kind: "draft"; draftId: string; nodeId: string } | { kind: "current"; nodeId: string },
   reviewStatus: "pending" | "approved" = "pending",
 ) {
   const [{ maxSeq }] = await tx
@@ -564,23 +651,29 @@ async function appendNodeVersion(
     .from(treeNodeVersions)
     .where(eq(treeNodeVersions.nodeId, node.id));
   const associations = await nodeAssociations(tx, node.id);
-  return tx.insert(treeNodeVersions).values({
-    nodeId: node.id,
-    seq: maxSeq + 1,
-    contentMd: snapshot.contentMd,
-    verification: node.verification,
-    createdBy: actor.userId,
-    changeSummary,
-    reviewStatus,
-    title: snapshot.title,
-    summary: snapshot.summary,
-    sortOrder: snapshot.sortOrder,
-    tags: associations.tags,
-    links: associations.links,
-    publish: node.publish,
-    reviewRequired: node.reviewRequired,
-    snapshotComplete: true,
-  });
+  const [version] = await tx
+    .insert(treeNodeVersions)
+    .values({
+      nodeId: node.id,
+      seq: maxSeq + 1,
+      contentMd: snapshot.contentMd,
+      verification: node.verification,
+      createdBy: actor.userId,
+      changeSummary,
+      reviewStatus,
+      title: snapshot.title,
+      summary: snapshot.summary,
+      sortOrder: snapshot.sortOrder,
+      tags: associations.tags,
+      links: associations.links,
+      publish: node.publish,
+      reviewRequired: node.reviewRequired,
+      snapshotComplete: true,
+      supportSnapshotComplete: false,
+    })
+    .returning({ id: treeNodeVersions.id });
+  await snapshotNoteVersionSupport(tx, version.id, supportSource);
+  return version;
 }
 
 export async function publishDraft(actor: Principal, draftId: string) {
@@ -616,8 +709,11 @@ export async function publishDraft(actor: Principal, draftId: string) {
       await syncTags(tx, actor, node.id, snapshot.tags);
       await syncLinks(tx, actor, node.id, snapshot.links);
       await syncDerivedLinks(tx, actor, node.id, snapshot.title, snapshot.contentMd);
-      await appendNodeVersion(tx, actor, node, snapshot, "draft_published");
-      await replaceOfficialSupportFromDraft(tx, node.id, draftId);
+      await appendNodeVersion(tx, actor, node, snapshot, "draft_published", {
+        kind: "draft",
+        draftId,
+        nodeId: node.id,
+      });
       await tx
         .update(extractionCandidates)
         .set({ evolvedDraftId: null, evolvedNodeId: node.id })
@@ -661,8 +757,11 @@ export async function publishDraft(actor: Principal, draftId: string) {
       await syncTags(tx, actor, node.id, snapshot.tags);
       await syncLinks(tx, actor, node.id, snapshot.links);
       await syncDerivedLinks(tx, actor, node.id, snapshot.title, snapshot.contentMd);
-      await appendNodeVersion(tx, actor, node, snapshot, "draft_published");
-      await replaceOfficialSupportFromDraft(tx, node.id, draftId);
+      await appendNodeVersion(tx, actor, node, snapshot, "draft_published", {
+        kind: "draft",
+        draftId,
+        nodeId: node.id,
+      });
       await tx.delete(nodeDrafts).where(eq(nodeDrafts.id, draftId));
       await recordAudit(tx, actor, {
         accountability: "editor_updater",
@@ -843,6 +942,13 @@ export async function restoreNodeVersionToDraft(actor: Principal, nodeId: string
     .from(treeNodeVersions)
     .where(and(eq(treeNodeVersions.nodeId, nodeId), eq(treeNodeVersions.seq, seq)));
   if (!version) throw notFound();
+  if (!version.supportSnapshotComplete) {
+    throw new ApiError(
+      409,
+      "historical_support_unavailable",
+      "Evidence history is unavailable for this Note version.",
+    );
+  }
 
   const legacyPartial = !version.snapshotComplete;
   const snapshot = cleanSnapshot({
@@ -905,9 +1011,7 @@ export async function restoreNodeVersionToDraft(actor: Principal, nodeId: string
           .onConflictDoNothing()
           .returning();
     if (!draft) throw versionConflict();
-    if (!existing && draft.projectId) {
-      await copyOfficialSupportToDraft(tx, nodeId, draft.id);
-    }
+    if (draft.projectId) await replaceDraftSupportFromNoteVersion(tx, draft.id, version.id);
     await recordAudit(tx, actor, {
       accountability: "editor_updater",
       action: "node.version.restore_to_draft",
@@ -935,7 +1039,10 @@ export async function setNodeProtection(actor: Principal, nodeId: string, review
       .where(and(eq(treeNodes.id, nodeId), eq(treeNodes.version, row.node.version)))
       .returning();
     if (!node) throw versionConflict();
-    await appendNodeVersion(tx, actor, node, await nodeSnapshot(nodeId), "protection_changed");
+    await appendNodeVersion(tx, actor, node, await nodeSnapshot(nodeId), "protection_changed", {
+      kind: "current",
+      nodeId,
+    });
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "node.protection.change",
