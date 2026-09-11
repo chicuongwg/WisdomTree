@@ -62,7 +62,7 @@ export async function run() {
   assert.match(projectList, /href={`\/app\/projects\/\$\{project\.id\}`}/);
   assert.match(projectList, /project\.features\.libraryCirculation/);
   assert.doesNotMatch(projectList, /project\.name\s*(?:===|includes|startsWith|endsWith)/);
-  assert.match(overviewService, /filter\(\(project\) => project\.operationalMember\)/);
+  assert.match(overviewService, /listAppMyWorkTasks/);
 
   for (const forbidden of [
     "DashboardWidget",

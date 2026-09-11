@@ -2,7 +2,7 @@ import type { Principal } from "../auth/principal";
 import {
   attachPersonToProject,
   createProjectPerson,
-  getPerson,
+  getPersonResearchContext,
   listProjectPeople,
   searchAccessiblePeople,
   updatePerson,
@@ -18,12 +18,14 @@ export async function listAppProjectPeople(actor: Principal, projectId: string) 
 }
 
 export async function getAppPerson(actor: Principal, personId: string) {
-  const person = await getPerson(actor, personId);
+  const person = await getPersonResearchContext(actor, personId);
   return {
     id: person.id,
     displayName: person.displayName,
     summary: person.summary,
     projectIds: person.projectIds,
+    projects: person.projects,
+    activities: person.activities,
     version: person.version,
   };
 }

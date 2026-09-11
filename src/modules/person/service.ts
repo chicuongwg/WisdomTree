@@ -6,6 +6,8 @@ import { requireProjectResearchRead, researchReadableProjectIds } from "../auth/
 import type { Principal } from "../auth/principal";
 import { recordAudit } from "../audit/service";
 import { projects } from "../project/schema";
+import { activities, activityPeople } from "../activity/schema";
+import { spaces } from "../storage/schema";
 import { persons, projectPeople } from "./schema";
 
 function requiredText(value: string | undefined, code: string, message: string): string {
@@ -130,6 +132,66 @@ export async function getPerson(actor: Principal, personId: string) {
     )
     .orderBy(asc(projectPeople.projectId));
   return { ...person, projectIds: linkedProjects.map((row) => row.projectId) };
+}
+
+/**
+ * Canonical Person detail. Activity context is intentionally limited to real
+ * Project membership, preserving the Stage 12 operational boundary for Core.
+ */
+export async function getPersonResearchContext(actor: Principal, personId: string) {
+  const person = await requireAccessiblePerson(actor, personId);
+  const visibleProjects = await researchReadableProjectIds(actor);
+  const memberProjectIds = actor.spaceMemberships.map((membership) => membership.spaceId);
+  const [linkedProjects, activityRows] = await Promise.all([
+    db
+      .select({ projectId: projects.projectId, projectName: spaces.name })
+      .from(projectPeople)
+      .innerJoin(projects, eq(projects.projectId, projectPeople.projectId))
+      .innerJoin(spaces, eq(spaces.id, projects.projectId))
+      .where(
+        and(eq(projectPeople.personId, personId), inArray(projectPeople.projectId, visibleProjects)),
+      )
+      .orderBy(asc(spaces.name), asc(projects.projectId)),
+    memberProjectIds.length
+      ? db
+          .select({
+            id: activities.id,
+            title: activities.title,
+            activityType: activities.activityType,
+            status: activities.status,
+            roleLabel: activityPeople.roleLabel,
+            projectId: projects.projectId,
+            projectName: spaces.name,
+          })
+          .from(activityPeople)
+          .innerJoin(
+            activities,
+            and(
+              eq(activities.id, activityPeople.activityId),
+              eq(activities.projectId, activityPeople.projectId),
+            ),
+          )
+          .innerJoin(projects, eq(projects.projectId, activities.projectId))
+          .innerJoin(spaces, eq(spaces.id, projects.projectId))
+          .where(
+            and(eq(activityPeople.personId, personId), inArray(activities.projectId, memberProjectIds)),
+          )
+          .orderBy(asc(activities.title), asc(activities.id))
+      : Promise.resolve([]),
+  ]);
+  return {
+    ...person,
+    projectIds: linkedProjects.map((project) => project.projectId),
+    projects: linkedProjects.map((project) => ({ id: project.projectId, name: project.projectName })),
+    activities: activityRows.map((activity) => ({
+      id: activity.id,
+      title: activity.title,
+      activityType: activity.activityType,
+      status: activity.status,
+      roleLabel: activity.roleLabel,
+      project: { id: activity.projectId, name: activity.projectName },
+    })),
+  };
 }
 
 export async function listProjectPeople(actor: Principal, projectId: string) {

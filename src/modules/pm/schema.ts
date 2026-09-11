@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  check,
   foreignKey,
   index,
   integer,
@@ -90,6 +91,10 @@ export const tasks = pgTable(
     version: integer("version").notNull().default(1),
   },
   (table) => [
+    check(
+      "tasks_activity_requires_project_check",
+      sql`${table.activityId} IS NULL OR ${table.projectId} IS NOT NULL`,
+    ),
     foreignKey({
       columns: [table.activityId, table.projectId],
       foreignColumns: [activities.id, activities.projectId],

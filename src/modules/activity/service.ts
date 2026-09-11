@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { authorize } from "../auth/authorize";
@@ -9,6 +9,7 @@ import { persons, projectPeople } from "../person/schema";
 import { projects } from "../project/schema";
 import { tasks } from "../pm/schema";
 import { sources } from "../storage/schema";
+import { spaceMembers } from "../storage/schema";
 import {
   activities,
   activityMaterials,
@@ -116,6 +117,20 @@ export async function listProjectActivities(actor: Principal, projectId: string)
     .select()
     .from(activities)
     .where(eq(activities.projectId, project.projectId))
+    .orderBy(desc(activities.updatedAt), asc(activities.title));
+}
+
+/** Current actor's operational Activities across their current Project memberships. */
+export async function listMyProjectActivities(actor: Principal) {
+  return db
+    .select({ activity: activities, projectId: projects.projectId })
+    .from(activities)
+    .innerJoin(projects, eq(projects.projectId, activities.projectId))
+    .innerJoin(
+      spaceMembers,
+      and(eq(spaceMembers.spaceId, activities.projectId), eq(spaceMembers.userId, actor.userId)),
+    )
+    .where(ne(activities.status, "cancelled"))
     .orderBy(desc(activities.updatedAt), asc(activities.title));
 }
 

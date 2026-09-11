@@ -8,7 +8,7 @@ import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { activities } from "../activity/schema";
 import { projects } from "../project/schema";
-import { sources, spaceMembers } from "../storage/schema";
+import { sources, spaceMembers, spaces } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
 import { calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
 
@@ -619,6 +619,47 @@ export async function listProjectTasks(actor: Principal, projectId: string) {
     .orderBy(desc(tasks.updatedAt));
 }
 
+/** Active Project members eligible for task assignment. */
+export async function listProjectTaskAssignees(actor: Principal, projectId: string) {
+  const project = await requireConfirmedProject(projectId);
+  authorize(actor, "pm.project_task.read", { spaceId: project.projectId, kind: "read" });
+  return db
+    .select({ id: users.id, displayName: users.displayName })
+    .from(spaceMembers)
+    .innerJoin(users, and(eq(users.id, spaceMembers.userId), isNull(users.disabledAt)))
+    .where(eq(spaceMembers.spaceId, project.projectId))
+    .orderBy(asc(users.displayName), asc(users.id));
+}
+
+/** Current actor's assigned target Tasks, bounded to current Project participation. */
+export async function listMyAssignedProjectTasks(actor: Principal) {
+  return db
+    .select({
+      id: tasks.id,
+      projectId: tasks.projectId,
+      activityId: tasks.activityId,
+      title: tasks.title,
+      state: tasks.state,
+      assignedTo: tasks.assignedTo,
+      dueAt: tasks.dueAt,
+      startAt: tasks.startAt,
+      notes: tasks.notes,
+      version: tasks.version,
+      projectName: spaces.name,
+      activityTitle: activities.title,
+    })
+    .from(tasks)
+    .innerJoin(projects, eq(projects.projectId, tasks.projectId))
+    .innerJoin(
+      spaceMembers,
+      and(eq(spaceMembers.spaceId, tasks.projectId), eq(spaceMembers.userId, actor.userId)),
+    )
+    .innerJoin(spaces, eq(spaces.id, projects.projectId))
+    .leftJoin(activities, eq(activities.id, tasks.activityId))
+    .where(and(eq(tasks.assignedTo, actor.userId), ne(tasks.state, "archived")))
+    .orderBy(asc(tasks.dueAt), asc(tasks.title), asc(tasks.id));
+}
+
 export async function attachTaskToActivity(
   actor: Principal,
   input: { taskId: string; activityId: string; expectedVersion?: number },
@@ -709,6 +750,25 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
   }
   const expectedVersion = input.expectedVersion;
   if (typeof expectedVersion !== "number") throw versionConflict();
+  if (existing.projectId && input.assigneeId) {
+    const [membership] = await db
+      .select({ userId: spaceMembers.userId })
+      .from(spaceMembers)
+      .innerJoin(users, and(eq(users.id, spaceMembers.userId), isNull(users.disabledAt)))
+      .where(
+        and(
+          eq(spaceMembers.spaceId, existing.projectId),
+          eq(spaceMembers.userId, input.assigneeId),
+        ),
+      );
+    if (!membership) {
+      throw new ApiError(
+        400,
+        "invalid_project_assignee",
+        "Task assignee must be an active Project member.",
+      );
+    }
+  }
 
   const updated = await db.transaction(async (tx) => {
     const [row] = await tx

@@ -1,5 +1,6 @@
-import { ProjectModulePlaceholder } from "../_components/module-placeholder";
+import { listAppProjectMaterials } from "@/modules/application";
 import { requireProjectModule } from "../_lib/workspace-context";
+import { MaterialsView } from "./_components/materials-view";
 
 export default async function ProjectMaterialsPage({
   params,
@@ -7,12 +8,14 @@ export default async function ProjectMaterialsPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const { application } = await requireProjectModule(projectId, "materials");
+  const { actor, application, workspace } = await requireProjectModule(projectId, "materials");
+  const materials = await listAppProjectMaterials(actor, projectId);
   return (
-    <ProjectModulePlaceholder
+    <MaterialsView
+      projectId={projectId}
       locale={application.locale}
-      titleKey="project.materials"
-      descriptionKey="workspace.materialsUnavailable"
+      materials={materials}
+      canCreateMaterial={workspace.project.capabilities.canCreateMaterial}
     />
   );
 }

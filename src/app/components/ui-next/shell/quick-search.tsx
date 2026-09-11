@@ -11,7 +11,7 @@ import { runGuardedNoteNavigation } from "../navigation/unsaved-note-navigation"
 type ProjectRef = { id: string; name: string };
 type SearchResult =
   | {
-      kind: "project" | "note" | "material";
+      kind: "project" | "note" | "material" | "activity";
       id: string;
       title: string;
       summary: string | null;
@@ -29,8 +29,11 @@ type Choice = {
 
 function resultHref(result: SearchResult) {
   if (result.kind === "project") return `/app/projects/${result.id}`;
-  if (result.kind === "person") return `/app/people?personId=${encodeURIComponent(result.id)}`;
-  return `/app/projects/${result.project.id}?${result.kind}Id=${encodeURIComponent(result.id)}`;
+  if (result.kind === "person") return `/app/people/${encodeURIComponent(result.id)}`;
+  if (result.kind === "note") return `/app/projects/${result.project.id}/notes/${result.id}`;
+  if (result.kind === "material") return `/app/projects/${result.project.id}/materials/${result.id}`;
+  if (result.kind === "activity") return `/app/projects/${result.project.id}/activities/${result.id}`;
+  return `/app/projects/${result.project.id}`;
 }
 
 export function QuickSearch({ locale }: { locale: UiLocale }) {

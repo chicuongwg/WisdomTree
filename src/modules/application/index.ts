@@ -11,4 +11,5 @@ export * from "./people";
 export * from "./search";
 export * from "./publication";
 export * from "./tempo";
+export * from "./provenance";
 export * from "./errors";

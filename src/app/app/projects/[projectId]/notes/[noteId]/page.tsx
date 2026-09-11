@@ -5,6 +5,7 @@ import {
   getAppProjectNote,
   listAppDraftSupportingResearch,
   listAppNoteVersionSupportingResearch,
+  getAppNoteResearchProvenance,
   toApplicationError,
 } from "@/modules/application";
 import { requireProjectModule } from "../../_lib/workspace-context";
@@ -23,6 +24,7 @@ export default async function ProjectNoteDetailPage({
   let officialEvidence: Awaited<ReturnType<typeof listAppNoteVersionSupportingResearch>> | null =
     null;
   let draftEvidence: Awaited<ReturnType<typeof listAppDraftSupportingResearch>> | null = null;
+  let officialProvenance: Awaited<ReturnType<typeof getAppNoteResearchProvenance>> | null = null;
 
   try {
     officialNote = await getAppProjectNote(actor, projectId, noteId);
@@ -30,6 +32,7 @@ export default async function ProjectNoteDetailPage({
       actor,
       officialNote.currentVersionId,
     );
+    officialProvenance = await getAppNoteResearchProvenance(actor, officialNote.currentVersionId);
     if (officialNote.capabilities.canEdit) {
       const workingState = await getAppNoteWorkingState(actor, projectId, noteId);
       draft = workingState.draft;
@@ -68,6 +71,7 @@ export default async function ProjectNoteDetailPage({
       draft={draft}
       officialEvidence={officialEvidence}
       draftEvidence={draftEvidence}
+      officialProvenance={officialProvenance}
     />
   );
 }

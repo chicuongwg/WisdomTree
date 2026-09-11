@@ -1,5 +1,6 @@
-import { ProjectModulePlaceholder } from "../_components/module-placeholder";
 import { requireProjectModule } from "../_lib/workspace-context";
+import { listAppProjectPeople } from "@/modules/application";
+import { PeopleDirectory } from "../../../people/_components/people-directory";
 
 export default async function ProjectPeoplePage({
   params,
@@ -7,12 +8,7 @@ export default async function ProjectPeoplePage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const { application } = await requireProjectModule(projectId, "people");
-  return (
-    <ProjectModulePlaceholder
-      locale={application.locale}
-      titleKey="project.people"
-      descriptionKey="workspace.peopleUnavailable"
-    />
-  );
+  const { actor, application, workspace } = await requireProjectModule(projectId, "people");
+  const people = await listAppProjectPeople(actor, projectId);
+  return <PeopleDirectory locale={application.locale} people={people} projectId={projectId} projectName={workspace.project.name} canCreate={workspace.project.capabilities.canManagePeople} />;
 }

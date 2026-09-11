@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
@@ -43,6 +43,16 @@ export async function requestExtraction(
     ownerIds: [row.source.submittedBy, row.source.assignedTo],
     kind: "write",
   });
+  return queueExtraction(actor, row, method);
+}
+
+async function queueExtraction(
+  actor: Principal,
+  row: { source: typeof sources.$inferSelect; version: typeof sourceVersions.$inferSelect },
+  method: ExtractionMethod,
+) {
+  const sourceId = row.source.id;
+  const versionId = row.version.id;
   const [existing] = await db
     .select({ id: extractionCandidates.id })
     .from(extractionCandidates)
@@ -76,6 +86,30 @@ export async function requestExtraction(
   return { sourceId, versionId, status: "pending" as const, method };
 }
 
+/** Target retry boundary: Project participation, never legacy source ownership, authorizes it. */
+export async function requestProjectMaterialExtraction(
+  actor: Principal,
+  input: { projectId: string; sourceId: string; sourceVersionId: string; method: ExtractionMethod },
+) {
+  await requireProjectResearchRead(actor, input.projectId);
+  authorize(actor, "storage.upload", { spaceId: input.projectId, kind: "write" });
+
+  const [row] = await db
+    .select({ source: sources, version: sourceVersions })
+    .from(sourceVersions)
+    .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
+    .innerJoin(projects, eq(projects.projectId, sources.spaceId))
+    .where(
+      and(
+        eq(projects.projectId, input.projectId),
+        eq(sources.id, input.sourceId),
+        eq(sourceVersions.id, input.sourceVersionId),
+      ),
+    );
+  if (!row) throw notFound();
+  return queueExtraction(actor, row, input.method);
+}
+
 export async function listPersonalCandidates(actor: Principal) {
   authorize(actor, "knowledge.node.read", { kind: "read" });
   return db
@@ -93,10 +127,12 @@ export async function listPersonalCandidates(actor: Principal) {
     .from(extractionCandidates)
     .innerJoin(sourceVersions, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
     .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
+    .leftJoin(projects, eq(projects.projectId, sources.spaceId))
     .where(
       and(
         eq(extractionCandidates.createdBy, actor.userId),
         eq(extractionCandidates.state, "pending_review"),
+        isNull(projects.projectId),
       ),
     )
     .orderBy(asc(extractionCandidates.createdAt));
@@ -152,7 +188,8 @@ export async function evolveCandidate(
     .from(extractionCandidates)
     .innerJoin(sourceVersions, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
     .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
-    .where(eq(extractionCandidates.id, candidateId));
+    .leftJoin(projects, eq(projects.projectId, sources.spaceId))
+    .where(and(eq(extractionCandidates.id, candidateId), isNull(projects.projectId)));
   if (!candidate || !canActOnCandidate(actor, candidate.candidate)) throw notFound();
   if (candidate.candidate.state !== "pending_review") {
     throw new ApiError(409, "invalid_state", "This extraction candidate has already been handled.");
@@ -347,6 +384,69 @@ export async function getProjectMaterialExtraction(
     .where(and(eq(sources.id, input.sourceId), eq(projects.projectId, input.projectId)));
   if (!row) throw notFound();
   return row;
+}
+
+/**
+ * Machine-derived candidate text is a contributor workflow, not a consequence
+ * of research-read access. The caller supplies no legacy scope or candidate id.
+ */
+export async function getProjectMaterialCandidateForReview(
+  actor: Principal,
+  input: { projectId: string; sourceId: string; sourceVersionId: string },
+) {
+  await requireProjectResearchRead(actor, input.projectId);
+  authorize(actor, "storage.upload", { spaceId: input.projectId, kind: "write" });
+  const [row] = await db
+    .select({
+      candidateId: extractionCandidates.id,
+      contentMd: extractionCandidates.contentMd,
+      method: extractionCandidates.method,
+      sourceVersionId: sourceVersions.id,
+      sourceId: sources.id,
+      projectId: projects.projectId,
+    })
+    .from(extractionCandidates)
+    .innerJoin(sourceVersions, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
+    .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
+    .innerJoin(projects, eq(projects.projectId, sources.spaceId))
+    .where(
+      and(
+        eq(projects.projectId, input.projectId),
+        eq(sources.id, input.sourceId),
+        eq(sourceVersions.id, input.sourceVersionId),
+        eq(extractionCandidates.state, "pending_review"),
+      ),
+    );
+  if (!row) throw notFound();
+  return row;
+}
+
+/** Official Notes created through extraction retain their exact SourceVersion lineage. */
+export async function listProjectMaterialLineageNotes(
+  actor: Principal,
+  input: { projectId: string; sourceId: string },
+) {
+  await requireProjectResearchRead(actor, input.projectId);
+  return db
+    .select({
+      sourceVersionId: sourceVersions.id,
+      sourceVersionSeq: sourceVersions.seq,
+      noteId: treeNodes.id,
+      title: treeNodes.title,
+    })
+    .from(extractionCandidates)
+    .innerJoin(sourceVersions, eq(extractionCandidates.sourceVersionId, sourceVersions.id))
+    .innerJoin(sources, eq(sourceVersions.sourceId, sources.id))
+    .innerJoin(projects, eq(projects.projectId, sources.spaceId))
+    .innerJoin(treeNodes, eq(treeNodes.id, extractionCandidates.evolvedNodeId))
+    .where(
+      and(
+        eq(projects.projectId, input.projectId),
+        eq(sources.id, input.sourceId),
+        eq(treeNodes.projectId, input.projectId),
+      ),
+    )
+    .orderBy(asc(sourceVersions.seq));
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

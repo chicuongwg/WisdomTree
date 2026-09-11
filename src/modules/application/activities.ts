@@ -1,4 +1,5 @@
 import type { Principal } from "../auth/principal";
+import { notFound } from "@/lib/errors";
 import {
   addActivityMaterial,
   addActivityNote,
@@ -9,6 +10,7 @@ import {
   listActivityNotes,
   listActivityParticipants,
   listActivityTasks,
+  listMyProjectActivities,
   listProjectActivities,
   removeActivityMaterial,
   removeActivityNote,
@@ -16,6 +18,10 @@ import {
   updateActivity,
 } from "../activity/service";
 import { getProjectApplicationAccess } from "../project/service";
+import { listAppProjectMaterials } from "./materials";
+import { listAppProjectNotes } from "./notes";
+import { listAppProjectPeople } from "./people";
+import { listAppProjectTasks } from "./tasks";
 
 const activityDto = (activity: Awaited<ReturnType<typeof getActivity>>) => ({
   id: activity.id,
@@ -31,6 +37,10 @@ const activityDto = (activity: Awaited<ReturnType<typeof getActivity>>) => ({
 
 export async function listAppProjectActivities(actor: Principal, projectId: string) {
   return (await listProjectActivities(actor, projectId)).map(activityDto);
+}
+
+export async function listAppMyWorkActivities(actor: Principal) {
+  return (await listMyProjectActivities(actor)).map(({ activity }) => activityDto(activity));
 }
 
 export async function getAppActivity(actor: Principal, activityId: string) {
@@ -67,6 +77,27 @@ export async function getAppActivity(actor: Principal, activityId: string) {
       version: task.version,
     })),
     capabilities: { canEdit: access.capabilities.canCreateActivity },
+  };
+}
+
+/** One bounded, Project-safe DTO for the Activity detail workspace. */
+export async function getAppActivityWorkspace(actor: Principal, projectId: string, activityId: string) {
+  const activity = await getAppActivity(actor, activityId);
+  if (activity.projectId !== projectId) {
+    throw notFound();
+  }
+  const [people, materials, noteCollection, tasks] = await Promise.all([
+    listAppProjectPeople(actor, projectId),
+    listAppProjectMaterials(actor, projectId),
+    listAppProjectNotes(actor, projectId),
+    listAppProjectTasks(actor, projectId),
+  ]);
+  return {
+    activity,
+    availablePeople: people,
+    availableMaterials: materials,
+    availableNotes: noteCollection.notes,
+    availableTasks: tasks,
   };
 }
 

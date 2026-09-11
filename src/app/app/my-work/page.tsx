@@ -1,13 +1,9 @@
-import { PagePlaceholder } from "../_components/page-placeholder";
 import { getAppRequestContext } from "../_lib/request-context";
+import { getMyWork } from "@/modules/application";
+import { MyWorkView } from "./_components/my-work-view";
 
 export default async function AppMyWorkPage() {
-  const { application } = await getAppRequestContext();
-  return (
-    <PagePlaceholder
-      locale={application.locale}
-      titleKey="page.myWork.title"
-      descriptionKey="page.myWork.description"
-    />
-  );
+  const { actor, application } = await getAppRequestContext();
+  const myWork = await getMyWork(actor);
+  return <MyWorkView locale={application.locale} tasks={myWork.assignedTasks} />;
 }

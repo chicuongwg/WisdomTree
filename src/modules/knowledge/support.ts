@@ -231,7 +231,7 @@ export async function listDraftSupportingResearch(actor: Principal, draftId: str
       .select({
         noteVersionId: treeNodeVersions.id,
         nodeId: treeNodes.id,
-        title: sql<string>`coalesce(${treeNodeVersions.title}, ${treeNodes.title})`,
+        title: treeNodeVersions.title,
         seq: treeNodeVersions.seq,
         projectId: projects.projectId,
       })
@@ -311,7 +311,7 @@ export async function listNoteVersionSupportingResearch(
       .select({
         noteVersionId: treeNodeVersions.id,
         supportingNodeId: treeNodes.id,
-        title: sql<string>`coalesce(${treeNodeVersions.title}, ${treeNodes.title})`,
+        title: treeNodeVersions.title,
         seq: treeNodeVersions.seq,
         projectId: projects.projectId,
       })

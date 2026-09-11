@@ -1,9 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { T, verificationStateLabel } from "@/lib/vi";
-import { wikiPath } from "@/lib/wiki-path";
 
 // The one node link in the app. Every place a page is named — sidebar
 // outline, graph, backlinks, outgoing links, wiki-links inside content,
@@ -111,9 +109,7 @@ export function cardPosition(target: Element): { top: number; left: number } {
 }
 
 /**
- * Anchor-agnostic preview behaviour: returns the handlers to spread on any
- * focusable element plus the card to render. Used by NodeLink and by the
- * command palette, whose rows are buttons rather than links.
+ * Anchor-agnostic preview behaviour for the retained secondary Graph.
  */
 export function useNodePreview(nodeId: string) {
   const [preview, setPreview] = useState<NodePreview | null>(null);
@@ -190,51 +186,4 @@ export function useNodePreview(nodeId: string) {
   ) : null;
 
   return { handlers, card, isOpen: openAt !== null };
-}
-
-export function NodeLink({
-  nodeId,
-  children,
-  className,
-  title,
-  verification,
-  slug,
-  "aria-current": ariaCurrent,
-}: {
-  nodeId: string;
-  children: ReactNode;
-  className?: string;
-  title?: string;
-  /** rendered as a leading state dot when given (outline / wiki-link rows) */
-  verification?: string;
-  slug?: string;
-  /** the sidebar marks the open page; without this the row says "current" in colour only */
-  "aria-current"?: "page";
-}) {
-  const { handlers, card } = useNodePreview(nodeId);
-  return (
-    <>
-      <Link
-        href={wikiPath(nodeId, slug)}
-        className={className}
-        title={title}
-        aria-current={ariaCurrent}
-        {...handlers}
-      >
-        {verification ? (
-          <>
-            {/* The dot is decoration; the word beside it is the fact. aria-label
-                on a bare <span> has no role to hang off and is not reliably
-                announced, so the state is spelled out in .sr-only text. */}
-            <span className={`node-state ${verification}`} aria-hidden="true">
-              ●
-            </span>
-            <span className="sr-only">{verificationStateLabel(verification)} — </span>
-          </>
-        ) : null}
-        {children}
-      </Link>
-      {card}
-    </>
-  );
 }

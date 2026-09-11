@@ -3,13 +3,14 @@ import { db } from "@/db";
 import { ApiError } from "@/lib/errors";
 import { researchReadableProjectIds } from "../auth/core";
 import type { Principal } from "../auth/principal";
+import { activities } from "../activity/schema";
 import { treeNodes } from "../knowledge/schema";
 import { persons, projectPeople } from "../person/schema";
 import { projects } from "../project/schema";
 import { notePublications, notePublicRevisions } from "../publication/schema";
 import { sources, spaces, textChunks } from "../storage/schema";
 
-const SEARCH_TYPES = ["project", "note", "material", "person"] as const;
+const SEARCH_TYPES = ["project", "note", "material", "activity", "person"] as const;
 type SearchType = (typeof SEARCH_TYPES)[number];
 type ProjectContext = { id: string; name: string };
 
@@ -23,7 +24,7 @@ export type InternalResearchSearchResult =
       score: number;
     }
   | {
-      kind: "note" | "material";
+      kind: "note" | "material" | "activity";
       id: string;
       title: string;
       summary: string | null;
@@ -112,8 +113,17 @@ export async function searchInternalResearch(
   const personVector = sql`
     setweight(to_tsvector('simple', immutable_unaccent(${persons.displayName})), 'A') ||
     setweight(to_tsvector('simple', immutable_unaccent(coalesce(${persons.summary}, ''))), 'B')`;
+  // Activities are operational workspaces. Do not widen their visibility for
+  // Core research readers who lack a real membership in the Project.
+  const operationalProjectIds = actor.spaceMemberships
+    .map((membership) => membership.spaceId)
+    .filter((id) => projectIds.includes(id));
+  const activityVector = sql`
+    setweight(to_tsvector('simple', immutable_unaccent(${activities.title})), 'A') ||
+    setweight(to_tsvector('simple', immutable_unaccent(coalesce(${activities.activityType}, ''))), 'B') ||
+    setweight(to_tsvector('simple', immutable_unaccent(coalesce(${activities.summary}, ''))), 'C')`;
 
-  const [projectRows, noteRows, materialRows, personRows] = await Promise.all([
+  const [projectRows, noteRows, materialRows, activityRows, personRows] = await Promise.all([
     types.has("project")
       ? db
           .select({
@@ -217,6 +227,29 @@ export async function searchInternalResearch(
           )
           .limit(limit)
       : Promise.resolve([]),
+    types.has("activity") && operationalProjectIds.length
+      ? db
+          .select({
+            kind: sql<"activity">`'activity'`,
+            id: activities.id,
+            title: activities.title,
+            summary: activities.summary,
+            projectId: projects.projectId,
+            projectName: spaces.name,
+            score: sql<number>`ts_rank(${activityVector}, ${tsQuery})`,
+          })
+          .from(activities)
+          .innerJoin(projects, eq(projects.projectId, activities.projectId))
+          .innerJoin(spaces, eq(spaces.id, projects.projectId))
+          .where(
+            and(
+              inArray(activities.projectId, operationalProjectIds),
+              sql`${activityVector} @@ ${tsQuery}`,
+            ),
+          )
+          .orderBy(desc(sql`ts_rank(${activityVector}, ${tsQuery})`), asc(activities.id))
+          .limit(limit)
+      : Promise.resolve([]),
     types.has("person")
       ? db
           .select({
@@ -281,6 +314,14 @@ export async function searchInternalResearch(
       score: Number(row.score),
     })),
     ...materialRows.map((row) => ({
+      kind: row.kind,
+      id: row.id,
+      title: row.title,
+      summary: row.summary,
+      project: { id: row.projectId, name: row.projectName },
+      score: Number(row.score),
+    })),
+    ...activityRows.map((row) => ({
       kind: row.kind,
       id: row.id,
       title: row.title,

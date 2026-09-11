@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { NotePublicationStatus } from "@/modules/publication/service";
 import { Button, Drawer, StatusBadge, translate, type StatusTone } from "@/app/components/ui-next";
@@ -17,7 +18,7 @@ export interface AttachedNoteVersion {
   noteVersionId: string;
   nodeId?: string;
   supportingNodeId?: string;
-  title: string;
+  title: string | null;
   seq: number;
   projectId: string;
 }
@@ -43,6 +44,21 @@ export interface NoteInspectorProps {
   onOpenEvidencePicker?: () => void;
   onRemoveSourceVersion?: (sourceVersionId: string) => Promise<void>;
   onRemoveNoteVersion?: (noteVersionId: string) => Promise<void>;
+  provenance?: {
+    snapshotStatus: "complete" | "unknown";
+    supportingMaterials: Array<{
+      material: { id: string; title: string };
+      materialVersion: { id: string; version: number };
+      project: { id: string };
+      activities: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+    }>;
+    supportingNotes: Array<{
+      note: { id: string; title: string | null };
+      noteVersion: { id: string; version: number };
+      project: { id: string };
+      activities: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+    }>;
+  } | null;
 }
 
 const publicationTones: Record<NotePublicationStatus["state"], StatusTone> = {
@@ -71,6 +87,7 @@ export function NoteInspectorContent({
   onOpenEvidencePicker,
   onRemoveSourceVersion,
   onRemoveNoteVersion,
+  provenance,
 }: Omit<NoteInspectorProps, "open" | "onClose" | "isDrawer">) {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -217,7 +234,7 @@ export function NoteInspectorContent({
                     >
                       <div className="ui-next-note-inspector__evidence-info">
                         <span className="ui-next-note-inspector__evidence-name" dir="auto">
-                          {item.title}
+                          {item.title ?? "—"}
                         </span>
                         <div className="ui-next-note-inspector__evidence-meta">
                           <StatusBadge tone="neutral">v{item.seq}</StatusBadge>
@@ -252,7 +269,7 @@ export function NoteInspectorContent({
                     <li key={item.noteVersionId} className="ui-next-note-inspector__evidence-item">
                       <div className="ui-next-note-inspector__evidence-info">
                         <span className="ui-next-note-inspector__evidence-name" dir="auto">
-                          {item.title}
+                          {item.title ?? "—"}
                         </span>
                         <div className="ui-next-note-inspector__evidence-meta">
                           <StatusBadge tone="information">v{item.seq}</StatusBadge>
@@ -264,7 +281,7 @@ export function NoteInspectorContent({
                           variant="ghost"
                           onClick={() => handleRemoveNote(item.noteVersionId)}
                           disabled={removingId === item.noteVersionId}
-                          aria-label={`${translate(locale, "notes.evidence.remove")} ${item.title}`}
+                          aria-label={`${translate(locale, "notes.evidence.remove")} ${item.title ?? "—"}`}
                         >
                           {removingId === item.noteVersionId
                             ? translate(locale, "notes.evidence.removing")
@@ -279,8 +296,54 @@ export function NoteInspectorContent({
           </div>
         )}
       </section>
+
+      {!isDraft && provenance ? (
+        <section className="ui-next-note-inspector__section">
+          <h4 className="ui-next-note-inspector__section-title">
+            {translate(locale, "provenance.title")}
+          </h4>
+          {provenance.snapshotStatus === "unknown" ? (
+            <p className="ui-next-muted">{translate(locale, "notes.evidence.historyUnknown")}</p>
+          ) : (
+            <div className="ui-next-note-inspector__evidence-content">
+              {provenance.supportingMaterials.map((item) => (
+                <div key={item.materialVersion.id} className="ui-next-note-inspector__evidence-group">
+                  <Link href={`/app/projects/${item.project.id}/materials/${item.material.id}`} className="ui-next-note-inspector__evidence-name">{item.material.title} · v{item.materialVersion.version}</Link>
+                  <ActivityContexts locale={locale} contexts={item.activities} />
+                </div>
+              ))}
+              {provenance.supportingNotes.map((item) => (
+                <div key={item.noteVersion.id} className="ui-next-note-inspector__evidence-group">
+                  <Link href={`/app/projects/${item.project.id}/notes/${item.note.id}`} className="ui-next-note-inspector__evidence-name">{item.note.title ?? "—"} · v{item.noteVersion.version}</Link>
+                  <ActivityContexts locale={locale} contexts={item.activities} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
     </>
   );
+}
+
+function ActivityContexts({
+  locale,
+  contexts,
+}: {
+  locale: UiLocale;
+  contexts: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+}) {
+  return contexts.length ? (
+    <ul className="ui-next-note-inspector__evidence-list">
+      {contexts.map((activity) => (
+        <li key={activity.id}>
+          <strong>{translate(locale, "provenance.activityContext")}: </strong>
+          <Link href={`/app/projects/${activity.project.id}/activities/${activity.id}`}>{activity.title}</Link>
+          {activity.people.length ? ` — ${activity.people.map((person) => person.displayName).join(", ")}` : ""}
+        </li>
+      ))}
+    </ul>
+  ) : <p className="ui-next-muted">{translate(locale, "provenance.noActivityContext")}</p>;
 }
 
 export function NoteInspector(props: NoteInspectorProps) {

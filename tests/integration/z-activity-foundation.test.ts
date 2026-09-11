@@ -230,6 +230,14 @@ export async function run() {
   });
   assert.equal(task.activityId, activity.id);
   assert.equal((await listActivityTasks(viewer, activity.id))[0]?.id, task.id);
+  await assert.rejects(
+    db.insert(tasks).values({
+      title: "Activity context without a Project",
+      state: "todo",
+      activityId: activity.id,
+      createdBy: contributor.userId,
+    }),
+  );
   const unattachedTask = await createProjectTask(contributor, {
     projectId: projectA.id,
     title: "Process transcript",

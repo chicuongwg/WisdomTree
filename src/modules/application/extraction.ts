@@ -1,6 +1,7 @@
 import type { Principal } from "../auth/principal";
 import {
   evolveCandidateIntoProjectNote,
+  getProjectMaterialCandidateForReview,
   getProjectMaterialExtraction,
 } from "../storage/candidates";
 
@@ -28,4 +29,20 @@ export async function evolveAppCandidateIntoProjectNote(
       status: result.state,
     },
   };
+}
+
+/** Target UI derives the candidate from one Project Material version; it never posts a scope choice. */
+export async function evolveAppProjectMaterialCandidateIntoNote(
+  actor: Principal,
+  input: { projectId: string; materialId: string; sourceVersionId: string; title?: string },
+) {
+  const candidate = await getProjectMaterialCandidateForReview(actor, {
+    projectId: input.projectId,
+    sourceId: input.materialId,
+    sourceVersionId: input.sourceVersionId,
+  });
+  return evolveAppCandidateIntoProjectNote(actor, {
+    candidateId: candidate.candidateId,
+    title: input.title,
+  });
 }

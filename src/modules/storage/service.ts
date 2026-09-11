@@ -333,8 +333,12 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
   // listSourceVersions service + route would be more code for the same rows.
   const versions = await db
     .select({
+      id: sourceVersions.id,
       seq: sourceVersions.seq,
-      filename: sourceVersions.originalFilename,
+      originalFilename: sourceVersions.originalFilename,
+      mimeType: sourceVersions.mimeType,
+      sizeBytes: sourceVersions.sizeBytes,
+      extractionStatus: sourceVersions.extractionStatus,
       storedAt: sourceVersions.storedAt,
       uploadedByName: users.displayName,
     })
@@ -619,7 +623,17 @@ async function addStoredSourceVersion(
   projectId?: string,
   extractionMethod: ExtractionMethod = "auto",
 ) {
-  const row = await loadOwnedSource(actor, sourceId, "write");
+  // Project Materials grants this operation to a Project contributor. The
+  // legacy Source path still keeps its uploader/assignee ownership rule.
+  const [projectMaterial] = projectId
+    ? await db
+        .select({ source: sources, version: sourceVersions })
+        .from(sources)
+        .leftJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+        .where(and(eq(sources.id, sourceId), eq(sources.spaceId, projectId)))
+    : [];
+  if (projectId && !projectMaterial) throw notFound();
+  const row = projectMaterial ?? (await loadOwnedSource(actor, sourceId, "write"));
   if (row.version && row.version.storageState !== "stored") {
     throw new ApiError(409, "not_stored", "New versions can only be added to a stored item.");
   }

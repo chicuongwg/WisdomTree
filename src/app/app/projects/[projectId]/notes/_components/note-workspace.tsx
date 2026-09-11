@@ -42,6 +42,21 @@ export interface NoteWorkspaceProps {
   draft: DraftDto | null;
   officialEvidence?: EvidenceSet | null;
   draftEvidence?: EvidenceSet | null;
+  officialProvenance?: {
+    snapshotStatus: "complete" | "unknown";
+    supportingMaterials: Array<{
+      material: { id: string; title: string };
+      materialVersion: { id: string; version: number };
+      project: { id: string };
+      activities: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+    }>;
+    supportingNotes: Array<{
+      note: { id: string; title: string | null };
+      noteVersion: { id: string; version: number };
+      project: { id: string };
+      activities: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+    }>;
+  } | null;
 }
 
 export function NoteWorkspace({
@@ -53,6 +68,7 @@ export function NoteWorkspace({
   draft,
   officialEvidence,
   draftEvidence,
+  officialProvenance,
 }: NoteWorkspaceProps) {
   // If official note exists, start in reader mode (unless there are active draft changes and no official note)
   const [mode, setMode] = useState<"reader" | "editor">(officialNote ? "reader" : "editor");
@@ -258,6 +274,7 @@ export function NoteWorkspace({
         tags={officialNote?.tags}
         isDrawer={isNarrow || focusMode}
         evidence={activeEvidence}
+        provenance={isDraft ? null : officialProvenance}
         onOpenEvidencePicker={handleOpenEvidencePicker}
         onRemoveSourceVersion={handleRemoveSourceVersion}
         onRemoveNoteVersion={handleRemoveNoteVersion}

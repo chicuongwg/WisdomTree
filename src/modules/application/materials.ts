@@ -9,6 +9,11 @@ import {
   listProjectMaterials,
   listSourceVersions,
 } from "../storage/service";
+import {
+  getProjectMaterialCandidateForReview,
+  listProjectMaterialLineageNotes,
+  requestProjectMaterialExtraction,
+} from "../storage/candidates";
 import { getProject } from "../project/service";
 
 function listItem(row: Awaited<ReturnType<typeof listProjectMaterials>>[number]) {
@@ -20,13 +25,11 @@ function listItem(row: Awaited<ReturnType<typeof listProjectMaterials>>[number])
       ? {
           mimeType: row.mimeType,
           storedAt: row.storedAt,
-          extractionStatus: row.extractionStatus,
+          extractionStatus: row.extractionStatus ?? "pending",
           hasText: row.hasText,
         }
       : null,
-    physical: row.itemCode
-      ? { itemCode: row.itemCode, status: row.physicalStatus }
-      : null,
+    physical: row.itemCode ? { itemCode: row.itemCode, status: row.physicalStatus } : null,
   };
 }
 
@@ -44,6 +47,10 @@ export async function getAppProjectMaterial(
     getSourceDetail(actor, materialId),
   ]);
   if (material.spaceId !== project.id) throw notFound();
+  const lineageNotes = await listProjectMaterialLineageNotes(actor, {
+    projectId: project.id,
+    sourceId: material.id,
+  });
   return {
     id: material.id,
     project: { id: project.id, name: project.name },
@@ -63,7 +70,17 @@ export async function getAppProjectMaterial(
           hasText: material.currentVersion.hasText,
         }
       : null,
-    versions: material.versions,
+    versions: material.versions.map((version) => ({
+      id: version.id,
+      seq: version.seq,
+      originalFilename: version.originalFilename,
+      mimeType: version.mimeType,
+      sizeBytes: version.sizeBytes,
+      extractionStatus: version.extractionStatus,
+      storedAt: version.storedAt,
+      uploadedByName: version.uploadedByName,
+    })),
+    lineageNotes,
   };
 }
 
@@ -101,3 +118,23 @@ export async function addAppProjectMaterialVersion(
 
 export const getAppMaterialDownloadToken = getDownloadToken;
 export const listAppMaterialVersions = listSourceVersions;
+
+/** Contributor-only review of machine-derived text. It intentionally omits legacy scope. */
+export const getAppProjectMaterialCandidateForReview = getProjectMaterialCandidateForReview;
+
+export async function requestAppProjectMaterialExtraction(
+  actor: Principal,
+  input: {
+    projectId: string;
+    materialId: string;
+    sourceVersionId: string;
+    method: ExtractionMethod;
+  },
+) {
+  return requestProjectMaterialExtraction(actor, {
+    projectId: input.projectId,
+    sourceId: input.materialId,
+    sourceVersionId: input.sourceVersionId,
+    method: input.method,
+  });
+}

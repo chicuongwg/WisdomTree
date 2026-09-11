@@ -17,6 +17,7 @@ import { attachPersonToProject, createProjectPerson } from "@/modules/person/ser
 import { publishNote, unpublishNote } from "@/modules/publication/service";
 import { notePublicRevisions } from "@/modules/publication/schema";
 import { createProject } from "@/modules/project/service";
+import { createProjectActivity } from "@/modules/activity/service";
 import { searchInternalResearch, searchPublishedNotes } from "@/modules/search/service";
 import { sources, spaces } from "@/modules/storage/schema";
 import { addSpaceMember, createProjectMaterial, createSpace } from "@/modules/storage/service";
@@ -90,6 +91,12 @@ export async function run() {
     projectId: projectB.id,
     title: "Coastal recording",
     description: "echohidden material context",
+  });
+  const activityB = await createProjectActivity(manager, {
+    projectId: projectB.id,
+    title: `Operational activity ${suffix}`,
+    activityType: "fieldwork",
+    summary: "echohidden operational context",
   });
 
   const sharedPersonName = `Trần Minh Shared ${suffix}`;
@@ -227,6 +234,11 @@ export async function run() {
   assert.ok(coreHidden.some((result) => result.kind === "note" && result.id === noteB.nodeId));
   assert.ok(coreHidden.some((result) => result.kind === "material" && result.id === materialB.id));
   assert.ok(coreHidden.some((result) => result.kind === "person" && result.id === personB.id));
+  assert.ok(!coreHidden.some((result) => result.kind === "activity" && result.id === activityB.id));
+  assert.equal(
+    (await searchInternalResearch(core, { query: "echohidden", types: ["activity"] })).length,
+    0,
+  );
   const sharedWithCore = await searchInternalResearch(core, {
     query: sharedPersonName,
     types: ["person"],

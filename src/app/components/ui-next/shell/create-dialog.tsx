@@ -210,6 +210,21 @@ export function CreateDialog({
                       </Button>
                     );
                   }
+                  if (action.capability === "canCreateActivity" || action.capability === "canCreateTask") {
+                    const module = action.capability === "canCreateActivity" ? "activities" : "tasks";
+                    return (
+                      <Button
+                        key={action.labelKey}
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          window.location.href = `/app/projects/${encodeURIComponent(selected.id)}/${module}`;
+                        }}
+                      >
+                        {translate(locale, action.labelKey)}
+                      </Button>
+                    );
+                  }
                   return (
                     <Button key={action.labelKey} type="button" variant="secondary" disabled>
                       {translate(locale, action.labelKey)} · {translate(locale, "common.upcoming")}

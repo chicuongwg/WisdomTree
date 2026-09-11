@@ -3,6 +3,9 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  addAppActivityMaterial,
+  addAppActivityNote,
+  addAppActivityParticipant,
   addAppProjectMaterialPhysical,
   approveAppProjectLoan,
   createAppProjectActivity,
@@ -12,6 +15,7 @@ import {
   createAppProjectTask,
   enableAppProjectCapability,
   getAppActivity,
+  getAppActivityWorkspace,
   getAppDraft,
   getAppPerson,
   getAppProjectMaterial,
@@ -23,6 +27,8 @@ import {
   grantAppProjectLibraryOperator,
   listAppProjectLoans,
   listAppProjectNotes,
+  listAppProjectTaskAssignees,
+  listAppMyWorkTasks,
   listAppProjects,
   publishAppDraft,
   publishAppNote,
@@ -192,15 +198,27 @@ export async function run() {
     type: "research_session",
     summary: multilingual,
   });
-  await createAppProjectTask(contributor, {
+  await addAppActivityParticipant(contributor, { activityId: activity.id, personId: person.id });
+  await addAppActivityMaterial(contributor, { activityId: activity.id, sourceId: material.id });
+  await addAppActivityNote(contributor, { activityId: activity.id, nodeId: official.nodeId });
+  const assignedTask = await createAppProjectTask(contributor, {
     projectId: ordinaryProject.id,
     activityId: activity.id,
     title: `Assigned work ${suffix}`,
     assigneeId: contributor.userId,
   });
   const myWork = await getMyWork(contributor);
-  assert.ok(myWork.assignedTasks.some((task) => task.projectId === ordinaryProject.id));
+  const mine = myWork.assignedTasks.find((task) => task.id === assignedTask.id);
+  assert.equal(mine?.project.id, ordinaryProject.id);
+  assert.equal(mine?.activity?.id, activity.id);
   assert.ok(myWork.activities.some((item) => item.id === activity.id));
+  assert.ok((await listAppMyWorkTasks(contributor)).some((task) => task.id === assignedTask.id));
+  assert.ok((await listAppProjectTaskAssignees(contributor, ordinaryProject.id)).some((user) => user.id === contributor.userId));
+  const activityWorkspace = await getAppActivityWorkspace(contributor, ordinaryProject.id, activity.id);
+  assert.equal(activityWorkspace.activity.participants[0]?.personId, person.id);
+  assert.equal(activityWorkspace.activity.materials[0]?.id, material.id);
+  assert.equal(activityWorkspace.activity.notes[0]?.id, official.nodeId);
+  assert.equal(activityWorkspace.activity.tasks[0]?.id, assignedTask.id);
   assert.equal((await getTmktOverview(contributor)).myWork.assignedTaskCount > 0, true);
 
   await enableAppProjectCapability(manager, {

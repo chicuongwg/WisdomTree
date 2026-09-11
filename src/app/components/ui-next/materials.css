@@ -1,0 +1,217 @@
+/* Stage 17.7 — Project Material intake and exact-version review. */
+.ui-next-materials-page,
+.ui-next-material-detail {
+  display: grid;
+  gap: var(--ui-space-6);
+  inline-size: min(100%, var(--ui-width-wide));
+  margin-inline: auto;
+}
+
+.ui-next-materials-page__header,
+.ui-next-material-detail__header,
+.ui-next-materials-list__heading,
+.ui-next-material-version-form,
+.ui-next-material-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  flex-wrap: wrap;
+}
+
+.ui-next-materials-page__header h2,
+.ui-next-material-detail__header h2,
+.ui-next-material-panel h3 {
+  margin: 0;
+}
+
+.ui-next-materials-page__header p,
+.ui-next-material-detail__header > div > p,
+.ui-next-material-panel > p,
+.ui-next-material-detail__description {
+  margin: var(--ui-space-1) 0 0;
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-materials-list,
+.ui-next-material-versions,
+.ui-next-material-lineage {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-next-materials-list__item,
+.ui-next-material-panel,
+.ui-next-material-version-form,
+.ui-next-material-candidate {
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+}
+
+.ui-next-materials-list__link {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ui-next-materials-list__item:hover,
+.ui-next-material-version:hover,
+.ui-next-material-version[data-selected] {
+  border-color: var(--ui-color-border-strong);
+}
+
+.ui-next-materials-list__heading h3 {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+}
+
+.ui-next-materials-list__badges,
+.ui-next-materials-list__meta {
+  display: flex;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+}
+
+.ui-next-materials-list__meta,
+.ui-next-material-detail__meta,
+.ui-next-material-version small,
+.ui-next-material-lineage span {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size-sm);
+}
+
+.ui-next-material-form {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+
+.ui-next-material-form label,
+.ui-next-material-version-form label,
+.ui-next-material-candidate label {
+  display: grid;
+  gap: var(--ui-space-1);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-font-size-sm);
+  font-weight: 650;
+}
+
+.ui-next-material-form input,
+.ui-next-material-form textarea,
+.ui-next-material-version-form input,
+.ui-next-material-candidate input {
+  inline-size: min(100%, 40rem);
+  border: 1px solid var(--ui-color-border-strong);
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+}
+
+.ui-next-material-form small {
+  color: var(--ui-color-text-muted);
+}
+
+.ui-next-material-form__error {
+  margin: 0;
+  color: var(--ui-color-danger);
+}
+
+.ui-next-material-detail__back {
+  inline-size: fit-content;
+  color: var(--ui-color-accent);
+  text-underline-offset: 0.18em;
+}
+
+.ui-next-material-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.25fr);
+  gap: var(--ui-space-6);
+}
+
+.ui-next-material-panel {
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-4);
+  min-inline-size: 0;
+}
+
+.ui-next-material-version {
+  display: grid;
+  gap: var(--ui-space-1);
+  inline-size: 100%;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-3);
+  background: var(--ui-color-surface-raised);
+  color: var(--ui-color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.ui-next-material-version[data-selected] {
+  box-shadow: inset 0.25rem 0 var(--ui-color-accent);
+}
+
+.ui-next-material-candidate {
+  display: grid;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-4);
+  background: var(--ui-color-surface-sunken);
+}
+
+.ui-next-material-candidate > p {
+  margin: 0;
+}
+
+.ui-next-material-candidate .ui-next-markdown-view {
+  max-block-size: 26rem;
+  overflow: auto;
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-surface);
+}
+
+.ui-next-material-lineage li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding-block-end: var(--ui-space-2);
+  border-block-end: 1px solid var(--ui-color-border);
+}
+
+.ui-next-material-lineage a {
+  color: var(--ui-color-accent);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 44rem) {
+  .ui-next-material-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-next-materials-page__header,
+  .ui-next-material-detail__header,
+  .ui-next-material-version-form {
+    align-items: stretch;
+  }
+
+  .ui-next-materials-page__header > .ui-next-button,
+  .ui-next-material-version-form > .ui-next-button {
+    inline-size: 100%;
+  }
+
+  .ui-next-material-lineage li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

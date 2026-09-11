@@ -31,18 +31,16 @@ export async function GET(
         limit: 20,
       });
 
-      const results = searchResults
-        .filter(
-          (item): item is Extract<typeof item, { kind: "material" | "note" }> =>
-            item.kind === "material" || item.kind === "note",
-        )
-        .map((item) => ({
+      const results = searchResults.flatMap((item) => {
+        if (item.kind !== "material" && item.kind !== "note") return [];
+        return [{
           kind: item.kind,
           id: item.id,
           title: item.title,
           summary: item.summary,
           project: item.project,
-        }));
+        }];
+      });
 
       return NextResponse.json({ results });
     }

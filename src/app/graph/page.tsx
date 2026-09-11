@@ -57,10 +57,7 @@ export default async function GraphPage({
           {T.graphScopePersonal}
         </Link>
       </nav>
-      <p className="muted">
-        {T.graphIntro} <Link href="/tree">{T.tree}</Link> ·{" "}
-        <Link href="/tree/branches">{T.navBranches}</Link>
-      </p>
+      <p className="muted">{T.graphIntro}</p>
       <KnowledgeMap
         nodes={graph.nodes.map((item) => ({
           id: item.id,

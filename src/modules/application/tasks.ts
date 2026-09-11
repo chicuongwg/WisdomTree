@@ -4,6 +4,8 @@ import {
   attachTaskToActivity,
   createProjectTask,
   detachTaskFromActivity,
+  listMyAssignedProjectTasks,
+  listProjectTaskAssignees,
   listProjectTasks,
   updateTask,
 } from "../pm/service";
@@ -24,6 +26,26 @@ const taskDto = (task: Awaited<ReturnType<typeof listProjectTasks>>[number]) => 
 
 export async function listAppProjectTasks(actor: Principal, projectId: string) {
   return (await listProjectTasks(actor, projectId)).map(taskDto);
+}
+
+export async function listAppProjectTaskAssignees(actor: Principal, projectId: string) {
+  return listProjectTaskAssignees(actor, projectId);
+}
+
+export async function listAppMyWorkTasks(actor: Principal) {
+  return (await listMyAssignedProjectTasks(actor)).map((task) => ({
+    id: task.id,
+    projectId: task.projectId!,
+    activityId: task.activityId,
+    title: task.title,
+    state: task.state,
+    dueAt: task.dueAt,
+    startAt: task.startAt,
+    notes: task.notes,
+    version: task.version,
+    project: { id: task.projectId!, name: task.projectName },
+    activity: task.activityId && task.activityTitle ? { id: task.activityId, title: task.activityTitle } : null,
+  }));
 }
 
 export async function getAppProjectTask(actor: Principal, projectId: string, taskId: string) {
