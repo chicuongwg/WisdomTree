@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
@@ -6,7 +6,8 @@ import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
 import { loanTickets } from "../circulation/schema";
 import { ACTIVE_LOAN_STATES, activeLoanCount } from "../circulation/service";
-import { requireProjectLibraryOperator } from "../project/capabilities";
+import { requireProjectCapability, requireProjectLibraryOperator } from "../project/capabilities";
+import { projects } from "../project/schema";
 import { getObject, putObject } from "./object-store";
 import { categories, sources, sourcePhysical } from "./schema";
 import { requireProjectMaterial } from "./service";
@@ -45,6 +46,20 @@ async function loadPhysical(runner: Tx | typeof db, sourceId: string) {
   return row;
 }
 
+async function requireProjectLibraryOperatorIfConfirmed(
+  actor: Principal,
+  projectId: string,
+  runner: Tx | typeof db = db,
+) {
+  const [project] = await runner
+    .select({ id: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, projectId));
+  if (!project) return false;
+  await requireProjectLibraryOperator(actor, projectId, runner);
+  return true;
+}
+
 export async function listCategories() {
   return db
     .select({ id: categories.id, name: categories.name })
@@ -62,13 +77,18 @@ export async function createPhysicalItem(
   actor: Principal,
   input: { title?: string; author?: string; location?: string; spaceId?: string; copies?: unknown },
 ) {
-  authorize(actor, "library.physical.manage", { kind: "write" });
   const title = input.title?.trim();
   if (!title) throw new ApiError(400, "invalid_item", "A title is required.");
   if (!input.spaceId) throw new ApiError(400, "invalid_item", "A space is required.");
+  if (!(await requireProjectLibraryOperatorIfConfirmed(actor, input.spaceId))) {
+    authorize(actor, "library.physical.manage", { kind: "write" });
+  }
   const copies = parseCopies(input.copies);
 
   return db.transaction(async (tx) => {
+    // The human-readable sequence is global. Serialize allocation so two
+    // concurrent librarians cannot both select the same current maximum.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('source_physical_item_code'))`);
     const [category] = await tx
       .select({ id: categories.id })
       .from(categories)
@@ -131,6 +151,7 @@ export async function addProjectMaterialPhysical(
     if (existing) {
       throw new ApiError(409, "physical_exists", "This Material already has physical details.");
     }
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('source_physical_item_code'))`);
     const [category] = await tx
       .select({ id: categories.id })
       .from(categories)
@@ -184,10 +205,11 @@ export async function updatePhysicalItem(
   sourceId: string,
   input: { copies?: unknown; author?: string; location?: string },
 ) {
-  authorize(actor, "library.physical.manage", { kind: "write" });
-
   return db.transaction(async (tx) => {
-    const { physical: item } = await loadPhysical(tx, sourceId);
+    const { physical: item, source } = await loadPhysical(tx, sourceId);
+    if (!(await requireProjectLibraryOperatorIfConfirmed(actor, source.spaceId, tx))) {
+      authorize(actor, "library.physical.manage", { kind: "write" });
+    }
     const copies = input.copies !== undefined ? parseCopies(input.copies) : item.copies;
     const onLoan = await activeLoanCount(tx, item.id);
     if (copies < onLoan) {
@@ -232,14 +254,16 @@ export async function updatePhysicalItem(
 
 /** Store a cover in the object store and keep only its key in DB. */
 export async function setPhysicalCover(actor: Principal, sourceId: string, file: File) {
-  authorize(actor, "library.physical.manage", { kind: "write" });
   if (!COVER_TYPES.has(file.type)) {
     throw new ApiError(415, "not_an_image", "Cover must be PNG, JPEG or WebP.");
   }
   if (file.size > COVER_MAX_BYTES) {
     throw new ApiError(413, "image_too_large", "Cover image exceeds 5 MB.");
   }
-  const { physical: item } = await loadPhysical(db, sourceId);
+  const { physical: item, source } = await loadPhysical(db, sourceId);
+  if (!(await requireProjectLibraryOperatorIfConfirmed(actor, source.spaceId))) {
+    authorize(actor, "library.physical.manage", { kind: "write" });
+  }
   if (item.archivedAt) throw notFound();
   const key = `catalog-covers/${item.id}/${Date.now()}`;
   await putObject(key, Buffer.from(await file.arrayBuffer()), file.type);
@@ -273,8 +297,10 @@ export async function getPhysicalCover(actor: Principal, sourceId: string) {
  * any digital versions stay untouched.
  */
 export async function archivePhysicalItem(actor: Principal, sourceId: string) {
-  authorize(actor, "library.physical.manage", { kind: "write" });
-  const { physical: item } = await loadPhysical(db, sourceId);
+  const { physical: item, source } = await loadPhysical(db, sourceId);
+  if (!(await requireProjectLibraryOperatorIfConfirmed(actor, source.spaceId))) {
+    authorize(actor, "library.physical.manage", { kind: "write" });
+  }
   if (item.archivedAt) return item;
   const out = await activeLoanCount(db, item.id);
   if (out > 0) {
@@ -331,4 +357,49 @@ export async function getPhysicalDetail(actor: Principal, sourceId: string) {
     availableCopies: Math.max(row.physical.copies - onLoan, 0),
     hasMyActiveLoan: Boolean(myActive),
   };
+}
+
+/** Physical holdings only, scoped to a capability-enabled Project Library. */
+export async function listProjectPhysicalHoldings(actor: Principal, projectId: string) {
+  await requireProjectCapability(projectId, "library_circulation");
+  authorize(actor, "storage.library.browse", { spaceId: projectId, kind: "read" });
+  const activeStates = sql.join(
+    ACTIVE_LOAN_STATES.map((state) => sql`${state}`),
+    sql`, `,
+  );
+  const activeLoans = sql<number>`(
+    SELECT count(*)::int
+    FROM ${loanTickets}
+    WHERE ${loanTickets.itemId} = ${sourcePhysical.id}
+      AND ${loanTickets.state} IN (${activeStates})
+  )`;
+  const myActiveLoans = sql<number>`(
+    SELECT count(*)::int
+    FROM ${loanTickets}
+    WHERE ${loanTickets.itemId} = ${sourcePhysical.id}
+      AND ${loanTickets.borrowerId} = ${actor.userId}
+      AND ${loanTickets.state} IN (${activeStates})
+  )`;
+  const rows = await db
+    .select({
+      sourceId: sources.id,
+      title: sources.title,
+      description: sources.description,
+      itemCode: sourcePhysical.itemCode,
+      author: sourcePhysical.author,
+      location: sourcePhysical.location,
+      copies: sourcePhysical.copies,
+      status: sourcePhysical.status,
+      activeLoans,
+      myActiveLoans,
+    })
+    .from(sourcePhysical)
+    .innerJoin(sources, eq(sourcePhysical.sourceId, sources.id))
+    .where(and(eq(sources.spaceId, projectId), isNull(sourcePhysical.archivedAt)))
+    .orderBy(asc(sources.title), asc(sourcePhysical.itemCode));
+  return rows.map((row) => ({
+    ...row,
+    availableCopies: Math.max(row.copies - row.activeLoans, 0),
+    hasMyActiveLoan: row.myActiveLoans > 0,
+  }));
 }

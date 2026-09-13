@@ -4,6 +4,7 @@ import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
+import { requireProjectResearchRead } from "../auth/core";
 import { recordAudit } from "../audit/service";
 import { users } from "../auth/schema";
 import { activities } from "../activity/schema";
@@ -272,27 +273,32 @@ export async function updateDeadline(actor: Principal, deadlineId: string, input
 
 export async function listBoard(actor: Principal) {
   authorize(actor, "pm.board.read", { kind: "read" });
-  return db
-    .select({
-      id: tasks.id,
-      title: tasks.title,
-      state: tasks.state,
-      projectId: tasks.projectId,
-      activityId: tasks.activityId,
-      assignedTo: tasks.assignedTo,
-      assigneeName: users.displayName, // additive over the contract Task shape
-      dueAt: tasks.dueAt,
-      startAt: tasks.startAt,
-      targetType: tasks.targetType,
-      targetId: tasks.targetId,
-      createdBy: tasks.createdBy,
-      updatedAt: tasks.updatedAt,
-      version: tasks.version,
-    })
-    .from(tasks)
-    .leftJoin(users, eq(tasks.assignedTo, users.id))
-    .where(ne(tasks.state, "archived"))
-    .orderBy(desc(tasks.updatedAt));
+  return (
+    db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        state: tasks.state,
+        projectId: tasks.projectId,
+        activityId: tasks.activityId,
+        assignedTo: tasks.assignedTo,
+        assigneeName: users.displayName, // additive over the contract Task shape
+        dueAt: tasks.dueAt,
+        startAt: tasks.startAt,
+        targetType: tasks.targetType,
+        targetId: tasks.targetId,
+        createdBy: tasks.createdBy,
+        updatedAt: tasks.updatedAt,
+        version: tasks.version,
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assignedTo, users.id))
+      // Project Tasks have their own membership-scoped board. Keeping this
+      // compatibility endpoint to legacy Tasks prevents it becoming a second,
+      // global read path around Project privacy.
+      .where(and(isNull(tasks.projectId), ne(tasks.state, "archived")))
+      .orderBy(desc(tasks.updatedAt))
+  );
 }
 
 type TaskInput = {
@@ -350,6 +356,9 @@ export async function getTask(actor: Principal, taskId: string) {
     .leftJoin(users, eq(tasks.assignedTo, users.id))
     .where(eq(tasks.id, taskId));
   if (!row) throw notFound();
+  if (row.projectId) {
+    authorize(actor, "pm.project_task.read", { spaceId: row.projectId, kind: "read" });
+  }
   return row;
 }
 
@@ -385,6 +394,43 @@ export async function claimTask(actor: Principal, taskId: string) {
     throw new ApiError(409, "already_claimed", "This task is already claimed.");
   }
   return claimed;
+}
+
+/** Claim one still-open Task only inside an authorized confirmed Project. */
+export async function claimProjectTask(actor: Principal, projectId: string, taskId: string) {
+  const project = await requireConfirmedProject(actor, projectId);
+  authorize(actor, "pm.project_task.read", { spaceId: project.projectId, kind: "read" });
+  authorize(actor, "pm.task.claim", { kind: "write" });
+  const claimed = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(tasks)
+      .set({ assignedTo: actor.userId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.projectId, project.projectId),
+          isNull(tasks.assignedTo),
+          ne(tasks.state, "archived"),
+        ),
+      )
+      .returning();
+    if (!row) return null;
+    await recordAudit(tx, actor, {
+      accountability: "member",
+      action: "task.claim",
+      targetType: "task",
+      targetId: row.id,
+      details: { title: row.title, projectId: project.projectId },
+    });
+    return row;
+  });
+  if (claimed) return claimed;
+  const [exists] = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.id, taskId), eq(tasks.projectId, project.projectId)));
+  if (!exists) throw notFound();
+  throw new ApiError(409, "already_claimed", "This task is already claimed.");
 }
 
 /**
@@ -440,6 +486,7 @@ export async function listSchedule(actor: Principal, range: { from: Date; to: Da
       // span collapses to the deadline itself, which is the old behaviour.
       .where(
         and(
+          isNull(tasks.projectId),
           ne(tasks.state, "archived"),
           sql`${tasks.dueAt} >= ${range.from} AND COALESCE(${tasks.startAt}, ${tasks.dueAt}) < ${range.to}`,
         ),
@@ -453,8 +500,92 @@ export async function listSchedule(actor: Principal, range: { from: Date; to: Da
         type: deadlines.type,
       })
       .from(deadlines)
-      .where(sql`${deadlines.dueAt} >= ${range.from} AND ${deadlines.dueAt} < ${range.to}`)
+      .leftJoin(projects, eq(projects.projectId, deadlines.spaceId))
+      .where(
+        and(
+          isNull(projects.projectId),
+          sql`${deadlines.dueAt} >= ${range.from} AND ${deadlines.dueAt} < ${range.to}`,
+        ),
+      )
       .orderBy(asc(deadlines.dueAt)),
+  ]);
+  return { tasks: taskRows, deadlines: deadlineRows };
+}
+
+/**
+ * Target Calendar read model. Unlike the legacy Board schedule, every row is
+ * bounded to Projects in which the caller is an operational member. This
+ * deliberately keeps Core research-read separate from private work and
+ * deadline visibility.
+ */
+export async function listProjectCalendarSchedule(
+  actor: Principal,
+  range: { from: Date; to: Date; projectId?: string },
+) {
+  const membershipIds = actor.spaceMemberships.map((membership) => membership.spaceId);
+  const memberProjects = membershipIds.length
+    ? await db
+        .select({ id: projects.projectId, name: spaces.name })
+        .from(projects)
+        .innerJoin(spaces, eq(spaces.id, projects.projectId))
+        .where(inArray(projects.projectId, membershipIds))
+    : [];
+  const projectIds = range.projectId
+    ? memberProjects
+        .filter((project) => project.id === range.projectId)
+        .map((project) => project.id)
+    : memberProjects.map((project) => project.id);
+  if (range.projectId && !projectIds.length) throw notFound();
+  if (!projectIds.length) return { tasks: [], deadlines: [] };
+
+  const [taskRows, deadlineRows] = await Promise.all([
+    db
+      .select({
+        id: tasks.id,
+        projectId: projects.projectId,
+        projectName: spaces.name,
+        activityId: tasks.activityId,
+        activityTitle: activities.title,
+        title: tasks.title,
+        state: tasks.state,
+        assignedTo: tasks.assignedTo,
+        assigneeName: users.displayName,
+        dueAt: tasks.dueAt,
+        startAt: tasks.startAt,
+      })
+      .from(tasks)
+      .innerJoin(projects, eq(projects.projectId, tasks.projectId))
+      .innerJoin(spaces, eq(spaces.id, projects.projectId))
+      .leftJoin(users, eq(tasks.assignedTo, users.id))
+      .leftJoin(activities, eq(activities.id, tasks.activityId))
+      .where(
+        and(
+          inArray(tasks.projectId, projectIds),
+          ne(tasks.state, "archived"),
+          sql`${tasks.dueAt} >= ${range.from} AND COALESCE(${tasks.startAt}, ${tasks.dueAt}) < ${range.to}`,
+        ),
+      )
+      .orderBy(asc(tasks.dueAt), asc(tasks.title), asc(tasks.id)),
+    db
+      .select({
+        id: deadlines.id,
+        projectId: deadlines.spaceId,
+        projectName: spaces.name,
+        title: deadlines.title,
+        type: deadlines.type,
+        dueAt: deadlines.dueAt,
+        version: deadlines.version,
+      })
+      .from(deadlines)
+      .innerJoin(projects, eq(projects.projectId, deadlines.spaceId))
+      .innerJoin(spaces, eq(spaces.id, projects.projectId))
+      .where(
+        and(
+          inArray(deadlines.spaceId, projectIds),
+          sql`${deadlines.dueAt} >= ${range.from} AND ${deadlines.dueAt} < ${range.to}`,
+        ),
+      )
+      .orderBy(asc(deadlines.dueAt), asc(deadlines.title), asc(deadlines.id)),
   ]);
   return { tasks: taskRows, deadlines: deadlineRows };
 }
@@ -508,7 +639,7 @@ type ProjectTaskInput = {
   notes?: string | null;
 };
 
-async function requireConfirmedProject(projectId: string | undefined) {
+async function requireConfirmedProject(actor: Principal, projectId: string | undefined) {
   if (!projectId) {
     throw new ApiError(400, "invalid_project_task", "Project is required.");
   }
@@ -517,12 +648,13 @@ async function requireConfirmedProject(projectId: string | undefined) {
     .from(projects)
     .where(eq(projects.projectId, projectId));
   if (!project) throw notFound();
+  await requireProjectResearchRead(actor, project.projectId);
   return project;
 }
 
 /** Create a target-product Task with one authoritative confirmed Project. */
 export async function createProjectTask(actor: Principal, input: ProjectTaskInput) {
-  const project = await requireConfirmedProject(input.projectId);
+  const project = await requireConfirmedProject(actor, input.projectId);
   authorize(actor, "pm.project_task.create", { spaceId: project.projectId, kind: "write" });
   if (!input.title?.trim()) {
     throw new ApiError(400, "invalid_task", "Task title must not be empty.");
@@ -592,7 +724,7 @@ export async function createProjectTask(actor: Principal, input: ProjectTaskInpu
 
 /** Project-scoped Task read model; legacy-unassigned Tasks cannot enter it. */
 export async function listProjectTasks(actor: Principal, projectId: string) {
-  const project = await requireConfirmedProject(projectId);
+  const project = await requireConfirmedProject(actor, projectId);
   authorize(actor, "pm.project_task.read", { spaceId: project.projectId, kind: "read" });
   return db
     .select({
@@ -621,7 +753,7 @@ export async function listProjectTasks(actor: Principal, projectId: string) {
 
 /** Active Project members eligible for task assignment. */
 export async function listProjectTaskAssignees(actor: Principal, projectId: string) {
-  const project = await requireConfirmedProject(projectId);
+  const project = await requireConfirmedProject(actor, projectId);
   authorize(actor, "pm.project_task.read", { spaceId: project.projectId, kind: "read" });
   return db
     .select({ id: users.id, displayName: users.displayName })
@@ -745,6 +877,11 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
     ownerIds: [existing.createdBy, existing.assignedTo],
     kind: "write",
   });
+  if (existing.projectId) {
+    // Ownership of a task survives roster edits in the row, but it must not
+    // survive loss of access to the Project that owns the task.
+    authorize(actor, "pm.project_task.read", { spaceId: existing.projectId, kind: "write" });
+  }
   if (input.state !== undefined && !TASK_STATES.includes(input.state as TaskState)) {
     throw new ApiError(400, "invalid_task_state", "Invalid task state.");
   }
@@ -867,8 +1004,8 @@ const icsDate = (d: Date) =>
 
 /**
  * Resolve a calendar token (404 when unknown or revoked) and render the ICS
- * body of deadlines visible to that subscriber's spaces — no session, no
- * Google credentials.
+ * body of due Tasks and standalone Deadlines visible to that subscriber's
+ * Projects — no session or Google credentials.
  */
 export async function renderCalendarFeed(token: string): Promise<string> {
   const [row] = await db.select().from(calendarTokens).where(eq(calendarTokens.token, token));
@@ -879,23 +1016,39 @@ export async function renderCalendarFeed(token: string): Promise<string> {
     .where(and(eq(users.id, row.userId), isNull(users.disabledAt)));
   if (!user) throw notFound();
 
-  let visible: string[] | null;
-  if (row.spaceId) {
-    visible = [row.spaceId]; // optional per-project narrowing
-  } else if (user.role === "admin_op") {
-    visible = null; // global scope
-  } else {
-    visible = await memberSpaceIds(row.userId);
-  }
-
-  const rows =
-    visible && visible.length === 0
-      ? []
-      : await db
+  // A token is owned by a User, not an administrator's global capability.
+  // Personal Project workload therefore remains private even when its owner
+  // is admin_op or TMKT Core.
+  const memberProjects = await db
+    .select({ id: projects.projectId })
+    .from(projects)
+    .innerJoin(
+      spaceMembers,
+      and(eq(spaceMembers.spaceId, projects.projectId), eq(spaceMembers.userId, row.userId)),
+    );
+  const visible = row.spaceId
+    ? memberProjects.filter((project) => project.id === row.spaceId).map((project) => project.id)
+    : memberProjects.map((project) => project.id);
+  const [deadlineRows, taskRows] = visible.length
+    ? await Promise.all([
+        db
           .select()
           .from(deadlines)
-          .where(visible ? inArray(deadlines.spaceId, visible) : undefined)
-          .orderBy(asc(deadlines.dueAt));
+          .where(inArray(deadlines.spaceId, visible))
+          .orderBy(asc(deadlines.dueAt)),
+        db
+          .select()
+          .from(tasks)
+          .where(
+            and(
+              inArray(tasks.projectId, visible),
+              ne(tasks.state, "archived"),
+              sql`${tasks.dueAt} IS NOT NULL`,
+            ),
+          )
+          .orderBy(asc(tasks.dueAt), asc(tasks.id)),
+      ])
+    : [[], []];
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -904,7 +1057,7 @@ export async function renderCalendarFeed(token: string): Promise<string> {
     "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:${icsEscape(`WisdomTree — Hạn chót (${user.displayName})`)}`,
   ];
-  for (const d of rows) {
+  for (const d of deadlineRows) {
     lines.push(
       "BEGIN:VEVENT",
       `UID:${d.id}@wisdomtree`,
@@ -915,14 +1068,17 @@ export async function renderCalendarFeed(token: string): Promise<string> {
       "END:VEVENT",
     );
   }
+  for (const task of taskRows) {
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:task-${task.id}@wisdomtree`,
+      `DTSTAMP:${icsDate(task.updatedAt)}`,
+      `DTSTART:${icsDate(task.dueAt!)}`,
+      `SUMMARY:${icsEscape(task.title)}`,
+      `CATEGORIES:${icsEscape("task")}`,
+      "END:VEVENT",
+    );
+  }
   lines.push("END:VCALENDAR");
   return lines.join("\r\n") + "\r\n";
-}
-
-async function memberSpaceIds(userId: string): Promise<string[]> {
-  const memberships = await db
-    .select({ spaceId: spaceMembers.spaceId })
-    .from(spaceMembers)
-    .where(eq(spaceMembers.userId, userId));
-  return memberships.map((m) => m.spaceId);
 }

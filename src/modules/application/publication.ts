@@ -1,9 +1,5 @@
 import type { Principal } from "../auth/principal";
-import {
-  getPublishedNoteBySlug,
-  publishNote,
-  unpublishNote,
-} from "../publication/service";
+import { getPublishedNoteBySlug, publishNote, unpublishNote } from "../publication/service";
 import { grantTmktCore, listTmktCoreMembers, revokeTmktCore } from "../auth/core";
 
 export async function publishAppNote(

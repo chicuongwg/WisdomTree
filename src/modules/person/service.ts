@@ -149,7 +149,10 @@ export async function getPersonResearchContext(actor: Principal, personId: strin
       .innerJoin(projects, eq(projects.projectId, projectPeople.projectId))
       .innerJoin(spaces, eq(spaces.id, projects.projectId))
       .where(
-        and(eq(projectPeople.personId, personId), inArray(projectPeople.projectId, visibleProjects)),
+        and(
+          eq(projectPeople.personId, personId),
+          inArray(projectPeople.projectId, visibleProjects),
+        ),
       )
       .orderBy(asc(spaces.name), asc(projects.projectId)),
     memberProjectIds.length
@@ -174,7 +177,10 @@ export async function getPersonResearchContext(actor: Principal, personId: strin
           .innerJoin(projects, eq(projects.projectId, activities.projectId))
           .innerJoin(spaces, eq(spaces.id, projects.projectId))
           .where(
-            and(eq(activityPeople.personId, personId), inArray(activities.projectId, memberProjectIds)),
+            and(
+              eq(activityPeople.personId, personId),
+              inArray(activities.projectId, memberProjectIds),
+            ),
           )
           .orderBy(asc(activities.title), asc(activities.id))
       : Promise.resolve([]),
@@ -182,7 +188,10 @@ export async function getPersonResearchContext(actor: Principal, personId: strin
   return {
     ...person,
     projectIds: linkedProjects.map((project) => project.projectId),
-    projects: linkedProjects.map((project) => ({ id: project.projectId, name: project.projectName })),
+    projects: linkedProjects.map((project) => ({
+      id: project.projectId,
+      name: project.projectName,
+    })),
     activities: activityRows.map((activity) => ({
       id: activity.id,
       title: activity.title,

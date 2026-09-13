@@ -17,6 +17,7 @@ import { revokeUserSessions } from "./session";
 import { recordAudit } from "../audit/service";
 import { auditEvents } from "../audit/schema";
 import { invitedSentinel } from "./oidc";
+import { ensurePersonalProject } from "../project/service";
 
 /**
  * Invite: create the row a first Google sign-in will claim (oidc.ts binds the
@@ -41,8 +42,9 @@ export async function inviteUser(
     throw new ApiError(400, "invalid_name", "A display name is required.");
   }
   const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
-  if (existing) throw new ApiError(409, "email_taken", "An account with this email already exists.");
-  return db.transaction(async (tx) => {
+  if (existing)
+    throw new ApiError(409, "email_taken", "An account with this email already exists.");
+  const created = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(users)
       .values({ googleSub: invitedSentinel(), email, displayName, role })
@@ -56,6 +58,8 @@ export async function inviteUser(
     });
     return created;
   });
+  await ensurePersonalProject(created.id);
+  return created;
 }
 
 export async function listUsers(actor: Principal) {
@@ -131,6 +135,7 @@ export async function setUserDisabled(actor: Principal, userId: string, disabled
       details: { email: target.email },
     });
   });
+  if (!disabled) await ensurePersonalProject(userId);
 }
 
 /**

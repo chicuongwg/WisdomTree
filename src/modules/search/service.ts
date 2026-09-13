@@ -21,6 +21,7 @@ export type InternalResearchSearchResult =
       title: string;
       summary: string | null;
       project: ProjectContext;
+      isPersonal: boolean;
       score: number;
     }
   | {
@@ -99,7 +100,12 @@ export async function searchInternalResearch(
   if (!projectIds.length || !types.size) return [];
 
   const tsQuery = sql`plainto_tsquery('simple', immutable_unaccent(${query}))`;
-  const projectNameVector = sql`setweight(to_tsvector('simple', immutable_unaccent(${spaces.name})), 'A')`;
+  const projectNameVector = sql`setweight(to_tsvector('simple', immutable_unaccent(
+    ${spaces.name} || CASE
+      WHEN ${projects.personalOwnerId} = ${actor.userId} THEN ' Dự án của tôi My Project'
+      ELSE ''
+    END
+  )), 'A')`;
   const projectResearchVector = sql`
     setweight(to_tsvector('simple', immutable_unaccent(${projects.researchLens})), 'B') ||
     setweight(to_tsvector('simple', immutable_unaccent(coalesce(${projects.description}, ''))), 'C')`;
@@ -133,6 +139,7 @@ export async function searchInternalResearch(
             summary: projects.description,
             projectId: projects.projectId,
             projectName: spaces.name,
+            isPersonal: sql<boolean>`${projects.personalOwnerId} = ${actor.userId}`,
             score: sql<number>`
               ts_rank(${projectNameVector}, ${tsQuery}) +
               ts_rank(${projectResearchVector}, ${tsQuery})`,
@@ -303,6 +310,7 @@ export async function searchInternalResearch(
       title: row.title,
       summary: row.summary,
       project: { id: row.projectId, name: row.projectName },
+      isPersonal: row.isPersonal,
       score: Number(row.score),
     })),
     ...noteRows.map((row) => ({

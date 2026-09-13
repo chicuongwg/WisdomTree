@@ -7,12 +7,7 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notifyEvent } from "../notify/fanout";
-import {
-  extractionCandidates,
-  sources,
-  sourceVersions,
-  textChunks,
-} from "./schema";
+import { extractionCandidates, sources, sourceVersions, textChunks } from "./schema";
 import { getObject } from "./object-store";
 
 const run = promisify(execFile);

@@ -11,7 +11,7 @@ export const comments = pgTable("comments", {
     // Loan tickets are NOT an anchor: a loan carries a factual record on the
     // Catalog Item Detail screen, not a discussion (owner decision
     // 2026-07-20; CHECK tightened in drizzle/0002_comments_drop_loan_anchor.sql).
-    enum: ["source", "tree_node", "deadline"],
+    enum: ["source", "tree_node", "deadline", "activity", "task"],
   }).notNull(),
   anchorId: uuid("anchor_id").notNull(),
   parentCommentId: uuid("parent_comment_id"), // threading; self-FK in the migration
@@ -36,7 +36,6 @@ export const notifications = pgTable("notifications", {
   readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
-
 
 // Absent row means the built-in default channel matrix.
 export const notificationPreferences = pgTable(

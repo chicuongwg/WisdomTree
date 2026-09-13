@@ -53,7 +53,11 @@ export function createGoogleOidcClient(config: GoogleOidcConfig) {
           audience: config.clientId,
         });
         return typeof payload.sub === "string" && typeof payload.email === "string"
-          ? { sub: payload.sub, email: payload.email, emailVerified: payload.email_verified === true }
+          ? {
+              sub: payload.sub,
+              email: payload.email,
+              emailVerified: payload.email_verified === true,
+            }
           : null;
       } catch {
         return null;

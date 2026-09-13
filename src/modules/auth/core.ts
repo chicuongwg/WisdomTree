@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
 import { db, type Tx } from "@/db";
 import { notFound } from "@/lib/errors";
 import { recordAudit } from "../audit/service";
@@ -38,7 +38,7 @@ export async function requireProjectResearchRead(
   runner: Runner = db,
 ) {
   const [project] = await runner
-    .select({ projectId: projects.projectId })
+    .select({ projectId: projects.projectId, personalOwnerId: projects.personalOwnerId })
     .from(projects)
     .where(eq(projects.projectId, projectId));
   if (!project) throw notFound();
@@ -47,7 +47,14 @@ export async function requireProjectResearchRead(
     .from(spaceMembers)
     .where(and(eq(spaceMembers.spaceId, project.projectId), eq(spaceMembers.userId, actor.userId)));
   if (membership) return project;
-  if (await hasTmktCoreCapability(actor, "tmkt.research.read_all", runner)) return project;
+  // Core is cross-Project research access for Shared Projects. A Personal
+  // Project is private to its owner unless a future explicit break-glass
+  // policy says otherwise.
+  if (
+    !project.personalOwnerId &&
+    (await hasTmktCoreCapability(actor, "tmkt.research.read_all", runner))
+  )
+    return project;
   throw notFound();
 }
 
@@ -57,6 +64,7 @@ export async function researchReadableProjectIds(actor: Principal, runner: Runne
     return runner
       .select({ projectId: projects.projectId })
       .from(projects)
+      .where(or(isNull(projects.personalOwnerId), eq(projects.personalOwnerId, actor.userId)))
       .orderBy(asc(projects.projectId))
       .then((rows) => rows.map((row) => row.projectId));
   }

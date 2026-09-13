@@ -41,10 +41,7 @@ export async function getProfile(actor: Principal) {
   return row;
 }
 
-export async function updateProfile(
-  actor: Principal,
-  input: { displayName?: string },
-) {
+export async function updateProfile(actor: Principal, input: { displayName?: string }) {
   const displayName = input.displayName?.trim();
   if (input.displayName !== undefined && !displayName) {
     throw new ApiError(400, "invalid_name", "Display name must not be empty.");

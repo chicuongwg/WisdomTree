@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db";
-import { ApiError, notFound } from "@/lib/errors";
+import { ApiError, forbidden, notFound } from "@/lib/errors";
 import { signDownload } from "@/lib/sign";
 import type { Principal } from "../auth/principal";
 import { authorize, scopedToSpaces } from "../auth/authorize";
@@ -111,13 +111,14 @@ export async function uploadSource(actor: Principal, input: DigitalSourceInput) 
   return storeDigitalSource(actor, input);
 }
 
-async function requireConfirmedProject(projectId: string | undefined) {
+async function requireConfirmedProject(actor: Principal, projectId: string | undefined) {
   if (!projectId) throw new ApiError(400, "invalid_project_material", "Project is required.");
   const [project] = await db
     .select({ projectId: projects.projectId })
     .from(projects)
     .where(eq(projects.projectId, projectId));
   if (!project) throw notFound();
+  await requireProjectResearchRead(actor, project.projectId);
   return project;
 }
 
@@ -145,7 +146,7 @@ export async function createProjectMaterial(
     extractionMethod?: ExtractionMethod;
   },
 ) {
-  const project = await requireConfirmedProject(input.projectId);
+  const project = await requireConfirmedProject(actor, input.projectId);
   authorize(actor, "storage.upload", { spaceId: project.projectId, kind: "write" });
   const title = input.title?.trim();
   if (!title) throw new ApiError(400, "invalid_material", "Material title is required.");
@@ -301,7 +302,7 @@ export async function listProjectMaterials(
   projectId: string,
   opts: Omit<Parameters<typeof listLibrary>[1], "spaceId"> = {},
 ) {
-  const project = await requireConfirmedProject(projectId);
+  const project = await requireConfirmedProject(actor, projectId);
   const rows = await listLibrary(actor, {
     ...opts,
     spaceId: project.projectId,
@@ -338,6 +339,7 @@ export async function getSourceDetail(actor: Principal, sourceId: string) {
       originalFilename: sourceVersions.originalFilename,
       mimeType: sourceVersions.mimeType,
       sizeBytes: sourceVersions.sizeBytes,
+      storageState: sourceVersions.storageState,
       extractionStatus: sourceVersions.extractionStatus,
       storedAt: sourceVersions.storedAt,
       uploadedByName: users.displayName,
@@ -417,6 +419,37 @@ export async function getDownloadToken(actor: Principal, sourceId: string) {
     .select({ spaceId: sources.spaceId, version: sourceVersions })
     .from(sources)
     .innerJoin(sourceVersions, eq(sources.currentVersionId, sourceVersions.id))
+    .where(eq(sources.id, sourceId));
+  if (!row || row.version.storageState !== "stored") throw notFound();
+  const [project] = await db
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, row.spaceId));
+  if (project) {
+    await requireProjectResearchRead(actor, project.projectId);
+  } else {
+    authorize(actor, "storage.download", { spaceId: row.spaceId, kind: "read" });
+  }
+  return signDownload(row.version.originalObjectKey, row.version.originalFilename);
+}
+
+/**
+ * Issue a download token for the exact immutable SourceVersion selected by
+ * the caller. This is deliberately separate from getDownloadToken(), whose
+ * legacy contract is the Material's current version.
+ */
+export async function getSourceVersionDownloadToken(
+  actor: Principal,
+  sourceId: string,
+  sourceVersionId: string,
+) {
+  const [row] = await db
+    .select({ spaceId: sources.spaceId, version: sourceVersions })
+    .from(sources)
+    .innerJoin(
+      sourceVersions,
+      and(eq(sourceVersions.sourceId, sources.id), eq(sourceVersions.id, sourceVersionId)),
+    )
     .where(eq(sources.id, sourceId));
   if (!row || row.version.storageState !== "stored") throw notFound();
   const [project] = await db
@@ -709,7 +742,7 @@ export async function addProjectMaterialVersion(
     extractionMethod?: ExtractionMethod;
   },
 ) {
-  const project = await requireConfirmedProject(input.projectId);
+  const project = await requireConfirmedProject(actor, input.projectId);
   if (!input.sourceId || !input.file) {
     throw new ApiError(400, "invalid_material_version", "Material and file are required.");
   }
@@ -730,7 +763,11 @@ export async function addProjectMaterialVersion(
 
 /** Shared Project/Material assertion for representation-specific boundaries. */
 export async function requireProjectMaterial(projectId: string, sourceId: string) {
-  const project = await requireConfirmedProject(projectId);
+  const [project] = await db
+    .select({ projectId: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, projectId));
+  if (!project) throw notFound();
   const [source] = await db
     .select()
     .from(sources)
@@ -745,6 +782,7 @@ export async function mySubmissions(actor: Principal) {
   const sourceRows = await db
     .select({
       submissionId: sources.id,
+      spaceId: sources.spaceId,
       title: sources.title,
       storageState: sourceVersions.storageState,
       extractionStatus: sourceVersions.extractionStatus,
@@ -833,6 +871,46 @@ export async function listSpaceMembers(actor: Principal, spaceId: string) {
     .orderBy(asc(users.displayName));
 }
 
+/** Personal Projects are single-owner workspaces, never ad-hoc Team Spaces. */
+async function requireSharedProjectMembershipManagement(spaceId: string) {
+  const [project] = await db
+    .select({ personalOwnerId: projects.personalOwnerId })
+    .from(projects)
+    .where(eq(projects.projectId, spaceId));
+  if (project?.personalOwnerId) throw forbidden();
+}
+
+async function requireManagerRemains(
+  tx: Tx,
+  spaceId: string,
+  userId: string,
+  nextRole: "viewer" | "contributor" | "manager" | null,
+) {
+  // Serialize roster changes so concurrent demotions cannot orphan a Project.
+  await tx.select({ id: spaces.id }).from(spaces).where(eq(spaces.id, spaceId)).for("update");
+  const [project] = await tx
+    .select({ id: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, spaceId));
+  if (!project) return;
+  const [target] = await tx
+    .select({ memberRole: spaceMembers.memberRole })
+    .from(spaceMembers)
+    .where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.userId, userId)));
+  if (target?.memberRole !== "manager" || nextRole === "manager") return;
+  const managers = await tx
+    .select({ userId: spaceMembers.userId })
+    .from(spaceMembers)
+    .where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.memberRole, "manager")));
+  if (managers.length <= 1) {
+    throw new ApiError(
+      409,
+      "project_requires_manager",
+      "Assign another Project manager before removing or changing the final manager.",
+    );
+  }
+}
+
 export async function addSpaceMember(
   actor: Principal,
   spaceId: string,
@@ -840,6 +918,7 @@ export async function addSpaceMember(
   memberRole: "viewer" | "contributor" | "manager" = "contributor",
 ) {
   authorize(actor, "storage.space.members.manage", { spaceId, kind: "write" });
+  await requireSharedProjectMembershipManagement(spaceId);
   const [space] = await db.select({ id: spaces.id }).from(spaces).where(eq(spaces.id, spaceId));
   if (!space) throw notFound();
   const [user] = await db
@@ -866,7 +945,9 @@ export async function addSpaceMember(
 
 export async function removeSpaceMember(actor: Principal, spaceId: string, userId: string) {
   authorize(actor, "storage.space.members.manage", { spaceId, kind: "write" });
+  await requireSharedProjectMembershipManagement(spaceId);
   await db.transaction(async (tx) => {
+    await requireManagerRemains(tx, spaceId, userId, null);
     await tx
       .delete(spaceMembers)
       .where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.userId, userId)));
@@ -887,7 +968,9 @@ export async function setSpaceMemberRole(
   memberRole: "viewer" | "contributor" | "manager",
 ) {
   authorize(actor, "storage.space.members.manage", { spaceId, kind: "write" });
+  await requireSharedProjectMembershipManagement(spaceId);
   await db.transaction(async (tx) => {
+    await requireManagerRemains(tx, spaceId, userId, memberRole);
     const [membership] = await tx
       .update(spaceMembers)
       .set({ memberRole })
@@ -1032,6 +1115,19 @@ export async function deleteFolder(actor: Principal, folderId: string) {
 /** Every enabled member — the "add someone" picker on the membership panel. */
 export async function listAllMembers(actor: Principal) {
   authorize(actor, "storage.space.manage", { kind: "read" });
+  return db
+    .select({ id: users.id, displayName: users.displayName, role: users.role })
+    .from(users)
+    .where(isNull(users.disabledAt))
+    .orderBy(asc(users.displayName));
+}
+
+/**
+ * Enabled accounts a Project manager may add to that Project. This intentionally
+ * stays separate from research People and does not grant user administration.
+ */
+export async function listSpaceMemberCandidates(actor: Principal, spaceId: string) {
+  authorize(actor, "storage.space.members.manage", { spaceId, kind: "read" });
   return db
     .select({ id: users.id, displayName: users.displayName, role: users.role })
     .from(users)

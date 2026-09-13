@@ -13,9 +13,12 @@ export type ProjectActionCapabilitiesDto = {
 };
 
 export type AppProjectDto = ProjectRefDto & {
+  version?: number;
   researchLens: string;
   description: string | null;
   status: "active" | "paused" | "completed" | "archived";
+  personalOwnerId: string | null;
+  isPersonal: boolean;
   researchReadable: boolean;
   operationalMember: boolean;
   features: { libraryCirculation: boolean };

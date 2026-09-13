@@ -8,14 +8,14 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { users } from "../auth/schema";
 import { spaceMembers, spaces } from "../storage/schema";
 
-// Module: project — confirmed TMKT projects. A row extends one team space and
-// deliberately shares its id; team spaces without a row remain legacy shared
-// spaces during migration.
+// Module: project — confirmed TMKT projects. A row extends one shared Team
+// Space or one owner-scoped Personal Space and deliberately shares its id.
 
 export const projects = pgTable(
   "projects",
@@ -31,6 +31,12 @@ export const projects = pgTable(
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id),
+    // NULL means a Shared Project. A non-NULL owner is the durable privacy
+    // boundary for one user's Personal Project; it is deliberately not a
+    // second workspace model.
+    personalOwnerId: uuid("personal_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     version: integer("version").notNull().default(1),
@@ -43,6 +49,9 @@ export const projects = pgTable(
     ),
     check("projects_version_positive", sql`${table.version} > 0`),
     index("projects_status_idx").on(table.status),
+    uniqueIndex("projects_personal_owner_id_unique")
+      .on(table.personalOwnerId)
+      .where(sql`${table.personalOwnerId} IS NOT NULL`),
   ],
 );
 

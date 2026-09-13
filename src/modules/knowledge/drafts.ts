@@ -73,13 +73,18 @@ function assertResearchPurpose(value: ResearchPurpose | null | undefined) {
   }
 }
 
-async function requireConfirmedProject(runner: Tx | typeof db, projectId: string | undefined) {
+async function requireConfirmedProject(
+  runner: Tx | typeof db,
+  actor: Principal,
+  projectId: string | undefined,
+) {
   if (!projectId) throw new ApiError(400, "invalid_project_note", "Project is required.");
   const [project] = await runner
     .select({ projectId: projects.projectId })
     .from(projects)
     .where(eq(projects.projectId, projectId));
   if (!project) throw notFound();
+  await requireProjectResearchRead(actor, project.projectId, runner);
   return project;
 }
 
@@ -114,7 +119,7 @@ export async function createProjectNoteInTransaction(
     researchPurpose?: ResearchPurpose | null;
   },
 ) {
-  const project = await requireConfirmedProject(tx, input.projectId);
+  const project = await requireConfirmedProject(tx, actor, input.projectId);
   authorize(actor, "project.note.create", { spaceId: project.projectId, kind: "write" });
   const snapshot = cleanSnapshot({
     title: input.title ?? "",
@@ -181,7 +186,7 @@ export async function createProjectNoteInTransaction(
 
 /** Official Project Notes plus only the caller's private working drafts. */
 export async function listProjectNotes(actor: Principal, projectId: string) {
-  const project = await requireConfirmedProject(db, projectId);
+  const project = await requireConfirmedProject(db, actor, projectId);
   await requireProjectResearchRead(actor, project.projectId);
   const notes = await db
     .select({
@@ -225,7 +230,7 @@ export async function listProjectNotes(actor: Principal, projectId: string) {
 
 /** One authoritative Project Note without exposing its compatibility Branch. */
 export async function getProjectNote(actor: Principal, projectId: string, nodeId: string) {
-  const project = await requireConfirmedProject(db, projectId);
+  const project = await requireConfirmedProject(db, actor, projectId);
   await requireProjectResearchRead(actor, project.projectId);
   const [note] = await db
     .select({

@@ -6,7 +6,7 @@ import { authorize } from "../auth/authorize";
 import { requireProjectResearchRead } from "../auth/core";
 import { recordAudit } from "../audit/service";
 import { createProjectNoteInTransaction } from "../knowledge/drafts";
-import { branches, treeNodes, treeNodeVersions } from "../knowledge/schema";
+import { branches, nodeDrafts, treeNodes, treeNodeVersions } from "../knowledge/schema";
 import { nodeAssociations } from "../knowledge/service-mutations";
 import { snapshotNoteVersionSupport } from "../knowledge/support";
 import { projects } from "../project/schema";
@@ -301,6 +301,7 @@ export async function evolveCandidateIntoProjectNote(
 
     // A Project outsider must not learn whether a candidate exists. A viewer
     // may see the Project but still cannot perform the contributor mutation.
+    await requireProjectResearchRead(actor, row.projectId, tx);
     authorize(actor, "project.note.read", { spaceId: row.projectId, kind: "read" });
     if (row.candidate.state !== "pending_review") {
       throw new ApiError(
@@ -447,6 +448,44 @@ export async function listProjectMaterialLineageNotes(
       ),
     )
     .orderBy(asc(sourceVersions.seq));
+}
+
+/**
+ * An extraction working draft remains author-private. This read model is used
+ * only to resume the current actor's persisted work from its originating
+ * Material; it does not disclose another contributor's draft existence.
+ */
+export async function listMyProjectMaterialWorkingDrafts(
+  actor: Principal,
+  input: { projectId: string; sourceId: string },
+) {
+  await requireProjectResearchRead(actor, input.projectId);
+  return db
+    .select({
+      sourceVersionId: sourceVersions.id,
+      sourceVersionSeq: sourceVersions.seq,
+      draftId: nodeDrafts.id,
+      title: nodeDrafts.title,
+    })
+    .from(extractionCandidates)
+    .innerJoin(sourceVersions, eq(sourceVersions.id, extractionCandidates.sourceVersionId))
+    .innerJoin(sources, eq(sources.id, sourceVersions.sourceId))
+    .innerJoin(projects, eq(projects.projectId, sources.spaceId))
+    .innerJoin(
+      nodeDrafts,
+      and(
+        eq(nodeDrafts.id, extractionCandidates.evolvedDraftId),
+        eq(nodeDrafts.authorId, actor.userId),
+      ),
+    )
+    .where(
+      and(
+        eq(projects.projectId, input.projectId),
+        eq(sources.id, input.sourceId),
+        eq(extractionCandidates.state, "evolved"),
+      ),
+    )
+    .orderBy(asc(sourceVersions.seq), asc(nodeDrafts.id));
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

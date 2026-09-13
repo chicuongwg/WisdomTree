@@ -1,6 +1,6 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { ApiError, notFound, versionConflict } from "@/lib/errors";
+import { ApiError, forbidden, notFound, versionConflict } from "@/lib/errors";
 import { recordAudit } from "../audit/service";
 import { authorize } from "../auth/authorize";
 import {
@@ -9,10 +9,16 @@ import {
   researchReadableProjectIds,
 } from "../auth/core";
 import type { Principal } from "../auth/principal";
+import { users } from "../auth/schema";
 import { createTeamSpaceInTransaction } from "../storage/service";
 import { spaceMembers, spaces } from "../storage/schema";
 import { hasProjectCapability, hasProjectLibraryOperator } from "./capabilities";
-import { projects, type ProjectStatus } from "./schema";
+import {
+  projectCapabilities,
+  projectLibraryOperators,
+  projects,
+  type ProjectStatus,
+} from "./schema";
 
 const PROJECT_STATUSES: ProjectStatus[] = ["active", "paused", "completed", "archived"];
 
@@ -34,10 +40,14 @@ const projectSelection = {
   description: projects.description,
   status: projects.status,
   createdBy: projects.createdBy,
+  personalOwnerId: projects.personalOwnerId,
   createdAt: projects.createdAt,
   updatedAt: projects.updatedAt,
   version: projects.version,
 };
+
+const PERSONAL_PROJECT_NAME = "My Project";
+const PERSONAL_PROJECT_LENS = "Personal research workspace";
 
 /** Create the team-space identity, manager membership and Project atomically. */
 export async function createProject(
@@ -73,6 +83,78 @@ export async function createProject(
     });
     const { projectId, ...metadata } = project;
     return { id: projectId, name: space.name, ...metadata };
+  });
+}
+
+/**
+ * Idempotently ensure one normal Project over an active User's Personal
+ * Space. The advisory lock makes concurrent account lifecycle calls converge
+ * on one Project without creating a second Personal Space.
+ */
+export async function ensurePersonalProject(userId: string) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+    const [existing] = await tx
+      .select(projectSelection)
+      .from(projects)
+      .innerJoin(spaces, eq(projects.projectId, spaces.id))
+      .where(eq(projects.personalOwnerId, userId));
+    if (existing) return existing;
+
+    const [owner] = await tx
+      .select({ id: users.id, role: users.role, disabledAt: users.disabledAt })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (!owner || owner.disabledAt) throw notFound();
+    const ownerActor: Principal = {
+      userId: owner.id,
+      role: owner.role,
+      spaceIds: [],
+      spaceMemberships: [],
+    };
+    const [space] = await tx
+      .insert(spaces)
+      .values({
+        name: PERSONAL_PROJECT_NAME,
+        type: "personal",
+        ownerUserId: owner.id,
+        createdBy: owner.id,
+      })
+      .returning({ id: spaces.id, name: spaces.name });
+    await tx.insert(spaceMembers).values({
+      spaceId: space.id,
+      userId: owner.id,
+      memberRole: "manager",
+      addedBy: owner.id,
+    });
+    const [project] = await tx
+      .insert(projects)
+      .values({
+        projectId: space.id,
+        researchLens: PERSONAL_PROJECT_LENS,
+        createdBy: owner.id,
+        personalOwnerId: owner.id,
+      })
+      .returning();
+    await recordAudit(tx, ownerActor, {
+      accountability: "member",
+      action: "project.personal.provision",
+      targetType: "project",
+      targetId: project.projectId,
+      details: { ownerUserId: owner.id },
+    });
+    return {
+      id: project.projectId,
+      name: space.name,
+      researchLens: project.researchLens,
+      description: project.description,
+      status: project.status,
+      createdBy: project.createdBy,
+      personalOwnerId: project.personalOwnerId,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      version: project.version,
+    };
   });
 }
 
@@ -169,14 +251,28 @@ export async function getProjectApplicationAccess(actor: Principal, projectId: s
     .select({ role: spaceMembers.memberRole })
     .from(spaceMembers)
     .where(and(eq(spaceMembers.spaceId, projectId), eq(spaceMembers.userId, actor.userId)));
-  const operationalMember = Boolean(membership);
-  const contributor = membership?.role === "contributor" || membership?.role === "manager";
-  const manager = membership?.role === "manager";
   const [libraryCirculation, libraryOperator, canPublish] = await Promise.all([
     hasProjectCapability(projectId, "library_circulation"),
     hasProjectLibraryOperator(actor, projectId),
     hasTmktCoreCapability(actor, "tmkt.publish"),
   ]);
+  return projectApplicationAccess(
+    membership?.role,
+    libraryCirculation,
+    libraryOperator,
+    canPublish,
+  );
+}
+
+function projectApplicationAccess(
+  membershipRole: "viewer" | "contributor" | "manager" | undefined,
+  libraryCirculation: boolean,
+  libraryOperator: boolean,
+  canPublish: boolean,
+) {
+  const operationalMember = Boolean(membershipRole);
+  const contributor = membershipRole === "contributor" || membershipRole === "manager";
+  const manager = membershipRole === "manager";
   return {
     researchReadable: true,
     operationalMember,
@@ -193,6 +289,50 @@ export async function getProjectApplicationAccess(actor: Principal, projectId: s
       isLibraryOperator: operationalMember && libraryCirculation && libraryOperator,
     },
   };
+}
+
+/** Batch access facts for an already research-authorized Project list. */
+export async function listProjectApplicationAccess(actor: Principal, projectIds: string[]) {
+  if (!projectIds.length) return new Map<string, ReturnType<typeof projectApplicationAccess>>();
+  const [memberships, capabilities, operators, canPublish] = await Promise.all([
+    db
+      .select({ projectId: spaceMembers.spaceId, role: spaceMembers.memberRole })
+      .from(spaceMembers)
+      .where(and(eq(spaceMembers.userId, actor.userId), inArray(spaceMembers.spaceId, projectIds))),
+    db
+      .select({ projectId: projectCapabilities.projectId })
+      .from(projectCapabilities)
+      .where(
+        and(
+          inArray(projectCapabilities.projectId, projectIds),
+          eq(projectCapabilities.capability, "library_circulation"),
+        ),
+      ),
+    db
+      .select({ projectId: projectLibraryOperators.projectId })
+      .from(projectLibraryOperators)
+      .where(
+        and(
+          eq(projectLibraryOperators.userId, actor.userId),
+          inArray(projectLibraryOperators.projectId, projectIds),
+        ),
+      ),
+    hasTmktCoreCapability(actor, "tmkt.publish"),
+  ]);
+  const membershipByProject = new Map(memberships.map((row) => [row.projectId, row.role]));
+  const libraryProjects = new Set(capabilities.map((row) => row.projectId));
+  const operatorProjects = new Set(operators.map((row) => row.projectId));
+  return new Map(
+    projectIds.map((projectId) => [
+      projectId,
+      projectApplicationAccess(
+        membershipByProject.get(projectId),
+        libraryProjects.has(projectId),
+        operatorProjects.has(projectId),
+        canPublish,
+      ),
+    ]),
+  );
 }
 
 export async function updateProject(
@@ -259,4 +399,14 @@ export async function updateProject(
     const { projectId: id, ...metadata } = updated;
     return { id, name: existing.name, ...metadata };
   });
+}
+
+/** Personal Projects are private single-owner workspaces, not member rosters. */
+export async function requireSharedProjectMembershipManagement(
+  actor: Principal,
+  projectId: string,
+) {
+  const project = await getProject(actor, projectId);
+  if (project.personalOwnerId) throw forbidden();
+  return project;
 }

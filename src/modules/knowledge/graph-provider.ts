@@ -36,9 +36,7 @@ export function createGraphProvider(actor: Principal): GraphDataProvider {
           and(
             ne(treeNodes.verification, "archived"),
             branchVisibilityCondition(actor),
-            query.scope === "shared"
-              ? eq(branches.scope, "team")
-              : eq(branches.scope, "personal"),
+            query.scope === "shared" ? eq(branches.scope, "team") : eq(branches.scope, "personal"),
             query.search
               ? or(
                   sql`${treeNodes.title} ILIKE ${`%${query.search}%`}`,

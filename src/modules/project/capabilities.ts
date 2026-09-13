@@ -26,7 +26,7 @@ function assertCapability(value: string): asserts value is ProjectCapability {
 
 async function requireConfirmedProject(projectId: string, runner: Runner = db) {
   const [project] = await runner
-    .select({ projectId: projects.projectId })
+    .select({ projectId: projects.projectId, personalOwnerId: projects.personalOwnerId })
     .from(projects)
     .where(eq(projects.projectId, projectId));
   if (!project) throw notFound();
@@ -72,7 +72,8 @@ export async function enableProjectCapability(
   authorize(actor, "storage.space.manage", { kind: "write" });
   assertCapability(input.capability);
   const capability = input.capability;
-  await requireConfirmedProject(input.projectId);
+  const project = await requireConfirmedProject(input.projectId);
+  if (project.personalOwnerId) throw notFound();
   return db.transaction(async (tx) => {
     const [created] = await tx
       .insert(projectCapabilities)
@@ -103,7 +104,8 @@ export async function disableProjectCapability(
   authorize(actor, "storage.space.manage", { kind: "write" });
   assertCapability(input.capability);
   const capability = input.capability;
-  await requireConfirmedProject(input.projectId);
+  const project = await requireConfirmedProject(input.projectId);
+  if (project.personalOwnerId) throw notFound();
   return db.transaction(async (tx) => {
     const [removed] = await tx
       .delete(projectCapabilities)
@@ -173,9 +175,7 @@ export async function grantProjectLibraryOperator(
   const [membership] = await db
     .select({ userId: spaceMembers.userId })
     .from(spaceMembers)
-    .where(
-      and(eq(spaceMembers.spaceId, input.projectId), eq(spaceMembers.userId, input.userId)),
-    );
+    .where(and(eq(spaceMembers.spaceId, input.projectId), eq(spaceMembers.userId, input.userId)));
   if (!membership) throw notFound();
   return db.transaction(async (tx) => {
     const [created] = await tx

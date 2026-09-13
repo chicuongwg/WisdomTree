@@ -451,7 +451,11 @@ export async function snapshotNoteVersionSupport(
     )
     .returning({ id: treeNodeVersions.id });
   if (!sealed) {
-    throw new ApiError(409, "support_snapshot_already_complete", "Note evidence is already sealed.");
+    throw new ApiError(
+      409,
+      "support_snapshot_already_complete",
+      "Note evidence is already sealed.",
+    );
   }
 }
 

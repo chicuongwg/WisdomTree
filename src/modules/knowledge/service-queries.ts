@@ -485,6 +485,7 @@ export async function getNode(actor: Principal, nodeId: string) {
         toNodeId: nodeLinks.toNodeId,
         linkType: nodeLinks.linkType,
         title: treeNodes.title,
+        projectId: treeNodes.projectId,
       })
       .from(nodeLinks)
       .innerJoin(treeNodes, eq(nodeLinks.toNodeId, treeNodes.id))
@@ -498,6 +499,7 @@ export async function getNode(actor: Principal, nodeId: string) {
         fromNodeId: nodeLinks.fromNodeId,
         linkType: nodeLinks.linkType,
         title: treeNodes.title,
+        projectId: treeNodes.projectId,
         contentMd: treeNodes.contentMd,
         verification: treeNodes.verification,
       })
@@ -570,6 +572,7 @@ export async function getNode(actor: Principal, nodeId: string) {
       fromNodeId: b.fromNodeId,
       linkType: b.linkType,
       title: b.title,
+      projectId: b.projectId,
       verification: b.verification,
       // The sentence around the wiki-link when it is derivable, else the
       // source page's opening line.

@@ -29,8 +29,7 @@ export class ApiError extends Error {
   }
 }
 
-export const unauthorized = () =>
-  new ApiError(401, "unauthorized", "Sign-in required.");
+export const unauthorized = () => new ApiError(401, "unauthorized", "Sign-in required.");
 // Denied writes → 403; message uses the vocabulary term.
 export const forbidden = () => new ApiError(403, "forbidden", "Access denied.");
 // Out-of-scope reads → 404, never 403, so cross-space existence is not leaked.
@@ -65,8 +64,7 @@ export async function handleApi(fn: () => Promise<Response>): Promise<Response> 
     if (pg?.code === "23505" && pg.constraint === "loan_tickets_one_active_per_borrower") {
       const body: ErrorBody = {
         code: "loan_already_active",
-        message:
-          "You already hold an active loan for this title; one copy per person.",
+        message: "You already hold an active loan for this title; one copy per person.",
       };
       return NextResponse.json(body, { status: 409 });
     }

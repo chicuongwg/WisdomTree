@@ -33,6 +33,7 @@ export async function getApplicationContext(actor: Principal) {
     globalCapabilities: {
       canManageCoreRoster: may(actor, "admin.tmkt_core.manage"),
       canAccessAdministration: may(actor, "admin.health.read"),
+      canCreateProject: may(actor, "storage.space.manage"),
       canPublish,
     },
   };

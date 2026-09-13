@@ -73,7 +73,12 @@ export function parseBlocks(content: string): Block[] {
       flush();
       const code: string[] = [];
       for (i += 1; i < lines.length && !/^```\s*$/.test(lines[i]); i++) code.push(lines[i]);
-      blocks.push({ type: "code", code: code.join("\n"), language: fence[1] || null, title: fence[2] || null });
+      blocks.push({
+        type: "code",
+        code: code.join("\n"),
+        language: fence[1] || null,
+        title: fence[2] || null,
+      });
     } else if (directive) {
       flush();
       const end = directiveEnd(lines, i + 1);
@@ -108,11 +113,19 @@ export function parseBlocks(content: string): Block[] {
       i = end;
     } else if (heading) {
       flush();
-      blocks.push({ type: "heading", level: heading[1].length as 1 | 2 | 3 | 4 | 5 | 6, text: heading[2] });
+      blocks.push({
+        type: "heading",
+        level: heading[1].length as 1 | 2 | 3 | 4 | 5 | 6,
+        text: heading[2],
+      });
     } else if (/^\s*(?:---+|___+|\*\*\*+)\s*$/.test(line)) {
       flush();
       blocks.push({ type: "hr" });
-    } else if (line.includes("|") && i + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[i + 1])) {
+    } else if (
+      line.includes("|") &&
+      i + 1 < lines.length &&
+      /^\s*\|?\s*:?-{3,}/.test(lines[i + 1])
+    ) {
       flush();
       const headers = tableCells(line);
       const rows: string[][] = [];
@@ -135,7 +148,11 @@ export function parseBlocks(content: string): Block[] {
     } else if (bullet || ordered) {
       if (paragraph.length || (list.length && listType !== (bullet ? "ul" : "ol"))) flush();
       listType = bullet ? "ul" : "ol";
-      list.push(bullet ? { text: bullet[2], ...(bullet[1] ? { checked: bullet[1].toLowerCase() === "x" } : {}) } : { text: ordered![1] });
+      list.push(
+        bullet
+          ? { text: bullet[2], ...(bullet[1] ? { checked: bullet[1].toLowerCase() === "x" } : {}) }
+          : { text: ordered![1] },
+      );
     } else if (!line.trim()) {
       flush();
     } else {
@@ -156,9 +173,8 @@ export type Inline =
   | { kind: "link"; label: string; href: string; external: boolean }
   | { kind: "image"; alt: string; src: string; allowed: boolean };
 
-// Escaped brackets keep the wiki-link groups visually auditable.
-// eslint-disable-next-line no-useless-escape
-const INLINE_TOKEN = /\[\[([^\[\]|]+?)(?:\|([^\[\]]+?))?\]\]|!\[([^\]]*)\]\(([^\s)]+)(?:\s+"[^"]*")?\)|\[([^\]]+)\]\(([^\s)]+)\)|\*\*(.+?)\*\*|`([^`]+)`|(?<!\*)\*([^*\n]+)\*(?!\*)/g;
+const INLINE_TOKEN =
+  /\[\[([^[\]|]+?)(?:\|([^[\]]+?))?\]\]|!\[([^\]]*)\]\(([^\s)]+)(?:\s+"[^"]*")?\)|\[([^\]]+)\]\(([^\s)]+)\)|\*\*(.+?)\*\*|`([^`]+)`|(?<!\*)\*([^*\n]+)\*(?!\*)/g;
 
 export function safeHref(href: string): { href: string; external: boolean } | null {
   if (href.startsWith("/") || href.startsWith("#")) return { href, external: false };
@@ -178,12 +194,24 @@ export function inlineTokens(text: string): Inline[] {
     if (at > cursor) tokens.push({ kind: "text", text: text.slice(cursor, at) });
     if (match[1]) {
       const target = match[1].trim();
-      tokens.push({ kind: "wiki", target, key: normalizeTitle(target), label: (match[2] || match[1]).trim() });
+      tokens.push({
+        kind: "wiki",
+        target,
+        key: normalizeTitle(target),
+        label: (match[2] || match[1]).trim(),
+      });
     } else if (match[3] !== undefined) {
-      tokens.push({ kind: "image", alt: match[3], src: match[4], allowed: isAllowedImageSource(match[4]) });
+      tokens.push({
+        kind: "image",
+        alt: match[3],
+        src: match[4],
+        allowed: isAllowedImageSource(match[4]),
+      });
     } else if (match[5] !== undefined) {
       const safe = safeHref(match[6]);
-      tokens.push(safe ? { kind: "link", label: match[5], ...safe } : { kind: "text", text: match[0] });
+      tokens.push(
+        safe ? { kind: "link", label: match[5], ...safe } : { kind: "text", text: match[0] },
+      );
     } else if (match[7] !== undefined) tokens.push({ kind: "bold", text: match[7] });
     else if (match[8] !== undefined) tokens.push({ kind: "code", text: match[8] });
     else tokens.push({ kind: "italic", text: match[9] });
@@ -194,38 +222,56 @@ export function inlineTokens(text: string): Inline[] {
 }
 
 function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function inlineHtml(text: string): string {
-  return inlineTokens(text).map((token) => {
-    if (token.kind === "bold") return `<strong>${escapeHtml(token.text)}</strong>`;
-    if (token.kind === "italic") return `<em>${escapeHtml(token.text)}</em>`;
-    if (token.kind === "code") return `<code>${escapeHtml(token.text)}</code>`;
-    if (token.kind === "wiki") return escapeHtml(token.label);
-    if (token.kind === "link") return `<a href="${escapeHtml(token.href)}"${token.external ? ' rel="noopener noreferrer"' : ""}>${escapeHtml(token.label)}</a>`;
-    if (token.kind === "image") return token.allowed ? `<img src="${escapeHtml(token.src)}" alt="${escapeHtml(token.alt)}">` : `<span class="image-blocked">${escapeHtml(token.alt || "Ảnh ngoài hệ thống đã bị chặn")}</span>`;
-    return escapeHtml(token.text);
-  }).join("");
+  return inlineTokens(text)
+    .map((token) => {
+      if (token.kind === "bold") return `<strong>${escapeHtml(token.text)}</strong>`;
+      if (token.kind === "italic") return `<em>${escapeHtml(token.text)}</em>`;
+      if (token.kind === "code") return `<code>${escapeHtml(token.text)}</code>`;
+      if (token.kind === "wiki") return escapeHtml(token.label);
+      if (token.kind === "link")
+        return `<a href="${escapeHtml(token.href)}"${token.external ? ' rel="noopener noreferrer"' : ""}>${escapeHtml(token.label)}</a>`;
+      if (token.kind === "image")
+        return token.allowed
+          ? `<img src="${escapeHtml(token.src)}" alt="${escapeHtml(token.alt)}">`
+          : `<span class="image-blocked">${escapeHtml(token.alt || "Ảnh ngoài hệ thống đã bị chặn")}</span>`;
+      return escapeHtml(token.text);
+    })
+    .join("");
 }
 
 function blocksHtml(blocks: Block[]): string {
-  return blocks.map((block) => {
-    if (block.type === "heading") {
-      const id = normalizeTitle(block.text).replace(/\s+/g, "-");
-      return `<h${block.level} id="${escapeHtml(id)}">${inlineHtml(block.text)}</h${block.level}>`;
-    }
-    if (block.type === "p") return `<p>${inlineHtml(block.text)}</p>`;
-    if (block.type === "ul" || block.type === "ol") return `<${block.type}>${block.items.map((item) => `<li>${item.checked === undefined ? "" : `<input type="checkbox" disabled${item.checked ? " checked" : ""}> `}${inlineHtml(item.text)}</li>`).join("")}</${block.type}>`;
-    if (block.type === "quote") return `<blockquote>${blocksHtml(block.blocks)}</blockquote>`;
-    if (block.type === "code") return `${block.title ? `<div class="code-title">${escapeHtml(block.title)}</div>` : ""}<pre><code${block.language ? ` class="language-${escapeHtml(block.language)}"` : ""}>${escapeHtml(block.code)}</code></pre>`;
-    if (block.type === "table") return `<table><thead><tr>${block.headers.map((cell) => `<th>${inlineHtml(cell)}</th>`).join("")}</tr></thead><tbody>${block.rows.map((row) => `<tr>${row.map((cell) => `<td>${inlineHtml(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-    if (block.type === "hr") return "<hr>";
-    if (block.type === "admonition") return `<aside class="admonition ${block.kind}">${block.title ? `<strong>${escapeHtml(block.title)}</strong>` : ""}${blocksHtml(block.blocks)}</aside>`;
-    if (block.type === "details") return `<details><summary>${escapeHtml(block.title)}</summary>${blocksHtml(block.blocks)}</details>`;
-    if (block.type === "embed") return `<aside class="internal-embed">${escapeHtml(block.target)}</aside>`;
-    return `<div class="doc-tabs">${block.items.map((item) => `<details><summary>${escapeHtml(item.label)}</summary>${blocksHtml(item.blocks)}</details>`).join("")}</div>`;
-  }).join("\n");
+  return blocks
+    .map((block) => {
+      if (block.type === "heading") {
+        const id = normalizeTitle(block.text).replace(/\s+/g, "-");
+        return `<h${block.level} id="${escapeHtml(id)}">${inlineHtml(block.text)}</h${block.level}>`;
+      }
+      if (block.type === "p") return `<p>${inlineHtml(block.text)}</p>`;
+      if (block.type === "ul" || block.type === "ol")
+        return `<${block.type}>${block.items.map((item) => `<li>${item.checked === undefined ? "" : `<input type="checkbox" disabled${item.checked ? " checked" : ""}> `}${inlineHtml(item.text)}</li>`).join("")}</${block.type}>`;
+      if (block.type === "quote") return `<blockquote>${blocksHtml(block.blocks)}</blockquote>`;
+      if (block.type === "code")
+        return `${block.title ? `<div class="code-title">${escapeHtml(block.title)}</div>` : ""}<pre><code${block.language ? ` class="language-${escapeHtml(block.language)}"` : ""}>${escapeHtml(block.code)}</code></pre>`;
+      if (block.type === "table")
+        return `<table><thead><tr>${block.headers.map((cell) => `<th>${inlineHtml(cell)}</th>`).join("")}</tr></thead><tbody>${block.rows.map((row) => `<tr>${row.map((cell) => `<td>${inlineHtml(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+      if (block.type === "hr") return "<hr>";
+      if (block.type === "admonition")
+        return `<aside class="admonition ${block.kind}">${block.title ? `<strong>${escapeHtml(block.title)}</strong>` : ""}${blocksHtml(block.blocks)}</aside>`;
+      if (block.type === "details")
+        return `<details><summary>${escapeHtml(block.title)}</summary>${blocksHtml(block.blocks)}</details>`;
+      if (block.type === "embed")
+        return `<aside class="internal-embed">${escapeHtml(block.target)}</aside>`;
+      return `<div class="doc-tabs">${block.items.map((item) => `<details><summary>${escapeHtml(item.label)}</summary>${blocksHtml(item.blocks)}</details>`).join("")}</div>`;
+    })
+    .join("\n");
 }
 
 export function markdownToHtml(content: string): string {

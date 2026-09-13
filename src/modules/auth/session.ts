@@ -35,42 +35,44 @@ function tokenHash(token: string): string {
  * request. Outside a React request scope (tests, scripts) cache() is a
  * passthrough and every call hits the database, which is what tests rely on.
  */
-export const resolveSessionToken = cache(async (token: string): Promise<(Principal & { user: typeof users.$inferSelect }) | null> => {
-  const [row] = await db
-    .select({ session: sessions, user: users })
-    .from(sessions)
-    .innerJoin(users, eq(sessions.userId, users.id))
-    .where(
-      and(
-        eq(sessions.tokenHash, tokenHash(token)),
-        isNull(sessions.revokedAt),
-        gt(sessions.expiresAt, new Date()),
-        gt(sessions.lastSeenAt, new Date(Date.now() - SESSION_IDLE_MS)),
-        isNull(users.disabledAt),
-      ),
-    );
-  if (!row) return null;
+export const resolveSessionToken = cache(
+  async (token: string): Promise<(Principal & { user: typeof users.$inferSelect }) | null> => {
+    const [row] = await db
+      .select({ session: sessions, user: users })
+      .from(sessions)
+      .innerJoin(users, eq(sessions.userId, users.id))
+      .where(
+        and(
+          eq(sessions.tokenHash, tokenHash(token)),
+          isNull(sessions.revokedAt),
+          gt(sessions.expiresAt, new Date()),
+          gt(sessions.lastSeenAt, new Date(Date.now() - SESSION_IDLE_MS)),
+          isNull(users.disabledAt),
+        ),
+      );
+    if (!row) return null;
 
-  const memberships = await db
-    .select({ spaceId: spaceMembers.spaceId, role: spaceMembers.memberRole })
-    .from(spaceMembers)
-    .where(eq(spaceMembers.userId, row.user.id));
-  // Fire-and-forget on purpose, but never unhandled: a rejected promise here
-  // (a dropped DB connection) would crash the process, not just skip a renewal.
-  if (row.session.lastSeenAt.getTime() < Date.now() - LAST_SEEN_WRITE_INTERVAL_MS) {
-    db.update(sessions)
-      .set({ lastSeenAt: new Date() })
-      .where(eq(sessions.id, row.session.id))
-      .catch((err) => console.error("[auth] last_seen_at renewal failed:", err));
-  }
-  return {
-    userId: row.user.id,
-    role: row.user.role,
-    spaceIds: memberships.map((membership) => membership.spaceId),
-    spaceMemberships: memberships,
-    user: row.user,
-  };
-});
+    const memberships = await db
+      .select({ spaceId: spaceMembers.spaceId, role: spaceMembers.memberRole })
+      .from(spaceMembers)
+      .where(eq(spaceMembers.userId, row.user.id));
+    // Fire-and-forget on purpose, but never unhandled: a rejected promise here
+    // (a dropped DB connection) would crash the process, not just skip a renewal.
+    if (row.session.lastSeenAt.getTime() < Date.now() - LAST_SEEN_WRITE_INTERVAL_MS) {
+      db.update(sessions)
+        .set({ lastSeenAt: new Date() })
+        .where(eq(sessions.id, row.session.id))
+        .catch((err) => console.error("[auth] last_seen_at renewal failed:", err));
+    }
+    return {
+      userId: row.user.id,
+      role: row.user.role,
+      spaceIds: memberships.map((membership) => membership.spaceId),
+      spaceMemberships: memberships,
+      user: row.user,
+    };
+  },
+);
 
 export async function resolvePrincipal(): Promise<Principal | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
@@ -108,7 +110,10 @@ export async function revokeSessionToken(token: string | undefined): Promise<voi
     .where(and(eq(sessions.tokenHash, tokenHash(token)), isNull(sessions.revokedAt)));
 }
 
-export async function revokeUserSessions(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], userId: string) {
+export async function revokeUserSessions(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+) {
   await tx
     .update(sessions)
     .set({ revokedAt: new Date() })

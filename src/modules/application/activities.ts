@@ -81,7 +81,11 @@ export async function getAppActivity(actor: Principal, activityId: string) {
 }
 
 /** One bounded, Project-safe DTO for the Activity detail workspace. */
-export async function getAppActivityWorkspace(actor: Principal, projectId: string, activityId: string) {
+export async function getAppActivityWorkspace(
+  actor: Principal,
+  projectId: string,
+  activityId: string,
+) {
   const activity = await getAppActivity(actor, activityId);
   if (activity.projectId !== projectId) {
     throw notFound();

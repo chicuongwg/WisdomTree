@@ -23,13 +23,28 @@ function operationalProjectIds(actor: Principal) {
 }
 
 function indexActivityContexts(
-  links: Array<{ referenceId: string; activityId: string; title: string; projectId: string; projectName: string }>,
-  people: Array<{ activityId: string; personId: string; displayName: string; roleLabel: string | null }>,
+  links: Array<{
+    referenceId: string;
+    activityId: string;
+    title: string;
+    projectId: string;
+    projectName: string;
+  }>,
+  people: Array<{
+    activityId: string;
+    personId: string;
+    displayName: string;
+    roleLabel: string | null;
+  }>,
 ) {
   const peopleByActivity = new Map<string, ActivityContext["people"]>();
   for (const person of people) {
     const entries = peopleByActivity.get(person.activityId) ?? [];
-    entries.push({ id: person.personId, displayName: person.displayName, roleLabel: person.roleLabel });
+    entries.push({
+      id: person.personId,
+      displayName: person.displayName,
+      roleLabel: person.roleLabel,
+    });
     peopleByActivity.set(person.activityId, entries);
   }
   const result = new Map<string, ActivityContext[]>();
@@ -129,7 +144,9 @@ export async function getNoteResearchProvenance(actor: Principal, noteVersionId:
           : Promise.resolve([]),
       ])
     : [[], []];
-  const activityIds = [...new Set([...sourceActivityLinks, ...noteActivityLinks].map((row) => row.activityId))];
+  const activityIds = [
+    ...new Set([...sourceActivityLinks, ...noteActivityLinks].map((row) => row.activityId)),
+  ];
   const activityPeopleRows = activityIds.length
     ? await db
         .select({

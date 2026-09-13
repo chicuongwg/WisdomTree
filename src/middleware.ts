@@ -12,11 +12,16 @@ const PUBLIC_PATHS = [
   "/calendar/",
 ];
 
+const isPublicPath = (pathname: string) =>
+  PUBLIC_PATHS.some((path) => pathname.startsWith(path)) ||
+  pathname === "/p" ||
+  pathname.startsWith("/p/");
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Let public routes through
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 

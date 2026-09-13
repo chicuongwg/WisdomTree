@@ -1,14 +1,12 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, type Tx } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import type { Principal } from "../auth/principal";
 import { authorize } from "../auth/authorize";
 import { recordAudit } from "../audit/service";
-import {
-  requireProjectCapability,
-  requireProjectLibraryOperator,
-} from "../project/capabilities";
+import { requireProjectCapability, requireProjectLibraryOperator } from "../project/capabilities";
+import { projects } from "../project/schema";
 import { sources, sourcePhysical } from "../storage/schema";
 import { users } from "../auth/schema";
 import { loanTickets } from "./schema";
@@ -45,13 +43,21 @@ async function loadItemBySource(runner: Tx | typeof db, sourceId: string) {
   return row;
 }
 
-async function requestLoanWithMode(
-  actor: Principal,
-  sourceId: string,
-  mode: "legacy" | "project",
-) {
+async function isConfirmedProject(runner: Tx | typeof db, projectId: string) {
+  const [project] = await runner
+    .select({ id: projects.projectId })
+    .from(projects)
+    .where(eq(projects.projectId, projectId));
+  return Boolean(project);
+}
+
+async function requestLoanWithMode(actor: Principal, sourceId: string, mode: "legacy" | "project") {
   const { item, spaceId } = await loadItemBySource(db, sourceId);
   if (mode === "project") {
+    await requireProjectCapability(spaceId, "library_circulation");
+  } else if (await isConfirmedProject(db, spaceId)) {
+    // Legacy routes still exist for non-Project collections. They must not
+    // downgrade a confirmed Project's capability requirement.
     await requireProjectCapability(spaceId, "library_circulation");
   }
   authorize(actor, "circulation.loan.request", { spaceId, kind: "write" });
@@ -78,14 +84,14 @@ async function requestLoanWithMode(
       ),
     );
   if (mine) {
-    throw new ApiError(409, "loan_already_active", "You already have an active loan for this title.");
-  }
-  if ((await activeLoanCount(db, item.id)) >= item.copies) {
     throw new ApiError(
       409,
-      "item_unavailable",
-      "All copies of this title are on loan.",
+      "loan_already_active",
+      "You already have an active loan for this title.",
     );
+  }
+  if ((await activeLoanCount(db, item.id)) >= item.copies) {
+    throw new ApiError(409, "item_unavailable", "All copies of this title are on loan.");
   }
 
   const ticket = await db.transaction(async (tx) => {
@@ -93,11 +99,7 @@ async function requestLoanWithMode(
     // same title twice; the copy count is checked again here, inside the
     // transaction, so two people racing for the last copy cannot both win.
     if ((await activeLoanCount(tx, item.id)) >= item.copies) {
-      throw new ApiError(
-        409,
-        "item_unavailable",
-        "All copies of this title are on loan.",
-      );
+      throw new ApiError(409, "item_unavailable", "All copies of this title are on loan.");
     }
     const [created] = await tx
       .insert(loanTickets)
@@ -190,10 +192,6 @@ async function librarianTransition(
   dueAt?: Date,
   mode: "legacy" | "project" = "legacy",
 ): Promise<TicketRow> {
-  if (mode === "legacy") {
-    authorize(actor, "circulation.loan.manage", { kind: "write" });
-  }
-
   const result = await db.transaction(async (tx) => {
     const ticket = await loadTicket(tx, ticketId);
     const [ownership] = await tx
@@ -202,8 +200,10 @@ async function librarianTransition(
       .innerJoin(sources, eq(sourcePhysical.sourceId, sources.id))
       .where(eq(sourcePhysical.id, ticket.itemId));
     if (!ownership) throw notFound();
-    if (mode === "project") {
+    if (mode === "project" || (await isConfirmedProject(tx, ownership.projectId))) {
       await requireProjectLibraryOperator(actor, ownership.projectId, tx);
+    } else {
+      authorize(actor, "circulation.loan.manage", { kind: "write" });
     }
     let updated: TicketRow;
     switch (action) {
@@ -293,7 +293,7 @@ export const handoverProjectLoan = (actor: Principal, ticketId: string, dueAt: D
 export const returnProjectLoan = (actor: Principal, ticketId: string) =>
   librarianTransition(actor, ticketId, "return", undefined, "project");
 
-/** Loan-desk queue: all tickets, newest first, with item and borrower. */
+/** Legacy loan-desk queue for non-Project collections only. */
 export async function listTickets(actor: Principal, states?: TicketRow["state"][]) {
   authorize(actor, "circulation.loan.manage", { kind: "read" });
   return db
@@ -307,8 +307,14 @@ export async function listTickets(actor: Principal, states?: TicketRow["state"][
     .from(loanTickets)
     .innerJoin(sourcePhysical, eq(loanTickets.itemId, sourcePhysical.id))
     .innerJoin(sources, eq(sourcePhysical.sourceId, sources.id))
+    .leftJoin(projects, eq(projects.projectId, sources.spaceId))
     .innerJoin(users, eq(loanTickets.borrowerId, users.id))
-    .where(states?.length ? inArray(loanTickets.state, states) : undefined)
+    .where(
+      and(
+        isNull(projects.projectId),
+        ...(states?.length ? [inArray(loanTickets.state, states)] : []),
+      ),
+    )
     .orderBy(desc(loanTickets.updatedAt));
 }
 
@@ -348,7 +354,11 @@ export async function listProjectLoans(
  */
 export async function listTicketsForItem(actor: Principal, sourceId: string) {
   const { item, spaceId } = await loadItemBySource(db, sourceId);
-  authorize(actor, "storage.library.browse", { spaceId, kind: "read" });
+  if (await isConfirmedProject(db, spaceId)) {
+    await requireProjectLibraryOperator(actor, spaceId);
+  } else {
+    authorize(actor, "storage.library.browse", { spaceId, kind: "read" });
+  }
 
   const handler = alias(users, "handler");
   return db

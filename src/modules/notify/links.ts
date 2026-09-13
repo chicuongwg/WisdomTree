@@ -17,13 +17,21 @@ import { eventLabel } from "../../lib/vi";
 // An event we cannot map returns null — the caller renders plain text. A dead
 // link is worse than no link.
 
-export type NotificationLink = { href: string; label: string };
+export type NotificationLink = { href: string; label: string; subject?: string };
 
 /** Comment anchors, mirroring comments.anchorType. */
-export type AnchorType = "source" | "tree_node" | "deadline";
+export type AnchorType = "source" | "tree_node" | "deadline" | "activity" | "task";
 
 export type NotificationLinkContext = {
-  /** loan ticket id → Library source id, for loan payloads carrying no sourceId. */
+  /**
+   * Authorised target paths keyed by "anchorType:anchorId". The target UI
+   * owns these paths; an absent entry deliberately renders as text instead of
+   * falling back to a removed legacy route.
+   */
+  anchorHrefs?: Readonly<Record<string, string>>;
+  /** Safe current titles keyed by "anchorType:anchorId". */
+  anchorTitles?: Readonly<Record<string, string>>;
+  /** loan ticket id → source id, for older payloads carrying no sourceId. */
   ticketSourceIds?: Readonly<Record<string, string>>;
   /** The viewer's role — kept for role-aware routes. */
   viewerRole?: "user" | "editor" | "admin_op";
@@ -40,19 +48,10 @@ const str = (v: unknown): string | null => (typeof v === "string" && v.length > 
 export function anchorHref(
   anchorType: string | null,
   anchorId: string | null,
-  _ctx: NotificationLinkContext = {},
+  ctx: NotificationLinkContext = {},
 ): string | null {
-  if (!anchorId) return null;
-  switch (anchorType) {
-    case "tree_node":
-      return `/wiki/${anchorId}`;
-    case "source":
-      return `/library/${anchorId}`;
-    case "deadline":
-      return `/deadlines/${anchorId}`;
-    default:
-      return null;
-  }
+  if (!anchorType || !anchorId) return null;
+  return ctx.anchorHrefs?.[`${anchorType}:${anchorId}`] ?? null;
 }
 
 /** Anchors whose detail screen renders the shared comment block. */
@@ -60,6 +59,8 @@ const ANCHORS_WITH_COMMENTS: ReadonlySet<string> = new Set<AnchorType>([
   "source",
   "tree_node",
   "deadline",
+  "activity",
+  "task",
 ]);
 
 function hrefFor(eventType: string, payload: Payload, ctx: NotificationLinkContext): string | null {
@@ -81,10 +82,10 @@ function hrefFor(eventType: string, payload: Payload, ctx: NotificationLinkConte
       // a loan lives on its Library item detail, where the loan record block
       // names borrower, approver and due date.
       const sourceId = str(payload.sourceId);
-      if (sourceId) return `/library/${sourceId}`;
+      if (sourceId) return anchorHref("source", sourceId, ctx);
       const ticketId = str(payload.ticketId);
       const viaTicket = ticketId ? ctx.ticketSourceIds?.[ticketId] : null;
-      return viaTicket ? `/library/${viaTicket}` : null;
+      return viaTicket ? anchorHref("source", viaTicket, ctx) : null;
     }
 
     case "deadline.approaching":
@@ -121,5 +122,25 @@ export function notificationLink(
   if (!href) return null;
   // Link text is the event sentence itself ("Bạn được giao việc hiệu đính"),
   // never "bấm vào đây": it reads on its own out of context.
-  return { href, label: eventLabel(eventType) };
+  const anchorType =
+    str(p.anchorType) ??
+    (eventType === "tree.node.published"
+      ? "tree_node"
+      : eventType === "source.processing_failed"
+        ? "source"
+        : eventType.startsWith("deadline.")
+          ? "deadline"
+          : null);
+  const anchorId =
+    str(p.anchorId) ??
+    (anchorType === "tree_node"
+      ? str(p.nodeId)
+      : anchorType === "source"
+        ? str(p.sourceId)
+        : anchorType === "deadline"
+          ? str(p.deadlineId)
+          : null);
+  const subject =
+    anchorType && anchorId ? ctx.anchorTitles?.[`${anchorType}:${anchorId}`] : undefined;
+  return { href, label: eventLabel(eventType), ...(subject ? { subject } : {}) };
 }

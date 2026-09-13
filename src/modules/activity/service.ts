@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError, notFound, versionConflict } from "@/lib/errors";
 import { authorize } from "../auth/authorize";
+import { requireProjectResearchRead } from "../auth/core";
 import type { Principal } from "../auth/principal";
 import { recordAudit } from "../audit/service";
 import { treeNodes } from "../knowledge/schema";
@@ -45,6 +46,7 @@ async function requireProject(actor: Principal, projectId: string, kind: "read" 
     .from(projects)
     .where(eq(projects.projectId, projectId));
   if (!project) throw notFound();
+  await requireProjectResearchRead(actor, project.projectId);
   authorize(actor, "project.activity.read", { spaceId: project.projectId, kind: "read" });
   if (kind === "write") {
     authorize(actor, "project.activity.manage", { spaceId: project.projectId, kind: "write" });
@@ -59,6 +61,7 @@ async function requireActivity(actor: Principal, activityId: string, kind: "read
     .innerJoin(projects, eq(projects.projectId, activities.projectId))
     .where(eq(activities.id, activityId));
   if (!activity) throw notFound();
+  await requireProjectResearchRead(actor, activity.projects.projectId);
   authorize(actor, "project.activity.read", {
     spaceId: activity.activities.projectId,
     kind: "read",

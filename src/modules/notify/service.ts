@@ -10,6 +10,9 @@ import { sources, sourcePhysical, spaceMembers } from "../storage/schema";
 import { branches, treeNodes } from "../knowledge/schema";
 import { loanTickets } from "../circulation/schema";
 import { deadlines } from "../pm/schema";
+import { tasks } from "../pm/schema";
+import { activities } from "../activity/schema";
+import { researchReadableProjectIds } from "../auth/core";
 import { comments, notificationPreferences, notifications, presence } from "./schema";
 import { NOTIFIED_EVENTS, notifyEvent } from "./fanout";
 import { notificationLink, type NotificationLinkContext } from "./links";
@@ -48,7 +51,11 @@ async function authorizeAnchorRead(
     }
     case "tree_node": {
       const [node] = await db
-        .select({ scope: branches.scope, ownerUserId: branches.ownerUserId, spaceId: branches.spaceId })
+        .select({
+          scope: branches.scope,
+          ownerUserId: branches.ownerUserId,
+          spaceId: branches.spaceId,
+        })
         .from(treeNodes)
         .innerJoin(branches, eq(branches.id, treeNodes.branchId))
         .where(eq(treeNodes.id, anchorId));
@@ -66,7 +73,33 @@ async function authorizeAnchorRead(
       authorize(actor, "pm.deadline.read", { spaceId: deadline.spaceId, kind: "read" });
       return;
     }
+    case "activity": {
+      const [activity] = await db.select().from(activities).where(eq(activities.id, anchorId));
+      if (!activity) throw notFound();
+      authorize(actor, "project.activity.read", { spaceId: activity.projectId, kind: "read" });
+      return;
+    }
+    case "task": {
+      const [task] = await db.select().from(tasks).where(eq(tasks.id, anchorId));
+      if (!task?.projectId) throw notFound();
+      authorize(actor, "pm.project_task.read", { spaceId: task.projectId, kind: "read" });
+      return;
+    }
   }
+}
+
+/**
+ * The shared read gate for target collaboration adapters. It deliberately
+ * retains the comment domain's historical anchor permissions instead of
+ * treating target research-read access as collaboration access.
+ */
+export async function authorizeCommentContext(
+  actor: Principal,
+  anchorType: AnchorType,
+  anchorId: string,
+): Promise<void> {
+  authorize(actor, "notify.comment.create", { kind: "read" });
+  await authorizeAnchorRead(actor, anchorType, anchorId);
 }
 
 // ---------------------------------------------------------------------------
@@ -104,13 +137,31 @@ async function anchorAudience(anchorType: AnchorType, anchorId: string): Promise
     }
     case "tree_node": {
       const [row] = await db
-        .select({ scope: branches.scope, spaceId: branches.spaceId, ownerUserId: branches.ownerUserId })
+        .select({
+          scope: branches.scope,
+          spaceId: branches.spaceId,
+          ownerUserId: branches.ownerUserId,
+        })
         .from(treeNodes)
         .innerJoin(branches, eq(branches.id, treeNodes.branchId))
         .where(eq(treeNodes.id, anchorId));
       return row?.scope === "personal"
         ? { spaceId: null, ownerUserId: row.ownerUserId }
         : { spaceId: row?.spaceId ?? null, ownerUserId: null };
+    }
+    case "activity": {
+      const [row] = await db
+        .select({ spaceId: activities.projectId })
+        .from(activities)
+        .where(eq(activities.id, anchorId));
+      return { spaceId: row?.spaceId ?? null, ownerUserId: null };
+    }
+    case "task": {
+      const [row] = await db
+        .select({ spaceId: tasks.projectId })
+        .from(tasks)
+        .where(eq(tasks.id, anchorId));
+      return { spaceId: row?.spaceId ?? null, ownerUserId: null };
     }
   }
 }
@@ -161,10 +212,7 @@ function matchMentions(
   return [...found];
 }
 
-/**
- * Members who can see the anchor: enabled users, narrowed to the anchor's
- * space when it has one (Admin/Op reads every space, so they stay in).
- */
+/** Enabled members who can reopen this collaboration context. */
 async function mentionCandidates(anchorType: AnchorType, anchorId: string) {
   const audience = await anchorAudience(anchorType, anchorId);
   const enabled = await db
@@ -178,7 +226,7 @@ async function mentionCandidates(anchorType: AnchorType, anchorId: string) {
     .from(spaceMembers)
     .where(eq(spaceMembers.spaceId, audience.spaceId));
   const inSpace = new Set(members.map((m) => m.userId));
-  return enabled.filter((u) => u.role === "admin_op" || inSpace.has(u.id));
+  return enabled.filter((user) => inSpace.has(user.id));
 }
 
 /**
@@ -187,7 +235,12 @@ async function mentionCandidates(anchorType: AnchorType, anchorId: string) {
  * member the resolver then cannot see would put the reader back where they
  * started — a mention that looks accepted and silently notifies nobody.
  */
-export async function listMentionCandidates(anchorType: AnchorType, anchorId: string) {
+export async function listMentionCandidates(
+  actor: Principal,
+  anchorType: AnchorType,
+  anchorId: string,
+) {
+  await authorizeCommentContext(actor, anchorType, anchorId);
   const rows = await mentionCandidates(anchorType, anchorId);
   return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
 }
@@ -204,8 +257,7 @@ async function displayNamesById(ids: readonly string[]): Promise<Map<string, str
 
 /** Threaded list, oldest first; caller must see the anchor (else 404). */
 export async function listComments(actor: Principal, anchorType: AnchorType, anchorId: string) {
-  authorize(actor, "notify.comment.create", { kind: "read" });
-  await authorizeAnchorRead(actor, anchorType, anchorId);
+  await authorizeCommentContext(actor, anchorType, anchorId);
   const rows = await db
     .select({
       id: comments.id,
@@ -247,7 +299,11 @@ export async function createComment(
   if (input.parentCommentId) {
     const [parent] = await db.select().from(comments).where(eq(comments.id, input.parentCommentId));
     if (!parent || parent.anchorType !== input.anchorType || parent.anchorId !== input.anchorId) {
-      throw new ApiError(400, "invalid_parent_comment", "The parent comment belongs to a different item.");
+      throw new ApiError(
+        400,
+        "invalid_parent_comment",
+        "The parent comment belongs to a different item.",
+      );
     }
   }
   // Mentions come out of the text itself, against members who can see this
@@ -321,23 +377,51 @@ export async function listNotifications(actor: Principal, unreadOnly = false) {
 
 /**
  * Hydrate the one database fact the pure link resolver cannot know, ONCE per
- * page render rather than per row: which Library item each referenced loan
- * ticket belongs to. Read-only and self-scoped — it only ever looks at ids
- * the viewer's own notifications already contain.
+ * page render rather than per row: which target context each notification can
+ * still open. Read-only and self-scoped — it only ever looks at ids the
+ * viewer's own notifications already contain, then filters paths through the
+ * viewer's current Project access.
  */
 export async function buildNotificationLinkContext(
   actor: Principal,
   notes: ReadonlyArray<{ eventType: string; payload: unknown }>,
 ): Promise<NotificationLinkContext> {
   const ticketIds = new Set<string>();
+  const sourceIds = new Set<string>();
+  const nodeIds = new Set<string>();
+  const deadlineIds = new Set<string>();
+  const activityIds = new Set<string>();
+  const taskIds = new Set<string>();
   const pick = (p: Record<string, unknown>, key: string): string | null =>
     typeof p[key] === "string" && p[key] ? (p[key] as string) : null;
 
   for (const note of notes) {
     const p = (note.payload ?? {}) as Record<string, unknown>;
+    const anchorType = pick(p, "anchorType");
+    const anchorId = pick(p, "anchorId");
+    if (anchorType === "source" && anchorId) sourceIds.add(anchorId);
+    if (anchorType === "tree_node" && anchorId) nodeIds.add(anchorId);
+    if (anchorType === "deadline" && anchorId) deadlineIds.add(anchorId);
+    if (anchorType === "activity" && anchorId) activityIds.add(anchorId);
+    if (anchorType === "task" && anchorId) taskIds.add(anchorId);
+    if (note.eventType === "source.processing_failed") {
+      const sourceId = pick(p, "sourceId");
+      if (sourceId) sourceIds.add(sourceId);
+    }
+    if (note.eventType === "tree.node.published") {
+      const nodeId = pick(p, "nodeId");
+      if (nodeId) nodeIds.add(nodeId);
+    }
+    if (note.eventType === "deadline.approaching" || note.eventType === "deadline.created") {
+      const deadlineId = pick(p, "deadlineId");
+      if (deadlineId) deadlineIds.add(deadlineId);
+    }
     if (note.eventType.startsWith("loan.")) {
       // Only tickets whose payload lacks sourceId need the lookup.
-      if (!pick(p, "sourceId")) {
+      const sourceId = pick(p, "sourceId");
+      if (sourceId) {
+        sourceIds.add(sourceId);
+      } else {
         const id = pick(p, "ticketId");
         if (id) ticketIds.add(id);
       }
@@ -351,10 +435,88 @@ export async function buildNotificationLinkContext(
       .from(loanTickets)
       .innerJoin(sourcePhysical, eq(loanTickets.itemId, sourcePhysical.id))
       .where(inArray(loanTickets.id, [...ticketIds]));
-    for (const row of rows) ticketSourceIds[row.id] = row.sourceId;
+    for (const row of rows) {
+      ticketSourceIds[row.id] = row.sourceId;
+      sourceIds.add(row.sourceId);
+    }
   }
 
-  return { ticketSourceIds, viewerRole: actor.role };
+  const [researchIds, sourceRows, nodeRows, deadlineRows, activityRows, taskRows, operationalRows] =
+    await Promise.all([
+      researchReadableProjectIds(actor),
+      sourceIds.size
+        ? db
+            .select({ id: sources.id, projectId: sources.spaceId, title: sources.title })
+            .from(sources)
+            .where(inArray(sources.id, [...sourceIds]))
+        : [],
+      nodeIds.size
+        ? db
+            .select({ id: treeNodes.id, projectId: treeNodes.projectId, title: treeNodes.title })
+            .from(treeNodes)
+            .where(inArray(treeNodes.id, [...nodeIds]))
+        : [],
+      deadlineIds.size
+        ? db
+            .select({ id: deadlines.id, projectId: deadlines.spaceId, title: deadlines.title })
+            .from(deadlines)
+            .where(inArray(deadlines.id, [...deadlineIds]))
+        : [],
+      activityIds.size
+        ? db
+            .select({ id: activities.id, projectId: activities.projectId, title: activities.title })
+            .from(activities)
+            .where(inArray(activities.id, [...activityIds]))
+        : [],
+      taskIds.size
+        ? db
+            .select({ id: tasks.id, projectId: tasks.projectId, title: tasks.title })
+            .from(tasks)
+            .where(inArray(tasks.id, [...taskIds]))
+        : [],
+      db
+        .select({ projectId: spaceMembers.spaceId })
+        .from(spaceMembers)
+        .where(eq(spaceMembers.userId, actor.userId)),
+    ]);
+  const readable = new Set(researchIds);
+  const operational = new Set(operationalRows.map((row) => row.projectId));
+  const anchorHrefs: Record<string, string> = {};
+  const anchorTitles: Record<string, string> = {};
+  for (const row of nodeRows) {
+    if (row.projectId && readable.has(row.projectId)) {
+      anchorHrefs[`tree_node:${row.id}`] = `/app/projects/${row.projectId}/notes/${row.id}`;
+      anchorTitles[`tree_node:${row.id}`] = row.title;
+    }
+  }
+  for (const row of sourceRows) {
+    if (readable.has(row.projectId)) {
+      anchorHrefs[`source:${row.id}`] = `/app/projects/${row.projectId}/materials/${row.id}`;
+      anchorTitles[`source:${row.id}`] = row.title;
+    }
+  }
+  // Target Calendar is intentionally membership-bound. A Core-only reader
+  // does not receive a deadline path merely because a notification is old.
+  for (const row of deadlineRows) {
+    if (operational.has(row.projectId)) {
+      anchorHrefs[`deadline:${row.id}`] = `/app/calendar/deadlines/${row.id}`;
+      anchorTitles[`deadline:${row.id}`] = row.title;
+    }
+  }
+  for (const row of activityRows) {
+    if (operational.has(row.projectId)) {
+      anchorHrefs[`activity:${row.id}`] = `/app/projects/${row.projectId}/activities/${row.id}`;
+      anchorTitles[`activity:${row.id}`] = row.title;
+    }
+  }
+  for (const row of taskRows) {
+    if (row.projectId && operational.has(row.projectId)) {
+      anchorHrefs[`task:${row.id}`] = `/app/projects/${row.projectId}/tasks/${row.id}`;
+      anchorTitles[`task:${row.id}`] = row.title;
+    }
+  }
+
+  return { anchorHrefs, anchorTitles, ticketSourceIds, viewerRole: actor.role };
 }
 
 /** Rows ready to render: the notification plus its resolved jump-to link. */
@@ -496,6 +658,7 @@ export async function listPresence(actor: Principal, pageKey: string) {
         eq(presence.pageKey, pageKey),
         ne(presence.userId, actor.userId),
         gt(presence.seenAt, since),
+        isNull(users.disabledAt),
       ),
     )
     .orderBy(desc(presence.seenAt));

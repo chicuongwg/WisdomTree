@@ -657,5 +657,4 @@ export const T = {
   demoLoginHeading: "Đăng nhập demo (chỉ máy phát triển)",
   oidcNotConfigured:
     "Bản cài đặt này chưa cấu hình đăng nhập Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APP_URL). Liên hệ quản trị viên để được cấp quyền truy cập.",
-
 } as const;
