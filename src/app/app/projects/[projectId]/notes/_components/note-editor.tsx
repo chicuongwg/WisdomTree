@@ -414,37 +414,40 @@ export function NoteEditor({
           required
         />
 
-        <div className="ui-next-note-editor__purpose-row">
-          <label htmlFor="note-purpose-select">{translate(locale, "notes.purpose.label")}:</label>
-          <select
-            id="note-purpose-select"
-            className="ui-next-note-editor__purpose-select"
-            value={researchPurpose ?? ""}
+        <details className="ui-next-note-editor__metadata">
+          <summary>{translate(locale, "notes.inspector.metadata")}</summary>
+          <div className="ui-next-note-editor__purpose-row">
+            <label htmlFor="note-purpose-select">{translate(locale, "notes.purpose.label")}:</label>
+            <select
+              id="note-purpose-select"
+              className="ui-next-note-editor__purpose-select"
+              value={researchPurpose ?? ""}
+              onChange={(e) => {
+                const val = e.target.value as "evidence" | "synthesis" | "";
+                saveSnapshotRef.current.researchPurpose = val ? val : null;
+                setResearchPurpose(val ? val : null);
+                markDirty();
+              }}
+            >
+              <option value="">{translate(locale, "notes.purpose.unspecified")}</option>
+              <option value="evidence">{translate(locale, "notes.purpose.evidence")}</option>
+              <option value="synthesis">{translate(locale, "notes.purpose.synthesis")}</option>
+            </select>
+          </div>
+
+          <input
+            type="text"
+            className="ui-next-note-editor__summary-input"
+            value={summary}
             onChange={(e) => {
-              const val = e.target.value as "evidence" | "synthesis" | "";
-              saveSnapshotRef.current.researchPurpose = val ? val : null;
-              setResearchPurpose(val ? val : null);
+              saveSnapshotRef.current.summary = e.target.value;
+              setSummary(e.target.value);
               markDirty();
             }}
-          >
-            <option value="">{translate(locale, "notes.purpose.unspecified")}</option>
-            <option value="evidence">{translate(locale, "notes.purpose.evidence")}</option>
-            <option value="synthesis">{translate(locale, "notes.purpose.synthesis")}</option>
-          </select>
-        </div>
-
-        <input
-          type="text"
-          className="ui-next-note-editor__summary-input"
-          value={summary}
-          onChange={(e) => {
-            saveSnapshotRef.current.summary = e.target.value;
-            setSummary(e.target.value);
-            markDirty();
-          }}
-          placeholder={translate(locale, "notes.field.summaryPlaceholder")}
-          aria-label={translate(locale, "notes.field.summary")}
-        />
+            placeholder={translate(locale, "notes.field.summaryPlaceholder")}
+            aria-label={translate(locale, "notes.field.summary")}
+          />
+        </details>
       </div>
 
       <div className="ui-next-note-editor__content-area">

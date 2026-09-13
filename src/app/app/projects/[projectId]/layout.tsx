@@ -15,7 +15,7 @@ export default async function ProjectWorkspaceLayout({
   const { application, projects, workspace } = await getProjectWorkspaceContext(projectId);
 
   return (
-    <PageContainer width="wide">
+    <PageContainer width="full">
       <div className="ui-next-project-workspace">
         <ProjectHeader
           project={workspace.project}

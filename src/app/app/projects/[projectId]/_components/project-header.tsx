@@ -28,11 +28,11 @@ export function ProjectHeader({
 }) {
   return (
     <header className="ui-next-project-header">
-      <ProjectSwitcher projectId={project.id} projects={projects} locale={locale} />
       <div className="ui-next-project-header__identity">
+        <ProjectSwitcher projectId={project.id} projects={projects} locale={locale} />
         <div>
           <h1>{project.isPersonal ? translate(locale, "projects.myProject") : project.name}</h1>
-          <p dir="auto">
+          <p className="ui-next-project-header__lens" dir="auto">
             {project.isPersonal && project.researchLens === "Personal research workspace"
               ? translate(locale, "projects.personalWorkspace")
               : project.researchLens}

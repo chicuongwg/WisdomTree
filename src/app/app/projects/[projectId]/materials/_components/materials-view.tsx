@@ -150,13 +150,29 @@ export function MaterialsView({
       )}
 
       <Dialog
+        footer={
+          <div className="ui-next-material-form__actions">
+            <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
+              {translate(locale, "common.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              form="create-material"
+              variant="primary"
+              loading={isCreating}
+              loadingLabel={translate(locale, "common.loading")}
+            >
+              {translate(locale, "materials.create.submit")}
+            </Button>
+          </div>
+        }
         open={isOpen}
         onClose={() => setIsOpen(false)}
         title={translate(locale, "materials.create.title")}
         description={translate(locale, "materials.create.description")}
         closeLabel={translate(locale, "common.close")}
       >
-        <form className="ui-next-material-form" onSubmit={createMaterial}>
+        <form id="create-material" className="ui-next-material-form" onSubmit={createMaterial}>
           <label>
             <span>{translate(locale, "materials.field.title")}</span>
             <input name="title" required maxLength={300} autoFocus />
@@ -175,19 +191,6 @@ export function MaterialsView({
               {error}
             </p>
           ) : null}
-          <div className="ui-next-material-form__actions">
-            <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
-              {translate(locale, "common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isCreating}
-              loadingLabel={translate(locale, "common.loading")}
-            >
-              {translate(locale, "materials.create.submit")}
-            </Button>
-          </div>
         </form>
       </Dialog>
     </section>

@@ -175,6 +175,31 @@ export function EvidencePicker({
 
   return (
     <Dialog
+      footer={
+        selectedItem ? (
+          <div className="ui-next-evidence-picker__actions">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setSelectedItem(null)}
+              disabled={isAttaching}
+            >
+              {translate(locale, "notes.evidence.backToResults")}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleAttach}
+              disabled={!selectedVersionId || isAttaching}
+            >
+              {isAttaching
+                ? translate(locale, "notes.evidence.attaching")
+                : translate(locale, "notes.evidence.attachAction")}
+            </Button>
+          </div>
+        ) : undefined
+      }
+      size="wide"
       open={open}
       onClose={handleClose}
       title={translate(locale, "notes.evidence.add")}
@@ -360,27 +385,6 @@ export function EvidencePicker({
             </div>
 
             {attachError ? <p className="ui-next-danger">{attachError}</p> : null}
-
-            <div className="ui-next-evidence-picker__actions">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setSelectedItem(null)}
-                disabled={isAttaching}
-              >
-                {translate(locale, "notes.evidence.backToResults")}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleAttach}
-                disabled={!selectedVersionId || isAttaching}
-              >
-                {isAttaching
-                  ? translate(locale, "notes.evidence.attaching")
-                  : translate(locale, "notes.evidence.attachAction")}
-              </Button>
-            </div>
           </div>
         )}
       </div>

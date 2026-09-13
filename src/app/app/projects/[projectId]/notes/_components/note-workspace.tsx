@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { parseBlocks } from "@/lib/markdown-core";
 import { normalizeTitle } from "@/lib/wikilink";
@@ -102,6 +102,25 @@ export function NoteWorkspace({
   const [mode, setMode] = useState<"reader" | "editor">(officialNote ? "reader" : "editor");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focusMode || !workspaceRef.current) return;
+    const obscured: HTMLElement[] = [];
+    let node: HTMLElement | null = workspaceRef.current;
+    while (node?.parentElement) {
+      for (const sibling of node.parentElement.children) {
+        if (sibling !== node && sibling instanceof HTMLElement && !sibling.inert) {
+          sibling.inert = true;
+          obscured.push(sibling);
+        }
+      }
+      node = node.parentElement;
+    }
+    return () =>
+      obscured.forEach((element) => {
+        element.inert = false;
+      });
+  }, [focusMode]);
   const [isNarrow, setIsNarrow] = useState(false);
   const tableOfContents = officialNote
     ? parseBlocks(officialNote.contentMd)
@@ -265,7 +284,10 @@ export function NoteWorkspace({
   }
 
   return (
-    <div className={`ui-next-note-workspace ${focusMode ? "ui-next-note-workspace--focus" : ""}`}>
+    <div
+      ref={workspaceRef}
+      className={`ui-next-note-workspace ${focusMode ? "ui-next-note-workspace--focus" : ""}`}
+    >
       <div className="ui-next-note-workspace__main">
         {mode === "reader" && officialNote ? (
           <NoteReader

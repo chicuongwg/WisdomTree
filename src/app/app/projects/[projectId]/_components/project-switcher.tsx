@@ -31,7 +31,9 @@ export function ProjectSwitcher({
 
   return (
     <label className="ui-next-project-switcher">
-      <span>{translate(locale, "workspace.switchProject")}</span>
+      <span className="ui-next-visually-hidden">
+        {translate(locale, "workspace.switchProject")}
+      </span>
       <select
         className="ui-next-control"
         value={projectId}

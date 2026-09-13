@@ -27,59 +27,62 @@ export default async function AppOverviewPage() {
           description={translate(application.locale, "page.overview.description")}
         />
 
-        <section className="ui-next-overview-section" aria-labelledby="overview-work-title">
-          <div className="ui-next-section-heading">
-            <div>
-              <h2 id="overview-work-title">
-                {translate(application.locale, "overview.myWork.title")}
-              </h2>
-              <p>{translate(application.locale, "overview.myWork.description")}</p>
+        <div className="ui-next-overview-columns">
+          <section className="ui-next-overview-section" aria-labelledby="overview-work-title">
+            <div className="ui-next-section-heading">
+              <div>
+                <h2 id="overview-work-title">
+                  {translate(application.locale, "overview.myWork.title")}
+                </h2>
+                <p>{translate(application.locale, "overview.myWork.description")}</p>
+              </div>
+              <Link href="/app/my-work">
+                {translate(application.locale, "overview.myWork.open")}
+              </Link>
             </div>
-            <Link href="/app/my-work">{translate(application.locale, "overview.myWork.open")}</Link>
-          </div>
-          {hasActiveWork ? (
-            <Surface>
-              <dl className="ui-next-work-summary">
-                <div>
-                  <dt>{translate(application.locale, "overview.myWork.tasks")}</dt>
-                  <dd>{overview.myWork.assignedTaskCount}</dd>
-                </div>
-                <div>
-                  <dt>{translate(application.locale, "overview.myWork.activities")}</dt>
-                  <dd>{overview.myWork.activeActivityCount}</dd>
-                </div>
-              </dl>
-            </Surface>
-          ) : (
-            <EmptyState
-              title={translate(application.locale, "overview.myWork.emptyTitle")}
-              description={translate(application.locale, "overview.myWork.emptyDescription")}
-            />
-          )}
-        </section>
+            {hasActiveWork ? (
+              <Surface>
+                <dl className="ui-next-work-summary">
+                  <div>
+                    <dt>{translate(application.locale, "overview.myWork.tasks")}</dt>
+                    <dd>{overview.myWork.assignedTaskCount}</dd>
+                  </div>
+                  <div>
+                    <dt>{translate(application.locale, "overview.myWork.activities")}</dt>
+                    <dd>{overview.myWork.activeActivityCount}</dd>
+                  </div>
+                </dl>
+              </Surface>
+            ) : (
+              <EmptyState
+                title={translate(application.locale, "overview.myWork.emptyTitle")}
+                description={translate(application.locale, "overview.myWork.emptyDescription")}
+              />
+            )}
+          </section>
 
-        <section className="ui-next-overview-section" aria-labelledby="overview-projects-title">
-          <div className="ui-next-section-heading">
-            <div>
-              <h2 id="overview-projects-title">
-                {translate(application.locale, "overview.projects.title")}
-              </h2>
-              <p>{translate(application.locale, "overview.projects.description")}</p>
+          <section className="ui-next-overview-section" aria-labelledby="overview-projects-title">
+            <div className="ui-next-section-heading">
+              <div>
+                <h2 id="overview-projects-title">
+                  {translate(application.locale, "overview.projects.title")}
+                </h2>
+                <p>{translate(application.locale, "overview.projects.description")}</p>
+              </div>
+              <Link href="/app/projects">
+                {translate(application.locale, "overview.projects.open")}
+              </Link>
             </div>
-            <Link href="/app/projects">
-              {translate(application.locale, "overview.projects.open")}
-            </Link>
-          </div>
-          {overviewProjects.length ? (
-            <ProjectList projects={overviewProjects} locale={application.locale} />
-          ) : (
-            <EmptyState
-              title={translate(application.locale, "projects.emptyTitle")}
-              description={translate(application.locale, "projects.emptyDescription")}
-            />
-          )}
-        </section>
-
+            {overviewProjects.length ? (
+              <ProjectList projects={overviewProjects} locale={application.locale} />
+            ) : (
+              <EmptyState
+                title={translate(application.locale, "projects.emptyTitle")}
+                description={translate(application.locale, "projects.emptyDescription")}
+              />
+            )}
+          </section>
+        </div>
         <section className="ui-next-overview-section" aria-labelledby="continue-research-title">
           <Surface className="ui-next-continue-research" tone="sunken">
             <div>

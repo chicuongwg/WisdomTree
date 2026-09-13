@@ -132,12 +132,28 @@ export function ActivitiesView({
         />
       )}
       <Dialog
+        footer={
+          <div className="ui-next-work-form__actions">
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              {translate(locale, "common.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              form="create-activity"
+              variant="primary"
+              loading={saving}
+              loadingLabel={translate(locale, "common.loading")}
+            >
+              {translate(locale, "activities.create.submit")}
+            </Button>
+          </div>
+        }
         open={open}
         onClose={() => setOpen(false)}
         title={translate(locale, "activities.create.title")}
         closeLabel={translate(locale, "common.close")}
       >
-        <form className="ui-next-work-form" onSubmit={createActivity}>
+        <form id="create-activity" className="ui-next-work-form" onSubmit={createActivity}>
           <label>
             <span>{translate(locale, "activities.field.title")}</span>
             <input name="title" required maxLength={300} autoFocus />
@@ -155,19 +171,6 @@ export function ActivitiesView({
               {error}
             </p>
           ) : null}
-          <div className="ui-next-work-form__actions">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-              {translate(locale, "common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={saving}
-              loadingLabel={translate(locale, "common.loading")}
-            >
-              {translate(locale, "activities.create.submit")}
-            </Button>
-          </div>
         </form>
       </Dialog>
     </section>

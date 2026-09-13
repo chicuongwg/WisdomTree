@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
 import {
   Button,
+  Dialog,
   Select,
   Surface,
   TextArea,
@@ -82,6 +83,7 @@ export function AdminWorkspace({
   operationalStatus: OperationalStatus;
 }) {
   const router = useRouter();
+  const [activeForm, setActiveForm] = useState<"project" | "user" | "core" | null>(null);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -103,54 +105,82 @@ export function AdminWorkspace({
       <Surface className="ui-next-governance__section">
         <div className="ui-next-governance__heading">
           <h2>{translate(locale, "admin.projects")}</h2>
-        </div>
-        <form
-          className="ui-next-governance__form ui-next-governance__form--reading"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formElement = event.currentTarget;
-            const form = new FormData(formElement);
-            void run(async () => {
-              await api("/api/app/projects", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  name: form.get("name"),
-                  researchLens: form.get("researchLens"),
-                  description: form.get("description"),
-                }),
-              });
-              formElement.reset();
-            });
-          }}
-        >
-          <TextField
-            id="admin-project-name"
-            name="name"
-            label={translate(locale, "admin.projectName")}
-            required
-          />
-          <TextField
-            id="admin-project-lens"
-            name="researchLens"
-            label={translate(locale, "admin.researchLens")}
-            required
-          />
-          <TextArea
-            id="admin-project-description"
-            name="description"
-            label={translate(locale, "admin.projectDescription")}
-            rows={2}
-          />
           <Button
-            type="submit"
-            variant="primary"
-            loading={pending}
-            loadingLabel={translate(locale, "common.loading")}
+            type="button"
+            onClick={() => {
+              setMessage(null);
+              setActiveForm("project");
+            }}
           >
             {translate(locale, "admin.createProject")}
           </Button>
-        </form>
+        </div>
+        <Dialog
+          open={activeForm === "project"}
+          onClose={() => {
+            if (!pending) setActiveForm(null);
+          }}
+          title={translate(locale, "admin.createProject")}
+          closeLabel={translate(locale, "common.close")}
+          footer={
+            <Button
+              type="submit"
+              form="admin-project-form"
+              variant="primary"
+              loading={pending}
+              loadingLabel={translate(locale, "common.loading")}
+            >
+              {translate(locale, "admin.createProject")}
+            </Button>
+          }
+        >
+          <form
+            id="admin-project-form"
+            className="ui-next-governance__form ui-next-governance__form--reading"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formElement = event.currentTarget;
+              const form = new FormData(formElement);
+              void run(async () => {
+                await api("/api/app/projects", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: form.get("name"),
+                    researchLens: form.get("researchLens"),
+                    description: form.get("description"),
+                  }),
+                });
+                formElement.reset();
+                setActiveForm(null);
+              });
+            }}
+          >
+            <TextField
+              id="admin-project-name"
+              name="name"
+              label={translate(locale, "admin.projectName")}
+              required
+            />
+            <TextField
+              id="admin-project-lens"
+              name="researchLens"
+              label={translate(locale, "admin.researchLens")}
+              required
+            />
+            <TextArea
+              id="admin-project-description"
+              name="description"
+              label={translate(locale, "admin.projectDescription")}
+              rows={2}
+            />
+          </form>
+          {message ? (
+            <p role="alert" className="ui-next-governance__error">
+              {message}
+            </p>
+          ) : null}
+        </Dialog>
         <ul
           className="ui-next-governance__rows"
           role="list"
@@ -190,60 +220,197 @@ export function AdminWorkspace({
 
       <Surface className="ui-next-governance__section">
         <div className="ui-next-governance__heading">
-          <h2>{translate(locale, "admin.users")}</h2>
-        </div>
-        <form
-          className="ui-next-governance__form ui-next-governance__form--reading"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formElement = event.currentTarget;
-            const form = new FormData(formElement);
-            void run(async () => {
-              await api("/api/app/admin/users", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  displayName: form.get("displayName"),
-                  email: form.get("email"),
-                  role: form.get("role"),
-                }),
-              });
-              formElement.reset();
-            });
-          }}
-        >
-          <TextField
-            id="admin-user-name"
-            name="displayName"
-            label={translate(locale, "people.name")}
-            required
-          />
-          <TextField
-            id="admin-user-email"
-            name="email"
-            type="email"
-            label={translate(locale, "admin.email")}
-            required
-          />
-          <Select
-            id="admin-user-role"
-            name="role"
-            label={translate(locale, "admin.userRole")}
-            defaultValue="user"
-          >
-            <option value="user">{translate(locale, "account.role.user")}</option>
-            <option value="editor">{translate(locale, "account.role.editor")}</option>
-            <option value="admin_op">{translate(locale, "account.role.admin_op")}</option>
-          </Select>
+          <div>
+            <h2>{translate(locale, "admin.core")}</h2>
+            <p>{translate(locale, "admin.coreDescription")}</p>
+          </div>
           <Button
-            type="submit"
-            variant="primary"
-            loading={pending}
-            loadingLabel={translate(locale, "common.loading")}
+            type="button"
+            onClick={() => {
+              setMessage(null);
+              setActiveForm("core");
+            }}
+          >
+            {translate(locale, "admin.grantCore")}
+          </Button>
+        </div>
+        <Dialog
+          open={activeForm === "core"}
+          onClose={() => {
+            if (!pending) setActiveForm(null);
+          }}
+          title={translate(locale, "admin.grantCore")}
+          closeLabel={translate(locale, "common.close")}
+          footer={
+            <Button
+              type="submit"
+              form="admin-core-form"
+              loading={pending}
+              loadingLabel={translate(locale, "common.loading")}
+            >
+              {translate(locale, "admin.grantCore")}
+            </Button>
+          }
+        >
+          <form
+            id="admin-core-form"
+            className="ui-next-governance__form ui-next-governance__form--compact"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const form = new FormData(event.currentTarget);
+              void run(async () => {
+                await api("/api/app/admin/core", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ userId: form.get("userId") }),
+                });
+                setActiveForm(null);
+              });
+            }}
+          >
+            <Select
+              id="admin-core-user"
+              name="userId"
+              label={translate(locale, "admin.users")}
+              required
+              defaultValue=""
+            >
+              <option value="" disabled>
+                —
+              </option>
+              {users
+                .filter(
+                  (user) =>
+                    !user.disabledAt && !coreMembers.some((member) => member.userId === user.id),
+                )
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.displayName} · {user.email}
+                  </option>
+                ))}
+            </Select>
+          </form>
+          {message ? (
+            <p role="alert" className="ui-next-governance__error">
+              {message}
+            </p>
+          ) : null}
+        </Dialog>
+        <ul
+          className="ui-next-governance__rows"
+          role="list"
+          aria-label={translate(locale, "admin.core")}
+          tabIndex={0}
+        >
+          {coreMembers.map((member) => (
+            <li key={member.userId}>
+              <div>
+                <strong>{member.displayName}</strong>
+                <span>{member.email}</span>
+              </div>
+              <Button
+                type="button"
+                disabled={pending}
+                variant="danger"
+                onClick={() =>
+                  void run(() =>
+                    api(`/api/app/admin/core/${encodeURIComponent(member.userId)}`, {
+                      method: "DELETE",
+                    }),
+                  )
+                }
+              >
+                {translate(locale, "admin.revokeCore")}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </Surface>
+
+      <Surface className="ui-next-governance__section ui-next-governance__accounts">
+        <div className="ui-next-governance__heading">
+          <h2>{translate(locale, "admin.users")}</h2>
+          <Button
+            type="button"
+            onClick={() => {
+              setMessage(null);
+              setActiveForm("user");
+            }}
           >
             {translate(locale, "admin.invite")}
           </Button>
-        </form>
+        </div>
+        <Dialog
+          open={activeForm === "user"}
+          onClose={() => {
+            if (!pending) setActiveForm(null);
+          }}
+          title={translate(locale, "admin.invite")}
+          closeLabel={translate(locale, "common.close")}
+          footer={
+            <Button
+              type="submit"
+              form="admin-user-form"
+              variant="primary"
+              loading={pending}
+              loadingLabel={translate(locale, "common.loading")}
+            >
+              {translate(locale, "admin.invite")}
+            </Button>
+          }
+        >
+          <form
+            id="admin-user-form"
+            className="ui-next-governance__form ui-next-governance__form--reading"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formElement = event.currentTarget;
+              const form = new FormData(formElement);
+              void run(async () => {
+                await api("/api/app/admin/users", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    displayName: form.get("displayName"),
+                    email: form.get("email"),
+                    role: form.get("role"),
+                  }),
+                });
+                formElement.reset();
+                setActiveForm(null);
+              });
+            }}
+          >
+            <TextField
+              id="admin-user-name"
+              name="displayName"
+              label={translate(locale, "people.name")}
+              required
+            />
+            <TextField
+              id="admin-user-email"
+              name="email"
+              type="email"
+              label={translate(locale, "admin.email")}
+              required
+            />
+            <Select
+              id="admin-user-role"
+              name="role"
+              label={translate(locale, "admin.userRole")}
+              defaultValue="user"
+            >
+              <option value="user">{translate(locale, "account.role.user")}</option>
+              <option value="editor">{translate(locale, "account.role.editor")}</option>
+              <option value="admin_op">{translate(locale, "account.role.admin_op")}</option>
+            </Select>
+          </form>
+          {message ? (
+            <p role="alert" className="ui-next-governance__error">
+              {message}
+            </p>
+          ) : null}
+        </Dialog>
         <ul
           className="ui-next-governance__rows"
           role="list"
@@ -300,87 +467,6 @@ export function AdminWorkspace({
                     : translate(locale, "admin.disabled")}
                 </Button>
               </div>
-            </li>
-          ))}
-        </ul>
-      </Surface>
-
-      <Surface className="ui-next-governance__section">
-        <div className="ui-next-governance__heading">
-          <div>
-            <h2>{translate(locale, "admin.core")}</h2>
-            <p>{translate(locale, "admin.coreDescription")}</p>
-          </div>
-        </div>
-        <form
-          className="ui-next-governance__form ui-next-governance__form--compact"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const form = new FormData(event.currentTarget);
-            void run(() =>
-              api("/api/app/admin/core", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: form.get("userId") }),
-              }),
-            );
-          }}
-        >
-          <Select
-            id="admin-core-user"
-            name="userId"
-            label={translate(locale, "admin.users")}
-            required
-            defaultValue=""
-          >
-            <option value="" disabled>
-              —
-            </option>
-            {users
-              .filter(
-                (user) =>
-                  !user.disabledAt && !coreMembers.some((member) => member.userId === user.id),
-              )
-              .map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.displayName} · {user.email}
-                </option>
-              ))}
-          </Select>
-          <Button
-            type="submit"
-            loading={pending}
-            loadingLabel={translate(locale, "common.loading")}
-          >
-            {translate(locale, "admin.grantCore")}
-          </Button>
-        </form>
-        <ul
-          className="ui-next-governance__rows"
-          role="list"
-          aria-label={translate(locale, "admin.core")}
-          tabIndex={0}
-        >
-          {coreMembers.map((member) => (
-            <li key={member.userId}>
-              <div>
-                <strong>{member.displayName}</strong>
-                <span>{member.email}</span>
-              </div>
-              <Button
-                type="button"
-                disabled={pending}
-                variant="danger"
-                onClick={() =>
-                  void run(() =>
-                    api(`/api/app/admin/core/${encodeURIComponent(member.userId)}`, {
-                      method: "DELETE",
-                    }),
-                  )
-                }
-              >
-                {translate(locale, "admin.revokeCore")}
-              </Button>
             </li>
           ))}
         </ul>

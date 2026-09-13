@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
 import {
   Button,
@@ -488,14 +488,31 @@ function TaskDialog({
   submitLabel: string;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const formId = useId();
   return (
     <Dialog
+      footer={
+        <div className="ui-next-work-form__actions">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {translate(locale, "common.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            variant="primary"
+            loading={saving}
+            loadingLabel={translate(locale, "common.loading")}
+          >
+            {submitLabel}
+          </Button>
+        </div>
+      }
       open={open}
       onClose={onClose}
       title={title}
       closeLabel={translate(locale, "common.close")}
     >
-      <form className="ui-next-work-form" onSubmit={onSubmit}>
+      <form id={formId} className="ui-next-work-form" onSubmit={onSubmit}>
         <label>
           <span>{translate(locale, "tasks.field.title")}</span>
           <input name="title" defaultValue={task?.title || ""} required maxLength={300} autoFocus />
@@ -549,19 +566,6 @@ function TaskDialog({
             {error}
           </p>
         ) : null}
-        <div className="ui-next-work-form__actions">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            {translate(locale, "common.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            loading={saving}
-            loadingLabel={translate(locale, "common.loading")}
-          >
-            {submitLabel}
-          </Button>
-        </div>
       </form>
     </Dialog>
   );

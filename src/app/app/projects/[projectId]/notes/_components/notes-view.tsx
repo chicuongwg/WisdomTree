@@ -82,12 +82,30 @@ export function NotesView({
       />
 
       <Dialog
+        footer={
+          <div className="ui-next-dialog-actions">
+            <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
+              {translate(locale, "common.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              form="create-note"
+              variant="primary"
+              disabled={isCreating || !title.trim()}
+            >
+              {isCreating
+                ? translate(locale, "notes.create.creating")
+                : translate(locale, "notes.create.submit")}
+            </Button>
+          </div>
+        }
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title={translate(locale, "notes.create.title")}
         closeLabel={translate(locale, "common.close")}
       >
         <form
+          id="create-note"
           onSubmit={handleCreate}
           style={{ display: "flex", flexDirection: "column", gap: "var(--ui-space-4)" }}
         >
@@ -122,17 +140,6 @@ export function NotesView({
               {error}
             </p>
           ) : null}
-
-          <div className="ui-next-dialog-actions">
-            <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
-              {translate(locale, "common.cancel")}
-            </Button>
-            <Button type="submit" variant="primary" disabled={isCreating || !title.trim()}>
-              {isCreating
-                ? translate(locale, "notes.create.creating")
-                : translate(locale, "notes.create.submit")}
-            </Button>
-          </div>
         </form>
       </Dialog>
     </>

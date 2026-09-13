@@ -53,7 +53,7 @@ export default async function AppCalendarPage({
   if (projectId && !operationalProjects.some((project) => project.id === projectId)) notFound();
   const schedule = await listAppCalendarSchedule(actor, { from, to, projectId });
   return (
-    <PageContainer width="wide">
+    <PageContainer width="full">
       <CalendarWorkspace
         locale={application.locale}
         projects={operationalProjects}

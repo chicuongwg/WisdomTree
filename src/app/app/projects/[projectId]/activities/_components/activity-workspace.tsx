@@ -306,12 +306,28 @@ export function ActivityWorkspace({
         />
       ) : null}
       <Dialog
+        footer={
+          <div className="ui-next-work-form__actions">
+            <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
+              {translate(locale, "common.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              form="edit-activity"
+              variant="primary"
+              loading={saving}
+              loadingLabel={translate(locale, "common.loading")}
+            >
+              {translate(locale, "common.save")}
+            </Button>
+          </div>
+        }
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title={translate(locale, "activities.editTitle")}
         closeLabel={translate(locale, "common.close")}
       >
-        <form className="ui-next-work-form" onSubmit={saveActivity}>
+        <form id="edit-activity" className="ui-next-work-form" onSubmit={saveActivity}>
           <label>
             <span>{translate(locale, "activities.field.title")}</span>
             <input name="title" defaultValue={activity.title} required maxLength={300} />
@@ -334,19 +350,6 @@ export function ActivityWorkspace({
               ))}
             </select>
           </label>
-          <div className="ui-next-work-form__actions">
-            <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
-              {translate(locale, "common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={saving}
-              loadingLabel={translate(locale, "common.loading")}
-            >
-              {translate(locale, "common.save")}
-            </Button>
-          </div>
         </form>
       </Dialog>
       <Dialog

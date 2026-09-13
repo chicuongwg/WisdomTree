@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { getProjectWorkspace } from "@/modules/application";
-import {
-  runGuardedNoteNavigation,
-  translate,
-  type UiNextMessageKey,
-} from "../../../../components/ui-next";
+import { translate, type UiNextMessageKey } from "../../../../components/ui-next";
 
 type WorkspaceModules = Awaited<ReturnType<typeof getProjectWorkspace>>["modules"];
 
@@ -38,7 +35,12 @@ export function ProjectNavigation({
   canEditProject?: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const linksRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    linksRef.current
+      ?.querySelector<HTMLElement>('[aria-current="page"]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [pathname]);
   const base = `/app/projects/${projectId}`;
   const availableModules = projectModules.filter(
     (item) => item.module === null || modules[item.module],
@@ -59,7 +61,7 @@ export function ProjectNavigation({
       className="ui-next-project-navigation"
       aria-label={translate(locale, "workspace.navigation")}
     >
-      <div className="ui-next-project-navigation__links">
+      <div ref={linksRef} className="ui-next-project-navigation__links">
         {navigationItems.map((item) => {
           const href = item.segment ? `${base}/${item.segment}` : base;
           const active = current === item.segment;
@@ -74,26 +76,6 @@ export function ProjectNavigation({
           );
         })}
       </div>
-      <label className="ui-next-project-navigation__select">
-        <span>{translate(locale, "workspace.chooseModule")}</span>
-        <select
-          className="ui-next-control"
-          value={current}
-          onChange={(event) => {
-            const segment = event.target.value;
-            const href = segment ? `${base}/${segment}` : base;
-            if (!runGuardedNoteNavigation(() => router.push(href))) {
-              event.currentTarget.value = current;
-            }
-          }}
-        >
-          {navigationItems.map((item) => (
-            <option key={item.segment || "overview"} value={item.segment}>
-              {translate(locale, item.labelKey)}
-            </option>
-          ))}
-        </select>
-      </label>
     </nav>
   );
 }

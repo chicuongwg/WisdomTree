@@ -33,7 +33,7 @@ export default async function AppResearchGraphPage({
   ]) as Array<[string, string]>;
 
   return (
-    <PageContainer width="wide">
+    <PageContainer width="full">
       <Stack>
         <PageHeader
           title={translate(application.locale, "page.graph.title")}
