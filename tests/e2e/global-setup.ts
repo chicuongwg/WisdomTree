@@ -33,6 +33,8 @@ export default async function globalSetup() {
       `SELECT id FROM users WHERE email = 'huong@wisdomtree.local' AND disabled_at IS NULL`,
     );
     if (!rows[0]) throw new Error("E2E needs the seeded admin (run db:seed first).");
+    // Interrupted locale checks may leave the shared account in English.
+    await client.query("UPDATE users SET locale = 'vi' WHERE id = $1", [rows[0].id]);
     const token = randomBytes(32).toString("base64url");
     await client.query(
       `INSERT INTO sessions (user_id, token_hash, expires_at)

@@ -44,7 +44,7 @@ async function renderedPage(page: Page, route: string) {
 for (const role of ["admin", "collaborator"] as const) {
   test.describe(role, () => {
     test.use({ storageState: `tests/e2e/.auth/${role}.json` });
-    for (const width of [1440, 1280, 1024, 768, 390]) {
+    for (const width of [2560, 1440, 1280, 1024, 900, 768, 704, 390]) {
       test(`completed workspaces fit ${width}px in VI and EN`, async ({ page }) => {
         test.setTimeout(120_000);
         await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
@@ -88,9 +88,7 @@ for (const role of ["admin", "collaborator"] as const) {
             }
             if (width <= 704) {
               await renderedPage(page, `${project}/tasks`);
-              await expect(
-                page.locator(".ui-next-project-navigation__select select"),
-              ).toBeVisible();
+              await expect(page.locator(".ui-next-project-navigation__links")).toBeVisible();
             }
           }
         } finally {
@@ -183,7 +181,9 @@ test("zoom-equivalent layouts retain Task views and readable administration form
   for (const width of [960, 720, 640]) {
     await page.setViewportSize({ width, height: 600 });
     await renderedPage(page, "/app/admin");
+    await page.getByRole("button", { name: "Tạo Dự án", exact: true }).click();
     await expect(page.locator("#admin-project-name")).toBeVisible();
+    await page.keyboard.press("Escape");
     await renderedPage(page, `/app/projects/${fixture.sharedProjectId}/tasks`);
     const views = page.getByRole("navigation", { name: "Chế độ xem công việc" });
     await expect(views.getByRole("link", { name: "Kanban", exact: true })).toBeVisible();
@@ -367,8 +367,12 @@ test("research creation connects a dated Activity Task to My Work, Calendar, and
   ).toHaveValue(noteTitle);
 
   await renderedPage(page, `${project}/people`);
-  await page.getByLabel("Tên hiển thị", { exact: true }).fill(personName);
-  await page.getByRole("button", { name: "Thêm hồ sơ người", exact: true }).click();
+  await page.getByRole("button", { name: "Thêm hồ sơ người", exact: true }).first().click();
+  await page.getByRole("dialog").getByLabel("Tên hiển thị", { exact: true }).fill(personName);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Thêm hồ sơ người", exact: true })
+    .click();
   await expect(page.getByRole("link", { name: personName, exact: true })).toBeVisible();
 
   await renderedPage(page, `${project}/activities`);

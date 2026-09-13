@@ -260,9 +260,11 @@ export async function run() {
     "src/app/components/ui-next/shell/quick-search.tsx",
     "utf8",
   );
-  for (const source of [projectSwitcherSource, projectNavigationSource, quickSearchSource]) {
+  for (const source of [projectSwitcherSource, quickSearchSource]) {
     assert.match(source, /runGuardedNoteNavigation/);
   }
+
+  assert.match(projectNavigationSource, /<Link[\s\S]*?href={href}/);
 
   // 4. Version conflict reload confirmation: explicit warning before discarding buffer
   assert.match(editorSource, /notes\.conflict\.confirmReload/);
