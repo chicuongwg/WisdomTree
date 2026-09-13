@@ -16,8 +16,12 @@ export default async function AppSearchPage({
   const results = query
     ? await searchAppResearch(actor, {
         query,
-        ...(type !== "all" ? { types: [type as "project" | "note" | "material" | "activity" | "person"] } : {}),
+        ...(type !== "all"
+          ? { types: [type as "project" | "note" | "material" | "activity" | "person"] }
+          : {}),
       })
     : [];
-  return <ResearchSearchView locale={application.locale} query={query} type={type} results={results} />;
+  return (
+    <ResearchSearchView locale={application.locale} query={query} type={type} results={results} />
+  );
 }

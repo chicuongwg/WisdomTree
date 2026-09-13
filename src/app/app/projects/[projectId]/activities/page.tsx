@@ -10,5 +10,12 @@ export default async function ProjectActivitiesPage({
   const { projectId } = await params;
   const { actor, application, workspace } = await requireProjectModule(projectId, "activities");
   const activities = await listAppProjectActivities(actor, projectId);
-  return <ActivitiesView projectId={projectId} locale={application.locale} activities={activities} canCreate={workspace.project.capabilities.canCreateActivity} />;
+  return (
+    <ActivitiesView
+      projectId={projectId}
+      locale={application.locale}
+      activities={activities}
+      canCreate={workspace.project.capabilities.canCreateActivity}
+    />
+  );
 }

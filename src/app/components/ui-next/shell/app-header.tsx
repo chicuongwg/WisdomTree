@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { AppProjectDto } from "@/modules/application";
 import { Drawer } from "../overlays/drawer";
@@ -14,7 +15,7 @@ import { QuickSearch } from "./quick-search";
 
 type ShellProject = Pick<
   AppProjectDto,
-  "id" | "name" | "researchLens" | "status" | "operationalMember" | "capabilities"
+  "id" | "name" | "researchLens" | "status" | "isPersonal" | "operationalMember" | "capabilities"
 >;
 
 export function AppHeader({
@@ -22,13 +23,18 @@ export function AppHeader({
   locale,
   supportedLocales,
   projects,
+  unreadNotifications = 0,
 }: {
   displayName: string;
   locale: UiLocale;
   supportedLocales: UiLocale[];
   projects: ShellProject[];
+  unreadNotifications?: number;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
   const pathname = usePathname();
   const currentProjectId = pathname.match(/^\/app\/projects\/([^/]+)/)?.[1] ?? null;
 
@@ -49,6 +55,22 @@ export function AppHeader({
       <QuickSearch locale={locale} />
       <div className="ui-next-app-header__utilities">
         <CreateDialog locale={locale} projects={projects} defaultProjectId={currentProjectId} />
+        <Link
+          href="/app/notifications"
+          className="ui-next-notification-bell"
+          aria-label={
+            unreadNotifications
+              ? `${translate(locale, "shell.notifications")} (${unreadNotifications})`
+              : translate(locale, "shell.notifications")
+          }
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 10a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+          </svg>
+          {unreadNotifications ? (
+            <span>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>
+          ) : null}
+        </Link>
         <AccountMenu
           displayName={displayName}
           locale={locale}

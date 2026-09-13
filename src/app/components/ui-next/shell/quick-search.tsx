@@ -11,7 +11,15 @@ import { runGuardedNoteNavigation } from "../navigation/unsaved-note-navigation"
 type ProjectRef = { id: string; name: string };
 type SearchResult =
   | {
-      kind: "project" | "note" | "material" | "activity";
+      kind: "project";
+      id: string;
+      title: string;
+      summary: string | null;
+      project: ProjectRef;
+      isPersonal: boolean;
+    }
+  | {
+      kind: "note" | "material" | "activity";
       id: string;
       title: string;
       summary: string | null;
@@ -31,8 +39,10 @@ function resultHref(result: SearchResult) {
   if (result.kind === "project") return `/app/projects/${result.id}`;
   if (result.kind === "person") return `/app/people/${encodeURIComponent(result.id)}`;
   if (result.kind === "note") return `/app/projects/${result.project.id}/notes/${result.id}`;
-  if (result.kind === "material") return `/app/projects/${result.project.id}/materials/${result.id}`;
-  if (result.kind === "activity") return `/app/projects/${result.project.id}/activities/${result.id}`;
+  if (result.kind === "material")
+    return `/app/projects/${result.project.id}/materials/${result.id}`;
+  if (result.kind === "activity")
+    return `/app/projects/${result.project.id}/activities/${result.id}`;
   return `/app/projects/${result.project.id}`;
 }
 
@@ -115,21 +125,54 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
           kind: "command",
         },
         {
+          key: "calendar",
+          title: translate(locale, "nav.calendar"),
+          context: "TMKT",
+          href: "/app/calendar",
+          kind: "command",
+        },
+        {
           key: "people",
           title: translate(locale, "nav.people"),
           context: "TMKT",
           href: "/app/people",
           kind: "command",
         },
+        {
+          key: "search",
+          title: translate(locale, "nav.search"),
+          context: "TMKT",
+          href: "/app/search",
+          kind: "command",
+        },
+        {
+          key: "graph",
+          title: translate(locale, "nav.graph"),
+          context: "TMKT",
+          href: "/app/graph",
+          kind: "command",
+        },
+        {
+          key: "notifications",
+          title: translate(locale, "nav.notifications"),
+          context: "TMKT",
+          href: "/app/notifications",
+          kind: "command",
+        },
       ];
     }
     return results.map((result) => ({
       key: `${result.kind}:${result.id}`,
-      title: result.title,
+      title:
+        result.kind === "project" && result.isPersonal
+          ? translate(locale, "projects.myProject")
+          : result.title,
       context:
         result.kind === "person"
           ? result.projects.map((project) => project.name).join(" · ")
-          : result.project.name,
+          : result.kind === "project"
+            ? translate(locale, "shell.kind.project")
+            : result.project.name,
       href: resultHref(result),
       kind: result.kind,
     }));
@@ -193,7 +236,13 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
               }
             }}
           />
-          <div className="ui-next-quick-search__status" role="status" aria-live="polite">
+          <div
+            className={
+              loading || failed ? "ui-next-quick-search__status" : "ui-next-visually-hidden"
+            }
+            role="status"
+            aria-live="polite"
+          >
             {loading
               ? translate(locale, "common.loading")
               : failed
@@ -202,6 +251,7 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
           </div>
           <div
             id={listId}
+            tabIndex={-1}
             role="listbox"
             aria-label={translate(
               locale,
@@ -215,6 +265,7 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
                 id={`${listId}-${index}`}
                 type="button"
                 role="option"
+                tabIndex={-1}
                 aria-selected={selected === index}
                 className="ui-next-quick-search__result"
                 onMouseEnter={() => setSelected(index)}
@@ -222,10 +273,14 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
               >
                 <span>
                   <strong>{choice.title}</strong>
-                  <small>{choice.context}</small>
+                  {choice.kind !== "command" ? <small>{choice.context}</small> : null}
                 </span>
                 <span>
-                  {choice.kind === "command" ? "↗" : translate(locale, `shell.kind.${choice.kind}`)}
+                  {choice.kind === "command" ? (
+                    <span aria-hidden="true">›</span>
+                  ) : (
+                    translate(locale, `shell.kind.${choice.kind}`)
+                  )}
                 </span>
               </button>
             ))}
@@ -238,6 +293,7 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
           <Button
             type="button"
             variant="ghost"
+            className="ui-next-quick-search__footer"
             onClick={() => {
               const href = `/app/search${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`;
               runGuardedNoteNavigation(() => {

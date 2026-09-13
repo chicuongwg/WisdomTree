@@ -123,7 +123,7 @@ export function NotesView({
             </p>
           ) : null}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--ui-space-2)" }}>
+          <div className="ui-next-dialog-actions">
             <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
               {translate(locale, "common.cancel")}
             </Button>

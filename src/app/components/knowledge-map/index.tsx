@@ -1,18 +1,13 @@
 "use client";
 
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type ForceGraphInstance from "force-graph";
 import { forceCollide, forceX, forceY } from "d3-force";
-import { T, verificationStateLabel } from "@/lib/vi";
+import { T as legacyCopy } from "@/lib/vi";
+import type { UiLocale } from "@/modules/auth/profile";
+import { getGraphCopy } from "../ui-next/localization/graph";
+import { translate } from "../ui-next/localization";
 import {
   DEFAULT_SETTINGS,
   readSettings,
@@ -21,12 +16,7 @@ import {
   type GraphSettings,
   type LinkType,
 } from "@/lib/graph-settings";
-import {
-  loadPreview,
-  NodePreviewCard,
-  PREVIEW_HOVER_DELAY_MS,
-  type NodePreview,
-} from "../node-link";
+import { NodePreviewCard, PREVIEW_HOVER_DELAY_MS, type NodePreview } from "../node-link";
 import { GraphSettingsPanel } from "../graph-settings-panel";
 import { useMedia } from "./use-media";
 import { useShortcutKey } from "@/lib/platform";
@@ -47,14 +37,13 @@ import {
   NODE_SCALE_RANGE,
   CENTRE_RANGE,
   REPEL_RANGE,
-  SHAPE_LABEL,
   type MapEdge,
   type MapNode,
 } from "./model";
 
 // The knowledge map on the open-source `force-graph` engine (canvas 2D,
 // d3-force underneath). This component owns the PRODUCT half — filters, the
-// settings panel, verification shapes, labels, hover preview, context menu,
+// settings panel, entity marks, labels, hover preview, context menu,
 // keyboard navigation — and hands rendering, picking, zoom/pan/pinch and the
 // physics loop to the library. Client-only: the canvas mounts after
 // hydration, behind a skeleton (the SSR SVG of the old hand-rolled engine
@@ -104,20 +93,35 @@ const LINK_COLOR: Record<string, keyof Palette> = {
   part_of: "--color-cham",
 };
 
+const NODE_COLOR: Record<NonNullable<MapNode["kind"]>, keyof Palette> = {
+  project: "--color-canopy",
+  note: "--color-amber",
+  material: "--color-seal",
+  person: "--color-cham",
+  activity: "--color-canopy-deep",
+};
+
 export function KnowledgeMap({
   nodes,
   edges,
   centerId,
-  scope = "shared",
   initialDepth,
+  targetGraph = false,
+  targetLegend,
+  targetScopeLabels,
+  locale = "vi",
 }: {
   nodes: MapNode[];
   edges: MapEdge[];
   /** this page sits at the centre, is pinned there, and is drawn larger */
   centerId?: string;
-  scope?: "shared" | "personal";
   initialDepth?: number;
+  targetGraph?: boolean;
+  targetLegend?: Array<[string, string]>;
+  targetScopeLabels?: { filter: string; all: string };
+  locale?: UiLocale;
 }) {
+  const T = useMemo(() => (targetGraph ? getGraphCopy(locale) : legacyCopy), [locale, targetGraph]);
   const router = useRouter();
   const uid = `map${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
@@ -131,6 +135,7 @@ export function KnowledgeMap({
   const [panelOpen, setPanelOpen] = useState(false);
   const reducedMotion = useMedia("(prefers-reduced-motion: reduce)");
   const coarsePointer = useMedia("(pointer: coarse)");
+  const compactViewport = useMedia("(max-width: 44rem)");
   const shortcut = useShortcutKey();
   const dirty = useRef(false);
 
@@ -193,13 +198,12 @@ export function KnowledgeMap({
 
   const open = useCallback(
     (id: string) =>
-      router.push(`/graph?node=${id}${scope === "personal" ? "&scope=personal" : ""}`),
-    [router, scope],
+      router.push(nodes.find((node) => node.id === id)?.href ?? `/app/graph?node=${id}`),
+    [nodes, router],
   );
   const openLocal = useCallback(
-    (id: string) =>
-      router.push(`/graph?node=${id}${scope === "personal" ? "&scope=personal" : ""}`),
-    [router, scope],
+    (id: string) => router.push(`/app/graph?node=${encodeURIComponent(id)}`),
+    [router],
   );
 
   const showContext = useCallback((id: string, x: number, y: number) => {
@@ -337,10 +341,19 @@ export function KnowledgeMap({
       labelHubs: scale(settings.textFade, ...FADE_HUBS_RANGE),
       nodeScale: scale(settings.nodeSize, ...NODE_SCALE_RANGE),
       edgeWidth: scale(settings.linkThickness, ...EDGE_WIDTH_RANGE),
+      compactViewport,
       arrows: settings.arrows,
-      groups: settings.groups,
+      groups: targetGraph ? [] : settings.groups,
     }),
-    [settings.textFade, settings.nodeSize, settings.linkThickness, settings.arrows, settings.groups],
+    [
+      settings.textFade,
+      settings.nodeSize,
+      settings.linkThickness,
+      settings.arrows,
+      settings.groups,
+      targetGraph,
+      compactViewport,
+    ],
   );
   const displayRef = useRef(display);
   displayRef.current = display;
@@ -363,9 +376,17 @@ export function KnowledgeMap({
   const fitNow = useCallback(() => {
     const graph = graphRef.current;
     if (!graph) return;
-    graph.zoomToFit(400, 48);
+    const data = graph.graphData();
+    if (targetGraph && data.nodes.length === 1) {
+      // A single point has no useful bounding box to fit; keep it a readable
+      // research record instead of magnifying it to fill the canvas.
+      graph.centerAt(data.nodes[0].x ?? 0, data.nodes[0].y ?? 0, 0);
+      graph.zoom(2, 0);
+    } else {
+      graph.zoomToFit(reducedMotion ? 0 : 400, 48);
+    }
     setAnnounce(`${T.graphZoomReset} · ${Math.round(graph.zoom() * 100)}%`);
-  }, []);
+  }, [T, targetGraph, reducedMotion]);
 
   const pinNode = useCallback((id: string, on: boolean) => {
     const graph = graphRef.current;
@@ -460,10 +481,14 @@ export function KnowledgeMap({
               left: Math.min(rect.left + at.x + 12, window.innerWidth - 340),
               top: Math.min(rect.top + at.y + 12, window.innerHeight - 260),
             });
-            setPreview(null);
-            void loadPreview(node.id).then((p) => {
-              if (peekToken.current === token) setPreview(p);
-            });
+            const selected = nodes.find((item) => item.id === node.id);
+            if (peekToken.current === token && selected) {
+              setPreview({
+                id: selected.id,
+                title: selected.title,
+                excerpt: selected.excerpt ?? "",
+              });
+            }
           }, PREVIEW_HOVER_DELAY_MS);
         })
         .onNodeClick((node) => open(node.id))
@@ -552,35 +577,15 @@ export function KnowledgeMap({
       ctx.stroke();
     }
 
-    // Verification shape: circle / diamond / square.
-    const fill =
-      node.verification === "verified"
-        ? palette["--color-canopy"]
-        : node.verification === "unverified"
-          ? palette["--color-amber-wash"]
-          : palette["--color-surface-sunken"];
-    const stroke =
-      node.verification === "verified"
-        ? palette["--color-canopy-deep"]
-        : node.verification === "unverified"
-          ? palette["--color-amber"]
-          : palette["--color-ink-muted"];
+    // Entity colour differentiates Project research objects without implying
+    // a verification state that this visualization has not loaded.
+    const fill = palette[NODE_COLOR[node.kind ?? "note"]];
+    const stroke = palette["--color-ink-muted"];
     ctx.fillStyle = fill;
     ctx.strokeStyle = stroke;
     ctx.lineWidth = 1.5 / Math.max(globalScale, 0.001);
     ctx.beginPath();
-    if (node.verification === "verified") {
-      ctx.arc(x, y, r, 0, 2 * Math.PI);
-    } else if (node.verification === "unverified") {
-      ctx.moveTo(x, y - r);
-      ctx.lineTo(x + r, y);
-      ctx.lineTo(x, y + r);
-      ctx.lineTo(x - r, y);
-      ctx.closePath();
-    } else {
-      const s = r * 0.9;
-      ctx.rect(x - s, y - s, s * 2, s * 2);
-    }
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
 
@@ -589,8 +594,8 @@ export function KnowledgeMap({
     const degree = viewRef.current.degree[node.id] ?? 0;
     const showLabel =
       isActive ||
-      globalScale >= displayRef.current.labelAll ||
-      (globalScale >= displayRef.current.labelHubs && degree >= HUB_DEGREE);
+      (!d.compactViewport &&
+        (globalScale >= d.labelAll || (globalScale >= d.labelHubs && degree >= HUB_DEGREE)));
     if (showLabel) {
       const text =
         node.title.length > LABEL_MAX ? `${node.title.slice(0, LABEL_CUT)}…` : node.title;
@@ -653,7 +658,10 @@ export function KnowledgeMap({
     if (!graph || !mounted) return;
     graph.d3Force("charge")?.strength(-forces.repel);
     const link = graph.d3Force("link") as
-      | { distance: (fn: (l: SimLink) => number) => void; strength: (fn: (l: SimLink) => number) => void }
+      | {
+          distance: (fn: (l: SimLink) => number) => void;
+          strength: (fn: (l: SimLink) => number) => void;
+        }
       | undefined;
     link?.distance((l: SimLink) => forces.distance * linkProfile(l.linkType).distance);
     link?.strength((l: SimLink) => forces.link * linkProfile(l.linkType).strength);
@@ -662,7 +670,9 @@ export function KnowledgeMap({
     graph.d3Force("y", forceY(0).strength(forces.centre));
     graph.d3Force(
       "collide",
-      forceCollide<SimNode>((n) => (radiiRef.current.get(n.id) ?? 8) * displayRef.current.nodeScale + 4),
+      forceCollide<SimNode>(
+        (n) => (radiiRef.current.get(n.id) ?? 8) * displayRef.current.nodeScale + 4,
+      ),
     );
     graph.d3ReheatSimulation();
   }, [forces, mounted]);
@@ -761,7 +771,8 @@ export function KnowledgeMap({
           ))}
         </div>
         <p className="map-count" aria-live="polite">
-          {view.visible.length} {T.node.toLowerCase()} · {view.links.length} liên kết
+          {view.visible.length} {T.node.toLowerCase()} · {view.links.length}{" "}
+          {targetGraph ? translate(locale, "graph.links") : "liên kết"}
         </p>
       </div>
 
@@ -784,6 +795,10 @@ export function KnowledgeMap({
           term={term}
           onTerm={setTerm}
           idPrefix={uid}
+          showGroups={!targetGraph}
+          scopeLabel={targetScopeLabels?.filter}
+          allScopesLabel={targetScopeLabels?.all}
+          locale={targetGraph ? locale : undefined}
         />
 
         {view.visible.length === 0 && <p className="map-empty">{T.graphNoMatch}</p>}
@@ -842,14 +857,16 @@ export function KnowledgeMap({
         {coarsePointer ? T.graphTouchHelp : `${T.graphHelp(shortcut)} ${T.graphKeyboardHelp}`}
       </p>
 
-      <ul className="map-legend" aria-label={T.legend}>
-        {(["verified", "unverified", "no_source"] as const).map((v) => (
-          <li key={v}>
-            <span className={`legend-swatch legend-${v}`} aria-hidden="true" />
-            {verificationStateLabel(v)} · {SHAPE_LABEL[v]}
-          </li>
-        ))}
-      </ul>
+      {targetGraph ? (
+        <ul className="map-legend" aria-label={T.legend}>
+          {(targetLegend ?? []).map(([kind, label]) => (
+            <li key={kind}>
+              <span className={`legend-swatch legend-${kind}`} aria-hidden="true" />
+              {label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

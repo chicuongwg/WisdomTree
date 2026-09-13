@@ -8,6 +8,7 @@ import {
   Button,
   Dialog,
   EmptyState,
+  PageHeader,
   StatusBadge,
   formatUiDate,
   translate,
@@ -73,17 +74,19 @@ export function MaterialsView({
 
   return (
     <section className="ui-next-materials-page" aria-labelledby="materials-title">
-      <header className="ui-next-materials-page__header">
-        <div>
-          <h2 id="materials-title">{translate(locale, "materials.title")}</h2>
-          <p>{translate(locale, "materials.description")}</p>
-        </div>
-        {canCreateMaterial ? (
-          <Button type="button" variant="primary" onClick={() => setIsOpen(true)}>
-            {translate(locale, "materials.new")}
-          </Button>
-        ) : null}
-      </header>
+      <PageHeader
+        headingLevel={2}
+        titleId="materials-title"
+        title={translate(locale, "materials.title")}
+        description={translate(locale, "materials.description")}
+        actions={
+          canCreateMaterial ? (
+            <Button type="button" variant="primary" onClick={() => setIsOpen(true)}>
+              {translate(locale, "materials.new")}
+            </Button>
+          ) : null
+        }
+      />
 
       {materials.length === 0 ? (
         <EmptyState

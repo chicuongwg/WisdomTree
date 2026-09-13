@@ -13,7 +13,7 @@ import {
 type WorkspaceModules = Awaited<ReturnType<typeof getProjectWorkspace>>["modules"];
 
 const projectModules: Array<{
-  segment: "" | "notes" | "materials" | "activities" | "tasks" | "people" | "library";
+  segment: "" | "notes" | "materials" | "activities" | "tasks" | "people" | "library" | "settings";
   module: keyof WorkspaceModules | null;
   labelKey: UiNextMessageKey;
 }> = [
@@ -30,10 +30,12 @@ export function ProjectNavigation({
   projectId,
   modules,
   locale,
+  canEditProject = false,
 }: {
   projectId: string;
   modules: WorkspaceModules;
   locale: UiLocale;
+  canEditProject?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -41,8 +43,14 @@ export function ProjectNavigation({
   const availableModules = projectModules.filter(
     (item) => item.module === null || modules[item.module],
   );
+  const navigationItems = canEditProject
+    ? [
+        ...availableModules,
+        { segment: "settings" as const, module: null, labelKey: "project.settings" as const },
+      ]
+    : availableModules;
   const currentSegment = pathname.split("/")[4] ?? "";
-  const current = availableModules.some((item) => item.segment === currentSegment)
+  const current = navigationItems.some((item) => item.segment === currentSegment)
     ? currentSegment
     : "";
 
@@ -52,7 +60,7 @@ export function ProjectNavigation({
       aria-label={translate(locale, "workspace.navigation")}
     >
       <div className="ui-next-project-navigation__links">
-        {availableModules.map((item) => {
+        {navigationItems.map((item) => {
           const href = item.segment ? `${base}/${item.segment}` : base;
           const active = current === item.segment;
           return (
@@ -79,7 +87,7 @@ export function ProjectNavigation({
             }
           }}
         >
-          {availableModules.map((item) => (
+          {navigationItems.map((item) => (
             <option key={item.segment || "overview"} value={item.segment}>
               {translate(locale, item.labelKey)}
             </option>

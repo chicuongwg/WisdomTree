@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
 import { translate } from "../localization";
 import { Button } from "../primitives/button";
@@ -18,13 +18,37 @@ export function AccountMenu({
   supportedLocales: UiLocale[];
 }) {
   const router = useRouter();
+  const menuRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    function dismiss(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        !menuRef.current?.contains(event.target) &&
+        menuRef.current
+      ) {
+        menuRef.current.open = false;
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
   const [pendingLocale, setPendingLocale] = useState(false);
   const [localeFailed, setLocaleFailed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
 
   return (
-    <details className="ui-next-account-menu">
+    <details
+      ref={menuRef}
+      className="ui-next-account-menu"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && event.currentTarget.open) {
+          event.preventDefault();
+          event.currentTarget.open = false;
+          event.currentTarget.querySelector("summary")?.focus();
+        }
+      }}
+    >
       <summary
         className="ui-next-account-menu__trigger"
         aria-label={translate(locale, "shell.account")}
@@ -35,8 +59,8 @@ export function AccountMenu({
         <span className="ui-next-account-menu__name">{displayName}</span>
       </summary>
       <div className="ui-next-account-menu__panel">
-        <strong>{displayName}</strong>
-        <label className="ui-next-field" htmlFor="ui-next-shell-locale">
+        <strong className="ui-next-account-menu__identity">{displayName}</strong>
+        <label className="ui-next-account-menu__preference" htmlFor="ui-next-shell-locale">
           <span className="ui-next-field__label">{translate(locale, "shell.locale")}</span>
           <select
             id="ui-next-shell-locale"
@@ -54,6 +78,7 @@ export function AccountMenu({
                   body: JSON.stringify({ locale: next }),
                 });
                 if (!response.ok) throw new Error("locale");
+                document.documentElement.lang = next;
                 router.refresh();
               } catch {
                 setLocaleFailed(true);
@@ -74,37 +99,45 @@ export function AccountMenu({
             </span>
           ) : null}
         </label>
-        <div className="ui-next-account-menu__row">
+        <label className="ui-next-account-menu__preference">
           <span>{translate(locale, "shell.appearance")}</span>
           <AppearanceToggle locale={locale} />
-        </div>
-        <Link href="/account" className="ui-next-account-menu__link">
-          {translate(locale, "shell.account")}
-        </Link>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={signingOut}
-          onClick={async () => {
-            setSigningOut(true);
-            setSignOutFailed(false);
-            try {
-              const response = await fetch("/api/auth/logout", { method: "POST" });
-              if (!response.ok) throw new Error("logout");
-              window.location.assign("/login");
-            } catch {
-              setSigningOut(false);
-              setSignOutFailed(true);
-            }
+        </label>
+        <Link
+          href="/app/account"
+          className="ui-next-account-menu__link"
+          onClick={() => {
+            if (menuRef.current) menuRef.current.open = false;
           }}
         >
-          {translate(locale, signingOut ? "shell.signingOut" : "shell.signOut")}
-        </Button>
-        {signOutFailed ? (
-          <span className="ui-next-field__error" role="alert">
-            {translate(locale, "shell.signOutFailed")}
-          </span>
-        ) : null}
+          {translate(locale, "shell.account")}
+        </Link>
+        <div className="ui-next-account-menu__footer">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={signingOut}
+            onClick={async () => {
+              setSigningOut(true);
+              setSignOutFailed(false);
+              try {
+                const response = await fetch("/api/auth/logout", { method: "POST" });
+                if (!response.ok) throw new Error("logout");
+                window.location.assign("/login");
+              } catch {
+                setSigningOut(false);
+                setSignOutFailed(true);
+              }
+            }}
+          >
+            {translate(locale, signingOut ? "shell.signingOut" : "shell.signOut")}
+          </Button>
+          {signOutFailed ? (
+            <span className="ui-next-field__error" role="alert">
+              {translate(locale, "shell.signOutFailed")}
+            </span>
+          ) : null}
+        </div>
       </div>
     </details>
   );

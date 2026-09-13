@@ -1,4 +1,5 @@
 import type { UiLocale } from "@/modules/auth/profile";
+import { APP_TZ } from "@/lib/time";
 import { enMessages } from "./locales/en";
 import { viMessages } from "./locales/vi";
 
@@ -40,7 +41,9 @@ export function formatUiDate(
   locale: UiLocale,
   options: Intl.DateTimeFormatOptions = { dateStyle: "medium" },
 ): string {
-  return new Intl.DateTimeFormat(localeTags[locale], options).format(new Date(value));
+  return new Intl.DateTimeFormat(localeTags[locale], { timeZone: APP_TZ, ...options }).format(
+    new Date(value),
+  );
 }
 
 export function formatUiNumber(

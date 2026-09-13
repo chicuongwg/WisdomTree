@@ -18,7 +18,7 @@ import { T, verificationStateLabel } from "@/lib/vi";
 export type NodePreview = {
   id: string;
   title: string;
-  verification: string;
+  verification?: string;
   excerpt: string;
 };
 
@@ -63,10 +63,16 @@ export function NodePreviewCard({
         <>
           <span className="node-card-head">
             <span className="node-card-title">{preview.title}</span>
-            <span className={`node-state ${preview.verification}`} aria-hidden="true">
-              ●
-            </span>
-            <span className="node-card-state">{verificationStateLabel(preview.verification)}</span>
+            {preview.verification ? (
+              <>
+                <span className={`node-state ${preview.verification}`} aria-hidden="true">
+                  ●
+                </span>
+                <span className="node-card-state">
+                  {verificationStateLabel(preview.verification)}
+                </span>
+              </>
+            ) : null}
           </span>
           <span className="node-card-body">{preview.excerpt || T.empty}</span>
         </>

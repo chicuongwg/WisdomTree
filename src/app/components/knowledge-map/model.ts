@@ -5,16 +5,12 @@ export type MapNode = {
   title: string;
   branchId: string;
   branchName: string;
-  verification: string;
   tags: string[];
+  kind?: "project" | "note" | "material" | "person" | "activity";
+  href?: string;
+  excerpt?: string;
 };
 export type MapEdge = { from: string; to: string; linkType: string };
-
-export const SHAPE_LABEL: Record<string, string> = {
-  verified: "hình tròn",
-  unverified: "hình thoi",
-  no_source: "hình vuông",
-};
 
 /** Link count per node id — drives mark radius and the label LOD. */
 export function degreeOf(links: ReadonlyArray<{ from: string; to: string }>) {

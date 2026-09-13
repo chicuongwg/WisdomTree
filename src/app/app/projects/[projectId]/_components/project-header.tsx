@@ -23,7 +23,7 @@ export function ProjectHeader({
   locale,
 }: {
   project: AppProjectDto;
-  projects: Pick<AppProjectDto, "id" | "name">[];
+  projects: Pick<AppProjectDto, "id" | "name" | "isPersonal">[];
   locale: UiLocale;
 }) {
   return (
@@ -31,8 +31,12 @@ export function ProjectHeader({
       <ProjectSwitcher projectId={project.id} projects={projects} locale={locale} />
       <div className="ui-next-project-header__identity">
         <div>
-          <h1>{project.name}</h1>
-          <p dir="auto">{project.researchLens}</p>
+          <h1>{project.isPersonal ? translate(locale, "projects.myProject") : project.name}</h1>
+          <p dir="auto">
+            {project.isPersonal && project.researchLens === "Personal research workspace"
+              ? translate(locale, "projects.personalWorkspace")
+              : project.researchLens}
+          </p>
         </div>
         <div className="ui-next-project-header__badges">
           <StatusBadge tone={statusTone[project.status]}>

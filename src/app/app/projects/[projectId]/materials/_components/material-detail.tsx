@@ -12,6 +12,7 @@ import {
   formatUiNumber,
   translate,
 } from "@/app/components/ui-next";
+import { CollaborationSection } from "@/app/components/ui-next/collaboration-section";
 
 type MaterialDetailDto = {
   id: string;
@@ -24,6 +25,7 @@ type MaterialDetailDto = {
     originalFilename: string;
     mimeType: string;
     sizeBytes: number;
+    storageState: "uploaded" | "stored" | "quarantined" | "archived";
     extractionStatus: "pending" | "processed" | "unprocessable";
     storedAt: Date | string | null;
     uploadedByName: string;
@@ -34,6 +36,19 @@ type MaterialDetailDto = {
     noteId: string;
     title: string;
   }>;
+  workingDrafts: Array<{
+    sourceVersionId: string;
+    sourceVersionSeq: number;
+    draftId: string;
+    title: string;
+  }>;
+  physical: {
+    itemCode: string;
+    author: string | null;
+    location: string | null;
+    copies: number;
+    availableCopies: number;
+  } | null;
 };
 
 type Candidate = { sourceVersionId: string; method: string; contentMd: string };
@@ -43,11 +58,17 @@ export function MaterialDetail({
   locale,
   material,
   canManageMaterial,
+  canStewardMaterial,
+  canManagePhysical,
+  collaboration,
 }: {
   projectId: string;
   locale: UiLocale;
   material: MaterialDetailDto;
   canManageMaterial: boolean;
+  canStewardMaterial: boolean;
+  canManagePhysical: boolean;
+  collaboration: { mentionCandidates: Array<{ id: string; displayName: string }> } | null;
 }) {
   const router = useRouter();
   const [selectedVersionId, setSelectedVersionId] = useState(
@@ -55,14 +76,26 @@ export function MaterialDetail({
   );
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
-  const [pendingAction, setPendingAction] = useState<"upload" | "review" | "retry" | "note" | null>(
-    null,
-  );
+  const [pendingAction, setPendingAction] = useState<
+    | "upload"
+    | "review"
+    | "retry"
+    | "note"
+    | "metadata"
+    | "withdraw"
+    | "reject"
+    | "physical"
+    | "archivePhysical"
+    | null
+  >(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedVersion = useMemo(
     () => material.versions.find((version) => version.id === selectedVersionId) ?? null,
     [material.versions, selectedVersionId],
+  );
+  const workingDraft = material.workingDrafts.find(
+    (draft) => draft.sourceVersionId === selectedVersionId,
   );
 
   function extractionLabel(status: "pending" | "processed" | "unprocessable") {
@@ -159,6 +192,109 @@ export function MaterialDetail({
     }
   }
 
+  async function saveMetadata(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPendingAction("metadata");
+    setMessage(null);
+    const form = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(
+        `/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: form.get("title"), description: form.get("description") }),
+        },
+      );
+      if (!response.ok) throw new Error("metadata_failed");
+      router.refresh();
+    } catch {
+      setMessage(translate(locale, "materials.error.stewardship"));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function withdrawMaterial() {
+    setPendingAction("withdraw");
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/withdraw`,
+        { method: "POST" },
+      );
+      if (!response.ok) throw new Error("withdraw_failed");
+      router.refresh();
+    } catch {
+      setMessage(translate(locale, "materials.error.stewardship"));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function rejectCandidate() {
+    if (!selectedVersion) return;
+    setPendingAction("reject");
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/versions/${encodeURIComponent(selectedVersion.id)}/candidate`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) throw new Error("reject_failed");
+      setCandidate(null);
+      router.refresh();
+    } catch {
+      setMessage(translate(locale, "materials.error.review"));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function savePhysical(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPendingAction("physical");
+    setMessage(null);
+    const form = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(
+        `/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/physical`,
+        {
+          method: material.physical ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            author: form.get("author"),
+            location: form.get("location"),
+            copies: form.get("copies"),
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("physical_failed");
+      router.refresh();
+    } catch {
+      setMessage(translate(locale, "materials.error.upload"));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function archivePhysical() {
+    setPendingAction("archivePhysical");
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/physical/archive`,
+        { method: "POST" },
+      );
+      if (!response.ok) throw new Error("physical_archive_failed");
+      router.refresh();
+    } catch {
+      setMessage(translate(locale, "materials.error.upload"));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   return (
     <section className="ui-next-material-detail" aria-labelledby="material-title">
       <Link
@@ -199,48 +335,82 @@ export function MaterialDetail({
         </form>
       ) : null}
 
+      {canStewardMaterial ? (
+        <section className="ui-next-material-panel" aria-labelledby="material-stewardship-title">
+          <h3 id="material-stewardship-title">{translate(locale, "materials.stewardship")}</h3>
+          <form className="ui-next-material-form" onSubmit={saveMetadata}>
+            <label>
+              <span>{translate(locale, "materials.field.title")}</span>
+              <input name="title" defaultValue={material.title} required maxLength={300} />
+            </label>
+            <label>
+              <span>{translate(locale, "materials.field.description")}</span>
+              <textarea name="description" defaultValue={material.description ?? ""} rows={3} />
+            </label>
+            <div className="ui-next-material-form__actions">
+              <Button
+                type="submit"
+                loading={pendingAction === "metadata"}
+                loadingLabel={translate(locale, "common.loading")}
+              >
+                {translate(locale, "materials.saveMetadata")}
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={withdrawMaterial}
+                loading={pendingAction === "withdraw"}
+                loadingLabel={translate(locale, "common.loading")}
+              >
+                {translate(locale, "materials.withdraw")}
+              </Button>
+            </div>
+          </form>
+        </section>
+      ) : null}
+
       <div className="ui-next-material-detail__grid">
         <section className="ui-next-material-panel" aria-labelledby="material-versions-title">
           <h3 id="material-versions-title">{translate(locale, "materials.versions")}</h3>
           {material.versions.length === 0 ? (
             <p>{translate(locale, "materials.noDigitalVersion")}</p>
           ) : (
-            <div className="ui-next-material-versions" role="list">
+            <ul className="ui-next-material-versions">
               {material.versions.map((version) => (
-                <button
-                  key={version.id}
-                  type="button"
-                  role="listitem"
-                  className="ui-next-material-version"
-                  data-selected={version.id === selectedVersionId || undefined}
-                  onClick={() => {
-                    setSelectedVersionId(version.id);
-                    setCandidate(null);
-                    setMessage(null);
-                  }}
-                >
-                  <span>
-                    {translate(locale, "materials.version.number", { number: version.seq })}
-                  </span>
-                  <strong>{version.originalFilename}</strong>
-                  <small>
-                    {version.mimeType} · {formatUiNumber(version.sizeBytes, locale)}{" "}
-                    {translate(locale, "materials.bytes")}
-                  </small>
-                  <StatusBadge
-                    tone={
-                      version.extractionStatus === "unprocessable"
-                        ? "warning"
-                        : version.extractionStatus === "processed"
-                          ? "success"
-                          : "information"
-                    }
+                <li key={version.id}>
+                  <button
+                    type="button"
+                    className="ui-next-material-version"
+                    data-selected={version.id === selectedVersionId || undefined}
+                    onClick={() => {
+                      setSelectedVersionId(version.id);
+                      setCandidate(null);
+                      setMessage(null);
+                    }}
                   >
-                    {extractionLabel(version.extractionStatus)}
-                  </StatusBadge>
-                </button>
+                    <span>
+                      {translate(locale, "materials.version.number", { number: version.seq })}
+                    </span>
+                    <strong>{version.originalFilename}</strong>
+                    <small>
+                      {version.mimeType} · {formatUiNumber(version.sizeBytes, locale)}{" "}
+                      {translate(locale, "materials.bytes")}
+                    </small>
+                    <StatusBadge
+                      tone={
+                        version.extractionStatus === "unprocessable"
+                          ? "warning"
+                          : version.extractionStatus === "processed"
+                            ? "success"
+                            : "information"
+                      }
+                    >
+                      {extractionLabel(version.extractionStatus)}
+                    </StatusBadge>
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </section>
 
@@ -255,6 +425,22 @@ export function MaterialDetail({
                   : translate(locale, "materials.dateUnavailable")}
               </p>
               <p>{translate(locale, "materials.extraction.derivedNotice")}</p>
+              {selectedVersion.storageState === "stored" ? (
+                <a
+                  className="ui-next-material-detail__download"
+                  href={`/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/versions/${encodeURIComponent(selectedVersion.id)}/download`}
+                >
+                  {translate(locale, "materials.downloadOriginal")}
+                </a>
+              ) : null}
+              {workingDraft ? (
+                <Link
+                  href={`/app/projects/${encodeURIComponent(projectId)}/notes/${encodeURIComponent(workingDraft.draftId)}`}
+                  className="ui-next-material-detail__continue-draft"
+                >
+                  {translate(locale, "materials.continueWorkingNote")}
+                </Link>
+              ) : null}
               {canManageMaterial &&
               selectedVersion.extractionStatus === "processed" &&
               !candidate ? (
@@ -303,6 +489,17 @@ export function MaterialDetail({
                   >
                     {translate(locale, "materials.createProjectNote")}
                   </Button>
+                  {canStewardMaterial ? (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={rejectCandidate}
+                      loading={pendingAction === "reject"}
+                      loadingLabel={translate(locale, "common.loading")}
+                    >
+                      {translate(locale, "materials.rejectCandidate")}
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </>
@@ -316,6 +513,63 @@ export function MaterialDetail({
           ) : null}
         </section>
       </div>
+
+      {canManagePhysical || material.physical ? (
+        <section className="ui-next-material-panel" aria-labelledby="material-physical-title">
+          <h3 id="material-physical-title">{translate(locale, "materials.physical.title")}</h3>
+          <p>{translate(locale, "materials.physical.description")}</p>
+          {material.physical ? (
+            <p className="ui-next-material-detail__meta">
+              {material.physical.itemCode} · {material.physical.availableCopies}/
+              {material.physical.copies}
+            </p>
+          ) : null}
+          {canManagePhysical ? (
+            <form className="ui-next-material-form" onSubmit={savePhysical}>
+              <label>
+                <span>{translate(locale, "materials.physical.author")}</span>
+                <input name="author" defaultValue={material.physical?.author ?? ""} />
+              </label>
+              <label>
+                <span>{translate(locale, "materials.physical.location")}</span>
+                <input name="location" defaultValue={material.physical?.location ?? ""} />
+              </label>
+              <label>
+                <span>{translate(locale, "materials.physical.copies")}</span>
+                <input
+                  name="copies"
+                  type="number"
+                  min="1"
+                  defaultValue={material.physical?.copies ?? 1}
+                  required
+                />
+              </label>
+              <div className="ui-next-material-form__actions">
+                <Button
+                  type="submit"
+                  loading={pendingAction === "physical"}
+                  loadingLabel={translate(locale, "common.loading")}
+                >
+                  {material.physical
+                    ? translate(locale, "materials.physical.update")
+                    : translate(locale, "materials.physical.add")}
+                </Button>
+                {material.physical ? (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={archivePhysical}
+                    loading={pendingAction === "archivePhysical"}
+                    loadingLabel={translate(locale, "common.loading")}
+                  >
+                    {translate(locale, "materials.physical.archive")}
+                  </Button>
+                ) : null}
+              </div>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="ui-next-material-panel" aria-labelledby="material-lineage-title">
         <h3 id="material-lineage-title">{translate(locale, "materials.lineage.title")}</h3>
@@ -341,6 +595,14 @@ export function MaterialDetail({
           <p>{translate(locale, "materials.lineage.empty")}</p>
         )}
       </section>
+      {collaboration ? (
+        <CollaborationSection
+          locale={locale}
+          members={collaboration.mentionCandidates}
+          commentsUrl={`/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/comments`}
+          presenceUrl={`/api/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}/presence`}
+        />
+      ) : null}
     </section>
   );
 }

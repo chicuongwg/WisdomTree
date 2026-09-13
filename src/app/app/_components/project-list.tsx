@@ -44,22 +44,61 @@ export function ProjectList({
   locale: UiLocale;
   showDescription?: boolean;
 }) {
+  const personal = orderProjects(
+    projects.filter((project) => project.isPersonal),
+    locale,
+  );
+  const shared = orderProjects(
+    projects.filter((project) => !project.isPersonal),
+    locale,
+  );
+  return (
+    <div className="ui-next-project-groups">
+      {personal.length ? (
+        <section aria-labelledby="my-project-heading">
+          <h2 id="my-project-heading">{translate(locale, "projects.myProject")}</h2>
+          <ProjectCards projects={personal} locale={locale} showDescription={showDescription} />
+        </section>
+      ) : null}
+      {shared.length ? (
+        <section aria-labelledby="shared-projects-heading">
+          <h2 id="shared-projects-heading">{translate(locale, "projects.sharedProjects")}</h2>
+          <ProjectCards projects={shared} locale={locale} showDescription={showDescription} />
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function ProjectCards({
+  projects,
+  locale,
+  showDescription,
+}: {
+  projects: readonly AppProjectDto[];
+  locale: UiLocale;
+  showDescription: boolean;
+}) {
   return (
     <ul className="ui-next-project-list" aria-label={translate(locale, "projects.listLabel")}>
-      {orderProjects(projects, locale).map((project) => (
+      {projects.map((project) => (
         <li key={project.id}>
           <Surface className="ui-next-project-card">
             <div className="ui-next-project-card__main">
               <div className="ui-next-project-card__title-row">
                 <h3>
-                  <Link href={`/app/projects/${project.id}`}>{project.name}</Link>
+                  <Link href={`/app/projects/${project.id}`}>
+                    {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
+                  </Link>
                 </h3>
                 <StatusBadge tone={statusTone[project.status]}>
                   {translate(locale, statusMessageKey[project.status])}
                 </StatusBadge>
               </div>
               <p className="ui-next-project-card__lens" dir="auto">
-                {project.researchLens}
+                {project.isPersonal && project.researchLens === "Personal research workspace"
+                  ? translate(locale, "projects.personalWorkspace")
+                  : project.researchLens}
               </p>
               {showDescription && project.description ? (
                 <p className="ui-next-project-card__description" dir="auto">

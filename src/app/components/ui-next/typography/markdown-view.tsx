@@ -64,17 +64,41 @@ function renderBlock(block: Block, index: number): ReactNode {
       const inlines = renderInlines(block.text);
       switch (block.level) {
         case 1:
-          return <h1 key={index} id={id}>{inlines}</h1>;
+          return (
+            <h1 key={index} id={id}>
+              {inlines}
+            </h1>
+          );
         case 2:
-          return <h2 key={index} id={id}>{inlines}</h2>;
+          return (
+            <h2 key={index} id={id}>
+              {inlines}
+            </h2>
+          );
         case 3:
-          return <h3 key={index} id={id}>{inlines}</h3>;
+          return (
+            <h3 key={index} id={id}>
+              {inlines}
+            </h3>
+          );
         case 4:
-          return <h4 key={index} id={id}>{inlines}</h4>;
+          return (
+            <h4 key={index} id={id}>
+              {inlines}
+            </h4>
+          );
         case 5:
-          return <h5 key={index} id={id}>{inlines}</h5>;
+          return (
+            <h5 key={index} id={id}>
+              {inlines}
+            </h5>
+          );
         case 6:
-          return <h6 key={index} id={id}>{inlines}</h6>;
+          return (
+            <h6 key={index} id={id}>
+              {inlines}
+            </h6>
+          );
       }
       break;
     }
@@ -97,9 +121,7 @@ function renderBlock(block: Block, index: number): ReactNode {
       return (
         <ol key={index}>
           {block.items.map((item: ListItem, itemIdx: number) => (
-            <li key={itemIdx}>
-              {renderInlines(item.text)}
-            </li>
+            <li key={itemIdx}>{renderInlines(item.text)}</li>
           ))}
         </ol>
       );
@@ -145,7 +167,10 @@ function renderBlock(block: Block, index: number): ReactNode {
       return <hr key={index} />;
     case "admonition":
       return (
-        <aside key={index} className={classNames("ui-next-admonition", `ui-next-admonition--${block.kind}`)}>
+        <aside
+          key={index}
+          className={classNames("ui-next-admonition", `ui-next-admonition--${block.kind}`)}
+        >
           {block.title ? <strong>{block.title}</strong> : null}
           {block.blocks.map((inner, innerIdx) => renderBlock(inner, innerIdx))}
         </aside>

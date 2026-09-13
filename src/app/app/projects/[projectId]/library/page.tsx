@@ -1,4 +1,5 @@
-import { ProjectModulePlaceholder } from "../_components/module-placeholder";
+import { getAppProjectLibrary } from "@/modules/application";
+import { LibraryView } from "./_components/library-view";
 import { requireProjectModule } from "../_lib/workspace-context";
 
 export default async function ProjectLibraryPage({
@@ -7,12 +8,7 @@ export default async function ProjectLibraryPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const { application } = await requireProjectModule(projectId, "library");
-  return (
-    <ProjectModulePlaceholder
-      locale={application.locale}
-      titleKey="project.library"
-      descriptionKey="workspace.libraryUnavailable"
-    />
-  );
+  const { actor, application } = await requireProjectModule(projectId, "library");
+  const library = await getAppProjectLibrary(actor, projectId);
+  return <LibraryView projectId={projectId} locale={application.locale} library={library} />;
 }

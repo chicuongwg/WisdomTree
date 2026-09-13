@@ -24,10 +24,15 @@
   gap: var(--ui-space-6);
 }
 
+.ui-next-project-header__identity > div {
+  min-inline-size: 0;
+}
+
 .ui-next-project-header h1 {
   margin: 0;
   font-size: var(--ui-font-size-xl);
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .ui-next-project-header__identity p {
@@ -83,10 +88,16 @@
 }
 
 .ui-next-project-workspace__content,
+.ui-next-project-module-frame,
 .ui-next-project-overview,
 .ui-next-project-module {
   display: grid;
   gap: var(--ui-space-6);
+}
+
+.ui-next-project-workspace__content,
+.ui-next-project-module-frame {
+  min-inline-size: 0;
 }
 
 .ui-next-project-overview {

@@ -8,7 +8,10 @@ import {
   type LinkType,
   type SliderKey,
 } from "@/lib/graph-settings";
-import { nodeLinkTypeLabel, T } from "@/lib/vi";
+import { nodeLinkTypeLabel, T as legacyCopy } from "@/lib/vi";
+import type { UiLocale } from "@/modules/auth/profile";
+import { getGraphCopy } from "./ui-next/localization/graph";
+import { translate } from "./ui-next/localization";
 
 // The map's control panel — one floating card at the top right of the canvas,
 // modelled on Obsidian's graph controls by owner decision (2026-07-21): a
@@ -36,15 +39,15 @@ type Setter = <K extends keyof GraphSettings>(key: K, value: GraphSettings[K]) =
 
 /** One label per slider. Typed against SliderKey, so adding a slider to the
  *  settings model fails to compile until it has a Vietnamese name. */
-const SLIDER_LABEL: Record<SliderKey, string> = {
-  textFade: T.graphTextFade,
-  nodeSize: T.graphNodeSize,
-  linkThickness: T.graphLinkThickness,
-  centreForce: T.graphCentreForce,
-  repelForce: T.graphRepelForce,
-  linkForce: T.graphLinkForce,
-  linkDistance: T.graphLinkDistance,
-};
+const SLIDER_LABEL = {
+  textFade: "graphTextFade",
+  nodeSize: "graphNodeSize",
+  linkThickness: "graphLinkThickness",
+  centreForce: "graphCentreForce",
+  repelForce: "graphRepelForce",
+  linkForce: "graphLinkForce",
+  linkDistance: "graphLinkDistance",
+} as const satisfies Record<SliderKey, keyof typeof legacyCopy>;
 
 const DISPLAY_SLIDERS = ["textFade", "nodeSize", "linkThickness"] as const;
 const FORCE_SLIDERS = ["centreForce", "repelForce", "linkForce", "linkDistance"] as const;
@@ -79,6 +82,10 @@ export function GraphSettingsPanel({
   term,
   onTerm,
   idPrefix,
+  showGroups = true,
+  scopeLabel = legacyCopy.filterByBranch,
+  allScopesLabel = legacyCopy.allBranches,
+  locale,
 }: {
   settings: GraphSettings;
   set: Setter;
@@ -93,13 +100,18 @@ export function GraphSettingsPanel({
   term: string;
   onTerm: (v: string) => void;
   idPrefix: string;
+  showGroups?: boolean;
+  scopeLabel?: string;
+  allScopesLabel?: string;
+  locale?: UiLocale;
 }) {
+  const T = locale ? getGraphCopy(locale) : legacyCopy;
   const p = (s: string) => `${idPrefix}-${s}`;
   const setGroups = (groups: GraphGroup[]) => set("groups", groups);
 
   const slider = (k: SliderKey) => (
     <div className="gp-slider" key={k}>
-      <label htmlFor={p(k)}>{SLIDER_LABEL[k]}</label>
+      <label htmlFor={p(k)}>{T[SLIDER_LABEL[k]]}</label>
       <input
         id={p(k)}
         type="range"
@@ -198,13 +210,13 @@ export function GraphSettingsPanel({
             <label htmlFor={p("orphans")}>{T.graphShowOrphans}</label>
           </div>
           <div className="field">
-            <label htmlFor={p("branch")}>{T.filterByBranch}</label>
+            <label htmlFor={p("branch")}>{scopeLabel}</label>
             <select
               id={p("branch")}
               value={settings.branchId}
               onChange={(e) => set("branchId", e.target.value)}
             >
-              <option value="">{T.allBranches}</option>
+              <option value="">{allScopesLabel}</option>
               {branchOptions.map(([id, name]) => (
                 <option key={id} value={id}>
                   {name}
@@ -227,80 +239,84 @@ export function GraphSettingsPanel({
                     >)
                   }
                 />
-                <label htmlFor={p(`lt-${t}`)}>{nodeLinkTypeLabel(t)}</label>
+                <label htmlFor={p(`lt-${t}`)}>
+                  {locale ? translate(locale, `graph.${t}`) : nodeLinkTypeLabel(t)}
+                </label>
               </div>
             ))}
           </fieldset>
         </Section>
 
-        <Section title={T.graphPanelGroups}>
-          {settings.groups.map((group, index) => (
-            <fieldset className="graph-group gp-color-group" key={group.id}>
-              <input
-                aria-label={T.graphGroupName}
-                value={group.name}
-                placeholder={T.graphGroupName}
-                onChange={(e) =>
-                  setGroups(
-                    settings.groups.map((item, at) =>
-                      at === index ? { ...item, name: e.target.value } : item,
-                    ),
-                  )
-                }
-              />
-              <input
-                aria-label={T.graphGroupQuery}
-                value={group.query}
-                placeholder={T.graphGroupQueryHelp}
-                onChange={(e) =>
-                  setGroups(
-                    settings.groups.map((item, at) =>
-                      at === index ? { ...item, query: e.target.value } : item,
-                    ),
-                  )
-                }
-              />
-              <div className="gp-group-row">
+        {showGroups ? (
+          <Section title={T.graphPanelGroups}>
+            {settings.groups.map((group, index) => (
+              <fieldset className="graph-group gp-color-group" key={group.id}>
                 <input
-                  type="color"
-                  aria-label="Màu"
-                  value={group.color}
+                  aria-label={T.graphGroupName}
+                  value={group.name}
+                  placeholder={T.graphGroupName}
                   onChange={(e) =>
                     setGroups(
                       settings.groups.map((item, at) =>
-                        at === index ? { ...item, color: e.target.value } : item,
+                        at === index ? { ...item, name: e.target.value } : item,
                       ),
                     )
                   }
                 />
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => setGroups(settings.groups.filter((_, at) => at !== index))}
-                >
-                  {T.graphRemoveGroup}
-                </button>
-              </div>
-            </fieldset>
-          ))}
-          <button
-            type="button"
-            className="secondary gp-wide"
-            onClick={() =>
-              setGroups([
-                ...settings.groups,
-                {
-                  id: crypto.randomUUID(),
-                  name: "",
-                  query: "",
-                  color: GROUP_COLORS[settings.groups.length % GROUP_COLORS.length],
-                },
-              ])
-            }
-          >
-            {T.graphNewGroup}
-          </button>
-        </Section>
+                <input
+                  aria-label={T.graphGroupQuery}
+                  value={group.query}
+                  placeholder={T.graphGroupQueryHelp}
+                  onChange={(e) =>
+                    setGroups(
+                      settings.groups.map((item, at) =>
+                        at === index ? { ...item, query: e.target.value } : item,
+                      ),
+                    )
+                  }
+                />
+                <div className="gp-group-row">
+                  <input
+                    type="color"
+                    aria-label="Màu"
+                    value={group.color}
+                    onChange={(e) =>
+                      setGroups(
+                        settings.groups.map((item, at) =>
+                          at === index ? { ...item, color: e.target.value } : item,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setGroups(settings.groups.filter((_, at) => at !== index))}
+                  >
+                    {T.graphRemoveGroup}
+                  </button>
+                </div>
+              </fieldset>
+            ))}
+            <button
+              type="button"
+              className="secondary gp-wide"
+              onClick={() =>
+                setGroups([
+                  ...settings.groups,
+                  {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    query: "",
+                    color: GROUP_COLORS[settings.groups.length % GROUP_COLORS.length],
+                  },
+                ])
+              }
+            >
+              {T.graphNewGroup}
+            </button>
+          </Section>
+        ) : null}
 
         <Section title={T.graphPanelDisplay}>
           <div className="graph-check">

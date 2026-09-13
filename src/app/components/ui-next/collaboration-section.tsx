@@ -1,0 +1,364 @@
+"use client";
+
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import type { UiLocale } from "@/modules/auth/profile";
+import { foldName } from "@/lib/mention-fold";
+import { Button } from "./primitives/button";
+import { formatUiDate, translate } from "./localization";
+
+type CommentRow = {
+  id: string;
+  parentCommentId: string | null;
+  authorId: string;
+  authorName: string;
+  body: string;
+  mentions: string[];
+  mentionNames: string[];
+  createdAt: Date | string;
+};
+
+type Member = { id: string; displayName: string };
+type PresencePerson = { userId: string; displayName: string };
+
+const PRESENCE_BEAT_MS = 45_000;
+
+function initials(name: string) {
+  return (name.split(/\s+/).filter(Boolean).at(-1) ?? "?").slice(0, 2).toUpperCase();
+}
+
+function renderBody(comment: CommentRow) {
+  if (!comment.mentionNames.length) return comment.body;
+  const names = [...comment.mentionNames].sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(
+    `@(${names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
+    "giu",
+  );
+  const parts = comment.body.split(pattern);
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <mark key={`${part}-${index}`} className="ui-next-comment__mention">
+        @{part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
+function Presence({ locale, url }: { locale: UiLocale; url: string }) {
+  const [people, setPeople] = useState<PresencePerson[]>([]);
+
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const leave = () => {
+      void fetch(url, { method: "DELETE", keepalive: true });
+    };
+    const beat = async () => {
+      try {
+        const response = await fetch(url, { method: "POST", cache: "no-store" });
+        if (!stopped && response.ok) setPeople((await response.json()) as PresencePerson[]);
+      } catch {
+        // Presence is advisory. A failed heartbeat does not interrupt work.
+      }
+    };
+    const sync = () => {
+      if (timer) clearInterval(timer);
+      timer = undefined;
+      if (document.visibilityState === "visible") {
+        void beat();
+        timer = setInterval(beat, PRESENCE_BEAT_MS);
+      } else {
+        leave();
+      }
+    };
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    window.addEventListener("pagehide", leave);
+    return () => {
+      stopped = true;
+      if (timer) clearInterval(timer);
+      document.removeEventListener("visibilitychange", sync);
+      window.removeEventListener("pagehide", leave);
+      leave();
+    };
+  }, [url]);
+
+  if (!people.length) return null;
+  return (
+    <p className="ui-next-presence" aria-live="polite">
+      <span>{translate(locale, "collaboration.viewing")}</span>
+      {people.map((person) => (
+        <span key={person.userId} className="ui-next-presence__person">
+          <span className="ui-next-presence__initials" aria-hidden="true">
+            {initials(person.displayName)}
+          </span>
+          {person.displayName}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+export function CollaborationSection({
+  locale,
+  commentsUrl,
+  presenceUrl,
+  members,
+}: {
+  locale: UiLocale;
+  commentsUrl: string;
+  presenceUrl: string;
+  members: Member[];
+}) {
+  const [comments, setComments] = useState<CommentRow[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [body, setBody] = useState("");
+  const [replyTo, setReplyTo] = useState<CommentRow | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const [mention, setMention] = useState<{ at: number; end: number; text: string } | null>(null);
+  const [selectedMention, setSelectedMention] = useState(0);
+  const fieldId = useId();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const load = useCallback(async () => {
+    setLoadFailed(false);
+    try {
+      const response = await fetch(commentsUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error("comment_load_failed");
+      setComments((await response.json()) as CommentRow[]);
+    } catch {
+      setComments([]);
+      setLoadFailed(true);
+    }
+  }, [commentsUrl]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    setTargetId(/^#comment-(.+)$/.exec(window.location.hash)?.[1] ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (!targetId || comments === null) return;
+    const target = document.getElementById(`comment-${targetId}`);
+    if (!target) return;
+    target.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center",
+    });
+    target.focus({ preventScroll: true });
+  }, [comments, targetId]);
+
+  const readMention = useCallback((element: HTMLTextAreaElement) => {
+    const end = element.selectionStart;
+    const found = /(?:^|\s)@([^\n@]{0,40})$/.exec(element.value.slice(0, end));
+    return found ? { at: end - found[1].length - 1, end, text: found[1] } : null;
+  }, []);
+
+  const matches = useMemo(() => {
+    if (!mention) return [];
+    const query = foldName(mention.text);
+    return members.filter((member) => foldName(member.displayName).startsWith(query)).slice(0, 6);
+  }, [members, mention]);
+
+  const chooseMention = useCallback(
+    (name: string) => {
+      const element = bodyRef.current;
+      if (!element || !mention) return;
+      const before = body.slice(0, mention.at);
+      const after = body.slice(mention.end);
+      setBody(`${before}@${name} ${after}`);
+      setMention(null);
+      const caret = before.length + name.length + 2;
+      requestAnimationFrame(() => {
+        element.focus();
+        element.setSelectionRange(caret, caret);
+      });
+    },
+    [body, mention],
+  );
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!body.trim()) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch(commentsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          body: body.trim(),
+          ...(replyTo ? { parentCommentId: replyTo.id } : {}),
+        }),
+      });
+      if (!response.ok) throw new Error("comment_post_failed");
+      setBody("");
+      setReplyTo(null);
+      setMessage(translate(locale, "collaboration.posted"));
+      await load();
+    } catch {
+      setMessage(translate(locale, "collaboration.postFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const topLevel = (comments ?? []).filter((comment) => !comment.parentCommentId);
+  const replies = (commentId: string) =>
+    (comments ?? []).filter((comment) => comment.parentCommentId === commentId);
+  const renderComment = (comment: CommentRow, nested = false) => (
+    <li
+      key={comment.id}
+      id={`comment-${comment.id}`}
+      tabIndex={-1}
+      className={`ui-next-comment${nested ? " ui-next-comment--reply" : ""}${
+        targetId === comment.id ? " ui-next-comment--target" : ""
+      }`}
+    >
+      <div className="ui-next-comment__meta">
+        <strong>{comment.authorName}</strong>
+        <span>
+          {formatUiDate(comment.createdAt, locale, { dateStyle: "medium", timeStyle: "short" })}
+        </span>
+      </div>
+      <p className="ui-next-comment__body">{renderBody(comment)}</p>
+      {!nested ? (
+        <Button
+          type="button"
+          variant="ghost"
+          className="ui-next-comment__reply"
+          onClick={() => {
+            setReplyTo(comment);
+            bodyRef.current?.focus();
+          }}
+        >
+          {translate(locale, "collaboration.reply")}
+        </Button>
+      ) : null}
+      {replies(comment.id).length ? (
+        <ul className="ui-next-comment-list ui-next-comment-list--replies">
+          {replies(comment.id).map((reply) => renderComment(reply, true))}
+        </ul>
+      ) : null}
+    </li>
+  );
+
+  return (
+    <section className="ui-next-collaboration" aria-labelledby={`${fieldId}-title`}>
+      <header className="ui-next-collaboration__header">
+        <div>
+          <h2 id={`${fieldId}-title`}>{translate(locale, "collaboration.title")}</h2>
+          <Presence locale={locale} url={presenceUrl} />
+        </div>
+      </header>
+
+      <div role="status" aria-live="polite" className="ui-next-collaboration__status">
+        {comments === null ? <p>{translate(locale, "common.loading")}</p> : null}
+        {loadFailed ? (
+          <p>
+            {translate(locale, "collaboration.loadFailed")}{" "}
+            <Button type="button" variant="ghost" onClick={() => void load()}>
+              {translate(locale, "common.tryAgain")}
+            </Button>
+          </p>
+        ) : null}
+        {!loadFailed && comments !== null && !topLevel.length ? (
+          <p>{translate(locale, "collaboration.empty")}</p>
+        ) : null}
+      </div>
+      {topLevel.length ? (
+        <ul className="ui-next-comment-list">
+          {topLevel.map((comment) => renderComment(comment))}
+        </ul>
+      ) : null}
+
+      <form className="ui-next-comment-composer" onSubmit={submit}>
+        {replyTo ? (
+          <p className="ui-next-comment-composer__replying">
+            {translate(locale, "collaboration.replyingTo", { name: replyTo.authorName })}{" "}
+            <Button type="button" variant="ghost" onClick={() => setReplyTo(null)}>
+              {translate(locale, "common.cancel")}
+            </Button>
+          </p>
+        ) : null}
+        <label htmlFor={`${fieldId}-body`}>{translate(locale, "collaboration.write")}</label>
+        <textarea
+          id={`${fieldId}-body`}
+          ref={bodyRef}
+          value={body}
+          onChange={(event) => {
+            setBody(event.target.value);
+            setMention(readMention(event.currentTarget));
+            setSelectedMention(0);
+          }}
+          onKeyDown={(event) => {
+            if (!mention || !matches.length) return;
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setSelectedMention((index) => (index + 1) % matches.length);
+            } else if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setSelectedMention((index) => (index - 1 + matches.length) % matches.length);
+            } else if (event.key === "Enter" || event.key === "Tab") {
+              event.preventDefault();
+              chooseMention(matches[selectedMention].displayName);
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              setMention(null);
+            }
+          }}
+          onBlur={() => setMention(null)}
+          rows={4}
+          required
+          aria-describedby={`${fieldId}-help`}
+          aria-controls={`${fieldId}-mentions`}
+          aria-activedescendant={
+            mention && matches.length ? `${fieldId}-mention-${selectedMention}` : undefined
+          }
+        />
+        {mention && matches.length ? (
+          <ul id={`${fieldId}-mentions`} className="ui-next-mention-list" role="listbox">
+            {matches.map((member, index) => (
+              <li
+                key={member.id}
+                id={`${fieldId}-mention-${index}`}
+                role="option"
+                aria-selected={selectedMention === index}
+                className={selectedMention === index ? "is-selected" : undefined}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  chooseMention(member.displayName);
+                }}
+              >
+                {member.displayName}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p id={`${fieldId}-help`} className="ui-next-comment-composer__help">
+          {translate(locale, "collaboration.mentionHelp")}
+        </p>
+        {message ? (
+          <p role="status" aria-live="polite">
+            {message}
+          </p>
+        ) : null}
+        <Button
+          type="submit"
+          variant="primary"
+          loading={busy}
+          loadingLabel={translate(locale, "common.loading")}
+          disabled={!body.trim()}
+        >
+          {translate(locale, "collaboration.submit")}
+        </Button>
+      </form>
+    </section>
+  );
+}

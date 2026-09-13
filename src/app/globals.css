@@ -217,40 +217,40 @@
 }
 
 /* ============================================================
-   Dark theme — "chàm đêm". The toggle stamps data-theme on <html>
+   Dark theme — soft slate. The toggle stamps data-theme on <html>
    before first paint; every component reads tokens only, so the
    whole identity flips here and nowhere else.
    ============================================================ */
 :root[data-theme="dark"] {
-  --color-paper: #171d1a;
-  --color-ink: #dbe3dc;
-  --color-canopy: #4ea87c;
+  --color-paper: #29343d;
+  --color-ink: #f3f2ec;
+  --color-canopy: #a8d4be;
   --color-seal: #d0603f;
-  --color-cham: #6f9cc9;
+  --color-cham: #a8d1ff;
   --color-amber: #c9974a;
 
-  --color-surface: #1e2521;
-  --color-surface-sunken: #121714;
-  --color-ink-muted: #94a398;
-  --color-line: #2c352f;
-  --color-line-strong: #3d4a41;
-  --color-canopy-deep: #63bd90;
-  --color-canopy-wash: #1d3328;
+  --color-surface: #34414b;
+  --color-surface-sunken: #253039;
+  --color-ink-muted: #c0cbd2;
+  --color-line: #647683;
+  --color-line-strong: #a4b4bf;
+  --color-canopy-deep: #c2e3d1;
+  --color-canopy-wash: #304f43;
   --color-seal-deep: #e0764f;
   --color-seal-wash: #39201a;
   --color-amber-wash: #332a17;
   --color-cham-deep: #8ab4dd;
   --color-cham-wash: #1b2a3a;
-  --color-on-strong: #121714;
-  --color-control-edge: #69756d; /* 3.3:1 on the dark surface */
+  --color-on-strong: #203c30;
+  --color-control-edge: #a4b4bf;
 
-  --shell-rail-bg: #101512;
-  --shell-rail-ink: #7d9184;
+  --shell-rail-bg: #29343d;
+  --shell-rail-ink: #c0cbd2;
   --shell-rail-active: #e8eee9;
-  --shell-side-bg: #1a201c;
-  --shell-side-hover: #232b26;
-  --shell-side-active: #22352b;
-  --shell-status-bg: #143826;
+  --shell-side-bg: #34414b;
+  --shell-side-hover: #3d4b56;
+  --shell-side-active: #304f43;
+  --shell-status-bg: #304f43;
   --shell-status-ink: #9fc7b0;
   --shell-veil: rgba(0, 0, 0, 0.55);
 
@@ -404,6 +404,74 @@ main.page > section {
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
+}
+
+.published-research {
+  max-width: 52rem;
+}
+
+.published-research__search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-3);
+  align-items: end;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+}
+
+.published-research__search label {
+  display: grid;
+  gap: var(--space-1);
+  font-weight: 650;
+}
+
+.published-research__search input {
+  min-inline-size: 0;
+}
+
+.published-research__results {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.published-research__results li {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+}
+
+.published-research__results a,
+.published-research__content a,
+.published-research__back a {
+  overflow-wrap: anywhere;
+}
+
+.published-research__results p,
+.published-research__metadata {
+  color: var(--color-ink-muted);
+}
+
+.published-research__content {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .published-research__search {
+    grid-template-columns: 1fr;
+  }
+
+  .published-research__search button {
+    inline-size: 100%;
+  }
 }
 
 /* the card head rule belongs to the screen title only — never to an
@@ -2039,12 +2107,11 @@ dialog.confirm .confirm-actions {
    panel open a 57rem window leaves a 35rem map, where a 16rem card floating
    over it covers nearly half — the lid this rule exists to prevent, arriving
    17rem of window before the rule fired. */
-@container main (max-width: 40rem) {
+@media (max-width: 44rem) {
   /* On a phone the map goes back to its own proportions: a 72vh box around a
      350px-wide drawing is mostly empty paper above and below the marks. */
-  svg.knowledge-map,
-  canvas.knowledge-map {
-    height: auto;
+  div.knowledge-map {
+    height: min(58dvh, 34rem);
   }
   .graph-panel {
     position: static;
@@ -2161,6 +2228,27 @@ div.knowledge-map:active {
   transform: rotate(45deg);
   background: var(--color-amber-wash);
   border-color: var(--color-amber);
+}
+.legend-project {
+  border-radius: 50%;
+  background: var(--color-canopy);
+  border-color: var(--color-canopy-deep);
+}
+.legend-note {
+  border-radius: 50%;
+  background: var(--color-amber);
+}
+.legend-material {
+  border-radius: 50%;
+  background: var(--color-seal);
+}
+.legend-person {
+  border-radius: 50%;
+  background: var(--color-cham);
+}
+.legend-activity {
+  border-radius: 50%;
+  background: var(--color-canopy-deep);
 }
 
 .map-legend {
@@ -2344,52 +2432,6 @@ button.login-person:hover {
 }
 button.login-person:hover .login-person-role {
   color: inherit;
-}
-
-/* --- Graph page: scope tab toggle --------------------------------- */
-/* Two tabs that let the reader switch between the shared project knowledge
-   graph and their private note graph. Same palette as the sidebar: vermilion
-   for the team tab, canopy for the personal tab. */
-.graph-scope-tabs {
-  display: flex;
-  gap: 0.25rem;
-  margin: 0.6rem 0 0.4rem;
-}
-.graph-scope-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.9rem;
-  border-radius: var(--radius);
-  font-size: 0.84rem;
-  font-weight: 500;
-  color: var(--color-ink-muted);
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-line);
-  text-decoration: none;
-  transition:
-    color var(--speed) ease,
-    background var(--speed) ease,
-    border-color var(--speed) ease;
-}
-.graph-scope-tab:hover {
-  color: var(--color-ink);
-  background: var(--color-surface);
-  border-color: var(--color-line-strong);
-  text-decoration: none;
-}
-/* Active team tab: vermilion accent (shared / official) */
-.graph-scope-tab.active {
-  color: var(--color-seal);
-  background: var(--color-seal-wash);
-  border-color: color-mix(in srgb, var(--color-seal) 35%, transparent);
-  font-weight: 600;
-}
-/* Active personal tab: canopy accent (private / mine) */
-.graph-scope-tab--personal.active {
-  color: var(--color-canopy-deep);
-  background: var(--color-canopy-wash);
-  border-color: color-mix(in srgb, var(--color-canopy) 35%, transparent);
 }
 
 /* ============================================================

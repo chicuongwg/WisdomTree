@@ -37,7 +37,13 @@ export default async function AppProjectOverviewPage({
       <section aria-labelledby="project-about-title">
         <h2 id="project-about-title">{translate(application.locale, "workspace.about")}</h2>
         <Surface>
-          <p dir="auto">{workspace.project.description || workspace.project.researchLens}</p>
+          <p dir="auto">
+            {workspace.project.description ||
+              (workspace.project.isPersonal &&
+              workspace.project.researchLens === "Personal research workspace"
+                ? translate(application.locale, "projects.personalWorkspace")
+                : workspace.project.researchLens)}
+          </p>
         </Surface>
       </section>
       <section aria-labelledby="project-access-title">
@@ -59,6 +65,31 @@ export default async function AppProjectOverviewPage({
                 : "workspace.researchAccessDescription",
             )}
           </p>
+          <ul>
+            <li>{translate(application.locale, "workspace.canReadResearch")}</li>
+            {(
+              [
+                "canCreateNote",
+                "canCreateMaterial",
+                "canCreateActivity",
+                "canCreateTask",
+                "canManagePeople",
+                "canEditProject",
+                "canPublish",
+              ] as const
+            )
+              .filter((capability) => workspace.project.capabilities[capability])
+              .map((capability) => (
+                <li key={capability}>
+                  {translate(
+                    application.locale,
+                    capability === "canEditProject" && workspace.project.isPersonal
+                      ? "workspace.canEditPersonalProject"
+                      : `workspace.${capability}`,
+                  )}
+                </li>
+              ))}
+          </ul>
         </Surface>
       </section>
     </div>

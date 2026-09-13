@@ -10,5 +10,12 @@ export default async function ProjectPeoplePage({
   const { projectId } = await params;
   const { actor, application, workspace } = await requireProjectModule(projectId, "people");
   const people = await listAppProjectPeople(actor, projectId);
-  return <PeopleDirectory locale={application.locale} people={people} projectId={projectId} projectName={workspace.project.name} canCreate={workspace.project.capabilities.canManagePeople} />;
+  return (
+    <PeopleDirectory
+      locale={application.locale}
+      people={people}
+      projectId={projectId}
+      canCreate={workspace.project.capabilities.canManagePeople}
+    />
+  );
 }

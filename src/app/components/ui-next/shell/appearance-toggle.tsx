@@ -1,8 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
-import { Button } from "../primitives/button";
 import { translate } from "../localization";
 
 const THEME_KEY = "wt-theme";
@@ -16,15 +15,22 @@ const subscribe = (notify: () => void) => {
 
 export function AppearanceToggle({ locale }: { locale: UiLocale }) {
   const dark = useSyncExternalStore(subscribe, readTheme, readServerTheme);
-  const label = translate(locale, dark ? "shell.useLightTheme" : "shell.useDarkTheme");
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(THEME_KEY);
+      if (stored === "light" || stored === "dark") document.documentElement.dataset.theme = stored;
+    } catch {
+      // The pre-paint theme still applies when storage is unavailable.
+    }
+  }, []);
 
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      aria-pressed={dark}
-      onClick={() => {
-        const next = dark ? "light" : "dark";
+    <select
+      className="ui-next-control"
+      aria-label={translate(locale, "shell.appearance")}
+      value={dark ? "dark" : "light"}
+      onChange={(event) => {
+        const next = event.target.value;
         document.documentElement.dataset.theme = next;
         try {
           localStorage.setItem(THEME_KEY, next);
@@ -33,7 +39,8 @@ export function AppearanceToggle({ locale }: { locale: UiLocale }) {
         }
       }}
     >
-      {label}
-    </Button>
+      <option value="light">{translate(locale, "preview.light")}</option>
+      <option value="dark">{translate(locale, "preview.dark")}</option>
+    </select>
   );
 }

@@ -26,8 +26,11 @@ export default async function ProjectWorkspaceLayout({
           projectId={projectId}
           modules={workspace.modules}
           locale={application.locale}
+          canEditProject={workspace.project.capabilities.canEditProject}
         />
-        <div className="ui-next-project-workspace__content">{children}</div>
+        <div className="ui-next-project-workspace__content">
+          <div className="ui-next-project-module-frame">{children}</div>
+        </div>
       </div>
     </PageContainer>
   );

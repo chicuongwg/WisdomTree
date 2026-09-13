@@ -2,12 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
-import {
-  Button,
-  Dialog,
-  StatusBadge,
-  translate,
-} from "@/app/components/ui-next";
+import { Button, Dialog, StatusBadge, translate } from "@/app/components/ui-next";
 
 export interface EvidenceCandidate {
   kind: "material" | "note";
@@ -32,8 +27,16 @@ export interface EvidencePickerProps {
   locale: UiLocale;
   projectId: string;
   noteId: string;
-  onAttachSourceVersion: (sourceVersionId: string, item: EvidenceCandidate, seq: number) => Promise<void>;
-  onAttachNoteVersion: (noteVersionId: string, item: EvidenceCandidate, seq: number) => Promise<void>;
+  onAttachSourceVersion: (
+    sourceVersionId: string,
+    item: EvidenceCandidate,
+    seq: number,
+  ) => Promise<void>;
+  onAttachNoteVersion: (
+    noteVersionId: string,
+    item: EvidenceCandidate,
+    seq: number,
+  ) => Promise<void>;
 }
 
 export function EvidencePicker({

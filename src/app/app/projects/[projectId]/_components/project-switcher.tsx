@@ -5,7 +5,7 @@ import type { AppProjectDto } from "@/modules/application";
 import type { UiLocale } from "@/modules/auth/profile";
 import { runGuardedNoteNavigation, translate } from "../../../../components/ui-next";
 
-type ProjectChoice = Pick<AppProjectDto, "id" | "name">;
+type ProjectChoice = Pick<AppProjectDto, "id" | "name" | "isPersonal">;
 
 const moduleSegments = new Set(["notes", "materials", "activities", "tasks", "people", "library"]);
 
@@ -44,7 +44,7 @@ export function ProjectSwitcher({
       >
         {projects.map((project) => (
           <option key={project.id} value={project.id}>
-            {project.name}
+            {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
           </option>
         ))}
       </select>

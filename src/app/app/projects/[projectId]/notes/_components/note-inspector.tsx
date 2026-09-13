@@ -4,7 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { NotePublicationStatus } from "@/modules/publication/service";
-import { Button, Drawer, StatusBadge, translate, type StatusTone } from "@/app/components/ui-next";
+import {
+  Button,
+  Dialog,
+  Drawer,
+  StatusBadge,
+  translate,
+  type StatusTone,
+} from "@/app/components/ui-next";
 
 export interface AttachedSourceVersion {
   sourceVersionId: string;
@@ -34,6 +41,10 @@ export interface NoteInspectorProps {
   officialVersion?: number | null;
   researchPurpose: "evidence" | "synthesis" | null;
   publication?: NotePublicationStatus | null;
+  projectId?: string;
+  noteId?: string;
+  canPublish?: boolean;
+  onPublicationUpdated?: () => void;
   tags?: string[];
   isDrawer?: boolean;
   evidence: {
@@ -50,13 +61,23 @@ export interface NoteInspectorProps {
       material: { id: string; title: string };
       materialVersion: { id: string; version: number };
       project: { id: string };
-      activities: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+      activities: Array<{
+        id: string;
+        title: string;
+        project: { id: string; name: string };
+        people: Array<{ id: string; displayName: string; roleLabel: string | null }>;
+      }>;
     }>;
     supportingNotes: Array<{
       note: { id: string; title: string | null };
       noteVersion: { id: string; version: number };
       project: { id: string };
-      activities: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+      activities: Array<{
+        id: string;
+        title: string;
+        project: { id: string; name: string };
+        people: Array<{ id: string; displayName: string; roleLabel: string | null }>;
+      }>;
     }>;
   } | null;
 }
@@ -82,6 +103,10 @@ export function NoteInspectorContent({
   officialVersion,
   researchPurpose,
   publication,
+  projectId,
+  noteId,
+  canPublish,
+  onPublicationUpdated,
   tags,
   evidence,
   onOpenEvidencePicker,
@@ -193,8 +218,19 @@ export function NoteInspectorContent({
               <span className="ui-next-note-inspector__meta-label">
                 {translate(locale, "notes.publication.publicUrl")}
               </span>
-              <span className="ui-next-note-inspector__url">/p/{publication.slug}</span>
+              <Link href={`/p/${publication.slug}`} className="ui-next-note-inspector__url">
+                /p/{publication.slug}
+              </Link>
             </div>
+          ) : null}
+          {canPublish && projectId && noteId && onPublicationUpdated ? (
+            <PublicationActions
+              locale={locale}
+              projectId={projectId}
+              noteId={noteId}
+              publication={publication}
+              onPublicationUpdated={onPublicationUpdated}
+            />
           ) : null}
         </section>
       ) : null}
@@ -307,14 +343,27 @@ export function NoteInspectorContent({
           ) : (
             <div className="ui-next-note-inspector__evidence-content">
               {provenance.supportingMaterials.map((item) => (
-                <div key={item.materialVersion.id} className="ui-next-note-inspector__evidence-group">
-                  <Link href={`/app/projects/${item.project.id}/materials/${item.material.id}`} className="ui-next-note-inspector__evidence-name">{item.material.title} · v{item.materialVersion.version}</Link>
+                <div
+                  key={item.materialVersion.id}
+                  className="ui-next-note-inspector__evidence-group"
+                >
+                  <Link
+                    href={`/app/projects/${item.project.id}/materials/${item.material.id}`}
+                    className="ui-next-note-inspector__evidence-name"
+                  >
+                    {item.material.title} · v{item.materialVersion.version}
+                  </Link>
                   <ActivityContexts locale={locale} contexts={item.activities} />
                 </div>
               ))}
               {provenance.supportingNotes.map((item) => (
                 <div key={item.noteVersion.id} className="ui-next-note-inspector__evidence-group">
-                  <Link href={`/app/projects/${item.project.id}/notes/${item.note.id}`} className="ui-next-note-inspector__evidence-name">{item.note.title ?? "—"} · v{item.noteVersion.version}</Link>
+                  <Link
+                    href={`/app/projects/${item.project.id}/notes/${item.note.id}`}
+                    className="ui-next-note-inspector__evidence-name"
+                  >
+                    {item.note.title ?? "—"} · v{item.noteVersion.version}
+                  </Link>
                   <ActivityContexts locale={locale} contexts={item.activities} />
                 </div>
               ))}
@@ -326,24 +375,164 @@ export function NoteInspectorContent({
   );
 }
 
+function PublicationActions({
+  locale,
+  projectId,
+  noteId,
+  publication,
+  onPublicationUpdated,
+}: {
+  locale: UiLocale;
+  projectId: string;
+  noteId: string;
+  publication: NotePublicationStatus;
+  onPublicationUpdated: () => void;
+}) {
+  const [intent, setIntent] = useState<"publish" | "unpublish" | null>(null);
+  const [publicSlug, setPublicSlug] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const publishLabel =
+    publication.state === "published_with_changes"
+      ? translate(locale, "notes.publication.publishChanges")
+      : translate(locale, "notes.publication.publish");
+
+  async function submit() {
+    if (!intent) return;
+    setPending(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/app/projects/${encodeURIComponent(projectId)}/notes/${encodeURIComponent(noteId)}/publication`,
+        {
+          method: intent === "publish" ? "POST" : "DELETE",
+          headers: { "Content-Type": "application/json" },
+          ...(intent === "publish" ? { body: JSON.stringify({ publicSlug }) } : {}),
+        },
+      );
+      if (!response.ok) throw new Error("publication_failed");
+      setIntent(null);
+      onPublicationUpdated();
+    } catch {
+      setError(translate(locale, "notes.publication.actionFailed"));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const canPublish = publication.state !== "published_current";
+  const canUnpublish =
+    publication.state === "published_current" || publication.state === "published_with_changes";
+
+  return (
+    <div className="ui-next-note-inspector__publication-actions">
+      {publication.revisionNumber ? (
+        <span className="ui-next-muted">
+          {translate(locale, "notes.publication.revision", { number: publication.revisionNumber })}
+        </span>
+      ) : null}
+      {canPublish ? (
+        <Button type="button" variant="secondary" onClick={() => setIntent("publish")}>
+          {publishLabel}
+        </Button>
+      ) : null}
+      {canUnpublish ? (
+        <Button type="button" variant="danger" onClick={() => setIntent("unpublish")}>
+          {translate(locale, "notes.publication.unpublish")}
+        </Button>
+      ) : null}
+      <Dialog
+        open={intent !== null}
+        onClose={() => {
+          if (!pending) setIntent(null);
+        }}
+        title={translate(
+          locale,
+          intent === "unpublish"
+            ? "notes.publication.unpublishTitle"
+            : "notes.publication.publishTitle",
+        )}
+        description={translate(
+          locale,
+          intent === "unpublish"
+            ? "notes.publication.unpublishDescription"
+            : "notes.publication.publishDescription",
+        )}
+        closeLabel={translate(locale, "common.close")}
+      >
+        {intent === "publish" && publication.state === "never_published" ? (
+          <label className="ui-next-field">
+            <span className="ui-next-field__label">
+              {translate(locale, "notes.publication.slug")}
+            </span>
+            <input
+              className="ui-next-control"
+              value={publicSlug}
+              onChange={(event) => setPublicSlug(event.target.value)}
+              maxLength={120}
+            />
+          </label>
+        ) : null}
+        {error ? (
+          <p className="ui-next-field__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="ui-next-note-inspector__publication-dialog-actions">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={() => setIntent(null)}
+          >
+            {translate(locale, "common.cancel")}
+          </Button>
+          <Button
+            type="button"
+            variant={intent === "unpublish" ? "danger" : "primary"}
+            loading={pending}
+            loadingLabel={translate(locale, "common.loading")}
+            onClick={submit}
+          >
+            {intent === "unpublish"
+              ? translate(locale, "notes.publication.confirmUnpublish")
+              : translate(locale, "notes.publication.confirmPublish")}
+          </Button>
+        </div>
+      </Dialog>
+    </div>
+  );
+}
+
 function ActivityContexts({
   locale,
   contexts,
 }: {
   locale: UiLocale;
-  contexts: Array<{ id: string; title: string; project: { id: string; name: string }; people: Array<{ id: string; displayName: string; roleLabel: string | null }> }>;
+  contexts: Array<{
+    id: string;
+    title: string;
+    project: { id: string; name: string };
+    people: Array<{ id: string; displayName: string; roleLabel: string | null }>;
+  }>;
 }) {
   return contexts.length ? (
     <ul className="ui-next-note-inspector__evidence-list">
       {contexts.map((activity) => (
         <li key={activity.id}>
           <strong>{translate(locale, "provenance.activityContext")}: </strong>
-          <Link href={`/app/projects/${activity.project.id}/activities/${activity.id}`}>{activity.title}</Link>
-          {activity.people.length ? ` — ${activity.people.map((person) => person.displayName).join(", ")}` : ""}
+          <Link href={`/app/projects/${activity.project.id}/activities/${activity.id}`}>
+            {activity.title}
+          </Link>
+          {activity.people.length
+            ? ` — ${activity.people.map((person) => person.displayName).join(", ")}`
+            : ""}
         </li>
       ))}
     </ul>
-  ) : <p className="ui-next-muted">{translate(locale, "provenance.noActivityContext")}</p>;
+  ) : (
+    <p className="ui-next-muted">{translate(locale, "provenance.noActivityContext")}</p>
+  );
 }
 
 export function NoteInspector(props: NoteInspectorProps) {

@@ -10,18 +10,44 @@ import { translate, type UiNextMessageKey } from "../localization";
 
 type ShellProject = Pick<
   AppProjectDto,
-  "id" | "name" | "researchLens" | "status" | "operationalMember" | "capabilities"
+  "id" | "name" | "researchLens" | "status" | "isPersonal" | "operationalMember" | "capabilities"
 >;
 
 const createActions: Array<{
   labelKey: UiNextMessageKey;
-  capability: keyof AppProjectDto["capabilities"];
+  descriptionKey: UiNextMessageKey;
+  capability:
+    | "canCreateNote"
+    | "canCreateMaterial"
+    | "canCreateActivity"
+    | "canCreateTask"
+    | "canManagePeople";
 }> = [
-  { labelKey: "shell.createNote", capability: "canCreateNote" },
-  { labelKey: "shell.createMaterial", capability: "canCreateMaterial" },
-  { labelKey: "shell.createActivity", capability: "canCreateActivity" },
-  { labelKey: "shell.createTask", capability: "canCreateTask" },
-  { labelKey: "shell.createPerson", capability: "canManagePeople" },
+  {
+    labelKey: "shell.createNote",
+    descriptionKey: "shell.notePurpose",
+    capability: "canCreateNote",
+  },
+  {
+    labelKey: "shell.createMaterial",
+    descriptionKey: "shell.materialPurpose",
+    capability: "canCreateMaterial",
+  },
+  {
+    labelKey: "shell.createActivity",
+    descriptionKey: "shell.activityPurpose",
+    capability: "canCreateActivity",
+  },
+  {
+    labelKey: "shell.createTask",
+    descriptionKey: "shell.taskPurpose",
+    capability: "canCreateTask",
+  },
+  {
+    labelKey: "shell.createPerson",
+    descriptionKey: "shell.personPurpose",
+    capability: "canManagePeople",
+  },
 ];
 
 export function CreateDialog({
@@ -39,6 +65,9 @@ export function CreateDialog({
   const availableActions = selected
     ? createActions.filter((action) => Boolean(selected.capabilities[action.capability]))
     : [];
+  const projectName = selected?.isPersonal
+    ? translate(locale, "projects.myProject")
+    : selected?.name;
 
   const [creatingNote, setCreatingNote] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
@@ -93,14 +122,19 @@ export function CreateDialog({
 
   return (
     <>
-      <Button type="button" variant="primary" onClick={openDialog}>
+      <Button
+        type="button"
+        variant="primary"
+        className="ui-next-create-trigger"
+        onClick={openDialog}
+      >
         {translate(locale, "shell.new")}
       </Button>
       <Dialog
         open={open}
         onClose={close}
         title={translate(locale, "shell.newTitle")}
-        description={translate(locale, "shell.newDescription")}
+        description={selected ? undefined : translate(locale, "shell.newDescription")}
         closeLabel={translate(locale, "common.close")}
       >
         {!selected ? (
@@ -115,8 +149,14 @@ export function CreateDialog({
                   onClick={() => setProjectId(project.id)}
                 >
                   <span>
-                    <strong>{project.name}</strong>
-                    <small>{project.researchLens}</small>
+                    <strong>
+                      {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
+                    </strong>
+                    <small>
+                      {project.isPersonal && project.researchLens === "Personal research workspace"
+                        ? translate(locale, "projects.personalWorkspace")
+                        : project.researchLens}
+                    </small>
                   </span>
                   <span>
                     <StatusBadge tone={project.operationalMember ? "success" : "information"}>
@@ -138,12 +178,17 @@ export function CreateDialog({
             className="ui-next-create-dialog"
             style={{ display: "flex", flexDirection: "column", gap: "var(--ui-space-4)" }}
           >
-            <Button type="button" variant="ghost" onClick={() => setCreatingNote(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="ui-next-create-dialog__back"
+              onClick={() => setCreatingNote(false)}
+            >
               {translate(locale, "common.back")}
             </Button>
             <div>
               <h3>{translate(locale, "notes.create.title")}</h3>
-              <p className="ui-next-muted">{selected.name}</p>
+              <p className="ui-next-muted">{projectName}</p>
             </div>
             <div className="ui-next-form-field">
               <label htmlFor="shell-note-title" className="ui-next-form-label">
@@ -175,7 +220,7 @@ export function CreateDialog({
                 {error}
               </p>
             ) : null}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--ui-space-2)" }}>
+            <div className="ui-next-dialog-actions">
               <Button type="button" variant="secondary" onClick={() => setCreatingNote(false)}>
                 {translate(locale, "common.cancel")}
               </Button>
@@ -188,54 +233,56 @@ export function CreateDialog({
           </form>
         ) : (
           <div className="ui-next-create-dialog">
-            <Button type="button" variant="ghost" onClick={() => setProjectId(null)}>
-              {translate(locale, "common.back")}
-            </Button>
-            <div>
-              <h3>{translate(locale, "shell.chooseObjectType")}</h3>
-              <p>{selected.name}</p>
+            <div className="ui-next-create-dialog__context">
+              <div>
+                <p className="ui-next-muted">{translate(locale, "shell.selectedProject")}</p>
+                <strong>{projectName}</strong>
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setProjectId(null)}>
+                {translate(locale, "shell.changeProject")}
+              </Button>
             </div>
             {availableActions.length ? (
-              <div className="ui-next-create-dialog__actions">
-                {availableActions.map((action) => {
-                  if (action.capability === "canCreateNote") {
+              <>
+                <h3>{translate(locale, "shell.chooseObjectType")}</h3>
+                <div className="ui-next-create-dialog__actions">
+                  {availableActions.map((action) => {
                     return (
-                      <Button
+                      <button
                         key={action.labelKey}
                         type="button"
-                        variant="primary"
-                        onClick={() => setCreatingNote(true)}
-                      >
-                        {translate(locale, action.labelKey)}
-                      </Button>
-                    );
-                  }
-                  if (action.capability === "canCreateActivity" || action.capability === "canCreateTask") {
-                    const module = action.capability === "canCreateActivity" ? "activities" : "tasks";
-                    return (
-                      <Button
-                        key={action.labelKey}
-                        type="button"
-                        variant="secondary"
+                        className="ui-next-create-dialog__action"
+                        aria-label={translate(locale, action.labelKey)}
+                        aria-describedby={`create-purpose-${action.capability}`}
                         onClick={() => {
+                          if (action.capability === "canCreateNote") {
+                            setCreatingNote(true);
+                            return;
+                          }
+                          const module = {
+                            canCreateMaterial: "materials",
+                            canCreateActivity: "activities",
+                            canCreateTask: "tasks",
+                            canManagePeople: "people",
+                          }[action.capability];
                           window.location.href = `/app/projects/${encodeURIComponent(selected.id)}/${module}`;
                         }}
                       >
-                        {translate(locale, action.labelKey)}
-                      </Button>
+                        <span>
+                          <strong>{translate(locale, action.labelKey)}</strong>
+                          <small id={`create-purpose-${action.capability}`}>
+                            {translate(locale, action.descriptionKey)}
+                          </small>
+                        </span>
+                        <span aria-hidden="true">›</span>
+                      </button>
                     );
-                  }
-                  return (
-                    <Button key={action.labelKey} type="button" variant="secondary" disabled>
-                      {translate(locale, action.labelKey)} · {translate(locale, "common.upcoming")}
-                    </Button>
-                  );
-                })}
-              </div>
+                  })}
+                </div>
+              </>
             ) : (
               <p>{translate(locale, "shell.noCreateActions")}</p>
             )}
-            <p className="ui-next-muted">{translate(locale, "shell.creationUpcoming")}</p>
           </div>
         )}
       </Dialog>

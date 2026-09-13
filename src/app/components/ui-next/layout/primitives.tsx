@@ -26,15 +26,24 @@ export function Inline({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
 
 export interface PageHeaderProps {
   title: string;
+  titleId?: string;
+  headingLevel?: 1 | 2;
   description?: string;
   actions?: ReactNode;
 }
 
-export function PageHeader({ title, description, actions }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  titleId,
+  headingLevel = 1,
+  description,
+  actions,
+}: PageHeaderProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h1";
   return (
     <header className="ui-next-page-header">
       <div>
-        <h1>{title}</h1>
+        <Heading id={titleId}>{title}</Heading>
         {description ? <p>{description}</p> : null}
       </div>
       {actions ? <div className="ui-next-page-header__actions">{actions}</div> : null}

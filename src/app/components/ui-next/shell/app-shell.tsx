@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { AppProjectDto } from "@/modules/application";
-import { GlobalNavigation } from "./navigation";
+import { AppSidebar } from "./app-sidebar";
 import { AppHeader } from "./app-header";
 
 type ShellProject = Pick<
   AppProjectDto,
-  "id" | "name" | "researchLens" | "status" | "operationalMember" | "capabilities"
+  "id" | "name" | "researchLens" | "status" | "isPersonal" | "operationalMember" | "capabilities"
 >;
 
 export function AppShell({
@@ -15,29 +15,26 @@ export function AppShell({
   locale,
   supportedLocales,
   projects,
+  canAccessAdministration = false,
+  unreadNotifications = 0,
 }: {
   children: ReactNode;
   displayName: string;
   locale: UiLocale;
   supportedLocales: UiLocale[];
   projects: ShellProject[];
+  canAccessAdministration?: boolean;
+  unreadNotifications?: number;
 }) {
   return (
     <div className="ui-next-app-shell">
-      <aside className="ui-next-app-sidebar">
-        <div className="ui-next-app-sidebar__brand" aria-label="TMKT">
-          <span className="ui-next-app-sidebar__mark" aria-hidden="true">
-            WT
-          </span>
-          <span className="ui-next-app-sidebar__name">TMKT</span>
-        </div>
-        <GlobalNavigation locale={locale} />
-      </aside>
+      <AppSidebar locale={locale} canAccessAdministration={canAccessAdministration} />
       <AppHeader
         displayName={displayName}
         locale={locale}
         supportedLocales={supportedLocales}
         projects={projects}
+        unreadNotifications={unreadNotifications}
       />
       <main id="app-main" className="ui-next-app-main" tabIndex={-1}>
         {children}

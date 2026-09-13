@@ -10,11 +10,7 @@ import { SayMutation, Say } from "@/app/components/say";
 // uploaded first, then the PATCH; useMutation's refresh repaints the server
 // page (and the rail) with the new name and picture.
 
-export function AccountProfile({
-  initial,
-}: {
-  initial: { displayName: string };
-}) {
+export function AccountProfile({ initial }: { initial: { displayName: string } }) {
   const m = useMutation();
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [file, setFile] = useState<File | null>(null);
@@ -42,7 +38,9 @@ export function AccountProfile({
           code?: string;
           details?: Record<string, unknown>;
         } | null;
-        setUploadError(err ? translateApiError(err.code, err.details, err.message) : T.genericError);
+        setUploadError(
+          err ? translateApiError(err.code, err.details, err.message) : T.genericError,
+        );
         return; // the name PATCH can wait until the picture problem is fixed
       }
       setFile(null);

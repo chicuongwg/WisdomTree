@@ -69,7 +69,7 @@ export function NoteEditor({
 
   const baseVersion = officialNote?.currentVersion ?? 1;
 
-  const [viewMode, setViewMode] = useState<"write" | "preview">("write");
+  const [viewMode, setViewMode] = useState<"write" | "split" | "preview">("split");
   const [saveState, setSaveState] = useState<SaveState>(
     initialDraft || officialNote ? "saved" : "unsaved",
   );
@@ -354,7 +354,9 @@ export function NoteEditor({
   }
 
   return (
-    <div className="ui-next-note-editor">
+    <div
+      className={`ui-next-note-editor ${viewMode === "split" ? "ui-next-note-editor--split" : ""}`}
+    >
       <header className="ui-next-note-editor__toolbar">
         <div className="ui-next-note-editor__toolbar-group">
           <span className="ui-next-muted">{projectName}</span>
@@ -450,37 +452,66 @@ export function NoteEditor({
           <Button
             type="button"
             variant={viewMode === "write" ? "primary" : "secondary"}
+            aria-pressed={viewMode === "write"}
             onClick={() => setViewMode("write")}
           >
             {translate(locale, "notes.action.write")}
           </Button>
           <Button
             type="button"
+            variant={viewMode === "split" ? "primary" : "secondary"}
+            aria-pressed={viewMode === "split"}
+            onClick={() => setViewMode("split")}
+          >
+            {translate(locale, "notes.action.splitView")}
+          </Button>
+          <Button
+            type="button"
             variant={viewMode === "preview" ? "primary" : "secondary"}
+            aria-pressed={viewMode === "preview"}
             onClick={() => setViewMode("preview")}
           >
             {translate(locale, "notes.action.preview")}
           </Button>
         </div>
 
-        {viewMode === "write" ? (
-          <textarea
-            className="ui-next-note-editor__textarea"
-            value={contentMd}
-            onChange={(e) => {
-              saveSnapshotRef.current.contentMd = e.target.value;
-              setContentMd(e.target.value);
-              markDirty();
-            }}
-            placeholder={translate(locale, "notes.field.contentPlaceholder")}
-            aria-label={translate(locale, "notes.field.content")}
-            dir="auto"
-          />
-        ) : (
-          <ResearchContent className="ui-next-note-editor__preview" dir="auto">
-            <MarkdownView content={contentMd} dir="auto" />
-          </ResearchContent>
-        )}
+        <div className={`ui-next-note-editor__panes ui-next-note-editor__panes--${viewMode}`}>
+          {viewMode !== "preview" ? (
+            <section
+              className="ui-next-note-editor__pane ui-next-note-editor__pane--write"
+              aria-labelledby="note-editor-write-label"
+            >
+              <h2 id="note-editor-write-label" className="ui-next-note-editor__pane-label">
+                {translate(locale, "notes.field.content")}
+              </h2>
+              <textarea
+                className="ui-next-note-editor__textarea"
+                value={contentMd}
+                onChange={(e) => {
+                  saveSnapshotRef.current.contentMd = e.target.value;
+                  setContentMd(e.target.value);
+                  markDirty();
+                }}
+                placeholder={translate(locale, "notes.field.contentPlaceholder")}
+                aria-labelledby="note-editor-write-label"
+                dir="auto"
+              />
+            </section>
+          ) : null}
+          {viewMode !== "write" ? (
+            <section
+              className="ui-next-note-editor__pane ui-next-note-editor__pane--preview"
+              aria-labelledby="note-editor-preview-label"
+            >
+              <h2 id="note-editor-preview-label" className="ui-next-note-editor__pane-label">
+                {translate(locale, "notes.action.livePreview")}
+              </h2>
+              <ResearchContent className="ui-next-note-editor__preview" dir="auto">
+                <MarkdownView content={contentMd} dir="auto" />
+              </ResearchContent>
+            </section>
+          ) : null}
+        </div>
       </div>
 
       <Dialog
