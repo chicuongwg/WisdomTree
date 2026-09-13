@@ -4,6 +4,7 @@ import { enforceRateLimit, requestAddress } from "@/lib/rate-limit";
 import { SESSION_TTL_MS } from "@/lib/sign";
 import { devLoginEnabled, findSignInCandidate } from "@/modules/auth/dev-login";
 import { issueSessionToken, SESSION_COOKIE } from "@/modules/auth/session";
+import { ensureAppPersonalProject } from "@/modules/application";
 
 // POST /api/auth/dev-login — local-only: a plain form post from the login
 // picker ({ userId }) becomes that member's session and a redirect home.
@@ -20,6 +21,7 @@ export async function POST(request: NextRequest) {
     }
     const user = await findSignInCandidate(userId);
     if (!user) throw notFound();
+    await ensureAppPersonalProject(user.id);
 
     // 303: the browser follows a form POST with a GET to "/".
     const response = new NextResponse(null, { status: 303, headers: { Location: "/" } });

@@ -15,9 +15,8 @@ export async function POST(
     if (!body.method || !["auto", "pandoc", "ocr"].includes(body.method)) {
       throw new ApiError(400, "invalid_method", "Extraction method must be pandoc or ocr.");
     }
-    return NextResponse.json(
-      await requestExtraction(actor, sourceId, versionId, body.method),
-      { status: 202 },
-    );
+    return NextResponse.json(await requestExtraction(actor, sourceId, versionId, body.method), {
+      status: 202,
+    });
   });
 }

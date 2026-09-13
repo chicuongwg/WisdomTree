@@ -4,6 +4,7 @@ import { verifyOAuthState } from "@/lib/sign";
 import { exchangeCode, findOrBindUser, oidcEnabled } from "@/modules/auth/oidc";
 import { issueSessionToken, SESSION_COOKIE } from "@/modules/auth/session";
 import { SESSION_TTL_MS } from "@/lib/sign";
+import { ensureAppPersonalProject } from "@/modules/application";
 
 // GET /api/auth/oidc/callback — back from Google. Every failure lands on
 // /login with a coarse error code; the page says it in Vietnamese. Codes are
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
     const user = await findOrBindUser(claims);
     // Valid Google account, no invitation: the one case worth its own words.
     if (!user) return back("not_invited");
+    await ensureAppPersonalProject(user.id);
 
     const response = new NextResponse(null, { status: 302, headers: { Location: "/" } });
     // Expire with the same path they were set under, or the delete misses.

@@ -14,7 +14,11 @@ import {
 
 type ContextKind = "participant" | "material" | "note";
 
-async function requireInProject(actor: Awaited<ReturnType<typeof requirePrincipal>>, projectId: string, activityId: string) {
+async function requireInProject(
+  actor: Awaited<ReturnType<typeof requirePrincipal>>,
+  projectId: string,
+  activityId: string,
+) {
   const activity = await getAppActivity(actor, activityId);
   if (activity.projectId !== projectId) throw new ApiError(404, "not_found", "Activity not found.");
 }
@@ -31,7 +35,11 @@ export async function POST(
       id?: unknown;
       roleLabel?: unknown;
     } | null;
-    if (!body || typeof body.id !== "string" || !["participant", "material", "note"].includes(body.kind as string)) {
+    if (
+      !body ||
+      typeof body.id !== "string" ||
+      !["participant", "material", "note"].includes(body.kind as string)
+    ) {
       throw new ApiError(400, "invalid_input", "Valid Activity context is required.");
     }
     await requireInProject(actor, projectId, activityId);

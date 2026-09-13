@@ -23,7 +23,11 @@ export async function GET(
     const id = request.nextUrl.searchParams.get("id");
 
     if (!id || (type !== "material" && type !== "note")) {
-      throw new ApiError(400, "invalid_input", "Valid type ('material' or 'note') and id are required.");
+      throw new ApiError(
+        400,
+        "invalid_input",
+        "Valid type ('material' or 'note') and id are required.",
+      );
     }
 
     if (type === "material") {

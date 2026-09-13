@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { createAppProjectTask, toApplicationError } from "@/modules/application";
@@ -28,6 +29,9 @@ export async function POST(
       dueAt: typeof body.dueAt === "string" && body.dueAt ? body.dueAt : null,
       notes: typeof body.notes === "string" ? body.notes : null,
     });
+    revalidatePath(`/app/projects/${projectId}/tasks`);
+    revalidatePath("/app/my-work");
+    revalidatePath("/app/calendar");
     return NextResponse.json({ task }, { status: 201 });
   } catch (error) {
     const applicationError = toApplicationError(error);

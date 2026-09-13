@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         id: result.id,
         title: result.title,
         summary: result.summary,
+        ...(result.kind === "project" ? { isPersonal: result.isPersonal } : {}),
         ...(result.kind === "person" ? { projects: result.projects } : { project: result.project }),
       })),
     );

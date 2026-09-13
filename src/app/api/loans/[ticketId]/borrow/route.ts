@@ -12,7 +12,8 @@ export async function POST(
     const actor = await requirePrincipal();
     const { ticketId } = await params;
     const body = (await request.json().catch(() => ({}))) as { dueAt?: string };
-    if (!body.dueAt) throw new ApiError(400, "invalid_due_date", "Please provide a valid due date.");
+    if (!body.dueAt)
+      throw new ApiError(400, "invalid_due_date", "Please provide a valid due date.");
     return NextResponse.json(await borrowLoan(actor, ticketId, new Date(body.dueAt)));
   });
 }

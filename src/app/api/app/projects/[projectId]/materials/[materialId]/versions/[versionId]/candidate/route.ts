@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requirePrincipal } from "@/lib/request";
-import { getAppProjectMaterialCandidateForReview, toApplicationError } from "@/modules/application";
+import {
+  getAppProjectMaterialCandidateForReview,
+  rejectAppProjectMaterialCandidate,
+  toApplicationError,
+} from "@/modules/application";
 
 export async function GET(
   _request: Request,
@@ -21,6 +25,25 @@ export async function GET(
         contentMd: candidate.contentMd,
       },
     });
+  } catch (error) {
+    const applicationError = toApplicationError(error);
+    return NextResponse.json(applicationError, { status: applicationError.status });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ projectId: string; materialId: string; versionId: string }> },
+) {
+  try {
+    const actor = await requirePrincipal();
+    const { projectId, materialId, versionId } = await params;
+    await rejectAppProjectMaterialCandidate(actor, {
+      projectId,
+      materialId,
+      sourceVersionId: versionId,
+    });
+    return NextResponse.json({ rejected: true });
   } catch (error) {
     const applicationError = toApplicationError(error);
     return NextResponse.json(applicationError, { status: applicationError.status });

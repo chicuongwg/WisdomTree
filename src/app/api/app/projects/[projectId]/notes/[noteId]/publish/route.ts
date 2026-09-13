@@ -1,11 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
-import {
-  getAppDraft,
-  publishAppDraft,
-  toApplicationError,
-} from "@/modules/application";
+import { getAppDraft, publishAppDraft, toApplicationError } from "@/modules/application";
 
 export async function POST(
   request: NextRequest,
@@ -19,9 +15,7 @@ export async function POST(
     } | null;
 
     const draftId =
-      typeof body?.draftId === "string" && body.draftId.trim()
-        ? body.draftId.trim()
-        : noteId;
+      typeof body?.draftId === "string" && body.draftId.trim() ? body.draftId.trim() : noteId;
 
     const draft = await getAppDraft(actor, draftId);
     if (draft.projectId !== projectId) {

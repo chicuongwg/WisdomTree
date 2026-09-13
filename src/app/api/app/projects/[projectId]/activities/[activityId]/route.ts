@@ -21,12 +21,17 @@ export async function PATCH(
       throw new ApiError(400, "invalid_input", "Activity version is required.");
     }
     const existing = await getAppActivity(actor, activityId);
-    if (existing.projectId !== projectId) throw new ApiError(404, "not_found", "Activity not found.");
+    if (existing.projectId !== projectId)
+      throw new ApiError(404, "not_found", "Activity not found.");
     const activity = await updateAppActivity(actor, {
       activityId,
       ...(typeof body.title === "string" ? { title: body.title } : {}),
-      ...(typeof body.type === "string" || body.type === null ? { activityType: body.type as string | null } : {}),
-      ...(typeof body.summary === "string" || body.summary === null ? { summary: body.summary as string | null } : {}),
+      ...(typeof body.type === "string" || body.type === null
+        ? { activityType: body.type as string | null }
+        : {}),
+      ...(typeof body.summary === "string" || body.summary === null
+        ? { summary: body.summary as string | null }
+        : {}),
       ...(typeof body.status === "string" ? { status: body.status } : {}),
       expectedVersion: body.expectedVersion,
     });

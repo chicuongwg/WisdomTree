@@ -23,7 +23,11 @@ export async function PUT(
       throw new ApiError(400, "invalid_input", "Activity and Task version are required.");
     }
     await getAppProjectTask(actor, projectId, taskId);
-    const task = await attachAppTaskToActivity(actor, { taskId, activityId: body.activityId, expectedVersion: body.expectedVersion });
+    const task = await attachAppTaskToActivity(actor, {
+      taskId,
+      activityId: body.activityId,
+      expectedVersion: body.expectedVersion,
+    });
     return NextResponse.json({ task });
   } catch (error) {
     const applicationError = toApplicationError(error);

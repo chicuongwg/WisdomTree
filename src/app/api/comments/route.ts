@@ -18,11 +18,7 @@ export async function GET(request: NextRequest) {
     const anchorType = request.nextUrl.searchParams.get("anchorType") as AnchorType | null;
     const anchorId = request.nextUrl.searchParams.get("anchorId");
     if (!anchorType || !ANCHOR_TYPES.includes(anchorType) || !anchorId) {
-      throw new ApiError(
-        400,
-        "invalid_anchor",
-        "An anchor type and id are required.",
-      );
+      throw new ApiError(400, "invalid_anchor", "An anchor type and id are required.");
     }
     return NextResponse.json(await listComments(actor, anchorType, anchorId));
   });

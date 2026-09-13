@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError, handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
-import { clearPresence, listPresence, markPresence } from "@/modules/notify/service";
+import {
+  authorizeCommentContext,
+  clearPresence,
+  listPresence,
+  markPresence,
+} from "@/modules/notify/service";
 
 // /api/presence?page=<key> — who has this surface open right now.
 //
@@ -23,11 +28,23 @@ function pageKeyOf(request: NextRequest): string {
   return key;
 }
 
+/**
+ * The retained endpoint was only ever used by Node reader/editor pages. Keep
+ * that wire format, but resolve it before presence can reveal another user's
+ * live activity to a caller who merely guessed a UUID.
+ */
+async function authorizePage(actor: Awaited<ReturnType<typeof requirePrincipal>>, pageKey: string) {
+  const nodeId = /^node:([0-9a-f-]{36})$/i.exec(pageKey)?.[1];
+  if (!nodeId) throw new ApiError(400, "invalid_page", "Invalid page.");
+  await authorizeCommentContext(actor, "tree_node", nodeId);
+}
+
 /** Heartbeat: mark me present, and answer with everyone else on the page. */
 export async function POST(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const pageKey = pageKeyOf(request);
+    await authorizePage(actor, pageKey);
     await markPresence(actor, pageKey);
     return NextResponse.json(await listPresence(actor, pageKey));
   });
@@ -37,7 +54,9 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
-    return NextResponse.json(await listPresence(actor, pageKeyOf(request)));
+    const pageKey = pageKeyOf(request);
+    await authorizePage(actor, pageKey);
+    return NextResponse.json(await listPresence(actor, pageKey));
   });
 }
 
@@ -45,7 +64,9 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
-    await clearPresence(actor, pageKeyOf(request));
+    const pageKey = pageKeyOf(request);
+    await authorizePage(actor, pageKey);
+    await clearPresence(actor, pageKey);
     return new NextResponse(null, { status: 204 });
   });
 }

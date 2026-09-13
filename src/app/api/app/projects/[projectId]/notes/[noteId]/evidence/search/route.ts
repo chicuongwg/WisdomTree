@@ -33,13 +33,15 @@ export async function GET(
 
       const results = searchResults.flatMap((item) => {
         if (item.kind !== "material" && item.kind !== "note") return [];
-        return [{
-          kind: item.kind,
-          id: item.id,
-          title: item.title,
-          summary: item.summary,
-          project: item.project,
-        }];
+        return [
+          {
+            kind: item.kind,
+            id: item.id,
+            title: item.title,
+            summary: item.summary,
+            project: item.project,
+          },
+        ];
       });
 
       return NextResponse.json({ results });

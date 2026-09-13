@@ -8,7 +8,10 @@ function locale(value: string): "en" {
   return value;
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ nodeId: string; locale: string }> }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ nodeId: string; locale: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { nodeId, locale: value } = await params;
@@ -16,7 +19,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ nod
   });
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ nodeId: string; locale: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ nodeId: string; locale: string }> },
+) {
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { nodeId, locale: value } = await params;
@@ -26,13 +32,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       contentMd?: string;
       expectedVersion?: number;
     } | null;
-    if (!body?.title?.trim() || typeof body.contentMd !== "string") throw new ApiError(400, "invalid_translation", "Title and content are required.");
+    if (!body?.title?.trim() || typeof body.contentMd !== "string")
+      throw new ApiError(400, "invalid_translation", "Title and content are required.");
     return NextResponse.json(
       await saveNodeTranslation(actor, nodeId, locale(value), {
         title: body.title,
         summary: body.summary,
         contentMd: body.contentMd,
-        expectedVersion: typeof body.expectedVersion === "number" ? body.expectedVersion : undefined,
+        expectedVersion:
+          typeof body.expectedVersion === "number" ? body.expectedVersion : undefined,
       }),
     );
   });

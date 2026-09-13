@@ -24,9 +24,15 @@ export async function PATCH(
     const task = await updateAppProjectTask(actor, projectId, taskId, {
       ...(typeof body.title === "string" ? { title: body.title } : {}),
       ...(typeof body.state === "string" ? { state: body.state } : {}),
-      ...(typeof body.assigneeId === "string" || body.assigneeId === null ? { assigneeId: body.assigneeId as string | null } : {}),
-      ...(typeof body.dueAt === "string" || body.dueAt === null ? { dueAt: body.dueAt as string | null } : {}),
-      ...(typeof body.notes === "string" || body.notes === null ? { notes: body.notes as string | null } : {}),
+      ...(typeof body.assigneeId === "string" || body.assigneeId === null
+        ? { assigneeId: body.assigneeId as string | null }
+        : {}),
+      ...(typeof body.dueAt === "string" || body.dueAt === null
+        ? { dueAt: body.dueAt as string | null }
+        : {}),
+      ...(typeof body.notes === "string" || body.notes === null
+        ? { notes: body.notes as string | null }
+        : {}),
       expectedVersion: body.expectedVersion,
     });
     return NextResponse.json({ task });
