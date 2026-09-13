@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { ApiError } from "@/lib/errors";
 import { auditEvents } from "@/modules/audit/schema";
@@ -144,7 +144,7 @@ export async function run() {
   const [personalSpace] = await db
     .select({ id: spaces.id })
     .from(spaces)
-    .where(eq(spaces.type, "personal"))
+    .where(and(eq(spaces.type, "personal"), ne(spaces.ownerUserId, manager.userId)))
     .limit(1);
   const [legacyTeam] = await db
     .select({ id: spaces.id })

@@ -6,6 +6,7 @@ export async function run() {
   const layout = readFileSync("src/app/layout.tsx", "utf8");
   const targetLayout = readFileSync("src/app/app/layout.tsx", "utf8");
   const navigation = readFileSync("src/app/components/ui-next/shell/navigation.tsx", "utf8");
+  const middleware = readFileSync("src/middleware.ts", "utf8");
 
   assert.match(root, /redirect\("\/app"\)/);
   for (const legacyShellName of ["ShellRail", "ShellSidebar", "CommandPalette"]) {
@@ -37,7 +38,18 @@ export async function run() {
     "src/app/app/my-work/page.tsx",
     "src/app/app/people/page.tsx",
     "src/app/app/search/page.tsx",
+    "src/app/app/graph/page.tsx",
+    "src/app/app/account/page.tsx",
   ]) {
     assert.equal(existsSync(targetRoute), true, `target route missing: ${targetRoute}`);
   }
+
+  const accountRoute = readFileSync("src/app/account/page.tsx", "utf8");
+  assert.match(accountRoute, /redirect\("\/app\/account"\)/);
+
+  for (const publicRoute of ["src/app/p/page.tsx", "src/app/p/[slug]/page.tsx"]) {
+    assert.equal(existsSync(publicRoute), true, `public projection route missing: ${publicRoute}`);
+  }
+  assert.match(middleware, /pathname === "\/p"/);
+  assert.match(middleware, /pathname\.startsWith\("\/p\/"\)/);
 }

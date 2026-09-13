@@ -27,9 +27,22 @@ export async function run() {
     `${root}/app/projects/[projectId]/materials/_components/material-detail.tsx`,
     "utf8",
   );
+  const materialStyles = readFileSync("src/app/components/ui-next/materials.css", "utf8");
   assert.match(detail, /materials\.extraction\.derivedNotice/);
   assert.match(detail, /createProjectNote/);
+  assert.match(detail, /materials\.continueWorkingNote/);
+  assert.match(detail, /className="ui-next-material-version-form"/);
+  assert.match(detail, /onSubmit={uploadVersion}/);
+  assert.match(detail, /name="file" type="file" required/);
+  assert.match(detail, /reviewExtraction/);
+  assert.match(detail, /retryExtraction/);
+  assert.match(detail, /ui-next-material-lineage/);
   assert.doesNotMatch(detail, /spaceId|branchId|Personal|Team/);
+  assert.match(
+    materialStyles,
+    /\.ui-next-material-version-form\s*{\s*display: grid;\s*grid-template-columns: minmax\(0, 40rem\) auto;/,
+  );
+  assert.match(materialStyles, /@media \(max-width: 48rem\)/);
 
   const candidateRoute = readFileSync(deliveryFiles[2], "utf8");
   assert.match(candidateRoute, /getAppProjectMaterialCandidateForReview/);
@@ -50,6 +63,7 @@ export async function run() {
     "materials.new",
     "materials.extraction.derivedNotice",
     "materials.createProjectNote",
+    "materials.continueWorkingNote",
     "materials.lineage.title",
   ] as const) {
     assert.ok(key in viMessages, `missing Vietnamese Material key ${key}`);

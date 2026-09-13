@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import {
   enMessages,
+  formatUiDate,
   formatUiNumber,
   interpolateMessage,
   translate,
@@ -42,6 +43,14 @@ export async function run() {
   assert.equal(translate("unsupported", "nav.projects"), "Dự án");
   assert.equal(translate("en", "nav.projects"), "Projects");
   assert.equal(formatUiNumber(1234.5, "vi"), "1.234,5");
+  assert.equal(
+    formatUiDate("2026-07-21T20:30:00Z", "en", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
+    "07/22/2026",
+  );
   assert.deepEqual(getErrorPresentation("version_conflict"), {
     titleKey: "error.versionConflict.title",
     descriptionKey: "error.versionConflict.description",

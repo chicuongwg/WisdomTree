@@ -11,6 +11,7 @@ export async function run() {
     `${root}/api/app/projects/[projectId]/activities/[activityId]/context/route.ts`,
     `${root}/api/app/projects/[projectId]/tasks/route.ts`,
     `${root}/api/app/projects/[projectId]/tasks/[taskId]/route.ts`,
+    `${root}/api/app/projects/[projectId]/tasks/[taskId]/claim/route.ts`,
     `${root}/api/app/projects/[projectId]/tasks/[taskId]/activity/route.ts`,
   ];
   for (const file of deliveryFiles) {
@@ -33,6 +34,19 @@ export async function run() {
   const taskFacade = readFileSync("src/modules/application/tasks.ts", "utf8");
   assert.match(taskFacade, /listAppMyWorkTasks/);
   assert.match(taskFacade, /listAppProjectTaskAssignees/);
+  assert.match(taskFacade, /claimProjectTask/);
+  assert.match(
+    taskFacade,
+    /canEdit: task\.createdBy === actor\.userId \|\| task\.assignedTo === actor\.userId/,
+  );
+  const taskView = readFileSync(
+    `${root}/app/projects/[projectId]/tasks/_components/tasks-view.tsx`,
+    "utf8",
+  );
+  assert.match(taskView, /task\.canEdit \? \(/);
+  assert.match(taskView, /ui-next-task-list__row--readonly/);
+  assert.match(taskView, /ui-next-kanban/);
+  assert.match(taskView, /tasks\.view\.kanban/);
   const myWork = readFileSync("src/modules/application/overview.ts", "utf8");
   assert.match(myWork, /listAppMyWorkTasks/);
 

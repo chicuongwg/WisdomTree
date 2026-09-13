@@ -219,6 +219,10 @@ export async function run() {
   assert.equal(activityWorkspace.activity.materials[0]?.id, material.id);
   assert.equal(activityWorkspace.activity.notes[0]?.id, official.nodeId);
   assert.equal(activityWorkspace.activity.tasks[0]?.id, assignedTask.id);
+  const unicodeResults = await searchAppResearch(contributor, { query: "𠀀" });
+  for (const kind of ["note", "material", "activity", "person"]) {
+    assert.ok(unicodeResults.some((result) => result.kind === kind), `Unicode Search preserves ${kind}`);
+  }
   assert.equal((await getTmktOverview(contributor)).myWork.assignedTaskCount > 0, true);
 
   await enableAppProjectCapability(manager, {
@@ -274,7 +278,7 @@ export async function run() {
   assert.equal(coreWorkspace.modules.people, true);
   assert.equal(coreWorkspace.modules.activities, false);
   assert.equal(coreWorkspace.modules.tasks, false);
-  assert.equal(coreWorkspace.modules.library, true);
+  assert.equal(coreWorkspace.modules.library, false);
   assert.equal(coreWorkspace.project.capabilities.canCreateNote, false);
   assert.equal(coreWorkspace.project.capabilities.canCreateMaterial, false);
   assert.equal(coreWorkspace.project.capabilities.canManageLibraryOperators, false);

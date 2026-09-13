@@ -30,19 +30,19 @@ export async function run() {
   const [personal] = await db
     .select({ id: spaces.id })
     .from(spaces)
-    .where(eq(spaces.type, "personal"))
+    .where(and(eq(spaces.type, "personal"), eq(spaces.ownerUserId, admin.userId)))
     .limit(1);
   assert.ok(legacyTeam);
   assert.ok(personal);
 
-  // The migration is additive: seeded team and personal spaces have no
-  // Project extension and cannot be discovered through the Project service.
+  // Shared legacy spaces stay outside the target Project list, while each
+  // owner-scoped Personal Space becomes exactly one private Project.
   await assert.rejects(getProject(admin, legacyTeam.id), errorCode("not_found"));
-  await assert.rejects(getProject(admin, personal.id), errorCode("not_found"));
+  assert.equal((await getProject(admin, personal.id)).personalOwnerId, admin.userId);
   assert.ok((await listProjects(admin)).every((project) => project.id !== legacyTeam.id));
 
   // The database enforces both halves of Project identity: a referenced Space
-  // must exist and must remain type=team.
+  // must exist and must preserve the matching backing Space kind.
   await assert.rejects(
     db.insert(projects).values({
       projectId: randomUUID(),
@@ -213,7 +213,7 @@ export async function run() {
   assert.equal((await getProject(viewer, project.id)).id, project.id);
   const viewerProjects = await listProjects(viewer);
   assert.ok(viewerProjects.some((row) => row.id === project.id));
-  assert.ok(viewerProjects.every((row) => row.id !== legacyTeam.id && row.id !== personal.id));
+  assert.ok(viewerProjects.every((row) => row.id !== legacyTeam.id));
 
   // Project metadata uses optimistic concurrency. Status changes do not remove
   // data owned by the underlying Space.

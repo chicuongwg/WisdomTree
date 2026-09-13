@@ -40,7 +40,7 @@ export async function run() {
   assert.match(layout, /SkipLink href="#app-main"/);
 
   const navigation = readFileSync("src/app/components/ui-next/shell/navigation.tsx", "utf8");
-  for (const href of ["/app", "/app/projects", "/app/my-work", "/app/people", "/app/search"]) {
+  for (const href of ["/app", "/app/projects", "/app/calendar", "/app/my-work", "/app/people", "/app/search"]) {
     assert.match(navigation, new RegExp(`href: "${href.replace("/", "\\/")}"`));
   }
   assert.match(navigation, /aria-current/);
@@ -57,9 +57,26 @@ export async function run() {
   assert.match(createDialog, /availableActions/);
   assert.match(createDialog, /disabled/);
 
+  const accountMenu = readFileSync("src/app/components/ui-next/shell/account-menu.tsx", "utf8");
+  const appHeader = readFileSync("src/app/components/ui-next/shell/app-header.tsx", "utf8");
+  assert.match(accountMenu, /href="\/app\/account"/);
+
+  const shellStyles = readFileSync("src/app/components/ui-next/shell.css", "utf8");
+  assert.match(
+    shellStyles,
+    /@media \(max-width: 64rem\) \{[\s\S]*?\.ui-next-mobile-menu-trigger\s*{\s*display: inline-flex;/,
+  );
+  assert.match(
+    shellStyles,
+    /@media \(max-width: 44rem\) \{[\s\S]*?\.ui-next-app-sidebar\s*{\s*display: none;/,
+  );
+  assert.match(appHeader, /<Drawer/);
+  assert.match(appHeader, /<GlobalNavigation locale={locale} onNavigate/);
+
   for (const key of [
     "nav.overview",
     "nav.projects",
+    "nav.calendar",
     "nav.myWork",
     "nav.people",
     "nav.search",

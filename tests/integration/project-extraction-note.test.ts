@@ -7,10 +7,7 @@ import { auditEvents } from "@/modules/audit/schema";
 import { getDraft, publishDraft } from "@/modules/knowledge/service";
 import { branches, nodeDrafts, treeNodes } from "@/modules/knowledge/schema";
 import { createProject } from "@/modules/project/service";
-import {
-  evolveCandidate,
-  evolveCandidateIntoProjectNote,
-} from "@/modules/storage/candidates";
+import { evolveCandidateIntoProjectNote } from "@/modules/storage/candidates";
 import { extractionWorker } from "@/modules/storage/extraction";
 import { extractionCandidates, sources, sourceVersions, spaces } from "@/modules/storage/schema";
 import {
@@ -305,16 +302,20 @@ export async function run() {
       0,
     );
 
-    const personalMaterial = await uploadSource(contributor, {
+    const personalProjectMaterial = await uploadSource(contributor, {
       spaceId: personal.id,
-      title: "Personal candidate",
-      file: new File(["personal"], "personal.txt", { type: "text/plain" }),
+      title: "Personal Project candidate",
+      file: new File(["personal target"], "personal-target.txt", { type: "text/plain" }),
     });
-    const personalCandidate = await createCandidate(
-      personalMaterial.currentVersion!.id,
+    const personalProjectCandidate = await createCandidate(
+      personalProjectMaterial.currentVersion!.id,
       contributor.userId,
-      "Personal compatibility content.",
+      "Personal Project candidate content.",
     );
+    const personalProjectDraft = await evolveCandidateIntoProjectNote(contributor, {
+      candidateId: personalProjectCandidate.id,
+    });
+    assert.equal(personalProjectDraft.projectId, personal.id);
     const legacyMaterial = await uploadSource(initialAdmin, {
       spaceId: legacyTeam.id,
       title: "Legacy candidate",
@@ -325,7 +326,7 @@ export async function run() {
       initialAdmin.userId,
       "Legacy compatibility content.",
     );
-    for (const invalid of [personalCandidate.id, legacyCandidate.id, randomUUID()]) {
+    for (const invalid of [legacyCandidate.id, randomUUID()]) {
       await assert.rejects(
         evolveCandidateIntoProjectNote(contributor, { candidateId: invalid }),
         errorCode("not_found"),
@@ -334,26 +335,6 @@ export async function run() {
     await assert.rejects(
       evolveCandidateIntoProjectNote(contributor, {}),
       errorCode("invalid_candidate"),
-    );
-
-    const [personalBranch] = await db
-      .select()
-      .from(branches)
-      .where(
-        and(eq(branches.scope, "personal"), eq(branches.ownerUserId, contributor.userId)),
-      );
-    const legacyNode = await evolveCandidate(contributor, personalCandidate.id, {
-      branchId: personalBranch.id,
-      title: "Legacy personal evolution",
-    });
-    assert.equal(legacyNode.projectId, null);
-    assert.equal(
-      await db
-        .select({ evolvedNodeId: extractionCandidates.evolvedNodeId })
-        .from(extractionCandidates)
-        .where(eq(extractionCandidates.id, personalCandidate.id))
-        .then((rows) => rows[0]?.evolvedNodeId),
-      legacyNode.id,
     );
 
     await assert.rejects(

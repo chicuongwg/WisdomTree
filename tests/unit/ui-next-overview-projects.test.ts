@@ -20,6 +20,8 @@ function project(
     researchReadable: true,
     researchLens: `${name} lens`,
     description: null,
+    personalOwnerId: null,
+    isPersonal: false,
     features: { libraryCirculation },
     capabilities: {
       canEditProject: false,

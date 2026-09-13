@@ -123,17 +123,15 @@ export async function run() {
     createProjectActivity(outsider, { projectId: projectA.id, title: "Guessed activity" }),
     errorCode("not_found"),
   );
-  const [personalSpace] = await db
-    .select({ id: spaces.id })
-    .from(spaces)
-    .where(eq(spaces.type, "personal"))
-    .limit(1);
   const [legacyTeam] = await db
     .select({ id: spaces.id })
     .from(spaces)
     .where(eq(spaces.name, "Kho Dự Án Cộng Đồng"))
     .limit(1);
-  for (const projectId of [personalSpace.id, legacyTeam.id, randomUUID()]) {
+  // A Personal Project is now a valid Project context (Stage 17.PR2).
+  // Keep this legacy-space rejection check focused on contexts that are not
+  // canonical Projects.
+  for (const projectId of [legacyTeam.id, randomUUID()]) {
     await assert.rejects(
       createProjectActivity(manager, { projectId, title: "Invalid Project context" }),
       errorCode("not_found"),

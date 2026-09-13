@@ -6,9 +6,11 @@ import { branches, treeNodes } from "@/modules/knowledge/schema";
 import { getDownloadToken, getSourceDetail, listLibrary } from "@/modules/storage/service";
 import {
   createNode,
+  createTeamDraft,
   getNode,
   getNodeTranslation,
   listPendingTranslations,
+  publishDraft,
   saveNodeTranslation,
   listBranches,
   listNodeVersions,
@@ -40,6 +42,7 @@ export async function run() {
   const lan = await principalFor("lan@wisdomtree.local"); // library only
   const duc = await principalFor("duc@wisdomtree.local"); // library only
   const minh = await principalFor("minh@wisdomtree.local"); // restricted-space editor
+  const admin = await principalFor("huong@wisdomtree.local");
 
   // --- Space isolation -----------------------------------------------------
   const [restricted] = await db
@@ -60,12 +63,20 @@ export async function run() {
     .where(and(eq(branches.scope, "team"), eq(branches.spaceId, restricted.id)))
     .limit(1);
   assert.ok(hiddenBranch, "seed premise: the restricted space holds a knowledge branch");
-  const [hiddenNode] = await db
-    .select({ id: treeNodes.id, title: treeNodes.title })
-    .from(treeNodes)
-    .where(eq(treeNodes.branchId, hiddenBranch.id))
-    .limit(1);
-  assert.ok(hiddenNode, "seed premise: the restricted branch holds a node");
+  // Use a fresh restricted Note rather than a seeded one: other stateful
+  // suites may legitimately leave translation proposals on seed content.
+  const hiddenTitle = `Isolation-only hidden Note ${Date.now()}`;
+  const hiddenDraft = await createTeamDraft(admin, {
+    branchId: hiddenBranch.id,
+    title: hiddenTitle,
+    summary: null,
+    sortOrder: 0,
+    contentMd: "Private to the restricted Project.",
+    tags: [],
+    links: [],
+  });
+  const hiddenPublished = await publishDraft(admin, hiddenDraft.id);
+  const hiddenNode = { id: hiddenPublished.nodeId, title: hiddenTitle };
   const hiddenTranslation = await saveNodeTranslation(minh, hiddenNode.id, "en", {
     title: `Hidden translation ${Date.now()}`,
     contentMd: "Private to the restricted space.",
@@ -103,7 +114,11 @@ export async function run() {
   const unifiedHits = await searchKnowledge(lan, hiddenNode.title);
   assert.ok(unifiedHits.every((result) => result.id !== hiddenNode.id && result.id !== hidden.id));
   const outsideEditor = { ...lan, role: "editor" as const };
-  assert.ok((await listPendingTranslations(outsideEditor)).every((proposal) => proposal.nodeId !== hiddenNode.id));
+  assert.ok(
+    (await listPendingTranslations(outsideEditor)).every(
+      (proposal) => proposal.nodeId !== hiddenNode.id,
+    ),
+  );
 
   // --- Personal-vault isolation -------------------------------------------
   const [lanBranch] = await db
@@ -165,6 +180,11 @@ export async function run() {
   const ducVisible = await db
     .select({ id: branches.id })
     .from(branches)
-    .where(inArray(branches.id, ducBranches.map((b) => b.id).concat("00000000-0000-0000-0000-000000000000")));
+    .where(
+      inArray(
+        branches.id,
+        ducBranches.map((b) => b.id).concat("00000000-0000-0000-0000-000000000000"),
+      ),
+    );
   assert.ok(ducVisible.every((b) => b.id !== lanBranch.id));
 }

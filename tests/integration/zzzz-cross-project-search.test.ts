@@ -255,12 +255,18 @@ export async function run() {
     "legacyonlysecret",
     "legacymaterialsecret",
     "personalonlysecret",
-    "personalmaterialsecret",
   ]) {
     assert.equal((await searchInternalResearch(refreshedManager, { query: secret })).length, 0);
     assert.equal((await searchInternalResearch(core, { query: secret })).length, 0);
     assert.equal((await searchPublishedNotes({ query: secret })).length, 0);
   }
+  assert.ok(
+    (await searchInternalResearch(refreshedManager, { query: "personalmaterialsecret" })).some(
+      (result) => result.kind === "material",
+    ),
+  );
+  assert.equal((await searchInternalResearch(core, { query: "personalmaterialsecret" })).length, 0);
+  assert.equal((await searchPublishedNotes({ query: "personalmaterialsecret" })).length, 0);
 
   const titleRankDraft = await createProjectNote(refreshedManager, {
     projectId: projectA.id,

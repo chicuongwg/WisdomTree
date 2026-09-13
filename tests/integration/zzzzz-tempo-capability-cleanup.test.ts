@@ -7,11 +7,14 @@ import { auditEvents } from "@/modules/audit/schema";
 import { inviteUser } from "@/modules/auth/admin";
 import { grantTmktCore } from "@/modules/auth/core";
 import {
+  approveLoan,
+  borrowLoan,
   approveProjectLoan,
   handoverProjectLoan,
   listProjectLoans,
   requestLoan,
   requestProjectMaterialLoan,
+  returnLoan,
   returnProjectLoan,
 } from "@/modules/circulation/service";
 import { personUserLinks } from "@/modules/person/schema";
@@ -232,15 +235,22 @@ export async function run() {
       .some((row) => row.id === material.id),
   );
 
-  const legacyPhysical = await createPhysicalItem(admin, {
-    title: `Ordinary legacy physical ${suffix}`,
-    spaceId: ordinary.id,
-  });
-  const ordinaryTicket = await requestLoan(manager, legacyPhysical.sourceId);
   await assert.rejects(
-    approveProjectLoan(operator, ordinaryTicket.id),
+    createPhysicalItem(admin, {
+      title: `Ordinary legacy physical ${suffix}`,
+      spaceId: ordinary.id,
+    }),
     errorCode("project_capability_required"),
   );
+
+  // Retained legacy API paths preserve non-Project collections, but cannot
+  // bypass capability/operator checks for a confirmed Project.
+  const legacyTicket = await requestLoan(borrower, physical.sourceId);
+  await assert.rejects(approveLoan(manager, legacyTicket.id), errorCode("forbidden"));
+  await assert.rejects(approveLoan(core, legacyTicket.id), errorCode("forbidden"));
+  await approveLoan(operator, legacyTicket.id);
+  await borrowLoan(operator, legacyTicket.id, new Date(Date.now() + 86_400_000));
+  await returnLoan(operator, legacyTicket.id);
 
   assert.equal(
     (

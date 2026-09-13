@@ -277,6 +277,7 @@ export async function run() {
   assert.match(inspectorSource, /published_current/);
   assert.match(inspectorSource, /published_with_changes/);
   assert.match(inspectorSource, /unpublished/);
+  assert.match(inspectorSource, /href=\{`\/p\/\$\{publication\.slug\}`\}/);
   assert.match(inspectorSource, /Drawer/);
   // Real evidence section
   assert.match(inspectorSource, /notes\.evidence\.title/);
