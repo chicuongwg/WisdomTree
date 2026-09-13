@@ -309,3 +309,22 @@
     grid-template-columns: 1fr;
   }
 }
+
+.ui-next-work-list__link,
+.ui-next-task-list__row {
+  border-radius: 0;
+  border-width: 0 0 1px;
+}
+.ui-next-work-list,
+.ui-next-task-list {
+  gap: 0;
+}
+.ui-next-task-summary__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 44rem) {
+  .ui-next-task-summary__meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

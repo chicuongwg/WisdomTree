@@ -5,12 +5,20 @@ interface StateProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  headingLevel?: 2 | 3;
 }
 
-function MessageState({ title, description, action, role }: StateProps & { role?: "alert" }) {
+function MessageState({
+  title,
+  description,
+  action,
+  role,
+  headingLevel = 2,
+}: StateProps & { role?: "alert" }) {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
   return (
     <Surface className="ui-next-message-state" role={role}>
-      <h2 className="ui-next-message-state__title">{title}</h2>
+      <Heading className="ui-next-message-state__title">{title}</Heading>
       {description ? <p className="ui-next-message-state__description">{description}</p> : null}
       {action ? <div className="ui-next-message-state__action">{action}</div> : null}
     </Surface>

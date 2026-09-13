@@ -266,3 +266,12 @@
     justify-items: start;
   }
 }
+
+.ui-next-notification-list > li {
+  border-radius: 0;
+  border-width: 0 0 1px;
+}
+.ui-next-notification-list {
+  gap: 0;
+  border-block-start: 1px solid var(--ui-color-border);
+}

@@ -200,12 +200,30 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
         type="button"
         variant="secondary"
         className="ui-next-quick-search-trigger"
+        aria-label={translate(locale, "shell.quickSearch")}
         onClick={() => setOpen(true)}
       >
         <span>{translate(locale, "shell.quickSearch")}</span>
         <kbd>{translate(locale, "shell.quickSearchHint")}</kbd>
       </Button>
       <Dialog
+        footer={
+          <Button
+            type="button"
+            variant="ghost"
+            className="ui-next-quick-search__footer"
+            onClick={() => {
+              const href = `/app/search${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`;
+              runGuardedNoteNavigation(() => {
+                close();
+                router.push(href);
+              });
+            }}
+          >
+            {translate(locale, "shell.viewAllResults")}
+          </Button>
+        }
+        size="wide"
         open={open}
         onClose={close}
         title={translate(locale, "shell.quickSearch")}
@@ -290,20 +308,6 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
               </p>
             ) : null}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            className="ui-next-quick-search__footer"
-            onClick={() => {
-              const href = `/app/search${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`;
-              runGuardedNoteNavigation(() => {
-                close();
-                router.push(href);
-              });
-            }}
-          >
-            {translate(locale, "shell.viewAllResults")}
-          </Button>
         </div>
       </Dialog>
     </>

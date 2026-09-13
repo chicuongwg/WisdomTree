@@ -11,7 +11,12 @@
 }
 
 .ui-next-app-sidebar {
-  grid-row: 1 / -1;
+  grid-row: 2;
+  position: sticky;
+  inset-block-start: 3.75rem;
+  block-size: calc(100dvh - 3.75rem);
+  overflow-y: auto;
+  align-self: start;
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-6);
@@ -104,7 +109,7 @@
   }
 
   :root[data-sidebar="collapsed"] .ui-next-app-sidebar__name,
-  :root[data-sidebar="collapsed"] .ui-next-global-nav__label {
+  :root[data-sidebar="collapsed"] .ui-next-app-sidebar .ui-next-global-nav__label {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -135,7 +140,11 @@
 }
 
 .ui-next-app-header {
-  min-block-size: 3.75rem;
+  grid-column: 1 / -1;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  block-size: 3.75rem;
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(14rem, 32rem) max-content;
   align-items: center;
@@ -242,7 +251,8 @@
 
 .ui-next-app-main {
   min-inline-size: 0;
-  padding-block: var(--ui-space-8) var(--ui-space-12);
+  grid-column: 2;
+  padding-block: var(--ui-space-6) var(--ui-space-12);
 }
 
 .ui-next-account-menu {
@@ -287,6 +297,8 @@
 }
 
 .ui-next-account-menu__panel {
+  max-block-size: calc(100dvh - 5rem);
+  overflow-y: auto;
   position: absolute;
   inset-block-start: calc(100% + var(--ui-space-2));
   inset-inline-end: 0;
@@ -468,6 +480,10 @@
   gap: var(--ui-space-2);
 }
 
+.ui-next-create-dialog__actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .ui-next-create-dialog__action {
   min-block-size: 4rem;
   border-color: var(--ui-color-border);
@@ -539,7 +555,7 @@
   }
 
   .ui-next-app-sidebar__name,
-  .ui-next-global-nav__label {
+  .ui-next-app-sidebar .ui-next-global-nav__label {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -548,13 +564,13 @@
     white-space: nowrap;
   }
 
-  .ui-next-global-nav__link {
+  .ui-next-app-sidebar .ui-next-global-nav__link {
     justify-content: center;
     padding-inline: var(--ui-space-2);
   }
 
-  .ui-next-global-nav__link:hover::after,
-  .ui-next-global-nav__link:focus-visible::after {
+  .ui-next-app-sidebar .ui-next-global-nav__link:hover::after,
+  .ui-next-app-sidebar .ui-next-global-nav__link:focus-visible::after {
     content: attr(data-label);
     position: absolute;
     inset-inline-start: calc(100% + var(--ui-space-2));
@@ -570,14 +586,6 @@
 
   .ui-next-app-header {
     grid-template-columns: auto minmax(12rem, 1fr) auto;
-  }
-
-  .ui-next-mobile-menu-trigger {
-    display: inline-flex;
-  }
-
-  .ui-next-account-menu__name {
-    display: none;
   }
 }
 
@@ -627,5 +635,32 @@
 
   .ui-next-app-main {
     padding-block-start: var(--ui-space-6);
+  }
+}
+
+@media (max-width: 44rem) {
+  .ui-next-create-dialog__actions {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 30rem) {
+  .ui-next-account-menu__name,
+  .ui-next-create-trigger__label,
+  .ui-next-quick-search-trigger > span,
+  .ui-next-quick-search-trigger kbd {
+    display: none;
+  }
+  .ui-next-quick-search-trigger {
+    inline-size: 2.5rem;
+    padding-inline: 0;
+    justify-content: center;
+  }
+  .ui-next-quick-search-trigger::before {
+    content: "⌕";
+    font-size: 1.5rem;
+  }
+  .ui-next-create-trigger::before {
+    content: "+";
+    font-size: 1.25rem;
   }
 }

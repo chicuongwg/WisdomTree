@@ -28,14 +28,15 @@ export function AppShell({
 }) {
   return (
     <div className="ui-next-app-shell">
-      <AppSidebar locale={locale} canAccessAdministration={canAccessAdministration} />
       <AppHeader
         displayName={displayName}
         locale={locale}
         supportedLocales={supportedLocales}
         projects={projects}
+        canAccessAdministration={canAccessAdministration}
         unreadNotifications={unreadNotifications}
       />
+      <AppSidebar locale={locale} canAccessAdministration={canAccessAdministration} />
       <main id="app-main" className="ui-next-app-main" tabIndex={-1}>
         {children}
       </main>

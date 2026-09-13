@@ -116,3 +116,7 @@
     min-inline-size: 28rem;
   }
 }
+
+.ui-next-account-settings form {
+  max-inline-size: 42rem;
+}

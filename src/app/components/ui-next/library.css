@@ -162,3 +162,13 @@
     align-items: flex-start;
   }
 }
+
+.ui-next-library__holdings,
+.ui-next-library__loans ul {
+  gap: 0;
+}
+.ui-next-library__holding,
+.ui-next-library__loans li {
+  border-radius: 0;
+  border-width: 0 0 1px;
+}

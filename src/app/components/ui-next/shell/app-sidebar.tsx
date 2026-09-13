@@ -40,12 +40,6 @@ export function AppSidebar({
 
   return (
     <aside className="ui-next-app-sidebar">
-      <div className="ui-next-app-sidebar__brand" aria-label="TMKT">
-        <span className="ui-next-app-sidebar__mark" aria-hidden="true">
-          WT
-        </span>
-        <span className="ui-next-app-sidebar__name">TMKT</span>
-      </div>
       <GlobalNavigation locale={locale} canAccessAdministration={canAccessAdministration} />
       <IconButton
         type="button"

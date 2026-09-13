@@ -206,3 +206,25 @@
     justify-content: flex-start;
   }
 }
+
+.ui-next-overview-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--ui-space-6);
+  align-items: start;
+}
+.ui-next-project-list {
+  gap: 0;
+}
+.ui-next-project-card {
+  border-radius: 0;
+  border-width: 0 0 1px;
+}
+.ui-next-project-list > li:first-child .ui-next-project-card {
+  border-block-start-width: 1px;
+}
+@media (max-width: 64rem) {
+  .ui-next-overview-columns {
+    grid-template-columns: 1fr;
+  }
+}

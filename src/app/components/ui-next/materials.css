@@ -258,3 +258,11 @@
     flex-direction: column;
   }
 }
+
+.ui-next-materials-list__item {
+  border-radius: 0;
+  border-width: 0 0 1px;
+}
+.ui-next-materials-list {
+  gap: 0;
+}

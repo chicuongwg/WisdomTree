@@ -45,7 +45,7 @@
   --ui-shadow-raised: 0 0.5rem 1.5rem rgb(23 32 26 / 10%);
   --ui-width-reading: 72ch;
   --ui-width-standard: 64rem;
-  --ui-width-wide: 80rem;
+  --ui-width-wide: 90rem;
   --ui-page-gutter: var(--ui-space-8);
   --ui-sidebar-expanded: 15rem;
   --ui-sidebar-collapsed: 4rem;
@@ -321,14 +321,14 @@ textarea.ui-next-control {
   display: inline-flex;
 }
 .ui-next-message-state {
-  text-align: center;
+  text-align: start;
 }
 .ui-next-message-state__title {
   margin: 0;
   font-size: var(--ui-font-size-lg);
 }
 .ui-next-message-state__description {
-  margin: var(--ui-space-2) auto 0;
+  margin: var(--ui-space-2) 0 0;
   color: var(--ui-color-text-secondary);
 }
 .ui-next-message-state__action {
@@ -376,7 +376,7 @@ textarea.ui-next-control {
 .ui-next-container {
   --ui-container-width: var(--ui-width-standard);
   inline-size: min(100% - 2 * var(--ui-page-gutter), var(--ui-container-width));
-  margin-inline: auto;
+  margin-inline: var(--ui-page-gutter);
 }
 .ui-next-container--reading {
   --ui-container-width: var(--ui-width-reading);
@@ -388,12 +388,14 @@ textarea.ui-next-control {
   --ui-container-width: var(--ui-width-wide);
 }
 .ui-next-container--full {
-  inline-size: 100%;
-}
-
-/* Application pages share the canvas; prose keeps its own reading-width limit. */
-.ui-next-app-main > .ui-next-container {
   inline-size: calc(100% - 2 * var(--ui-page-gutter));
+}
+.ui-next-container .ui-next-container {
+  inline-size: min(100%, var(--ui-container-width));
+  margin-inline: 0;
+}
+.ui-next-container .ui-next-container--full {
+  inline-size: 100%;
 }
 .ui-next-stack {
   display: flex;
@@ -539,7 +541,7 @@ form.ui-next-inline > :is(label, .ui-next-field) {
 .ui-next-dialog {
   inline-size: min(36rem, calc(100vw - 2rem));
   max-block-size: min(42rem, calc(100dvh - 2rem));
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-md);
   padding: 0;
@@ -547,6 +549,24 @@ form.ui-next-inline > :is(label, .ui-next-field) {
   color: var(--ui-color-text);
   box-shadow: var(--ui-shadow-raised);
   font-family: var(--ui-font-interface);
+}
+.ui-next-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.ui-next-dialog--wide {
+  inline-size: min(47.5rem, calc(100vw - 2rem));
+}
+.ui-next-dialog__header,
+.ui-next-dialog__footer {
+  flex-shrink: 0;
+}
+.ui-next-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-4) var(--ui-space-6);
+  border-block-start: 1px solid var(--ui-color-border);
 }
 .ui-next-dialog::backdrop {
   background: rgb(8 15 11 / 58%);
@@ -568,6 +588,8 @@ form.ui-next-inline > :is(label, .ui-next-field) {
   color: var(--ui-color-text-secondary);
 }
 .ui-next-dialog__body {
+  min-block-size: 0;
+  overflow-y: auto;
   padding: var(--ui-space-6);
 }
 
@@ -643,9 +665,10 @@ form.ui-next-inline > :is(label, .ui-next-field) {
   .ui-next-page-header {
     flex-direction: column;
   }
-  .ui-next-page-header__actions,
-  .ui-next-page-header__actions .ui-next-button {
-    inline-size: 100%;
+  .ui-next-dialog__header,
+  .ui-next-dialog__body,
+  .ui-next-dialog__footer {
+    padding-inline: var(--ui-space-4);
   }
   .ui-next-dialog {
     inline-size: calc(100vw - 1rem);
@@ -668,4 +691,16 @@ form.ui-next-inline > :is(label, .ui-next-field) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.ui-next-dialog__footer
+  :is(
+    .ui-next-work-form__actions,
+    .ui-next-material-form__actions,
+    .ui-next-dialog-actions,
+    .ui-next-evidence-picker__actions,
+    .ui-next-quick-search__footer
+  ) {
+  border-block-start: 0;
+  padding-block-start: 0;
 }

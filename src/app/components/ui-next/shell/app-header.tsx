@@ -24,12 +24,14 @@ export function AppHeader({
   supportedLocales,
   projects,
   unreadNotifications = 0,
+  canAccessAdministration = false,
 }: {
   displayName: string;
   locale: UiLocale;
   supportedLocales: UiLocale[];
   projects: ShellProject[];
   unreadNotifications?: number;
+  canAccessAdministration?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => {
@@ -83,7 +85,11 @@ export function AppHeader({
         title={translate(locale, "shell.tmkt")}
         closeLabel={translate(locale, "common.close")}
       >
-        <GlobalNavigation locale={locale} onNavigate={() => setMobileOpen(false)} />
+        <GlobalNavigation
+          locale={locale}
+          canAccessAdministration={canAccessAdministration}
+          onNavigate={() => setMobileOpen(false)}
+        />
       </Drawer>
     </header>
   );

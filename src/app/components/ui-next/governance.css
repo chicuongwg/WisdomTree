@@ -59,7 +59,7 @@
   cursor: pointer;
 }
 
-@media (min-width: 80rem) {
+@media (min-width: 64.0625rem) {
   .ui-next-governance--admin {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -212,4 +212,19 @@
   .ui-next-governance__actions {
     inline-size: 100%;
   }
+}
+
+.ui-next-governance__accounts {
+  grid-column: 1 / -1;
+}
+.ui-next-governance__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+}
+.ui-next-dialog .ui-next-governance__form {
+  grid-template-columns: minmax(0, 1fr);
+  max-inline-size: none;
 }

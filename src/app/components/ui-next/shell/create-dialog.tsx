@@ -126,11 +126,13 @@ export function CreateDialog({
         type="button"
         variant="primary"
         className="ui-next-create-trigger"
+        aria-label={translate(locale, "shell.new")}
         onClick={openDialog}
       >
-        {translate(locale, "shell.new")}
+        <span className="ui-next-create-trigger__label">{translate(locale, "shell.new")}</span>
       </Button>
       <Dialog
+        size="wide"
         open={open}
         onClose={close}
         title={translate(locale, "shell.newTitle")}

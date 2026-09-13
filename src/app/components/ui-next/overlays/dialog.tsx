@@ -12,6 +12,8 @@ export interface DialogProps {
   closeLabel: string;
   children?: ReactNode;
   placement?: "center" | "end";
+  size?: "standard" | "wide";
+  footer?: ReactNode;
 }
 
 export function Dialog({
@@ -22,6 +24,8 @@ export function Dialog({
   closeLabel,
   children,
   placement = "center",
+  size = "standard",
+  footer,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -49,7 +53,11 @@ export function Dialog({
   return (
     <dialog
       ref={dialogRef}
-      className={classNames("ui-next-dialog", placement === "end" && "ui-next-dialog--end")}
+      className={classNames(
+        "ui-next-dialog",
+        `ui-next-dialog--${size}`,
+        placement === "end" && "ui-next-dialog--end",
+      )}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => {
@@ -71,6 +79,7 @@ export function Dialog({
         </Button>
       </div>
       <div className="ui-next-dialog__body">{children}</div>
+      {footer ? <div className="ui-next-dialog__footer">{footer}</div> : null}
     </dialog>
   );
 }
