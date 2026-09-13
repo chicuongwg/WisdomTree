@@ -5,7 +5,7 @@
   "description": "WisdomTree — storage-first knowledge platform (modular monolith: Next.js App Router + Drizzle + PostgreSQL)",
   "scripts": {
     "runtime:up": "docker compose up -d --wait db",
-    "dev": "npm run runtime:up && next dev --turbopack",
+    "dev": "npm run runtime:up && npm run db:migrate && next dev --turbopack",
     "dev:webpack": "npm run runtime:up && next dev",
     "prebuild": "node scripts/check-port-free.mjs",
     "build": "next build",
@@ -64,5 +64,8 @@
     "prettier": "^3.9.6",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "postcss": "8.5.28"
   }
 }

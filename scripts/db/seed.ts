@@ -115,6 +115,14 @@ async function main() {
          VALUES ($1,$2,'manager',$2)`,
         [personal[u.id], u.id],
       );
+      // The test seed runs after migrations and truncates their backfill. Keep
+      // the production Personal Project invariant intact without creating a
+      // second personal workspace or any research content.
+      await client.query(
+        `INSERT INTO projects (project_id, research_lens, created_by, personal_owner_id)
+         VALUES ($1,'Personal research workspace',$2,$2)`,
+        [personal[u.id], u.id],
+      );
     }
     const memberships: Array<[string, string]> = [
       [library, lan.id],
