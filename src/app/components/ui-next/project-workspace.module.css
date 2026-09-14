@@ -187,16 +187,19 @@
 .root :global(.ui-next-project-module-frame) {
   max-inline-size: var(--ui-width-wide);
 }
-.root :global(.ui-next-project-module-frame:has(
-  .ui-next-note-workspace,
-  .ui-next-kanban,
-  .ui-next-calendar,
-  .knowledge-map
-)) {
+.root
+  :global(
+    .ui-next-project-module-frame:has(
+      .ui-next-note-workspace,
+      .ui-next-kanban,
+      .ui-next-calendar,
+      .knowledge-map
+    )
+  ) {
   max-inline-size: none;
 }
 
-.root :global(.ui-next-project-module-frame:has(.ui-next-governance:not(.ui-next-governance--admin))) {
+.root
+  :global(.ui-next-project-module-frame:has(.ui-next-governance:not(.ui-next-governance--admin))) {
   max-inline-size: var(--ui-width-standard);
 }
-

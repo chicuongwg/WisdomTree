@@ -582,7 +582,8 @@ export const viMessages = {
   "materials.emptyDescription": "Dự án này chưa có tư liệu nào.",
   "materials.createFirst": "Tạo tư liệu đầu tiên",
   "materials.create.title": "Đăng ký tư liệu",
-  "materials.create.description": "Tư liệu có thể bắt đầu từ tệp tải lên hoặc mục ghi nhận ban đầu.",
+  "materials.create.description":
+    "Tư liệu có thể bắt đầu từ tệp tải lên hoặc mục ghi nhận ban đầu.",
   "materials.create.submit": "Đăng ký tư liệu",
   "materials.field.title": "Tiêu đề",
   "materials.field.description": "Mô tả",
@@ -630,8 +631,7 @@ export const viMessages = {
   "materials.mySubmissions": "Tư liệu của tôi",
   "materials.mySubmissionsEmpty": "Bạn chưa đóng góp tư liệu dự án nào.",
   "activities.title": "Hoạt động",
-  "activities.description":
-    "Ghi nhận các sự kiện, phiên làm việc và bối cảnh hoạt động của dự án.",
+  "activities.description": "Ghi nhận các sự kiện, phiên làm việc và bối cảnh hoạt động của dự án.",
   "activities.new": "Hoạt động mới",
   "activities.emptyTitle": "Chưa có hoạt động",
   "activities.emptyDescription": "Dự án này chưa có hoạt động nào.",

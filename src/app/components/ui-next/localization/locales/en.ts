@@ -238,8 +238,7 @@ export const enMessages: Record<keyof typeof viMessages, string> = {
   "collaboration.postFailed": "The discussion could not be posted.",
   "collaboration.loadFailed": "The discussion could not be loaded.",
   "collaboration.viewing": "Viewing now:",
-  "people.directoryDescription":
-    "People documented across the Projects you are allowed to read.",
+  "people.directoryDescription": "People documented across the Projects you are allowed to read.",
   "people.empty": "No person records are available in your accessible scope.",
   "people.projectDescription":
     "Record people involved and find Activities they participate in. This is not the Project member list.",
@@ -582,14 +581,14 @@ export const enMessages: Record<keyof typeof viMessages, string> = {
   "library.action.updating": "Updating…",
   "library.transitionFailed": "The loan could not be updated. Reload to see its current state.",
   "materials.title": "Materials",
-  "materials.description":
-    "Register sources, preserve original versions, and review extraction.",
+  "materials.description": "Register sources, preserve original versions, and review extraction.",
   "materials.new": "New Material",
   "materials.emptyTitle": "No Materials yet",
   "materials.emptyDescription": "This Project has no Materials yet.",
   "materials.createFirst": "Create first Material",
   "materials.create.title": "Register Material",
-  "materials.create.description": "A Material can begin from an uploaded file or a registered record.",
+  "materials.create.description":
+    "A Material can begin from an uploaded file or a registered record.",
   "materials.create.submit": "Register Material",
   "materials.field.title": "Title",
   "materials.field.description": "Description",
@@ -638,8 +637,7 @@ export const enMessages: Record<keyof typeof viMessages, string> = {
   "materials.mySubmissions": "My Materials",
   "materials.mySubmissionsEmpty": "You have not contributed a Project Material yet.",
   "activities.title": "Activities",
-  "activities.description":
-    "Record events, sessions, and the Project activity context.",
+  "activities.description": "Record events, sessions, and the Project activity context.",
   "activities.new": "New Activity",
   "activities.emptyTitle": "No Activities yet",
   "activities.emptyDescription": "This Project has no Activities yet.",

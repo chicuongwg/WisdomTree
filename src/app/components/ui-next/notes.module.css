@@ -463,7 +463,10 @@
   margin: 0 auto;
 }
 
-.root :global(.ui-next-note-workspace--focus .ui-next-note-workspace__main:has(.ui-next-note-editor--split)) {
+.root
+  :global(
+    .ui-next-note-workspace--focus .ui-next-note-workspace__main:has(.ui-next-note-editor--split)
+  ) {
   max-inline-size: none;
 }
 
@@ -854,4 +857,3 @@
 .root :global(.ui-next-notes-item:first-child) {
   border-block-start-width: 1px;
 }
-
