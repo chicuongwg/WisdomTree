@@ -22,6 +22,13 @@ export default [
       "@next/next": nextPlugin,
     },
     rules: {
+      // Keep the App Router checks active even though this project owns its
+      // TypeScript and formatting rules directly.
+      ...nextPlugin.configs["core-web-vitals"].rules,
+      // The account avatar is a same-origin authenticated endpoint and
+      // Markdown may contain allowed external image URLs. Neither can use a
+      // fixed next/image source list without changing their delivery model.
+      "@next/next/no-img-element": "off",
       // The rules that catch REAL bugs:
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
