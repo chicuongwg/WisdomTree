@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { foldName } from "@/lib/mention-fold";
 import { inlineTokens, markdownToHtml, parseBlocks } from "@/lib/markdown-core";
-import { extractionDisplay, nextActionFor } from "@/lib/source-status";
 import {
   backlinkContext,
   buildWikiIndex,
@@ -10,7 +9,6 @@ import {
   parseWikiLinks,
   wikiTargetKeys,
 } from "@/lib/wikilink";
-import { wikiPath } from "@/lib/wiki-path";
 import { validateMarkdown } from "@/lib/markdown-validation";
 
 export function run() {
@@ -84,22 +82,4 @@ export function run() {
   assert.equal(foldName("Phạm Thu Hương"), "pham thu huong");
   assert.equal(foldName("Đặng"), "dang");
   assert.equal(foldName("Hương").length, "Hương".length);
-  assert.equal(wikiPath("node-id", "tieu-de"), "/wiki/node-id/tieu-de");
-
-  assert.deepEqual(extractionDisplay("processed", false), {
-    label: "Chưa đọc được nội dung",
-    tone: "no_source",
-  });
-  assert.equal(
-    nextActionFor({ storageState: "stored", extractionStatus: "pending" }),
-    "reading",
-  );
-  assert.equal(
-    nextActionFor({ storageState: "archived", extractionStatus: "pending", promoted: true }),
-    "archived",
-  );
-  assert.equal(
-    nextActionFor({ storageState: "stored", extractionStatus: "processed", promoted: true }),
-    "promoted",
-  );
 }

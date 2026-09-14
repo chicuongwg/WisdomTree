@@ -432,8 +432,8 @@ export const T = {
   moveAction: "Chuyển", // NEW
   uploadNewVersion: "Tải bản mới", // NEW
   nextStepColumn: "Bước tiếp theo", // NEW
-  // What happens to this file next, one sentence per state — the values of
-  // nextActionLabel in src/lib/source-status.ts. NEW pending humanities review.
+  // What happens to this file next, one sentence per state.
+  // NEW pending humanities review.
   nextActionArchived: "Đã thu hồi.", // NEW
   nextActionReading: "Hệ thống đang đọc nội dung tệp.", // NEW
   nextActionStored: "Đã lưu — dùng được ngay. Bạn có thể đề cử đưa lên cây tri thức.", // NEW
