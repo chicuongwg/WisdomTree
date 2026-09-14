@@ -1,5 +1,8 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { classNames } from "../shared";
+import styles from "./primitives.module.css";
+
+export const nativeControlClassName = styles.control;
 
 interface FieldCopy {
   label: string;
@@ -11,12 +14,12 @@ function FieldMessages({ id, description, error }: { id: string } & Omit<FieldCo
   return (
     <>
       {description ? (
-        <span id={`${id}-description`} className="ui-next-field__description">
+        <span id={`${id}-description`} className={styles.description}>
           {description}
         </span>
       ) : null}
       {error ? (
-        <span id={`${id}-error`} className="ui-next-field__error" role="alert">
+        <span id={`${id}-error`} className={styles.error} role="alert">
           {error}
         </span>
       ) : null}
@@ -45,8 +48,8 @@ export function TextField({
   ...props
 }: TextFieldProps) {
   return (
-    <label className="ui-next-field" htmlFor={id}>
-      <span className="ui-next-field__label">
+    <label className={styles.field} htmlFor={id}>
+      <span className={styles.label}>
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
       </span>
@@ -56,7 +59,7 @@ export function TextField({
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames("ui-next-control", className)}
+        className={classNames(styles.control, className)}
       />
       <FieldMessages id={id} description={description} error={error} />
     </label>
@@ -77,8 +80,8 @@ export function TextArea({
   ...props
 }: TextAreaProps) {
   return (
-    <label className="ui-next-field" htmlFor={id}>
-      <span className="ui-next-field__label">
+    <label className={styles.field} htmlFor={id}>
+      <span className={styles.label}>
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
       </span>
@@ -88,7 +91,7 @@ export function TextArea({
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames("ui-next-control", className)}
+        className={classNames(styles.control, className)}
       />
       <FieldMessages id={id} description={description} error={error} />
     </label>
@@ -110,8 +113,8 @@ export function Select({
   ...props
 }: SelectProps) {
   return (
-    <label className="ui-next-field" htmlFor={id}>
-      <span className="ui-next-field__label">
+    <label className={styles.field} htmlFor={id}>
+      <span className={styles.label}>
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
       </span>
@@ -121,7 +124,7 @@ export function Select({
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames("ui-next-control", className)}
+        className={classNames(styles.control, className)}
       >
         {children}
       </select>

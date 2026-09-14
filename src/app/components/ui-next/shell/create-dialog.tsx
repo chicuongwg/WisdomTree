@@ -5,6 +5,8 @@ import type { UiLocale } from "@/modules/auth/profile";
 import type { AppProjectDto } from "@/modules/application";
 import { Dialog } from "../overlays/dialog";
 import { Button } from "../primitives/button";
+import { TextField } from "../primitives/form-controls";
+import { Stack } from "../layout/primitives";
 import { StatusBadge } from "../primitives/status-badge";
 import { translate, type UiNextMessageKey } from "../localization";
 
@@ -175,10 +177,11 @@ export function CreateDialog({
             </div>
           </div>
         ) : creatingNote ? (
-          <form
+          <Stack
+            as="form"
+            gap="4"
             onSubmit={handleCreateNote}
             className="ui-next-create-dialog"
-            style={{ display: "flex", flexDirection: "column", gap: "var(--ui-space-4)" }}
           >
             <Button
               type="button"
@@ -192,36 +195,18 @@ export function CreateDialog({
               <h3>{translate(locale, "notes.create.title")}</h3>
               <p className="ui-next-muted">{projectName}</p>
             </div>
-            <div className="ui-next-form-field">
-              <label htmlFor="shell-note-title" className="ui-next-form-label">
-                {translate(locale, "notes.field.title")}
-              </label>
-              <input
-                id="shell-note-title"
-                type="text"
-                className="ui-next-note-editor__title-input"
-                style={{
-                  border: "1px solid var(--ui-color-border)",
-                  background: "var(--ui-color-surface)",
-                }}
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-                placeholder={translate(locale, "notes.field.titlePlaceholder")}
-                autoFocus
-                required
-              />
-            </div>
-            {error ? (
-              <p
-                style={{
-                  color: "var(--ui-color-danger)",
-                  fontSize: "var(--ui-font-size-sm)",
-                  margin: 0,
-                }}
-              >
-                {error}
-              </p>
-            ) : null}
+            <TextField
+              id="shell-note-title"
+              type="text"
+              label={translate(locale, "notes.field.title")}
+              className="ui-next-note-editor__title-input"
+              value={noteTitle}
+              onChange={(e) => setNoteTitle(e.target.value)}
+              placeholder={translate(locale, "notes.field.titlePlaceholder")}
+              autoFocus
+              required
+              error={error ?? undefined}
+            />
             <div className="ui-next-dialog-actions">
               <Button type="button" variant="secondary" onClick={() => setCreatingNote(false)}>
                 {translate(locale, "common.cancel")}
@@ -232,7 +217,7 @@ export function CreateDialog({
                   : translate(locale, "notes.create.submit")}
               </Button>
             </div>
-          </form>
+          </Stack>
         ) : (
           <div className="ui-next-create-dialog">
             <div className="ui-next-create-dialog__context">

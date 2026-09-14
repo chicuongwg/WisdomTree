@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { DraftDto } from "@/modules/application";
-import { Button, Dialog, translate } from "@/app/components/ui-next";
+import { Button, Dialog, Stack, TextField, translate } from "@/app/components/ui-next";
 import { NoteList } from "./note-list";
 
 export function NotesView({
@@ -104,43 +104,20 @@ export function NotesView({
         title={translate(locale, "notes.create.title")}
         closeLabel={translate(locale, "common.close")}
       >
-        <form
-          id="create-note"
-          onSubmit={handleCreate}
-          style={{ display: "flex", flexDirection: "column", gap: "var(--ui-space-4)" }}
-        >
-          <div className="ui-next-form-field">
-            <label htmlFor="create-note-title" className="ui-next-form-label">
-              {translate(locale, "notes.field.title")}
-            </label>
-            <input
-              id="create-note-title"
-              type="text"
-              className="ui-next-note-editor__title-input"
-              style={{
-                border: "1px solid var(--ui-color-border)",
-                background: "var(--ui-color-surface)",
-              }}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={translate(locale, "notes.field.titlePlaceholder")}
-              autoFocus
-              required
-            />
-          </div>
-
-          {error ? (
-            <p
-              style={{
-                color: "var(--ui-color-danger)",
-                fontSize: "var(--ui-font-size-sm)",
-                margin: 0,
-              }}
-            >
-              {error}
-            </p>
-          ) : null}
-        </form>
+        <Stack as="form" gap="4" id="create-note" onSubmit={handleCreate}>
+          <TextField
+            id="create-note-title"
+            type="text"
+            label={translate(locale, "notes.field.title")}
+            className="ui-next-note-editor__title-input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={translate(locale, "notes.field.titlePlaceholder")}
+            autoFocus
+            required
+            error={error ?? undefined}
+          />
+        </Stack>
       </Dialog>
     </>
   );

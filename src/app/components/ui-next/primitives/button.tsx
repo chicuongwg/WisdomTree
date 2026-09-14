@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { classNames } from "../shared";
 import { VisuallyHidden } from "./visually-hidden";
+import styles from "./primitives.module.css";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -24,11 +25,11 @@ export function Button({
   return (
     <button
       {...props}
-      className={classNames("ui-next-button", `ui-next-button--${variant}`, className)}
+      className={classNames(styles.button, styles[variant], className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
     >
-      {loading ? <span className="ui-next-spinner" aria-hidden="true" /> : leadingIcon}
+      {loading ? <span className={styles.spinner} aria-hidden="true" /> : leadingIcon}
       <span>{children}</span>
       {loading ? <VisuallyHidden>{loadingLabel}</VisuallyHidden> : null}
     </button>
@@ -47,7 +48,7 @@ export function IconButton({
   ...props
 }: IconButtonProps) {
   return (
-    <Button {...props} aria-label={label} className={classNames("ui-next-icon-button", className)}>
+    <Button {...props} aria-label={label} className={classNames(styles.iconButton, className)}>
       {children}
     </Button>
   );

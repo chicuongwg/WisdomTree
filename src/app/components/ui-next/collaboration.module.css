@@ -1,6 +1,10 @@
+.root {
+  display: contents;
+}
+
 /* Stage 17.PR3 — quiet, Project-scoped discussion and presence. */
 
-.ui-next-collaboration {
+.root :global(.ui-next-collaboration) {
   display: grid;
   gap: var(--ui-space-4);
   max-inline-size: var(--ui-width-reading);
@@ -10,20 +14,20 @@
   padding-block-start: var(--ui-space-6);
 }
 
-.ui-next-collaboration__header h2 {
+.root :global(.ui-next-collaboration__header h2) {
   margin: 0;
   font-size: var(--ui-font-size-lg);
 }
 
-.ui-next-collaboration__status p,
-.ui-next-comment-composer__help,
-.ui-next-comment-composer__replying {
+.root :global(.ui-next-collaboration__status p),
+.root :global(.ui-next-comment-composer__help),
+.root :global(.ui-next-comment-composer__replying) {
   margin: 0;
   color: var(--ui-color-text-secondary);
   font-size: var(--ui-font-size-sm);
 }
 
-.ui-next-presence {
+.root :global(.ui-next-presence) {
   display: flex;
   align-items: center;
   gap: var(--ui-space-2);
@@ -33,13 +37,13 @@
   font-size: var(--ui-font-size-sm);
 }
 
-.ui-next-presence__person {
+.root :global(.ui-next-presence__person) {
   display: inline-flex;
   align-items: center;
   gap: var(--ui-space-1);
 }
 
-.ui-next-presence__initials {
+.root :global(.ui-next-presence__initials) {
   inline-size: 1.35rem;
   block-size: 1.35rem;
   display: inline-grid;
@@ -51,7 +55,7 @@
   font-weight: 750;
 }
 
-.ui-next-comment-list {
+.root :global(.ui-next-comment-list) {
   display: grid;
   gap: var(--ui-space-3);
   margin: 0;
@@ -59,7 +63,7 @@
   list-style: none;
 }
 
-.ui-next-comment {
+.root :global(.ui-next-comment) {
   display: grid;
   gap: var(--ui-space-2);
   border: 1px solid var(--ui-color-border);
@@ -69,21 +73,21 @@
   outline: none;
 }
 
-.ui-next-comment:focus-visible,
-.ui-next-comment--target {
+.root :global(.ui-next-comment:focus-visible),
+.root :global(.ui-next-comment--target) {
   border-color: var(--ui-color-focus);
   box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--ui-color-focus) 25%, transparent);
 }
 
-.ui-next-comment--reply {
+.root :global(.ui-next-comment--reply) {
   background: var(--ui-color-surface-sunken);
 }
 
-.ui-next-comment-list--replies {
+.root :global(.ui-next-comment-list--replies) {
   margin-inline-start: var(--ui-space-4);
 }
 
-.ui-next-comment__meta {
+.root :global(.ui-next-comment__meta) {
   display: flex;
   align-items: baseline;
   gap: var(--ui-space-2);
@@ -92,18 +96,18 @@
   font-size: var(--ui-font-size-sm);
 }
 
-.ui-next-comment__meta strong {
+.root :global(.ui-next-comment__meta strong) {
   color: var(--ui-color-text);
 }
 
-.ui-next-comment__body {
+.root :global(.ui-next-comment__body) {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   line-height: 1.6;
 }
 
-.ui-next-comment__mention {
+.root :global(.ui-next-comment__mention) {
   border-radius: var(--ui-radius-sm);
   padding-inline: 0.12em;
   background: var(--ui-color-success-bg);
@@ -111,11 +115,11 @@
   font-weight: 650;
 }
 
-.ui-next-comment__reply {
+.root :global(.ui-next-comment__reply) {
   justify-self: start;
 }
 
-.ui-next-comment-composer {
+.root :global(.ui-next-comment-composer) {
   display: grid;
   gap: var(--ui-space-3);
   padding: var(--ui-space-4);
@@ -124,13 +128,13 @@
   background: var(--ui-color-surface-sunken);
 }
 
-.ui-next-comment-composer label {
+.root :global(.ui-next-comment-composer label) {
   color: var(--ui-color-text);
   font-size: var(--ui-font-size-sm);
   font-weight: 700;
 }
 
-.ui-next-comment-composer textarea {
+.root :global(.ui-next-comment-composer textarea) {
   inline-size: 100%;
   min-block-size: 6rem;
   box-sizing: border-box;
@@ -144,12 +148,12 @@
   line-height: 1.5;
 }
 
-.ui-next-comment-composer textarea:focus-visible {
+.root :global(.ui-next-comment-composer textarea:focus-visible) {
   outline: 2px solid var(--ui-color-focus);
   outline-offset: 2px;
 }
 
-.ui-next-mention-list {
+.root :global(.ui-next-mention-list) {
   display: grid;
   max-inline-size: 28rem;
   margin: calc(var(--ui-space-2) * -1) 0 0;
@@ -161,62 +165,62 @@
   box-shadow: var(--ui-shadow-raised);
 }
 
-.ui-next-mention-list li {
+.root :global(.ui-next-mention-list li) {
   border-radius: var(--ui-radius-sm);
   padding: var(--ui-space-2) var(--ui-space-3);
   cursor: pointer;
   border-block-end: 1px solid var(--ui-color-border);
 }
 
-.ui-next-mention-list li:last-child {
+.root :global(.ui-next-mention-list li:last-child) {
   border-block-end: 0;
 }
 
-.ui-next-mention-list li:hover {
+.root :global(.ui-next-mention-list li:hover) {
   background: var(--ui-color-surface-sunken);
 }
 
-.ui-next-mention-list li.is-selected {
+.root :global(.ui-next-mention-list li.is-selected) {
   background: var(--ui-color-success-bg);
   color: var(--ui-color-text);
 }
 
 @media (max-width: 30rem) {
-  .ui-next-comment-list--replies {
+  .root :global(.ui-next-comment-list--replies) {
     margin-inline-start: var(--ui-space-2);
   }
 
-  .ui-next-comment,
-  .ui-next-comment-composer {
+  .root :global(.ui-next-comment),
+  .root :global(.ui-next-comment-composer) {
     padding: var(--ui-space-3);
   }
 }
 
-.ui-next-notification-center,
-.ui-next-notification-list {
+.root :global(.ui-next-notification-center),
+.root :global(.ui-next-notification-list) {
   display: grid;
   gap: var(--ui-space-3);
 }
 
-.ui-next-notification-center > p,
-.ui-next-notification-empty,
-.ui-next-notification-preferences {
+.root :global(.ui-next-notification-center > p),
+.root :global(.ui-next-notification-empty),
+.root :global(.ui-next-notification-preferences) {
   margin: 0;
   color: var(--ui-color-text-secondary);
 }
 
-.ui-next-notification-preferences {
+.root :global(.ui-next-notification-preferences) {
   color: var(--ui-color-accent);
   text-underline-offset: 0.18em;
 }
 
-.ui-next-notification-list {
+.root :global(.ui-next-notification-list) {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.ui-next-notification-list > li {
+.root :global(.ui-next-notification-list > li) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -226,11 +230,11 @@
   padding: var(--ui-space-3) var(--ui-space-4);
 }
 
-.ui-next-notification-list > li[data-unread] {
+.root :global(.ui-next-notification-list > li[data-unread]) {
   border-inline-start: 0.3rem solid var(--ui-color-accent);
 }
 
-.ui-next-notification-list > li > :first-child {
+.root :global(.ui-next-notification-list > li > :first-child) {
   min-inline-size: 0;
   display: grid;
   gap: var(--ui-space-1);
@@ -238,16 +242,16 @@
   text-decoration: none;
 }
 
-.ui-next-notification-list strong,
-.ui-next-notification-list span {
+.root :global(.ui-next-notification-list strong),
+.root :global(.ui-next-notification-list span) {
   overflow-wrap: anywhere;
 }
 
-.ui-next-notification-list small {
+.root :global(.ui-next-notification-list small) {
   color: var(--ui-color-text-muted);
 }
 
-.ui-next-notification-list__state {
+.root :global(.ui-next-notification-list__state) {
   display: grid;
   justify-items: end;
   gap: var(--ui-space-1);
@@ -257,21 +261,22 @@
 }
 
 @media (max-width: 34rem) {
-  .ui-next-notification-list > li {
+  .root :global(.ui-next-notification-list > li) {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .ui-next-notification-list__state {
+  .root :global(.ui-next-notification-list__state) {
     justify-items: start;
   }
 }
 
-.ui-next-notification-list > li {
+.root :global(.ui-next-notification-list > li) {
   border-radius: 0;
   border-width: 0 0 1px;
 }
-.ui-next-notification-list {
+.root :global(.ui-next-notification-list) {
   gap: 0;
   border-block-start: 1px solid var(--ui-color-border);
 }
+

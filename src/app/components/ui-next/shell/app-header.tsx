@@ -34,6 +34,7 @@ export function AppHeader({
   canAccessAdministration?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const brandName = process.env.NEXT_PUBLIC_APP_BRAND || translate(locale, "shell.tmkt");
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
@@ -52,7 +53,7 @@ export function AppHeader({
         >
           <span aria-hidden="true">☰</span>
         </IconButton>
-        <span className="ui-next-app-header__identity">{translate(locale, "shell.tmkt")}</span>
+        <span className="ui-next-app-header__identity">{brandName}</span>
       </div>
       <QuickSearch locale={locale} />
       <div className="ui-next-app-header__utilities">
@@ -82,7 +83,7 @@ export function AppHeader({
       <Drawer
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        title={translate(locale, "shell.tmkt")}
+        title={brandName}
         closeLabel={translate(locale, "common.close")}
       >
         <GlobalNavigation

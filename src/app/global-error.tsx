@@ -5,7 +5,7 @@
 // above where an `error.tsx` boundary can catch it. Only global-error.tsx
 // covers that, and because it replaces the whole document it has to render its
 // own <html> and <body>, and cannot use anything from the layout: no shell, no
-// theme script, no globals.css. Hence the inline styles.
+// theme script, no foundation stylesheet. Hence the inline styles.
 // The hex values are the palette's own, copied because they cannot be read:
 // paper #f2f4ee on ink #232b26, canopy green #1e6b4a for the one button, and
 // the --font-ui stack. The dark set is the data-theme="dark" block; the theme

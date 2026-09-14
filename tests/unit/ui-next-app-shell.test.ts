@@ -68,14 +68,14 @@ export async function run() {
   const appHeader = readFileSync("src/app/components/ui-next/shell/app-header.tsx", "utf8");
   assert.match(accountMenu, /href="\/app\/account"/);
 
-  const shellStyles = readFileSync("src/app/components/ui-next/shell.css", "utf8");
+  const shellStyles = readFileSync("src/app/components/ui-next/shell.module.css", "utf8");
   assert.match(
     shellStyles,
-    /@media \(max-width: 44rem\) \{[\s\S]*?\.ui-next-mobile-menu-trigger\s*{\s*display: inline-flex;/,
+    /@media \(max-width: 44rem\) \{[\s\S]*?\.ui-next-mobile-menu-trigger(?:\)|\s)*\{\s*display: inline-flex;/,
   );
   assert.match(
     shellStyles,
-    /@media \(max-width: 44rem\) \{[\s\S]*?\.ui-next-app-sidebar\s*{\s*display: none;/,
+    /@media \(max-width: 44rem\) \{[\s\S]*?\.ui-next-app-sidebar(?:\)|\s)*\{\s*display: none;/,
   );
   assert.match(appHeader, /<Drawer/);
   assert.match(

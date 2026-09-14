@@ -44,7 +44,7 @@ module.
 - `npm run test:unit`
 - `npm run test:boundaries` — layer/dependency boundaries
 - `npm run test:sign` / `test:time` — signed-token and timezone contracts
-- `npm run test:contrast` — WCAG contrast audit over globals.css
+- `npm run test:contrast` — WCAG contrast audit over foundation.css
 - `npm run test:integration`
 - `npm run test:usecase` — service-layer user journeys
 - `npm run test:privacy` — isolation and leak rules

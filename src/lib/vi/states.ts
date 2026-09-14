@@ -397,7 +397,7 @@ export function fileSize(bytes: number): string {
 
 /**
  * How far off a deadline is, in words. A date chip that only changes colour
- * says nothing to a reader who cannot see the colour — globals.css is explicit
+ * says nothing to a reader who cannot see the colour — foundation.css is explicit
  * that a state is never carried by hue alone.
  */
 export function untilLabel(due: Date, now: Date): string | null {
@@ -451,7 +451,7 @@ export function spanLabel(start: Date | string, due: Date | string): string | nu
 // encodes "incomplete" by shape.
 //
 // Colour is never the only carrier: the chip still prints the Vietnamese word,
-// and globals.css adds a left bar / ring to separate the tones whose colours
+// and foundation.css adds a left bar / ring to separate the tones whose colours
 // converge under deuteranopia. Kind, type, role and count chips are NOT states
 // and stay on the neutral chip on purpose — tinting them would spend the
 // vocabulary on things that have no lifecycle.

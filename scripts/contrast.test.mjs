@@ -10,7 +10,7 @@
 // cannot drift away from what the app actually paints.
 import { readFileSync } from "node:fs";
 
-const css = readFileSync(process.argv[2] ?? "src/app/globals.css", "utf8");
+const css = readFileSync(process.argv[2] ?? "src/app/foundation.css", "utf8");
 
 function tokens(scope) {
   const block = scope === "dark"

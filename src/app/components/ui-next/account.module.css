@@ -1,25 +1,29 @@
-.ui-next-account-settings > section > .ui-next-surface {
+.root {
+  display: contents;
+}
+
+.root :global(.ui-next-account-settings > section > .ui-next-surface) {
   display: grid;
   gap: var(--ui-space-4);
 }
 
-.ui-next-account-settings h2 {
+.root :global(.ui-next-account-settings h2) {
   margin: 0;
   font-size: var(--ui-font-size-lg);
 }
 
-.ui-next-account-settings__profile {
+.root :global(.ui-next-account-settings__profile) {
   display: flex;
   align-items: center;
   gap: var(--ui-space-4);
 }
 
-.ui-next-account-settings__profile > :last-child {
+.root :global(.ui-next-account-settings__profile > :last-child) {
   min-inline-size: 0;
   overflow-wrap: anywhere;
 }
 
-.ui-next-account-settings__avatar {
+.root :global(.ui-next-account-settings__avatar) {
   inline-size: 4.5rem;
   block-size: 4.5rem;
   display: grid;
@@ -33,22 +37,22 @@
   object-fit: cover;
 }
 
-.ui-next-account-settings__name {
+.root :global(.ui-next-account-settings__name) {
   margin: 0;
   font-size: var(--ui-font-size-lg);
   font-weight: 700;
 }
 
-.ui-next-account-settings__profile .ui-next-muted {
+.root :global(.ui-next-account-settings__profile .ui-next-muted) {
   margin: var(--ui-space-1) 0 0;
 }
 
-.ui-next-account-settings :is(.field, .file-field) {
+.root :global(.ui-next-account-settings :is(.field, .file-field)) {
   display: grid;
   gap: var(--ui-space-2);
 }
 
-.ui-next-account-settings :is(input[type="text"], input[type="file"]) {
+.root :global(.ui-next-account-settings :is(input[type="text"], input[type="file"])) {
   inline-size: min(100%, 32rem);
   min-block-size: 2.5rem;
   border: 1px solid var(--ui-color-border-strong);
@@ -59,15 +63,15 @@
   font: inherit;
 }
 
-.ui-next-account-settings :is(.button-row, .file-field) {
+.root :global(.ui-next-account-settings :is(.button-row, .file-field)) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ui-space-2);
 }
 
-.ui-next-account-settings .button-row > button,
-.ui-next-account-settings .file-field .button {
+.root :global(.ui-next-account-settings .button-row > button),
+.root :global(.ui-next-account-settings .file-field .button) {
   min-block-size: 2.5rem;
   border: 1px solid var(--ui-color-border-strong);
   border-radius: var(--ui-radius-sm);
@@ -79,7 +83,7 @@
   cursor: pointer;
 }
 
-.ui-next-account-settings__calendar-link {
+.root :global(.ui-next-account-settings__calendar-link) {
   display: block;
   max-inline-size: 100%;
   overflow-x: auto;
@@ -91,32 +95,32 @@
   font-size: var(--ui-font-size-sm);
 }
 
-.ui-next-account-settings .record-scroll {
+.root :global(.ui-next-account-settings .record-scroll) {
   overflow-x: auto;
 }
 
-.ui-next-account-settings .record-scroll > table {
+.root :global(.ui-next-account-settings .record-scroll > table) {
   min-inline-size: 32rem;
   border-collapse: collapse;
 }
 
-.ui-next-account-settings th,
-.ui-next-account-settings td {
+.root :global(.ui-next-account-settings th),
+.root :global(.ui-next-account-settings td) {
   border-block-end: 1px solid var(--ui-color-border);
   padding: var(--ui-space-2) var(--ui-space-3);
   text-align: start;
 }
 
 @media (max-width: 44rem) {
-  .ui-next-account-settings__profile {
+  .root :global(.ui-next-account-settings__profile) {
     align-items: flex-start;
   }
 
-  .ui-next-account-settings .record-scroll > table {
+  .root :global(.ui-next-account-settings .record-scroll > table) {
     min-inline-size: 28rem;
   }
 }
 
-.ui-next-account-settings form {
+.root :global(.ui-next-account-settings form) {
   max-inline-size: 42rem;
 }

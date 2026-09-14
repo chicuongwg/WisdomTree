@@ -80,7 +80,7 @@ test("PC3 target workspaces and delivery entry points are browser reachable", as
   await expect(page.locator(".knowledge-map:visible")).toHaveCount(1);
 
   await page.goto("/app/admin");
-  await expect(page.getByRole("heading", { name: "Quản trị TMKT" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Quản trị hệ thống" })).toBeVisible();
 });
 
 test("PC4 responsive collaboration, drawer, graph, and public routes remain usable", async ({

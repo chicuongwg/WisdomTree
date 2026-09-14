@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from "react";
 import { classNames } from "../shared";
+import styles from "./primitives.module.css";
 
 export type StatusTone = "neutral" | "accent" | "success" | "warning" | "danger" | "information";
 
@@ -11,9 +12,9 @@ export function StatusBadge({ tone = "neutral", className, children, ...props }:
   return (
     <span
       {...props}
-      className={classNames("ui-next-status-badge", `ui-next-status-badge--${tone}`, className)}
+      className={classNames(styles.badge, tone === "neutral" ? undefined : styles[tone], className)}
     >
-      <span className="ui-next-status-badge__marker" aria-hidden="true" />
+      <span className={styles.marker} aria-hidden="true" />
       {children}
     </span>
   );

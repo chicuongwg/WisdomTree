@@ -57,12 +57,12 @@ Example:
 
 ```text
 Synthesis V1
-├── Interview V3
-└── Field Note V1
+├── Source Note A (V3)
+└── Source Note B (V1)
 
 Synthesis V2
-├── Interview V5
-└── Field Note V4
+├── Source Note A (V5)
+└── Source Note B (V4)
 ```
 
 Publishing V2 does not rewrite the provenance of V1.
@@ -72,7 +72,7 @@ Publishing V2 does not rewrite the provenance of V1.
 ## Product model
 
 ```text
-TMKT
+Workspace
 ├── Overview
 ├── Projects
 ├── My Work
@@ -106,14 +106,13 @@ Markdown-based research documents with:
 
 ### Materials
 
-Research sources with immutable versions:
+Project sources and records with immutable versions:
 
-* documents;
-* scans;
-* interviews;
-* archival material;
+* documents and text files;
+* media recordings;
+* reference data;
 * extracted text;
-* physical research items.
+* registered items.
 
 ### Evidence
 
@@ -127,9 +126,9 @@ NoteVersion
 
 ### Activities & Tasks
 
-Activities represent research work such as interviews, field visits, meetings, or archival sessions.
+Activities represent collaborative work context such as sessions, meetings, reviews, and project milestones.
 
-Tasks support that research workflow rather than acting as a standalone project-management product.
+Tasks support that workflow rather than acting as a standalone project-management product.
 
 ### People
 

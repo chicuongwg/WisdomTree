@@ -1,8 +1,12 @@
 "use client";
 
-import { Button, ErrorState, PageContainer, translate } from "../components/ui-next";
+import { Button } from "../components/ui-next/primitives/button";
+import { ErrorState } from "../components/ui-next/feedback/states";
+import { PageContainer } from "../components/ui-next/layout/primitives";
+import { translate } from "../components/ui-next/localization";
 
 export default function TargetAppError({
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string };

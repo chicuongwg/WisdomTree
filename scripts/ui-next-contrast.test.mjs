@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 
-const css = readFileSync("src/app/components/ui-next/styles.css", "utf8");
+const css = readFileSync("src/app/components/ui-next/styles.module.css", "utf8");
 
 function tokenBlock(selector) {
-  const start = css.indexOf(selector);
+  const clean = selector.replace(/\s*\{$/, "");
+  const index = css.indexOf(selector);
+  const start = index >= 0 ? index : css.indexOf(clean);
   if (start < 0) throw new Error(`Missing token selector: ${selector}`);
   const body = css.slice(start, css.indexOf("}", start));
   return Object.fromEntries(
@@ -24,8 +26,11 @@ function contrast(first, second) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-const light = tokenBlock(".ui-next {");
-const dark = { ...light, ...tokenBlock(':root[data-theme="dark"] .ui-next {') };
+const light = tokenBlock(".root :global(.ui-next)");
+const dark = {
+  ...light,
+  ...tokenBlock(':global(:root[data-theme="dark"]) .root :global(.ui-next)'),
+};
 const checks = [
   ["primary text/background", "--ui-color-text", "--ui-color-background", 4.5],
   ["secondary text/surface", "--ui-color-text-secondary", "--ui-color-surface", 4.5],

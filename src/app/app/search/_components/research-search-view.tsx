@@ -1,7 +1,17 @@
 import Link from "next/link";
 import type { UiLocale } from "@/modules/auth/profile";
 import type { InternalResearchSearchResult } from "@/modules/search/service";
-import { PageContainer, PageHeader, Stack, Surface, translate } from "@/app/components/ui-next";
+import {
+  Button,
+  PageContainer,
+  PageHeader,
+  Select,
+  Stack,
+  Surface,
+  TextField,
+  translate,
+} from "@/app/components/ui-next";
+import styles from "./research-search-view.module.css";
 
 function resultHref(result: InternalResearchSearchResult) {
   if (result.kind === "project") return `/app/projects/${result.id}`;
@@ -31,34 +41,33 @@ export function ResearchSearchView({
           title={translate(locale, "nav.search")}
           description={translate(locale, "search.description")}
         />
-        <form className="ui-next-inline" method="get">
-          <label style={{ flex: 1 }}>
-            <span className="ui-next-visually-hidden">{translate(locale, "nav.search")}</span>
-            <input
-              className="ui-next-control"
-              name="q"
-              defaultValue={query}
-              placeholder={translate(locale, "search.placeholder")}
-              maxLength={200}
-            />
-          </label>
-          <label>
-            <span className="ui-next-visually-hidden">
-              {translate(locale, "search.filterLabel")}
-            </span>
-            <select className="ui-next-control" name="type" defaultValue={type}>
-              {types.map((value) => (
-                <option key={value} value={value}>
-                  {value === "all"
-                    ? translate(locale, "search.filter.all")
-                    : translate(locale, `shell.kind.${value}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="ui-next-button ui-next-button--primary" type="submit">
+        <form className={styles.form} method="get">
+          <TextField
+            id="research-search-query"
+            className={styles.query}
+            label={translate(locale, "nav.search")}
+            name="q"
+            defaultValue={query}
+            placeholder={translate(locale, "search.placeholder")}
+            maxLength={200}
+          />
+          <Select
+            id="research-search-type"
+            label={translate(locale, "search.filterLabel")}
+            name="type"
+            defaultValue={type}
+          >
+            {types.map((value) => (
+              <option key={value} value={value}>
+                {value === "all"
+                  ? translate(locale, "search.filter.all")
+                  : translate(locale, `shell.kind.${value}`)}
+              </option>
+            ))}
+          </Select>
+          <Button variant="primary" type="submit">
             {translate(locale, "nav.search")}
-          </button>
+          </Button>
         </form>
         {!query ? (
           <Surface>
@@ -88,7 +97,7 @@ export function ResearchSearchView({
                       </Link>
                     </h3>
                     {result.summary ? (
-                      <p className="ui-next-project-card__description" dir="auto">
+                      <p className={styles.itemDescription} dir="auto">
                         {result.summary}
                       </p>
                     ) : null}

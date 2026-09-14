@@ -31,12 +31,12 @@ export async function run() {
   const projectContract = readFileSync("src/modules/application/projects.ts", "utf8");
   const appHeader = readFileSync("src/app/components/ui-next/shell/app-header.tsx", "utf8");
   const createDialog = readFileSync("src/app/components/ui-next/shell/create-dialog.tsx", "utf8");
-  const containerStyles = readFileSync("src/app/components/ui-next/styles.css", "utf8");
-  const workspaceStyles = readFileSync("src/app/components/ui-next/project-workspace.css", "utf8");
-  const notesStyles = readFileSync("src/app/components/ui-next/notes.css", "utf8");
-  const materialsStyles = readFileSync("src/app/components/ui-next/materials.css", "utf8");
+  const containerStyles = readFileSync("src/app/components/ui-next/styles.module.css", "utf8");
+  const workspaceStyles = readFileSync("src/app/components/ui-next/project-workspace.module.css", "utf8");
+  const notesStyles = readFileSync("src/app/components/ui-next/notes.module.css", "utf8");
+  const materialsStyles = readFileSync("src/app/components/ui-next/materials.module.css", "utf8");
   const activitiesTasksStyles = readFileSync(
-    "src/app/components/ui-next/activities-tasks.css",
+    "src/app/components/ui-next/activities-tasks.module.css",
     "utf8",
   );
   const projectPeoplePage = readFileSync(
@@ -91,9 +91,9 @@ export async function run() {
   assert.match(createDialog, /projects\.find\(\(project\) => project\.id === defaultProjectId\)/);
 
   assert.match(containerStyles, /--ui-container-width: var\(--ui-width-standard\)/);
-  assert.match(containerStyles, /\.ui-next-container--wide\s*{\s*--ui-container-width: var\(--ui-width-wide\);/);
+  assert.match(containerStyles, /\.ui-next-container--wide(?:\)|\s)*\{\s*--ui-container-width: var\(--ui-width-wide\);/);
   assert.match(layout, /ui-next-project-module-frame/);
-  assert.match(workspaceStyles, /\.ui-next-project-module-frame\s*{\s*min-inline-size: 0;/);
+  assert.match(workspaceStyles, /\.ui-next-project-module-frame(?:\)|\s)*\{\s*min-inline-size: 0;/);
   assert.doesNotMatch(notesStyles, /max-width: 1100px/);
   assert.doesNotMatch(materialsStyles, /inline-size: min\(100%, var\(--ui-width-wide\)\)/);
   assert.match(

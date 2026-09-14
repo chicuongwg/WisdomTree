@@ -25,6 +25,7 @@
     "test:boundaries": "tsx scripts/boundaries.test.ts",
     "test:contrast": "node scripts/contrast.test.mjs",
     "test:ui-next-contrast": "node scripts/ui-next-contrast.test.mjs",
+    "test:style-contract": "node scripts/style-contract.test.mjs",
     "test:time": "tsx scripts/time.test.ts",
     "test:unit": "tsx tests/run-all.ts tests/unit",
     "test:integration": "tsx tests/run-all.ts tests/integration",
@@ -35,7 +36,7 @@
     "lint": "eslint src/ --max-warnings=0",
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
-    "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:boundaries && npm run test:sign && npm run test:time && npm run test:contrast && npm run test:ui-next-contrast"
+    "test": "npm run lint && npm run typecheck && npm run test:unit && npm run test:boundaries && npm run test:sign && npm run test:time && npm run test:contrast && npm run test:ui-next-contrast && npm run test:style-contract"
   },
   "dependencies": {
     "d3-force": "^3.0.0",

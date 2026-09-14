@@ -1,9 +1,21 @@
 import { readdirSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { configureIsolatedTestDatabase } from "./db-safety";
 
 const root = path.resolve(process.cwd());
 const target = process.argv[2];
+const require = createRequire(import.meta.url);
+
+// Components now own CSS Modules. The lightweight unit runner does not render
+// styles, but it still imports those components while testing their behavior.
+require.extensions[".css"] = (module) => {
+  const classes = new Proxy(
+    {},
+    { get: (_target, name) => (name === "default" ? classes : String(name)) },
+  );
+  module.exports = { __esModule: true, default: classes };
+};
 
 if (!target) {
   console.error("Usage: tsx tests/run-all.ts <path>");

@@ -12,6 +12,7 @@ import {
   translate,
   type StatusTone,
 } from "@/app/components/ui-next";
+import styles from "./note-inspector.module.css";
 
 export interface AttachedSourceVersion {
   sourceVersionId: string;
@@ -248,11 +249,11 @@ export function NoteInspectorContent({
         </div>
 
         {evidence.snapshotStatus === "unknown" ? (
-          <p className="ui-next-muted" style={{ margin: 0, fontSize: "var(--ui-font-size-sm)" }}>
+          <p className={`ui-next-muted ${styles.evidenceMessage}`}>
             {translate(locale, "notes.evidence.historyUnknown")}
           </p>
         ) : !hasEvidence ? (
-          <p className="ui-next-muted" style={{ margin: 0, fontSize: "var(--ui-font-size-sm)" }}>
+          <p className={`ui-next-muted ${styles.evidenceMessage}`}>
             {translate(locale, "notes.evidence.empty")}
           </p>
         ) : (

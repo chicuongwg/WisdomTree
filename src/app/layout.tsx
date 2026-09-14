@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import "./globals.css";
+import "./foundation.css";
 import { ValidationMessages } from "./components/validation-messages";
 
 export const metadata: Metadata = {

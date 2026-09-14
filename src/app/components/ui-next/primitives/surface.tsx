@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from "react";
 import { classNames } from "../shared";
+import styles from "./primitives.module.css";
 
 export type SurfaceTone = "default" | "raised" | "sunken";
 
@@ -11,7 +12,11 @@ export function Surface({ tone = "default", className, ...props }: SurfaceProps)
   return (
     <div
       {...props}
-      className={classNames("ui-next-surface", `ui-next-surface--${tone}`, className)}
+      className={classNames(
+        styles.surface,
+        tone === "default" ? undefined : styles[tone],
+        className,
+      )}
     />
   );
 }
