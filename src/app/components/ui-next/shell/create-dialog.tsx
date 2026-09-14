@@ -177,12 +177,7 @@ export function CreateDialog({
             </div>
           </div>
         ) : creatingNote ? (
-          <Stack
-            as="form"
-            gap="4"
-            onSubmit={handleCreateNote}
-            className="ui-next-create-dialog"
-          >
+          <Stack as="form" gap="4" onSubmit={handleCreateNote} className="ui-next-create-dialog">
             <Button
               type="button"
               variant="ghost"
@@ -246,13 +241,13 @@ export function CreateDialog({
                             setCreatingNote(true);
                             return;
                           }
-                          const module = {
+                          const destination = {
                             canCreateMaterial: "materials",
                             canCreateActivity: "activities",
                             canCreateTask: "tasks",
                             canManagePeople: "people",
                           }[action.capability];
-                          window.location.href = `/app/projects/${encodeURIComponent(selected.id)}/${module}`;
+                          window.location.href = `/app/projects/${encodeURIComponent(selected.id)}/${destination}`;
                         }}
                       >
                         <span>
