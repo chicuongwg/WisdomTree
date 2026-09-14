@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   // Trace the server bundle and its dependencies into .next/standalone, so the
   // runtime image carries neither the source tree nor devDependencies.
   output: "standalone",
+  // Turbopack development output and production output are not safely
+  // interchangeable. Keeping them separate prevents a prior build from
+  // leaving server chunks that a later `next dev --turbopack` tries to load.
+  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   // A parent-level lockfile must not make this repository's standalone
   // server nest beneath an inferred workspace root.
   outputFileTracingRoot: process.cwd(),

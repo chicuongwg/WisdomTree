@@ -48,6 +48,7 @@ module.
 - `npm run test:integration`
 - `npm run test:usecase` — service-layer user journeys
 - `npm run test:privacy` — isolation and leak rules
+- `npm run test:standalone` — production standalone CSS and public-asset delivery
 - `npm run test:e2e`
 - `npm test` — fast, infrastructure-free gate
 - `npm run test:all` — integration, production build, and Playwright after the fast gate
@@ -78,6 +79,7 @@ lint + typecheck
   -> unit + module + contract + UI checks
   -> PostgreSQL integration + usecase + privacy
   -> production build
+  -> standalone CSS and public-asset delivery
   -> Playwright E2E via scripts/start-e2e.mjs
 ```
 

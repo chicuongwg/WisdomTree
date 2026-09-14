@@ -8,6 +8,7 @@ Thumbs.db
 # Node / Next.js
 node_modules/
 .next/
+.next-dev/
 out/
 *.tsbuildinfo
 next-env.d.ts

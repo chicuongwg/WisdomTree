@@ -40,6 +40,9 @@ ENV VAULT_GIT_DIR=/app/data/vault-repos
 
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+# Standalone output deliberately excludes public assets. The application ships
+# its font files from /public, so they must accompany the traced server.
+COPY --from=build /app/public ./public
 # Migrations run from the image so a deploy is one command. migrate.ts is
 # plain TypeScript over `pg`, which the standalone trace already includes, so
 # node's own type stripping runs it — no tsx in the runtime image.

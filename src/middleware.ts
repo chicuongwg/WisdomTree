@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/api/cron/",
   "/api/blob/",
   "/calendar/",
+  "/fonts/",
 ];
 
 const isPublicPath = (pathname: string) =>
