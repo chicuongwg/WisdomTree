@@ -12,12 +12,8 @@ export function Surface({ tone = "default", className, ...props }: SurfaceProps)
     <div
       {...props}
       className={classNames(
-        "ui-next-surface border border-ui-border rounded-md p-6",
-        tone === "raised"
-          ? "bg-ui-surface-raised shadow-md"
-          : tone === "sunken"
-            ? "bg-ui-surface-sunken"
-            : "bg-ui-surface",
+        "ui-next-surface",
+        tone !== "default" && `ui-next-surface--${tone}`,
         className,
       )}
     />

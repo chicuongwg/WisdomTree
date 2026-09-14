@@ -291,6 +291,11 @@
   font-size: var(--ui-font-size-sm);
   font-weight: 650;
 }
+.ui-next-field__label--required::after {
+  content: "*";
+  color: var(--ui-color-danger);
+  margin-inline-start: 0.25rem;
+}
 .ui-next-field__description {
   color: var(--ui-color-text-muted);
   font-size: var(--ui-font-size-sm);
@@ -309,6 +314,15 @@
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
   font: inherit;
+}
+.ui-next-control:focus,
+.ui-next-control:focus-visible {
+  outline: 2px solid var(--ui-color-focus);
+  outline-offset: 1px;
+}
+.ui-next-control:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 textarea.ui-next-control {
   min-block-size: 7rem;
@@ -408,6 +422,28 @@ textarea.ui-next-control {
   flex-direction: column;
   gap: var(--ui-space-6);
 }
+.ui-next-stack--gap-1 {
+  gap: var(--ui-space-1);
+}
+.ui-next-stack--gap-2 {
+  gap: var(--ui-space-2);
+}
+.ui-next-stack--gap-3 {
+  gap: var(--ui-space-3);
+}
+.ui-next-stack--gap-4 {
+  gap: var(--ui-space-4);
+}
+.ui-next-stack--gap-6 {
+  gap: var(--ui-space-6);
+}
+.ui-next-stack--gap-8 {
+  gap: var(--ui-space-8);
+}
+.ui-next-stack--gap-12 {
+  gap: var(--ui-space-12);
+}
+
 .ui-next-inline {
   display: flex;
   flex-direction: row;
@@ -427,6 +463,12 @@ form.ui-next-inline > :is(label, .ui-next-field) {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--ui-space-6);
+}
+@media (max-width: 48rem) {
+  .ui-next-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 .ui-next-page-header :is(h1, h2) {
   margin: 0;

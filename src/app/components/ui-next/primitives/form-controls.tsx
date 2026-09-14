@@ -1,8 +1,7 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { classNames } from "../shared";
 
-export const nativeControlClassName =
-  "w-full min-h-10 border border-ui-border-strong rounded px-3 py-2 bg-ui-surface text-ui-text focus:outline-2 focus:outline-ui-focus disabled:opacity-60 disabled:cursor-not-allowed";
+export const nativeControlClassName = "ui-next-control";
 
 interface FieldCopy {
   label: string;
@@ -14,12 +13,12 @@ function FieldMessages({ id, description, error }: { id: string } & Omit<FieldCo
   return (
     <>
       {description ? (
-        <span id={`${id}-description`} className="text-ui-text-muted text-sm">
+        <span id={`${id}-description`} className="ui-next-field__description">
           {description}
         </span>
       ) : null}
       {error ? (
-        <span id={`${id}-error`} className="m-0 text-ui-danger text-sm font-semibold" role="alert">
+        <span id={`${id}-error`} className="ui-next-field__error" role="alert">
           {error}
         </span>
       ) : null}
@@ -48,12 +47,9 @@ export function TextField({
   ...props
 }: TextFieldProps) {
   return (
-    <label className="grid gap-2" htmlFor={id}>
+    <label className="ui-next-field" htmlFor={id}>
       <span
-        className={classNames(
-          "text-ui-text text-sm font-semibold",
-          required && "after:content-['*'] after:ml-0.5 after:text-ui-danger",
-        )}
+        className={classNames("ui-next-field__label", required && "ui-next-field__label--required")}
       >
         {label}
       </span>
@@ -64,7 +60,7 @@ export function TextField({
         aria-label={props["aria-label"] ?? label}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames(nativeControlClassName, className)}
+        className={classNames("ui-next-control", className)}
       />
       <FieldMessages id={id} description={description} error={error} />
     </label>
@@ -85,12 +81,9 @@ export function TextArea({
   ...props
 }: TextAreaProps) {
   return (
-    <label className="grid gap-2" htmlFor={id}>
+    <label className="ui-next-field" htmlFor={id}>
       <span
-        className={classNames(
-          "text-ui-text text-sm font-semibold",
-          required && "after:content-['*'] after:ml-0.5 after:text-ui-danger",
-        )}
+        className={classNames("ui-next-field__label", required && "ui-next-field__label--required")}
       >
         {label}
       </span>
@@ -101,7 +94,7 @@ export function TextArea({
         aria-label={props["aria-label"] ?? label}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames(nativeControlClassName, "min-h-28 resize-y", className)}
+        className={classNames("ui-next-control", className)}
       />
       <FieldMessages id={id} description={description} error={error} />
     </label>
@@ -123,12 +116,9 @@ export function Select({
   ...props
 }: SelectProps) {
   return (
-    <label className="grid gap-2" htmlFor={id}>
+    <label className="ui-next-field" htmlFor={id}>
       <span
-        className={classNames(
-          "text-ui-text text-sm font-semibold",
-          required && "after:content-['*'] after:ml-0.5 after:text-ui-danger",
-        )}
+        className={classNames("ui-next-field__label", required && "ui-next-field__label--required")}
       >
         {label}
       </span>
@@ -139,7 +129,7 @@ export function Select({
         aria-label={props["aria-label"] ?? label}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames(nativeControlClassName, className)}
+        className={classNames("ui-next-control", className)}
       >
         {children}
       </select>
