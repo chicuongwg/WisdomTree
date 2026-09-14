@@ -193,7 +193,7 @@ Principles:
 ## Quickstart
 
 ```bash
-npm install
+npm ci
 npm run setup:system
 npm run demo
 ```
@@ -229,6 +229,10 @@ npm run build
 npm run start
 ```
 
+To run the deployment artifact itself, use `npm run start:standalone`. Do not
+run `node .next/standalone/server.js` directly: Next leaves static and public
+assets outside that directory, and the launcher copies them before startup.
+
 ---
 
 ## Testing
@@ -247,7 +251,26 @@ Full validation:
 npm run test:all
 ```
 
-Stateful tests must use an isolated test database.
+Stateful tests and browser tests must use an isolated test database. The
+complete create → migrate → seed → validate → dispose protocol is in
+[`tests/README.md`](./tests/README.md); never point `TEST_DATABASE_URL` at the
+normal `wisdomtree` database.
+
+Playwright needs a runnable Chromium. On NixOS, set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to a system Chromium; on supported
+Debian/Ubuntu hosts, install the Playwright browser dependencies before running
+`npm run test:e2e`.
+
+## Handover protocol
+
+1. Use Node 22 (`.nvmrc`) and `npm ci`; do not update the lockfile during a handover.
+2. Read [`docs/architecture.md`](./docs/architecture.md) and
+   [`docs/operations.md`](./docs/operations.md) before changing schema,
+   authorization, or deployment behavior.
+3. Run `npm test`, then the isolated stateful suites and `npm run build`.
+   Run Playwright only with an isolated database and a supported Chromium.
+4. For a release, build the Docker image, supply production-only secrets, run
+   migrations as the deploy workflow does, and verify `/api/health`.
 
 ---
 
