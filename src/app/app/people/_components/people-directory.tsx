@@ -95,22 +95,35 @@ export function PeopleDirectory({
         />
       )}
       {createdPerson ? (
-        <div className="ui-next-people-next-step">
-          <p role="status">{translate(locale, "people.created")}</p>
-          <Link href={`/app/people/${createdPerson.id}`}>
+        <div className="ui-next-people-next-step flex flex-wrap gap-x-6 gap-y-3 p-4 border-l-[3px] border-ui-accent bg-ui-surface">
+          <p role="status" className="m-0 basis-full font-medium text-ui-text">
+            {translate(locale, "people.created")}
+          </p>
+          <Link
+            href={`/app/people/${createdPerson.id}`}
+            className="text-ui-accent underline-offset-[0.18em] hover:underline"
+          >
             {translate(locale, "people.openRecord")} — {createdPerson.displayName}
           </Link>
           {projectId ? (
-            <Link href={`/app/projects/${projectId}/activities`}>
+            <Link
+              href={`/app/projects/${projectId}/activities`}
+              className="text-ui-accent underline-offset-[0.18em] hover:underline"
+            >
               {translate(locale, "people.openActivities")}
             </Link>
           ) : null}
         </div>
       ) : null}
       {items.length ? (
-        <section className="ui-next-people-results" aria-label={translate(locale, "nav.people")}>
-          <label className="ui-next-people-filter">
-            <span>{translate(locale, "people.filter")}</span>
+        <section
+          className="ui-next-people-results grid gap-4 min-w-0"
+          aria-label={translate(locale, "nav.people")}
+        >
+          <label className="ui-next-people-filter grid gap-2 min-w-0 w-full max-w-[32rem]">
+            <span className="text-sm font-medium text-ui-text-secondary">
+              {translate(locale, "people.filter")}
+            </span>
             <input
               type="search"
               className="ui-next-control"
@@ -118,27 +131,43 @@ export function PeopleDirectory({
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <ul className="ui-next-people-list">
+          <ul className="ui-next-people-list list-none m-0 p-0 divide-y divide-ui-border">
             {filteredItems.map((person) => (
-              <li key={person.id} className="ui-next-people-list__row">
-                <div>
-                  <h3>
-                    <Link href={`/app/people/${person.id}`}>{person.displayName}</Link>
+              <li
+                key={person.id}
+                className="ui-next-people-list__row flex flex-wrap items-center justify-between gap-3 py-4 border-b border-ui-border"
+              >
+                <div className="min-w-0 break-words">
+                  <h3 className="m-0 text-base font-semibold">
+                    <Link
+                      href={`/app/people/${person.id}`}
+                      className="text-ui-text hover:text-ui-accent hover:underline"
+                    >
+                      {person.displayName}
+                    </Link>
                   </h3>
                   {person.summary ? (
-                    <p className="ui-next-project-card__description" dir="auto">
+                    <p
+                      className="ui-next-project-card__description max-w-[65ch] mt-1 text-sm text-ui-text-muted break-words"
+                      dir="auto"
+                    >
                       {person.summary}
                     </p>
                   ) : null}
                 </div>
-                <Link href={`/app/people/${person.id}`}>
+                <Link
+                  href={`/app/people/${person.id}`}
+                  className="text-ui-accent underline-offset-[0.18em] hover:underline text-sm font-medium"
+                >
                   {translate(locale, "people.viewContext")}
                 </Link>
               </li>
             ))}
           </ul>
           {!filteredItems.length ? (
-            <p role="status">{translate(locale, "people.noMatches")}</p>
+            <p role="status" className="text-sm text-ui-text-muted">
+              {translate(locale, "people.noMatches")}
+            </p>
           ) : null}
         </section>
       ) : (
@@ -161,27 +190,36 @@ export function PeopleDirectory({
         >
           {createOpen ? (
             <form
-              className="ui-next-people-form"
+              className="ui-next-people-form grid gap-4 min-w-0"
               action={(formData) => void createPerson(formData)}
             >
-              <label>
-                <span>{translate(locale, "people.name")}</span>
+              <label className="grid gap-1.5 min-w-0">
+                <span className="text-sm font-medium text-ui-text-secondary">
+                  {translate(locale, "people.name")}
+                </span>
                 <input className="ui-next-control" name="displayName" required maxLength={200} />
               </label>
-              <label>
-                <span>{translate(locale, "people.summary")}</span>
+              <label className="grid gap-1.5 min-w-0">
+                <span className="text-sm font-medium text-ui-text-secondary">
+                  {translate(locale, "people.summary")}
+                </span>
                 <textarea className="ui-next-control" name="summary" maxLength={1000} rows={3} />
               </label>
               <Button
                 type="submit"
                 variant="primary"
+                className="justify-self-end"
                 disabled={creating}
                 loading={creating}
                 loadingLabel={translate(locale, "common.loading")}
               >
                 {translate(locale, "people.new")}
               </Button>
-              {error ? <p role="alert">{translate(locale, "people.saveFailed")}</p> : null}
+              {error ? (
+                <p role="alert" className="text-sm text-ui-danger">
+                  {translate(locale, "people.saveFailed")}
+                </p>
+              ) : null}
             </form>
           ) : null}
         </Dialog>

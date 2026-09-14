@@ -19,26 +19,7 @@ type MyTask = {
 };
 
 export function MyWorkView({ locale, tasks }: { locale: UiLocale; tasks: MyTask[] }) {
-  const now = new Date();
-  const due = (task: MyTask) => (task.dueAt ? new Date(task.dueAt) : null);
-  const groups = [
-    [
-      "myWork.overdue",
-      tasks.filter((task) => {
-        const date = due(task);
-        return date && date < now && task.state !== "done";
-      }),
-    ],
-    [
-      "myWork.upcoming",
-      tasks.filter((task) => {
-        const date = due(task);
-        return date && date >= now && task.state !== "done";
-      }),
-    ],
-    ["myWork.noDueDate", tasks.filter((task) => !task.dueAt && task.state !== "done")],
-    ["myWork.completed", tasks.filter((task) => task.state === "done")],
-  ] as const;
+  const states = ["todo", "doing", "done", "archived"] as const;
   return (
     <section className="ui-next-work-page" aria-labelledby="my-work-title">
       <PageHeader
@@ -47,26 +28,41 @@ export function MyWorkView({ locale, tasks }: { locale: UiLocale; tasks: MyTask[
         description={translate(locale, "myWork.description")}
       />
       {tasks.length ? (
-        <div className="ui-next-my-work">
-          {groups.map(([key, group]) =>
-            group.length ? (
-              <section key={key}>
-                <h2>{translate(locale, key)}</h2>
-                <ul className="ui-next-task-list">
-                  {group.map((task) => (
-                    <li key={task.id}>
-                      <Link
-                        className="ui-next-task-list__row"
-                        href={`/app/projects/${encodeURIComponent(task.projectId)}/tasks/${encodeURIComponent(task.id)}`}
-                      >
-                        <span>
-                          <strong>{task.title}</strong>
-                          <small>
-                            {task.project.name}
-                            {task.activity ? ` · ${task.activity.title}` : ""}
-                            {task.dueAt ? ` · ${formatUiDate(task.dueAt, locale)}` : ""}
-                          </small>
-                        </span>
+        <div
+          className="ui-next-kanban ui-next-my-work-kanban"
+          aria-label={translate(locale, "tasks.kanban")}
+        >
+          {states.map((state) => {
+            const laneTasks = tasks.filter((task) => task.state === state);
+            return (
+              <section
+                className="ui-next-kanban__lane"
+                key={state}
+                aria-labelledby={`my-work-${state}`}
+              >
+                <header>
+                  <h2 id={`my-work-${state}`}>{translate(locale, `tasks.state.${state}`)}</h2>
+                  <span>{laneTasks.length}</span>
+                </header>
+                {laneTasks.length ? (
+                  <ul role="list">
+                    {laneTasks.map((task) => (
+                      <li className="ui-next-kanban__card" key={task.id}>
+                        <Link
+                          href={`/app/projects/${encodeURIComponent(task.projectId)}/tasks/${encodeURIComponent(task.id)}`}
+                        >
+                          {task.title}
+                        </Link>
+                        <div className="ui-next-my-work-kanban__context">
+                          <span>{task.project.name}</span>
+                          {task.activity ? <span>{task.activity.title}</span> : null}
+                          {task.dueAt ? (
+                            <span>
+                              {translate(locale, "tasks.meta.due")}{" "}
+                              {formatUiDate(task.dueAt, locale)}
+                            </span>
+                          ) : null}
+                        </div>
                         <StatusBadge
                           tone={
                             task.state === "done"
@@ -78,13 +74,15 @@ export function MyWorkView({ locale, tasks }: { locale: UiLocale; tasks: MyTask[
                         >
                           {translate(locale, `tasks.state.${task.state}`)}
                         </StatusBadge>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{translate(locale, "tasks.laneEmpty")}</p>
+                )}
               </section>
-            ) : null,
-          )}
+            );
+          })}
         </div>
       ) : (
         <EmptyState

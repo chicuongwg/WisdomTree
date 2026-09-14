@@ -299,7 +299,7 @@ export async function run() {
   assert.match(workspaceSource, /document\.querySelector\("dialog\[open\]"\)/);
 
   // 6. Semantic reading width token consistency
-  const notesCss = readFileSync("src/app/components/ui-next/notes.module.css", "utf8");
+  const notesCss = readFileSync("src/app/components/ui-next/notes.css", "utf8");
   assert.match(
     notesCss,
     /\.ui-next-note-reader(?:\)|\s)*\{[^}]*max-inline-size:\s*var\(--ui-width-reading\)/,

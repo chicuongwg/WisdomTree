@@ -1,12 +1,8 @@
-.root {
-  display: contents;
-}
-
-.root :global(.ui-next-app-root) {
+.ui-next-app-root {
   min-block-size: 100dvh;
 }
 
-.root :global(.ui-next-app-shell) {
+.ui-next-app-shell {
   min-block-size: 100dvh;
   display: grid;
   grid-template-columns: var(--ui-sidebar-expanded) minmax(0, 1fr);
@@ -14,7 +10,7 @@
   background: var(--ui-color-background);
 }
 
-.root :global(.ui-next-app-sidebar) {
+.ui-next-app-sidebar {
   grid-row: 2;
   position: sticky;
   inset-block-start: 3.75rem;
@@ -29,13 +25,13 @@
   background: var(--ui-color-surface-sunken);
 }
 
-.root :global(.ui-next-app-sidebar__toggle) {
+.ui-next-app-sidebar__toggle {
   display: none;
   margin-block-start: auto;
   align-self: flex-end;
 }
 
-.root :global(.ui-next-app-sidebar__brand) {
+.ui-next-app-sidebar__brand {
   min-block-size: 2.75rem;
   display: flex;
   align-items: center;
@@ -45,7 +41,7 @@
   font-weight: 750;
 }
 
-.root :global(.ui-next-app-sidebar__mark) {
+.ui-next-app-sidebar__mark {
   inline-size: 2rem;
   block-size: 2rem;
   display: inline-grid;
@@ -56,12 +52,12 @@
   font-size: var(--ui-font-size-xs);
 }
 
-.root :global(.ui-next-global-nav) {
+.ui-next-global-nav {
   display: grid;
   gap: var(--ui-space-1);
 }
 
-.root :global(.ui-next-global-nav__link) {
+.ui-next-global-nav__link {
   position: relative;
   min-block-size: 2.75rem;
   display: flex;
@@ -75,45 +71,45 @@
   font-weight: 620;
 }
 
-.root :global(.ui-next-global-nav__link:hover) {
+.ui-next-global-nav__link:hover {
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
 }
 
-.root :global(.ui-next-global-nav__link[aria-current="page"]) {
+.ui-next-global-nav__link[aria-current="page"] {
   border-color: var(--ui-color-border);
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
   box-shadow: inset 0.25rem 0 var(--ui-color-accent);
 }
 
-.root :global(.ui-next-global-nav__icon) {
+.ui-next-global-nav__icon {
   inline-size: 1.25rem;
   block-size: 1.25rem;
   flex: 0 0 auto;
 }
 
-.root :global(.ui-next-global-nav__icon svg) {
+.ui-next-global-nav__icon svg {
   display: block;
   inline-size: 100%;
   block-size: 100%;
 }
 
 @media (min-width: 64.0625rem) {
-  .root :global(.ui-next-app-sidebar__toggle) {
+  .ui-next-app-sidebar__toggle {
     display: inline-flex;
   }
 
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-app-shell) {
+  :root[data-sidebar="collapsed"] .ui-next-app-shell {
     grid-template-columns: var(--ui-sidebar-collapsed) minmax(0, 1fr);
   }
 
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-app-sidebar) {
+  :root[data-sidebar="collapsed"] .ui-next-app-sidebar {
     padding-inline: var(--ui-space-2);
   }
 
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-app-sidebar__name),
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-app-sidebar .ui-next-global-nav__label) {
+  :root[data-sidebar="collapsed"] .ui-next-app-sidebar__name,
+  :root[data-sidebar="collapsed"] .ui-next-app-sidebar .ui-next-global-nav__label {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -122,13 +118,13 @@
     white-space: nowrap;
   }
 
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-global-nav__link) {
+  :root[data-sidebar="collapsed"] .ui-next-global-nav__link {
     justify-content: center;
     padding-inline: var(--ui-space-2);
   }
 
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-global-nav__link:hover::after),
-  .root :global(:root[data-sidebar="collapsed"] .ui-next-global-nav__link:focus-visible::after) {
+  :root[data-sidebar="collapsed"] .ui-next-global-nav__link:hover::after,
+  :root[data-sidebar="collapsed"] .ui-next-global-nav__link:focus-visible::after {
     content: attr(data-label);
     position: absolute;
     inset-inline-start: calc(100% + var(--ui-space-2));
@@ -143,7 +139,7 @@
   }
 }
 
-.root :global(.ui-next-app-header) {
+.ui-next-app-header {
   grid-column: 1 / -1;
   position: sticky;
   inset-block-start: 0;
@@ -158,14 +154,14 @@
   background: var(--ui-color-surface);
 }
 
-.root :global(.ui-next-app-header__context),
-.root :global(.ui-next-app-header__utilities) {
+.ui-next-app-header__context,
+.ui-next-app-header__utilities {
   display: flex;
   align-items: center;
   gap: var(--ui-space-2);
 }
 
-.root :global(.ui-next-notification-bell) {
+.ui-next-notification-bell {
   position: relative;
   inline-size: 2.5rem;
   block-size: 2.5rem;
@@ -176,17 +172,17 @@
   color: var(--ui-color-text-secondary);
 }
 
-.root :global(.ui-next-notification-bell:hover) {
+.ui-next-notification-bell:hover {
   background: var(--ui-color-surface-sunken);
   color: var(--ui-color-text);
 }
 
-.root :global(.ui-next-notification-bell:focus-visible) {
+.ui-next-notification-bell:focus-visible {
   outline: 2px solid var(--ui-color-focus);
   outline-offset: 2px;
 }
 
-.root :global(.ui-next-notification-bell svg) {
+.ui-next-notification-bell svg {
   inline-size: 1.25rem;
   block-size: 1.25rem;
   fill: none;
@@ -194,7 +190,7 @@
   stroke-width: 1.8;
 }
 
-.root :global(.ui-next-notification-bell span) {
+.ui-next-notification-bell span {
   position: absolute;
   inset-block-start: -0.35rem;
   inset-inline-end: -0.4rem;
@@ -209,33 +205,33 @@
   text-align: center;
 }
 
-.root :global(.ui-next-app-header__utilities) {
+.ui-next-app-header__utilities {
   justify-content: flex-end;
 }
 
-.root :global(.ui-next-create-trigger) {
+.ui-next-create-trigger {
   flex: 0 0 auto;
   white-space: nowrap;
 }
 
-.root :global(.ui-next-app-header__identity) {
+.ui-next-app-header__identity {
   color: var(--ui-color-text-secondary);
   font-size: var(--ui-font-size-sm);
   font-weight: 700;
 }
 
-.root :global(.ui-next-mobile-menu-trigger) {
+.ui-next-mobile-menu-trigger {
   display: none;
 }
 
-.root :global(.ui-next-quick-search-trigger) {
+.ui-next-quick-search-trigger {
   inline-size: 100%;
   justify-content: space-between;
   color: var(--ui-color-text-secondary);
   font-weight: 550;
 }
 
-.root :global(.ui-next-quick-search-trigger > span) {
+.ui-next-quick-search-trigger > span {
   inline-size: 100%;
   display: flex;
   align-items: center;
@@ -243,7 +239,7 @@
   gap: var(--ui-space-3);
 }
 
-.root :global(.ui-next kbd) {
+.ui-next kbd {
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-sm);
   padding: 0.1rem var(--ui-space-2);
@@ -253,17 +249,17 @@
   font-size: var(--ui-font-size-xs);
 }
 
-.root :global(.ui-next-app-main) {
+.ui-next-app-main {
   min-inline-size: 0;
   grid-column: 2;
   padding-block: var(--ui-space-6) var(--ui-space-12);
 }
 
-.root :global(.ui-next-account-menu) {
+.ui-next-account-menu {
   position: relative;
 }
 
-.root :global(.ui-next-account-menu__trigger) {
+.ui-next-account-menu__trigger {
   min-block-size: 2.5rem;
   display: flex;
   align-items: center;
@@ -274,15 +270,15 @@
   list-style: none;
 }
 
-.root :global(.ui-next-account-menu__trigger::-webkit-details-marker) {
+.ui-next-account-menu__trigger::-webkit-details-marker {
   display: none;
 }
 
-.root :global(.ui-next-account-menu__trigger:hover) {
+.ui-next-account-menu__trigger:hover {
   background: var(--ui-color-surface-sunken);
 }
 
-.root :global(.ui-next-account-menu__avatar) {
+.ui-next-account-menu__avatar {
   inline-size: 2rem;
   block-size: 2rem;
   display: inline-grid;
@@ -293,14 +289,14 @@
   font-weight: 750;
 }
 
-.root :global(.ui-next-account-menu__name) {
+.ui-next-account-menu__name {
   max-inline-size: 11rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.root :global(.ui-next-account-menu__panel) {
+.ui-next-account-menu__panel {
   max-block-size: calc(100dvh - 5rem);
   overflow-y: auto;
   position: absolute;
@@ -317,36 +313,36 @@
   box-shadow: var(--ui-shadow-raised);
 }
 
-.root :global(.ui-next-account-menu__preference) {
+.ui-next-account-menu__preference {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
   gap: var(--ui-space-3);
 }
 
-.root :global(.ui-next-account-menu__preference > span:first-child) {
+.ui-next-account-menu__preference > span:first-child {
   min-inline-size: 5.5rem;
 }
-.root :global(.ui-next-account-menu__preference .ui-next-field__error) {
+.ui-next-account-menu__preference .ui-next-field__error {
   grid-column: 1 / -1;
 }
-.root :global(.ui-next-account-menu__identity),
-.root :global(.ui-next-account-menu__footer) {
+.ui-next-account-menu__identity,
+.ui-next-account-menu__footer {
   border-block-end: 1px solid var(--ui-color-border);
   padding-block-end: var(--ui-space-3);
 }
-.root :global(.ui-next-account-menu__footer) {
+.ui-next-account-menu__footer {
   border-block-end: 0;
   border-block-start: 1px solid var(--ui-color-border);
   padding-block-end: 0;
   padding-block-start: var(--ui-space-2);
 }
-.root :global(.ui-next-account-menu__footer button) {
+.ui-next-account-menu__footer button {
   inline-size: 100%;
   justify-content: flex-start;
 }
 
-.root :global(.ui-next-account-menu__link) {
+.ui-next-account-menu__link {
   display: flex;
   align-items: center;
   min-block-size: 2.75rem;
@@ -358,42 +354,42 @@
   text-decoration: none;
 }
 
-.root :global(.ui-next-account-menu__link:hover),
-.root :global(.ui-next-account-menu__link:active) {
+.ui-next-account-menu__link:hover,
+.ui-next-account-menu__link:active {
   background: var(--ui-color-surface-sunken);
   text-decoration: underline;
 }
 
-.root :global(.ui-next-quick-search) {
+.ui-next-quick-search {
   display: grid;
   gap: var(--ui-space-4);
 }
-.root :global(.ui-next-quick-search__footer) {
+.ui-next-quick-search__footer {
   border-block-start: 1px solid var(--ui-color-border);
   border-radius: 0;
   padding-block-start: var(--ui-space-4);
   justify-content: flex-start;
 }
-.root :global(.ui-next-quick-search__result) {
+.ui-next-quick-search__result {
   min-block-size: 2.75rem;
 }
 
-.root :global(.ui-next-quick-search__status) {
+.ui-next-quick-search__status {
   min-block-size: 1.25rem;
   color: var(--ui-color-text-secondary);
   font-size: var(--ui-font-size-sm);
 }
 
-.root :global(.ui-next-quick-search__results) {
+.ui-next-quick-search__results {
   max-block-size: min(24rem, 50dvh);
   overflow-y: auto;
   display: grid;
   gap: var(--ui-space-1);
 }
 
-.root :global(.ui-next-quick-search__result),
-.root :global(.ui-next-create-dialog__action),
-.root :global(.ui-next-create-dialog__project) {
+.ui-next-quick-search__result,
+.ui-next-create-dialog__action,
+.ui-next-create-dialog__project {
   inline-size: 100%;
   display: flex;
   align-items: center;
@@ -409,46 +405,46 @@
   cursor: pointer;
 }
 
-.root :global(.ui-next-quick-search__result:hover),
-.root :global(.ui-next-quick-search__result[aria-selected="true"]),
-.root :global(.ui-next-create-dialog__project:hover),
-.root :global(.ui-next-create-dialog__action:hover),
-.root :global(.ui-next-create-dialog__project:focus-visible) {
+.ui-next-quick-search__result:hover,
+.ui-next-quick-search__result[aria-selected="true"],
+.ui-next-create-dialog__project:hover,
+.ui-next-create-dialog__action:hover,
+.ui-next-create-dialog__project:focus-visible {
   border-color: var(--ui-color-border);
   background: var(--ui-color-surface-sunken);
 }
 
-.root :global(.ui-next-quick-search__result > span:first-child),
-.root :global(.ui-next-create-dialog__action > span:first-child),
-.root :global(.ui-next-create-dialog__project > span) {
+.ui-next-quick-search__result > span:first-child,
+.ui-next-create-dialog__action > span:first-child,
+.ui-next-create-dialog__project > span {
   min-inline-size: 0;
   display: grid;
   gap: var(--ui-space-1);
 }
 
-.root :global(.ui-next-quick-search__result small),
-.root :global(.ui-next-create-dialog__action small),
-.root :global(.ui-next-create-dialog__project small) {
+.ui-next-quick-search__result small,
+.ui-next-create-dialog__action small,
+.ui-next-create-dialog__project small {
   color: var(--ui-color-text-muted);
   font-size: var(--ui-font-size-sm);
 }
 
-.root :global(.ui-next-quick-search__empty),
-.root :global(.ui-next-muted) {
+.ui-next-quick-search__empty,
+.ui-next-muted {
   color: var(--ui-color-text-muted);
 }
 
-.root :global(.ui-next-create-dialog) {
+.ui-next-create-dialog {
   display: grid;
   gap: var(--ui-space-4);
 }
 
-.root :global(.ui-next-create-dialog h3),
-.root :global(.ui-next-create-dialog p) {
+.ui-next-create-dialog h3,
+.ui-next-create-dialog p {
   margin: 0;
 }
 
-.root :global(.ui-next-create-dialog__context) {
+.ui-next-create-dialog__context {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -457,109 +453,109 @@
   background: var(--ui-color-surface-sunken);
   border-radius: var(--ui-radius-sm);
 }
-.root :global(.ui-next-create-dialog__context > div) {
+.ui-next-create-dialog__context > div {
   min-inline-size: 0;
   display: grid;
   gap: var(--ui-space-1);
   overflow-wrap: anywhere;
 }
-.root :global(.ui-next-create-dialog__context p) {
+.ui-next-create-dialog__context p {
   font-size: var(--ui-font-size-xs);
 }
-.root :global(.ui-next-create-dialog__context > button) {
+.ui-next-create-dialog__context > button {
   flex-shrink: 0;
   white-space: nowrap;
 }
-.root :global(.ui-next-create-dialog__context h3) {
+.ui-next-create-dialog__context h3 {
   font-size: var(--ui-font-size-md);
 }
-.root :global(.ui-next-create-dialog__back) {
+.ui-next-create-dialog__back {
   align-self: flex-start;
   justify-self: start;
 }
 
-.root :global(.ui-next-create-dialog__projects),
-.root :global(.ui-next-create-dialog__actions) {
+.ui-next-create-dialog__projects,
+.ui-next-create-dialog__actions {
   display: grid;
   gap: var(--ui-space-2);
 }
 
-.root :global(.ui-next-create-dialog__actions) {
+.ui-next-create-dialog__actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.root :global(.ui-next-create-dialog__action) {
+.ui-next-create-dialog__action {
   min-block-size: 4rem;
   border-color: var(--ui-color-border);
   background: var(--ui-color-surface);
 }
 
-.root :global(.ui-next-create-dialog__action strong) {
+.ui-next-create-dialog__action strong {
   font-size: var(--ui-font-size-md);
   font-weight: 650;
 }
 
-.root :global(.ui-next-create-dialog__action small) {
+.ui-next-create-dialog__action small {
   line-height: 1.45;
 }
 
-.root :global(.ui-next-create-dialog__action:hover) {
+.ui-next-create-dialog__action:hover {
   border-color: var(--ui-color-border-strong);
 }
 
-.root :global(.ui-next-create-dialog__action:active) {
+.ui-next-create-dialog__action:active {
   background: var(--ui-color-surface-sunken);
   border-color: var(--ui-color-accent);
 }
 
-.root :global(.ui-next-create-dialog__project) {
+.ui-next-create-dialog__project {
   border-color: var(--ui-color-border);
   background: var(--ui-color-surface);
 }
 
-.root :global(.ui-next-quick-search__result) {
+.ui-next-quick-search__result {
   border-block-end-color: var(--ui-color-border);
   border-radius: 0;
 }
 
-.root :global(.ui-next-quick-search__result:active),
-.root :global(.ui-next-create-dialog__project:active) {
+.ui-next-quick-search__result:active,
+.ui-next-create-dialog__project:active {
   background: var(--ui-color-surface-sunken);
   border-color: var(--ui-color-accent);
 }
 
-.root :global(.ui-next-shell-placeholder) {
+.ui-next-shell-placeholder {
   min-block-size: 18rem;
   display: grid;
   place-items: center;
 }
 
-.root :global(.ui-next-shell-placeholder > div) {
+.ui-next-shell-placeholder > div {
   max-inline-size: 34rem;
   text-align: center;
 }
 
-.root :global(.ui-next-shell-placeholder h2) {
+.ui-next-shell-placeholder h2 {
   margin: 0;
   font-size: var(--ui-font-size-lg);
 }
 
-.root :global(.ui-next-shell-placeholder p) {
+.ui-next-shell-placeholder p {
   margin: var(--ui-space-2) 0 0;
   color: var(--ui-color-text-secondary);
 }
 
 @media (max-width: 64rem) {
-  .root :global(.ui-next-app-shell) {
+  .ui-next-app-shell {
     grid-template-columns: var(--ui-sidebar-collapsed) minmax(0, 1fr);
   }
 
-  .root :global(.ui-next-app-sidebar) {
+  .ui-next-app-sidebar {
     padding-inline: var(--ui-space-2);
   }
 
-  .root :global(.ui-next-app-sidebar__name),
-  .root :global(.ui-next-app-sidebar .ui-next-global-nav__label) {
+  .ui-next-app-sidebar__name,
+  .ui-next-app-sidebar .ui-next-global-nav__label {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -568,13 +564,13 @@
     white-space: nowrap;
   }
 
-  .root :global(.ui-next-app-sidebar .ui-next-global-nav__link) {
+  .ui-next-app-sidebar .ui-next-global-nav__link {
     justify-content: center;
     padding-inline: var(--ui-space-2);
   }
 
-  .root :global(.ui-next-app-sidebar .ui-next-global-nav__link:hover::after),
-  .root :global(.ui-next-app-sidebar .ui-next-global-nav__link:focus-visible::after) {
+  .ui-next-app-sidebar .ui-next-global-nav__link:hover::after,
+  .ui-next-app-sidebar .ui-next-global-nav__link:focus-visible::after {
     content: attr(data-label);
     position: absolute;
     inset-inline-start: calc(100% + var(--ui-space-2));
@@ -588,21 +584,21 @@
     box-shadow: var(--ui-shadow-raised);
   }
 
-  .root :global(.ui-next-app-header) {
+  .ui-next-app-header {
     grid-template-columns: auto minmax(12rem, 1fr) auto;
   }
 }
 
 @media (max-width: 44rem) {
-  .root :global(.ui-next-app-shell) {
+  .ui-next-app-shell {
     display: block;
   }
 
-  .root :global(.ui-next-app-sidebar) {
+  .ui-next-app-sidebar {
     display: none;
   }
 
-  .root :global(.ui-next-app-header) {
+  .ui-next-app-header {
     position: sticky;
     inset-block-start: 0;
     z-index: 10;
@@ -610,60 +606,60 @@
     padding-inline: var(--ui-space-3);
   }
 
-  .root :global(.ui-next-mobile-menu-trigger) {
+  .ui-next-mobile-menu-trigger {
     display: inline-flex;
   }
 
-  .root :global(.ui-next-app-header__identity),
-  .root :global(.ui-next-quick-search-trigger kbd) {
+  .ui-next-app-header__identity,
+  .ui-next-quick-search-trigger kbd {
     display: none;
   }
 
-  .root :global(.ui-next-app-header__utilities) {
+  .ui-next-app-header__utilities {
     min-inline-size: 0;
   }
 
-  .root :global(.ui-next-app-header__utilities .ui-next-button) {
+  .ui-next-app-header__utilities .ui-next-button {
     inline-size: auto;
   }
 
-  .root :global(.ui-next-quick-search-trigger) {
+  .ui-next-quick-search-trigger {
     min-inline-size: 0;
   }
 
-  .root :global(.ui-next-quick-search-trigger > span > span) {
+  .ui-next-quick-search-trigger > span > span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .root :global(.ui-next-app-main) {
+  .ui-next-app-main {
     padding-block-start: var(--ui-space-6);
   }
 }
 
 @media (max-width: 44rem) {
-  .root :global(.ui-next-create-dialog__actions) {
+  .ui-next-create-dialog__actions {
     grid-template-columns: 1fr;
   }
 }
 @media (max-width: 30rem) {
-  .root :global(.ui-next-account-menu__name),
-  .root :global(.ui-next-create-trigger__label),
-  .root :global(.ui-next-quick-search-trigger > span),
-  .root :global(.ui-next-quick-search-trigger kbd) {
+  .ui-next-account-menu__name,
+  .ui-next-create-trigger__label,
+  .ui-next-quick-search-trigger > span,
+  .ui-next-quick-search-trigger kbd {
     display: none;
   }
-  .root :global(.ui-next-quick-search-trigger) {
+  .ui-next-quick-search-trigger {
     inline-size: 2.5rem;
     padding-inline: 0;
     justify-content: center;
   }
-  .root :global(.ui-next-quick-search-trigger::before) {
+  .ui-next-quick-search-trigger::before {
     content: "⌕";
     font-size: 1.5rem;
   }
-  .root :global(.ui-next-create-trigger::before) {
+  .ui-next-create-trigger::before {
     content: "+";
     font-size: 1.25rem;
   }

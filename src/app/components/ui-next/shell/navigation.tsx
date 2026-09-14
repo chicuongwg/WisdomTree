@@ -128,7 +128,10 @@ export function GlobalNavigation({
       ]
     : destinations;
   return (
-    <nav className="ui-next-global-nav" aria-label={translate(locale, "shell.primaryNavigation")}>
+    <nav
+      className="ui-next-global-nav grid gap-1"
+      aria-label={translate(locale, "shell.primaryNavigation")}
+    >
       {availableDestinations.map((destination) => {
         const label = translate(locale, destination.labelKey);
         const current = isCurrent(pathname, destination.href);
@@ -136,13 +139,17 @@ export function GlobalNavigation({
           <Link
             key={destination.href}
             href={destination.href}
-            className="ui-next-global-nav__link"
+            className={`ui-next-global-nav__link relative min-h-[2.75rem] flex items-center gap-3 border rounded px-3 py-2 text-sm font-semibold transition-colors ${
+              current
+                ? "border-ui-border bg-ui-surface text-ui-text shadow-[inset_0.25rem_0_var(--ui-color-accent)]"
+                : "border-transparent text-ui-text-secondary hover:bg-ui-surface hover:text-ui-text"
+            }`}
             aria-current={current ? "page" : undefined}
             data-label={label}
             title={label}
             onClick={onNavigate}
           >
-            <span className="ui-next-global-nav__icon">
+            <span className="ui-next-global-nav__icon size-5 shrink-0">
               <NavigationIcon icon={destination.icon} />
             </span>
             <span className="ui-next-global-nav__label">{label}</span>

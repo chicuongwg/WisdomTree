@@ -39,12 +39,12 @@ export function AppSidebar({
   }
 
   return (
-    <aside className="ui-next-app-sidebar">
+    <aside className="ui-next-app-sidebar row-start-2 sticky top-[3.75rem] h-[calc(100dvh-3.75rem)] overflow-y-auto self-start flex flex-col gap-6 border-r border-ui-border px-3 py-4 bg-ui-surface-sunken max-md:hidden">
       <GlobalNavigation locale={locale} canAccessAdministration={canAccessAdministration} />
       <IconButton
         type="button"
         variant="ghost"
-        className="ui-next-app-sidebar__toggle"
+        className="ui-next-app-sidebar__toggle hidden lg:inline-flex mt-auto self-end"
         aria-label={label}
         title={label}
         onClick={toggle}

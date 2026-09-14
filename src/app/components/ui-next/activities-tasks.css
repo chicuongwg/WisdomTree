@@ -1,61 +1,57 @@
-.root {
-  display: contents;
-}
-
-.root :global(.ui-next-work-page),
-.root :global(.ui-next-activity-detail) {
+.ui-next-work-page,
+.ui-next-activity-detail {
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-project-module-frame :is(.ui-next-work-page, .ui-next-activity-detail)) {
+.ui-next-project-module-frame :is(.ui-next-work-page, .ui-next-activity-detail) {
   max-inline-size: none;
   margin: 0;
   padding: 0;
 }
 
-.root :global(.ui-next-work-page__header),
-.root :global(.ui-next-activity-context > header),
-.root :global(.ui-next-work-list__link),
-.root :global(.ui-next-work-list__meta),
-.root :global(.ui-next-task-list__row),
-.root :global(.ui-next-task-list__row > span),
-.root :global(.ui-next-work-form__actions),
-.root :global(.ui-next-activity-context li) {
+.ui-next-work-page__header,
+.ui-next-activity-context > header,
+.ui-next-work-list__link,
+.ui-next-work-list__meta,
+.ui-next-task-list__row,
+.ui-next-task-list__row > span,
+.ui-next-work-form__actions,
+.ui-next-activity-context li {
   display: flex;
   align-items: center;
 }
 
-.root :global(.ui-next-work-page__header) {
+.ui-next-work-page__header {
   justify-content: space-between;
   gap: var(--ui-space-4);
   margin-block-end: var(--ui-space-6);
 }
-.root :global(.ui-next-work-page > .ui-next-page-header) {
+.ui-next-work-page > .ui-next-page-header {
   margin-block-end: var(--ui-space-6);
 }
-.root :global(.ui-next-work-page :where(h2)),
-.root :global(.ui-next-activity-detail :where(h2)) {
+.ui-next-work-page :where(h2),
+.ui-next-activity-detail :where(h2) {
   margin: var(--ui-space-2) 0;
   font-size: var(--ui-font-size-xl);
 }
-.root :global(.ui-next-work-page p),
-.root :global(.ui-next-activity-detail p) {
+.ui-next-work-page p,
+.ui-next-activity-detail p {
   color: var(--ui-color-text-secondary);
 }
-.root :global(.ui-next-work-list),
-.root :global(.ui-next-task-list),
-.root :global(.ui-next-activity-context ul) {
+.ui-next-work-list,
+.ui-next-task-list,
+.ui-next-activity-context ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.root :global(.ui-next-work-list),
-.root :global(.ui-next-task-list) {
+.ui-next-work-list,
+.ui-next-task-list {
   display: grid;
   gap: var(--ui-space-3);
 }
-.root :global(.ui-next-work-list__link),
-.root :global(.ui-next-task-list__row) {
+.ui-next-work-list__link,
+.ui-next-task-list__row {
   inline-size: 100%;
   min-block-size: 2.5rem;
   justify-content: space-between;
@@ -69,28 +65,28 @@
   text-decoration: none;
   font: inherit;
 }
-.root :global(.ui-next-work-list__link:hover),
-.root :global(.ui-next-task-list__row:hover) {
+.ui-next-work-list__link:hover,
+.ui-next-task-list__row:hover {
   background: var(--ui-color-surface-sunken);
 }
-.root :global(.ui-next-task-list__row--readonly:hover) {
+.ui-next-task-list__row--readonly:hover {
   background: var(--ui-color-surface);
 }
-.root :global(.ui-next-work-list h3),
-.root :global(.ui-next-task-list strong) {
+.ui-next-work-list h3,
+.ui-next-task-list strong {
   margin: 0;
 }
-.root :global(.ui-next-task-summary) {
+.ui-next-task-summary {
   display: grid;
   min-inline-size: 0;
   gap: var(--ui-space-2);
 }
-.root :global(.ui-next-task-summary__meta) {
+.ui-next-task-summary__meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ui-space-2) var(--ui-space-4);
 }
-.root :global(.ui-next-task-summary__meta > span) {
+.ui-next-task-summary__meta > span {
   display: grid;
   min-inline-size: 0;
   gap: 0.1rem;
@@ -98,37 +94,37 @@
   font-size: var(--ui-font-size-sm);
   overflow-wrap: anywhere;
 }
-.root :global(.ui-next-task-summary__meta small) {
+.ui-next-task-summary__meta small {
   color: var(--ui-color-text-muted);
   font-size: var(--ui-font-size-xs);
   font-weight: 650;
 }
-.root :global(.ui-next-work-list p),
-.root :global(.ui-next-task-list small) {
+.ui-next-work-list p,
+.ui-next-task-list small {
   display: block;
   margin: var(--ui-space-1) 0 0;
   color: var(--ui-color-text-muted);
 }
-.root :global(.ui-next-work-list__meta) {
+.ui-next-work-list__meta {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--ui-space-2);
   color: var(--ui-color-text-muted);
   font-size: var(--ui-font-size-sm);
 }
-.root :global(.ui-next-work-form) {
+.ui-next-work-form {
   display: grid;
   gap: var(--ui-space-4);
 }
-.root :global(.ui-next-work-form label) {
+.ui-next-work-form label {
   display: grid;
   gap: var(--ui-space-2);
   color: var(--ui-color-text-secondary);
   font-weight: 650;
 }
-.root :global(.ui-next-work-form input),
-.root :global(.ui-next-work-form textarea),
-.root :global(.ui-next-work-form select) {
+.ui-next-work-form input,
+.ui-next-work-form textarea,
+.ui-next-work-form select {
   inline-size: 100%;
   border: 1px solid var(--ui-color-border-strong);
   border-radius: var(--ui-radius-sm);
@@ -137,78 +133,78 @@
   padding: var(--ui-space-2);
   font: inherit;
 }
-.root :global(.ui-next-work-form__actions) {
+.ui-next-work-form__actions {
   justify-content: flex-end;
   gap: var(--ui-space-2);
 }
-.root :global(.ui-next-work-form__error) {
+.ui-next-work-form__error {
   color: var(--ui-color-danger) !important;
   margin: 0;
 }
-.root :global(.ui-next-back-link) {
+.ui-next-back-link {
   color: var(--ui-color-text-secondary);
 }
-.root :global(.ui-next-activity-detail__grid) {
+.ui-next-activity-detail__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ui-space-4);
 }
-.root :global(.ui-next-activity-context) {
+.ui-next-activity-context {
   min-inline-size: 0;
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-md);
   background: var(--ui-color-surface);
   padding: var(--ui-space-4);
 }
-.root :global(.ui-next-activity-context > header) {
+.ui-next-activity-context > header {
   justify-content: space-between;
   gap: var(--ui-space-3);
 }
-.root :global(.ui-next-activity-context h3) {
+.ui-next-activity-context h3 {
   margin: 0;
   font-size: var(--ui-font-size-lg);
 }
-.root :global(.ui-next-activity-context ul) {
+.ui-next-activity-context ul {
   display: grid;
   gap: var(--ui-space-2);
   margin-block-start: var(--ui-space-3);
 }
-.root :global(.ui-next-activity-context li) {
+.ui-next-activity-context li {
   justify-content: space-between;
   gap: var(--ui-space-3);
   padding-block: var(--ui-space-2);
   border-block-start: 1px solid var(--ui-color-border);
 }
-.root :global(.ui-next-activity-context li:first-child) {
+.ui-next-activity-context li:first-child {
   border-block-start: 0;
 }
-.root :global(.ui-next-activity-context li span) {
+.ui-next-activity-context li span {
   display: grid;
   gap: var(--ui-space-1);
 }
-.root :global(.ui-next-activity-context li small) {
+.ui-next-activity-context li small {
   color: var(--ui-color-text-muted);
 }
-.root :global(.ui-next-activity-detail > .ui-next-collaboration) {
+.ui-next-activity-detail > .ui-next-collaboration {
   max-inline-size: min(48rem, 100%);
   margin-inline: 0;
 }
-.root :global(.ui-next-my-work) {
+.ui-next-my-work {
   display: grid;
   gap: var(--ui-space-8);
 }
-.root :global(.ui-next-my-work h3) {
+.ui-next-my-work h3 {
   margin: 0 0 var(--ui-space-3);
   font-size: var(--ui-font-size-lg);
 }
 
-.root :global(.ui-next-task-views) {
+.ui-next-task-views {
   display: flex;
   gap: var(--ui-space-2);
   margin-block-end: var(--ui-space-4);
 }
 
-.root :global(.ui-next-task-views a) {
+.ui-next-task-views a {
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-sm);
   color: var(--ui-color-text-secondary);
@@ -216,14 +212,14 @@
   text-decoration: none;
 }
 
-.root :global(.ui-next-task-views a[aria-current="page"]) {
+.ui-next-task-views a[aria-current="page"] {
   border-color: var(--ui-color-accent);
   background: var(--ui-color-success-bg);
   color: var(--ui-color-accent);
   font-weight: 650;
 }
 
-.root :global(.ui-next-kanban) {
+.ui-next-kanban {
   display: grid;
   grid-template-columns: repeat(3, minmax(15rem, 1fr));
   gap: var(--ui-space-4);
@@ -231,7 +227,22 @@
   padding-block-end: var(--ui-space-2);
 }
 
-.root :global(.ui-next-kanban__lane) {
+.ui-next-my-work-kanban {
+  grid-template-columns: repeat(4, minmax(15rem, 1fr));
+}
+
+.ui-next-my-work-kanban__context {
+  display: grid;
+  gap: var(--ui-space-1);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-font-size-sm);
+}
+
+.ui-next-my-work-kanban__context span:last-child {
+  color: var(--ui-color-text-muted);
+}
+
+.ui-next-kanban__lane {
   min-inline-size: 15rem;
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-md);
@@ -239,23 +250,23 @@
   padding: var(--ui-space-3);
 }
 
-.root :global(.ui-next-kanban__lane > header),
-.root :global(.ui-next-kanban__actions) {
+.ui-next-kanban__lane > header,
+.ui-next-kanban__actions {
   display: flex;
   align-items: center;
   gap: var(--ui-space-2);
 }
 
-.root :global(.ui-next-kanban__lane > header) {
+.ui-next-kanban__lane > header {
   justify-content: space-between;
 }
 
-.root :global(.ui-next-kanban__lane h3),
-.root :global(.ui-next-kanban__lane p) {
+.ui-next-kanban__lane :is(h2, h3),
+.ui-next-kanban__lane p {
   margin: 0;
 }
 
-.root :global(.ui-next-kanban__lane > header > span) {
+.ui-next-kanban__lane > header > span {
   border-radius: 999px;
   background: var(--ui-color-neutral-bg);
   color: var(--ui-color-text-secondary);
@@ -264,7 +275,7 @@
   padding: 0 var(--ui-space-2);
 }
 
-.root :global(.ui-next-kanban__lane ul) {
+.ui-next-kanban__lane ul {
   display: grid;
   gap: var(--ui-space-3);
   margin: var(--ui-space-3) 0 0;
@@ -272,7 +283,7 @@
   list-style: none;
 }
 
-.root :global(.ui-next-kanban__card) {
+.ui-next-kanban__card {
   display: grid;
   gap: var(--ui-space-3);
   border: 1px solid var(--ui-color-border);
@@ -281,54 +292,54 @@
   padding: var(--ui-space-3);
 }
 
-.root :global(.ui-next-kanban__card > a) {
+.ui-next-kanban__card > a {
   color: var(--ui-color-text);
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
-.root :global(.ui-next-kanban__card > :is(span, .ui-next-status-badge)) {
+.ui-next-kanban__card > :is(span, .ui-next-status-badge) {
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-kanban__actions) {
+.ui-next-kanban__actions {
   flex-wrap: wrap;
 }
 
 @media (max-width: 46rem) {
-  .root :global(.ui-next-work-page__header),
-  .root :global(.ui-next-work-list__link),
-  .root :global(.ui-next-task-list__row) {
+  .ui-next-work-page__header,
+  .ui-next-work-list__link,
+  .ui-next-task-list__row {
     align-items: flex-start;
     flex-direction: column;
   }
-  .root :global(.ui-next-work-list__meta) {
+  .ui-next-work-list__meta {
     justify-content: flex-start;
   }
-  .root :global(.ui-next-task-summary__meta) {
+  .ui-next-task-summary__meta {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .root :global(.ui-next-activity-detail__grid) {
+  .ui-next-activity-detail__grid {
     grid-template-columns: 1fr;
   }
 }
 
-.root :global(.ui-next-work-list__link),
-.root :global(.ui-next-task-list__row) {
+.ui-next-work-list__link,
+.ui-next-task-list__row {
   border-radius: 0;
   border-width: 0 0 1px;
 }
-.root :global(.ui-next-work-list),
-.root :global(.ui-next-task-list) {
+.ui-next-work-list,
+.ui-next-task-list {
   gap: 0;
 }
-.root :global(.ui-next-task-summary__meta) {
+.ui-next-task-summary__meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 @media (max-width: 44rem) {
-  .root :global(.ui-next-task-summary__meta) {
+  .ui-next-task-summary__meta {
     grid-template-columns: minmax(0, 1fr);
   }
 }

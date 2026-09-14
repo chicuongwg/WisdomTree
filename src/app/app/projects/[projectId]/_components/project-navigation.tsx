@@ -58,10 +58,13 @@ export function ProjectNavigation({
 
   return (
     <nav
-      className="ui-next-project-navigation"
+      className="ui-next-project-navigation min-w-0 sticky top-[3.75rem] z-[5] border-y border-ui-border bg-ui-bg"
       aria-label={translate(locale, "workspace.navigation")}
     >
-      <div ref={linksRef} className="ui-next-project-navigation__links">
+      <div
+        ref={linksRef}
+        className="ui-next-project-navigation__links flex overflow-x-auto whitespace-nowrap min-w-0 scrollbar-thin"
+      >
         {navigationItems.map((item) => {
           const href = item.segment ? `${base}/${item.segment}` : base;
           const active = current === item.segment;
@@ -70,6 +73,11 @@ export function ProjectNavigation({
               key={item.segment || "overview"}
               href={href}
               aria-current={active ? "page" : undefined}
+              className={`shrink-0 border-b-[3px] px-4 py-3 font-semibold no-underline transition-colors ${
+                active
+                  ? "border-ui-accent bg-ui-surface text-ui-text"
+                  : "border-transparent text-ui-text-secondary hover:bg-ui-surface-sunken hover:text-ui-text"
+              }`}
             >
               {translate(locale, item.labelKey)}
             </Link>

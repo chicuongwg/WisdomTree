@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const appRoot = path.resolve("src/app");
+const workspaceLayout = path.join(appRoot, "app", "layout.tsx");
 const failures = [];
 
 function walk(directory) {
@@ -22,14 +23,22 @@ for (const file of sourceFiles) {
   const source = readFileSync(file, "utf8");
   for (const match of source.matchAll(/import\s+(?:[^"']+?\s+from\s+)?["']([^"']+\.css)["']/g)) {
     const imported = match[1];
-    if (!imported.endsWith(".module.css") && !imported.endsWith("foundation.css")) {
+    const isWorkspaceStyle =
+      /components\/ui-next\/(?:styles|shell|overview-projects|project-workspace|notes|materials|activities-tasks|calendar|library|governance|account|collaboration)\.css$/.test(
+        imported,
+      );
+    if (
+      !imported.endsWith(".module.css") &&
+      !imported.endsWith("foundation.css") &&
+      !(file === workspaceLayout && isWorkspaceStyle)
+    ) {
       failures.push(`${path.relative(process.cwd(), file)} imports global ${imported}`);
     }
   }
 }
 
 const tokenSources = cssFiles
-  .filter((file) => file.endsWith("foundation.css") || file.endsWith("styles.module.css"))
+  .filter((file) => file.endsWith("foundation.css") || file.endsWith("styles.css"))
   .map((file) => readFileSync(file, "utf8"))
   .join("\n");
 const definedTokens = new Set(
@@ -44,7 +53,7 @@ for (const file of cssFiles) {
     }
   }
 
-  if (!file.endsWith("foundation.css") && !file.endsWith("styles.module.css")) {
+  if (!file.endsWith("foundation.css") && !file.endsWith("styles.css")) {
     if (/(?:#[0-9a-f]{3,8}\b|\brgba?\()/i.test(css)) {
       failures.push(`${path.relative(process.cwd(), file)} contains a raw visual color`);
     }

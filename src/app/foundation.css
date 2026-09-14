@@ -17,6 +17,38 @@
    loads this file — it repeats a handful of hexes on purpose, and says so.
    ============================================================ */
 
+@import "tailwindcss";
+
+@theme {
+  --color-paper: var(--color-paper);
+  --color-ink: var(--color-ink);
+  --color-canopy: var(--color-canopy);
+  --color-seal: var(--color-seal);
+  --color-cham: var(--color-cham);
+  --color-amber: var(--color-amber);
+
+  --color-ui-bg: var(--ui-color-background);
+  --color-ui-surface: var(--ui-color-surface);
+  --color-ui-surface-raised: var(--ui-color-surface-raised);
+  --color-ui-surface-sunken: var(--ui-color-surface-sunken);
+  --color-ui-border: var(--ui-color-border);
+  --color-ui-border-strong: var(--ui-color-border-strong);
+  --color-ui-text: var(--ui-color-text);
+  --color-ui-text-secondary: var(--ui-color-text-secondary);
+  --color-ui-text-muted: var(--ui-color-text-muted);
+  --color-ui-accent: var(--ui-color-accent);
+  --color-ui-accent-hover: var(--ui-color-accent-hover);
+  --color-ui-on-accent: var(--ui-color-on-accent);
+  --color-ui-focus: var(--ui-color-focus);
+  --color-ui-danger: var(--ui-color-danger);
+  --color-ui-on-danger: var(--ui-color-on-danger);
+  --color-ui-danger-bg: var(--ui-color-danger-bg);
+
+  --font-interface: var(--ui-font-interface);
+  --font-research: var(--ui-font-research);
+  --font-mono: var(--ui-font-mono);
+}
+
 @font-face {
   font-family: "CDA Independence Text";
   src: url("/fonts/cda-independence-text-regular.otf") format("opentype");

@@ -1,18 +1,14 @@
-.root {
-  display: contents;
-}
-
 /* Stage 17.7 — Project Material intake and exact-version review. */
-.root :global(.ui-next-materials-page),
-.root :global(.ui-next-material-detail) {
+.ui-next-materials-page,
+.ui-next-material-detail {
   display: grid;
   gap: var(--ui-space-6);
 }
 
-.root :global(.ui-next-materials-page__header),
-.root :global(.ui-next-material-detail__header),
-.root :global(.ui-next-materials-list__heading),
-.root :global(.ui-next-material-form__actions) {
+.ui-next-materials-page__header,
+.ui-next-material-detail__header,
+.ui-next-materials-list__heading,
+.ui-next-material-form__actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -20,38 +16,38 @@
   flex-wrap: wrap;
 }
 
-.root :global(.ui-next-materials-page__header h2),
-.root :global(.ui-next-material-detail__header h2),
-.root :global(.ui-next-material-panel h3) {
+.ui-next-materials-page__header h2,
+.ui-next-material-detail__header h2,
+.ui-next-material-panel h3 {
   margin: 0;
 }
 
-.root :global(.ui-next-material-detail__header) {
+.ui-next-material-detail__header {
   align-items: flex-start;
 }
 
-.root :global(.ui-next-material-detail__header > div),
-.root :global(.ui-next-material-version-form label) {
+.ui-next-material-detail__header > div,
+.ui-next-material-version-form label {
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-material-detail__header h2),
-.root :global(.ui-next-material-detail__description),
-.root :global(.ui-next-material-version strong) {
+.ui-next-material-detail__header h2,
+.ui-next-material-detail__description,
+.ui-next-material-version strong {
   overflow-wrap: anywhere;
 }
 
-.root :global(.ui-next-materials-page__header p),
-.root :global(.ui-next-material-detail__header > div > p),
-.root :global(.ui-next-material-panel > p),
-.root :global(.ui-next-material-detail__description) {
+.ui-next-materials-page__header p,
+.ui-next-material-detail__header > div > p,
+.ui-next-material-panel > p,
+.ui-next-material-detail__description {
   margin: var(--ui-space-1) 0 0;
   color: var(--ui-color-text-secondary);
 }
 
-.root :global(.ui-next-materials-list),
-.root :global(.ui-next-material-versions),
-.root :global(.ui-next-material-lineage) {
+.ui-next-materials-list,
+.ui-next-material-versions,
+.ui-next-material-lineage {
   display: grid;
   gap: var(--ui-space-2);
   margin: 0;
@@ -59,16 +55,16 @@
   list-style: none;
 }
 
-.root :global(.ui-next-materials-list__item),
-.root :global(.ui-next-material-panel),
-.root :global(.ui-next-material-version-form),
-.root :global(.ui-next-material-candidate) {
+.ui-next-materials-list__item,
+.ui-next-material-panel,
+.ui-next-material-version-form,
+.ui-next-material-candidate {
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-md);
   background: var(--ui-color-surface);
 }
 
-.root :global(.ui-next-materials-list__link) {
+.ui-next-materials-list__link {
   display: grid;
   gap: var(--ui-space-2);
   padding: var(--ui-space-4);
@@ -76,38 +72,38 @@
   text-decoration: none;
 }
 
-.root :global(.ui-next-materials-list__item:hover),
-.root :global(.ui-next-material-version:hover),
-.root :global(.ui-next-material-version[data-selected]) {
+.ui-next-materials-list__item:hover,
+.ui-next-material-version:hover,
+.ui-next-material-version[data-selected] {
   border-color: var(--ui-color-border-strong);
 }
 
-.root :global(.ui-next-materials-list__heading h3) {
+.ui-next-materials-list__heading h3 {
   margin: 0;
   font-size: var(--ui-font-size-lg);
 }
 
-.root :global(.ui-next-materials-list__badges),
-.root :global(.ui-next-materials-list__meta) {
+.ui-next-materials-list__badges,
+.ui-next-materials-list__meta {
   display: flex;
   gap: var(--ui-space-2);
   flex-wrap: wrap;
 }
 
-.root :global(.ui-next-materials-list__meta),
-.root :global(.ui-next-material-detail__meta),
-.root :global(.ui-next-material-version small),
-.root :global(.ui-next-material-lineage span) {
+.ui-next-materials-list__meta,
+.ui-next-material-detail__meta,
+.ui-next-material-version small,
+.ui-next-material-lineage span {
   color: var(--ui-color-text-muted);
   font-size: var(--ui-font-size-sm);
 }
 
-.root :global(.ui-next-material-form) {
+.ui-next-material-form {
   display: grid;
   gap: var(--ui-space-4);
 }
 
-.root :global(.ui-next-material-version-form) {
+.ui-next-material-version-form {
   display: grid;
   grid-template-columns: minmax(0, 40rem) auto;
   align-items: end;
@@ -116,9 +112,9 @@
   padding: var(--ui-space-4);
 }
 
-.root :global(.ui-next-material-form label),
-.root :global(.ui-next-material-version-form label),
-.root :global(.ui-next-material-candidate label) {
+.ui-next-material-form label,
+.ui-next-material-version-form label,
+.ui-next-material-candidate label {
   display: grid;
   gap: var(--ui-space-1);
   color: var(--ui-color-text-secondary);
@@ -126,10 +122,10 @@
   font-weight: 650;
 }
 
-.root :global(.ui-next-material-form input),
-.root :global(.ui-next-material-form textarea),
-.root :global(.ui-next-material-version-form input),
-.root :global(.ui-next-material-candidate input) {
+.ui-next-material-form input,
+.ui-next-material-form textarea,
+.ui-next-material-version-form input,
+.ui-next-material-candidate input {
   inline-size: min(100%, 40rem);
   border: 1px solid var(--ui-color-border-strong);
   border-radius: var(--ui-radius-sm);
@@ -139,46 +135,46 @@
   font: inherit;
 }
 
-.root :global(.ui-next-material-version-form input) {
+.ui-next-material-version-form input {
   inline-size: 100%;
 }
 
-.root :global(.ui-next-material-form small) {
+.ui-next-material-form small {
   color: var(--ui-color-text-muted);
 }
 
-.root :global(.ui-next-material-form__error) {
+.ui-next-material-form__error {
   margin: 0;
   color: var(--ui-color-danger);
 }
 
-.root :global(.ui-next-material-detail__back) {
+.ui-next-material-detail__back {
   inline-size: fit-content;
   color: var(--ui-color-accent);
   text-underline-offset: 0.18em;
 }
 
-.root :global(.ui-next-material-detail__continue-draft) {
-  inline-size: fit-content;
-  color: var(--ui-color-accent);
-  font-weight: 650;
-  text-underline-offset: 0.18em;
-}
-
-.root :global(.ui-next-material-detail__download) {
+.ui-next-material-detail__continue-draft {
   inline-size: fit-content;
   color: var(--ui-color-accent);
   font-weight: 650;
   text-underline-offset: 0.18em;
 }
 
-.root :global(.ui-next-material-detail__grid) {
+.ui-next-material-detail__download {
+  inline-size: fit-content;
+  color: var(--ui-color-accent);
+  font-weight: 650;
+  text-underline-offset: 0.18em;
+}
+
+.ui-next-material-detail__grid {
   display: grid;
   grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.25fr);
   gap: var(--ui-space-6);
 }
 
-.root :global(.ui-next-material-panel) {
+.ui-next-material-panel {
   display: grid;
   align-content: start;
   gap: var(--ui-space-4);
@@ -186,7 +182,7 @@
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-material-version) {
+.ui-next-material-version {
   display: grid;
   gap: var(--ui-space-1);
   inline-size: 100%;
@@ -200,22 +196,22 @@
   cursor: pointer;
 }
 
-.root :global(.ui-next-material-version[data-selected]) {
+.ui-next-material-version[data-selected] {
   box-shadow: inset 0.25rem 0 var(--ui-color-accent);
 }
 
-.root :global(.ui-next-material-candidate) {
+.ui-next-material-candidate {
   display: grid;
   gap: var(--ui-space-4);
   padding: var(--ui-space-4);
   background: var(--ui-color-surface-sunken);
 }
 
-.root :global(.ui-next-material-candidate > p) {
+.ui-next-material-candidate > p {
   margin: 0;
 }
 
-.root :global(.ui-next-material-candidate .ui-next-markdown-view) {
+.ui-next-material-candidate .ui-next-markdown-view {
   max-block-size: 26rem;
   overflow: auto;
   padding: var(--ui-space-3);
@@ -224,7 +220,7 @@
   background: var(--ui-color-surface);
 }
 
-.root :global(.ui-next-material-lineage li) {
+.ui-next-material-lineage li {
   display: flex;
   justify-content: space-between;
   gap: var(--ui-space-3);
@@ -232,41 +228,41 @@
   border-block-end: 1px solid var(--ui-color-border);
 }
 
-.root :global(.ui-next-material-lineage a) {
+.ui-next-material-lineage a {
   color: var(--ui-color-accent);
   overflow-wrap: anywhere;
 }
 
 @media (max-width: 48rem) {
-  .root :global(.ui-next-material-detail__grid) {
+  .ui-next-material-detail__grid {
     grid-template-columns: 1fr;
   }
 
-  .root :global(.ui-next-materials-page__header),
-  .root :global(.ui-next-material-detail__header) {
+  .ui-next-materials-page__header,
+  .ui-next-material-detail__header {
     align-items: stretch;
   }
 
-  .root :global(.ui-next-material-version-form) {
+  .ui-next-material-version-form {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
 
-  .root :global(.ui-next-materials-page__header > .ui-next-button),
-  .root :global(.ui-next-material-version-form > .ui-next-button) {
+  .ui-next-materials-page__header > .ui-next-button,
+  .ui-next-material-version-form > .ui-next-button {
     inline-size: 100%;
   }
 
-  .root :global(.ui-next-material-lineage li) {
+  .ui-next-material-lineage li {
     align-items: flex-start;
     flex-direction: column;
   }
 }
 
-.root :global(.ui-next-materials-list__item) {
+.ui-next-materials-list__item {
   border-radius: 0;
   border-width: 0 0 1px;
 }
-.root :global(.ui-next-materials-list) {
+.ui-next-materials-list {
   gap: 0;
 }

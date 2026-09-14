@@ -56,11 +56,14 @@ export function AccountProfile({ initial }: { initial: { displayName: string } }
 
   return (
     <>
-      <div className="field">
-        <label htmlFor="acc-name">{T.displayNameLabel}</label>
+      <div className="field grid gap-2">
+        <label htmlFor="acc-name" className="text-sm font-medium text-ui-text-secondary">
+          {T.displayNameLabel}
+        </label>
         <input
           id="acc-name"
           type="text"
+          className="ui-next-control max-w-[32rem]"
           value={displayName}
           required
           disabled={busy}
@@ -69,7 +72,7 @@ export function AccountProfile({ initial }: { initial: { displayName: string } }
       </div>
       {/* Same hidden-input trigger as the upload form: the browser's own
           file-control words are English in a Vietnamese screen. */}
-      <div className="file-field">
+      <div className="file-field flex flex-wrap items-center gap-2">
         <input
           id="acc-avatar"
           type="file"
@@ -78,15 +81,24 @@ export function AccountProfile({ initial }: { initial: { displayName: string } }
           disabled={busy}
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
-        <label htmlFor="acc-avatar" className="button secondary">
+        <label
+          htmlFor="acc-avatar"
+          className="button secondary inline-flex items-center min-h-[2.5rem] px-4 py-2 border border-ui-border rounded text-sm font-semibold cursor-pointer bg-ui-surface hover:bg-ui-surface-sunken"
+        >
           {T.chooseAvatar}
         </label>
-        <span className="muted">{file ? file.name : T.avatarConstraint}</span>
+        <span className="muted text-xs text-ui-text-muted">
+          {file ? file.name : T.avatarConstraint}
+        </span>
       </div>
       <SayMutation m={m} />
       <Say error={uploadError} />
-      <div className="button-row">
-        <button onClick={() => void save()} disabled={busy || !displayName.trim()}>
+      <div className="button-row flex flex-wrap items-center gap-2">
+        <button
+          className="inline-flex items-center min-h-[2.5rem] px-4 py-2 border border-ui-border rounded text-sm font-semibold cursor-pointer bg-ui-surface hover:bg-ui-surface-sunken"
+          onClick={() => void save()}
+          disabled={busy || !displayName.trim()}
+        >
           {busy ? T.loading : T.save}
         </button>
       </div>

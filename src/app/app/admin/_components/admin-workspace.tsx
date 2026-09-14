@@ -101,10 +101,10 @@ export function AdminWorkspace({
   }
 
   return (
-    <div className="ui-next-governance ui-next-governance--admin">
-      <Surface className="ui-next-governance__section">
-        <div className="ui-next-governance__heading">
-          <h2>{translate(locale, "admin.projects")}</h2>
+    <div className="ui-next-governance ui-next-governance--admin grid grid-cols-1 lg:grid-cols-2 gap-6 items-start w-full max-w-[90rem]">
+      <Surface className="ui-next-governance__section grid gap-4 content-start">
+        <div className="ui-next-governance__heading flex items-center justify-between flex-wrap gap-3">
+          <h2 className="m-0 text-lg font-bold">{translate(locale, "admin.projects")}</h2>
           <Button
             type="button"
             onClick={() => {
@@ -182,16 +182,21 @@ export function AdminWorkspace({
           ) : null}
         </Dialog>
         <ul
-          className="ui-next-governance__rows"
+          className="ui-next-governance__rows grid gap-2 m-0 p-0 list-none max-h-[32rem] overflow-y-auto pr-2"
           role="list"
           aria-label={translate(locale, "admin.projects")}
           tabIndex={0}
         >
           {projects.map((project) => (
-            <li key={project.id}>
-              <div>
-                <strong>{project.name}</strong>
-                <span>{project.researchLens}</span>
+            <li
+              key={project.id}
+              className="flex max-md:flex-col items-center max-md:items-start justify-between flex-wrap gap-4 py-3 border-t border-ui-border first:border-t-0"
+            >
+              <div className="min-w-0 flex-[1_1_16rem]">
+                <strong className="block text-sm font-semibold text-ui-text">{project.name}</strong>
+                <span className="block text-ui-text-muted text-sm break-words">
+                  {project.researchLens}
+                </span>
               </div>
               <Button
                 type="button"
@@ -218,11 +223,13 @@ export function AdminWorkspace({
         </ul>
       </Surface>
 
-      <Surface className="ui-next-governance__section">
-        <div className="ui-next-governance__heading">
+      <Surface className="ui-next-governance__section grid gap-4 content-start">
+        <div className="ui-next-governance__heading flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2>{translate(locale, "admin.core")}</h2>
-            <p>{translate(locale, "admin.coreDescription")}</p>
+            <h2 className="m-0 text-lg font-bold">{translate(locale, "admin.core")}</h2>
+            <p className="m-0 text-sm text-ui-text-secondary">
+              {translate(locale, "admin.coreDescription")}
+            </p>
           </div>
           <Button
             type="button"
@@ -254,7 +261,7 @@ export function AdminWorkspace({
         >
           <form
             id="admin-core-form"
-            className="ui-next-governance__form ui-next-governance__form--compact"
+            className="ui-next-governance__form ui-next-governance__form--compact grid grid-cols-[minmax(0,1fr)_auto] max-md:grid-cols-1 items-end gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
@@ -291,22 +298,30 @@ export function AdminWorkspace({
             </Select>
           </form>
           {message ? (
-            <p role="alert" className="ui-next-governance__error">
+            <p
+              role="alert"
+              className="ui-next-governance__error m-0 text-sm text-ui-danger font-medium"
+            >
               {message}
             </p>
           ) : null}
         </Dialog>
         <ul
-          className="ui-next-governance__rows"
+          className="ui-next-governance__rows grid gap-2 m-0 p-0 list-none max-h-[32rem] overflow-y-auto pr-2"
           role="list"
           aria-label={translate(locale, "admin.core")}
           tabIndex={0}
         >
           {coreMembers.map((member) => (
-            <li key={member.userId}>
-              <div>
-                <strong>{member.displayName}</strong>
-                <span>{member.email}</span>
+            <li
+              key={member.userId}
+              className="flex max-md:flex-col items-center max-md:items-start justify-between flex-wrap gap-4 py-3 border-t border-ui-border first:border-t-0"
+            >
+              <div className="min-w-0 flex-[1_1_16rem]">
+                <strong className="block text-sm font-semibold text-ui-text">
+                  {member.displayName}
+                </strong>
+                <span className="block text-ui-text-muted text-sm break-words">{member.email}</span>
               </div>
               <Button
                 type="button"
@@ -327,9 +342,9 @@ export function AdminWorkspace({
         </ul>
       </Surface>
 
-      <Surface className="ui-next-governance__section ui-next-governance__accounts">
-        <div className="ui-next-governance__heading">
-          <h2>{translate(locale, "admin.users")}</h2>
+      <Surface className="ui-next-governance__section ui-next-governance__accounts grid gap-4 content-start col-span-full">
+        <div className="ui-next-governance__heading flex items-center justify-between flex-wrap gap-3">
+          <h2 className="m-0 text-lg font-bold">{translate(locale, "admin.users")}</h2>
           <Button
             type="button"
             onClick={() => {
@@ -361,7 +376,7 @@ export function AdminWorkspace({
         >
           <form
             id="admin-user-form"
-            className="ui-next-governance__form ui-next-governance__form--reading"
+            className="ui-next-governance__form ui-next-governance__form--reading grid grid-cols-1 max-w-[42rem] gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               const formElement = event.currentTarget;
@@ -406,31 +421,39 @@ export function AdminWorkspace({
             </Select>
           </form>
           {message ? (
-            <p role="alert" className="ui-next-governance__error">
+            <p
+              role="alert"
+              className="ui-next-governance__error m-0 text-sm text-ui-danger font-medium"
+            >
               {message}
             </p>
           ) : null}
         </Dialog>
         <ul
-          className="ui-next-governance__rows"
+          className="ui-next-governance__rows grid gap-2 m-0 p-0 list-none max-h-[32rem] overflow-y-auto pr-2"
           role="list"
           aria-label={translate(locale, "admin.users")}
           tabIndex={0}
         >
           {users.map((user) => (
-            <li key={user.id}>
-              <div>
-                <strong>{user.displayName}</strong>
-                <span>
+            <li
+              key={user.id}
+              className="flex max-md:flex-col items-center max-md:items-start justify-between flex-wrap gap-4 py-3 border-t border-ui-border first:border-t-0"
+            >
+              <div className="min-w-0 flex-[1_1_16rem]">
+                <strong className="block text-sm font-semibold text-ui-text">
+                  {user.displayName}
+                </strong>
+                <span className="block text-ui-text-muted text-sm break-words">
                   {user.email} ·{" "}
                   {user.invited
                     ? translate(locale, "admin.invited")
                     : translate(locale, `account.role.${user.role}`)}
                 </span>
               </div>
-              <div className="ui-next-governance__actions">
+              <div className="ui-next-governance__actions flex shrink-0 items-center gap-2 max-md:w-full max-md:flex-wrap">
                 <select
-                  className="ui-next-control"
+                  className="ui-next-control w-48 min-h-[2.5rem] max-md:flex-1 max-md:min-w-[8rem] rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 text-sm text-ui-text outline-none focus:border-ui-focus focus:ring-1 focus:ring-ui-focus"
                   value={user.role}
                   disabled={pending}
                   aria-label={`${translate(locale, "admin.userRole")}: ${user.displayName}`}
@@ -472,26 +495,34 @@ export function AdminWorkspace({
         </ul>
       </Surface>
 
-      <div className="ui-next-governance__status-grid">
-        <Surface className="ui-next-governance__section">
-          <h2>{translate(locale, "admin.operational")}</h2>
-          <dl className="ui-next-governance__facts">
-            <div>
-              <dt>{translate(locale, "admin.checked")}</dt>
-              <dd>
+      <div className="ui-next-governance__status-grid col-span-full grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <Surface className="ui-next-governance__section grid gap-4 content-start">
+          <h2 className="m-0 text-lg font-bold">{translate(locale, "admin.operational")}</h2>
+          <dl className="ui-next-governance__facts grid gap-2 m-0">
+            <div className="flex justify-between flex-wrap gap-4 py-1.5 border-b border-ui-border/50 last:border-b-0">
+              <dt className="text-ui-text-secondary text-sm">
+                {translate(locale, "admin.checked")}
+              </dt>
+              <dd className="m-0 font-semibold text-sm text-ui-text">
                 {formatUiDate(operationalStatus.checkedAt, locale, {
                   dateStyle: "medium",
                   timeStyle: "short",
                 })}
               </dd>
             </div>
-            <div>
-              <dt>{translate(locale, "admin.overdueLoans")}</dt>
-              <dd>{operationalStatus.overdueLoanCount}</dd>
+            <div className="flex justify-between flex-wrap gap-4 py-1.5 border-b border-ui-border/50 last:border-b-0">
+              <dt className="text-ui-text-secondary text-sm">
+                {translate(locale, "admin.overdueLoans")}
+              </dt>
+              <dd className="m-0 font-semibold text-sm text-ui-text">
+                {operationalStatus.overdueLoanCount}
+              </dd>
             </div>
-            <div>
-              <dt>{translate(locale, "admin.backup")}</dt>
-              <dd>
+            <div className="flex justify-between flex-wrap gap-4 py-1.5 border-b border-ui-border/50 last:border-b-0">
+              <dt className="text-ui-text-secondary text-sm">
+                {translate(locale, "admin.backup")}
+              </dt>
+              <dd className="m-0 font-semibold text-sm text-ui-text">
                 {translate(
                   locale,
                   operationalStatus.backupStatus === "not_configured"
@@ -502,16 +533,19 @@ export function AdminWorkspace({
             </div>
           </dl>
         </Surface>
-        <Surface className="ui-next-governance__section">
-          <h2>{translate(locale, "admin.audit")}</h2>
-          <ul className="ui-next-governance__audit" role="list">
+        <Surface className="ui-next-governance__section grid gap-4 content-start">
+          <h2 className="m-0 text-lg font-bold">{translate(locale, "admin.audit")}</h2>
+          <ul className="ui-next-governance__audit grid gap-2 m-0 p-0 list-none" role="list">
             {auditEvents.map((event) => (
-              <li key={event.id}>
-                <div>
-                  <strong>
+              <li
+                key={event.id}
+                className="flex items-center justify-between gap-4 py-2 border-t border-ui-border first:border-t-0"
+              >
+                <div className="min-w-0 w-full">
+                  <strong className="block text-sm font-semibold text-ui-text">
                     {translate(locale, auditLabels[event.action] ?? "admin.audit.other")}
                   </strong>
-                  <span>
+                  <span className="block text-ui-text-muted text-xs break-words">
                     {event.actorName ?? translate(locale, "admin.audit.unknownActor")} ·{" "}
                     <time dateTime={new Date(event.createdAt).toISOString()}>
                       {formatUiDate(event.createdAt, locale, {
@@ -520,9 +554,13 @@ export function AdminWorkspace({
                       })}
                     </time>
                   </span>
-                  <details className="ui-next-governance__audit-code">
-                    <summary>{translate(locale, "admin.audit.code")}</summary>
-                    <code>{event.action}</code>
+                  <details className="ui-next-governance__audit-code mt-1 text-xs text-ui-text-muted">
+                    <summary className="cursor-pointer hover:text-ui-text">
+                      {translate(locale, "admin.audit.code")}
+                    </summary>
+                    <code className="font-mono text-xs bg-ui-surface-muted px-1.5 py-0.5 rounded">
+                      {event.action}
+                    </code>
                   </details>
                 </div>
               </li>
@@ -531,7 +569,10 @@ export function AdminWorkspace({
         </Surface>
       </div>
       {message ? (
-        <p className="ui-next-governance__error" role="alert">
+        <p
+          className="ui-next-governance__error m-0 text-sm text-ui-danger font-medium"
+          role="alert"
+        >
           {message}
         </p>
       ) : null}

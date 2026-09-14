@@ -101,16 +101,19 @@ export function MaterialsView({
           }
         />
       ) : (
-        <ul className="ui-next-materials-list" role="list">
+        <ul className="ui-next-materials-list flex flex-col gap-3 list-none m-0 p-0" role="list">
           {materials.map((material) => (
-            <li key={material.id} className="ui-next-materials-list__item">
+            <li
+              key={material.id}
+              className="ui-next-materials-list__item bg-ui-surface border border-ui-border rounded-lg p-4 transition-all hover:border-ui-border-strong hover:shadow-sm"
+            >
               <Link
                 href={`/app/projects/${encodeURIComponent(projectId)}/materials/${encodeURIComponent(material.id)}`}
-                className="ui-next-materials-list__link"
+                className="ui-next-materials-list__link flex flex-col gap-2 no-underline text-inherit focus-visible:outline-2 focus-visible:outline-ui-focus rounded"
               >
-                <div className="ui-next-materials-list__heading">
-                  <h3>{material.title}</h3>
-                  <div className="ui-next-materials-list__badges">
+                <div className="ui-next-materials-list__heading flex items-center justify-between gap-3 flex-wrap">
+                  <h3 className="m-0 text-lg font-semibold text-ui-text">{material.title}</h3>
+                  <div className="ui-next-materials-list__badges flex items-center gap-2 flex-wrap">
                     {material.currentVersion ? (
                       <StatusBadge
                         tone={
@@ -133,7 +136,7 @@ export function MaterialsView({
                     ) : null}
                   </div>
                 </div>
-                <div className="ui-next-materials-list__meta">
+                <div className="ui-next-materials-list__meta flex items-center gap-4 text-xs text-ui-text-muted">
                   {material.currentVersion ? (
                     <span>{translate(locale, "materials.version.current")}</span>
                   ) : (
@@ -151,7 +154,7 @@ export function MaterialsView({
 
       <Dialog
         footer={
-          <div className="ui-next-material-form__actions">
+          <div className="ui-next-material-form__actions flex items-center justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
               {translate(locale, "common.cancel")}
             </Button>
@@ -172,22 +175,45 @@ export function MaterialsView({
         description={translate(locale, "materials.create.description")}
         closeLabel={translate(locale, "common.close")}
       >
-        <form id="create-material" className="ui-next-material-form" onSubmit={createMaterial}>
-          <label>
+        <form
+          id="create-material"
+          className="ui-next-material-form flex flex-col gap-4"
+          onSubmit={createMaterial}
+        >
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ui-text">
             <span>{translate(locale, "materials.field.title")}</span>
-            <input name="title" required maxLength={300} autoFocus />
+            <input
+              name="title"
+              required
+              maxLength={300}
+              autoFocus
+              className="min-h-[2.5rem] rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 text-sm text-ui-text outline-none focus:border-ui-focus focus:ring-1 focus:ring-ui-focus"
+            />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ui-text">
             <span>{translate(locale, "materials.field.description")}</span>
-            <textarea name="description" rows={3} />
+            <textarea
+              name="description"
+              rows={3}
+              className="rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 text-sm text-ui-text outline-none focus:border-ui-focus focus:ring-1 focus:ring-ui-focus"
+            />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ui-text">
             <span>{translate(locale, "materials.field.file")}</span>
-            <input name="file" type="file" />
-            <small>{translate(locale, "materials.field.fileHelp")}</small>
+            <input
+              name="file"
+              type="file"
+              className="text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-ui-surface-muted file:text-ui-text hover:file:cursor-pointer"
+            />
+            <small className="text-xs text-ui-text-muted">
+              {translate(locale, "materials.field.fileHelp")}
+            </small>
           </label>
           {error ? (
-            <p className="ui-next-material-form__error" role="alert">
+            <p
+              className="ui-next-material-form__error m-0 text-sm text-ui-danger font-medium"
+              role="alert"
+            >
               {error}
             </p>
           ) : null}

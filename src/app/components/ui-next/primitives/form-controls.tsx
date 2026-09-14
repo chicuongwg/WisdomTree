@@ -1,8 +1,8 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { classNames } from "../shared";
-import styles from "./primitives.module.css";
 
-export const nativeControlClassName = styles.control;
+export const nativeControlClassName =
+  "w-full min-h-10 border border-ui-border-strong rounded px-3 py-2 bg-ui-surface text-ui-text focus:outline-2 focus:outline-ui-focus disabled:opacity-60 disabled:cursor-not-allowed";
 
 interface FieldCopy {
   label: string;
@@ -14,12 +14,12 @@ function FieldMessages({ id, description, error }: { id: string } & Omit<FieldCo
   return (
     <>
       {description ? (
-        <span id={`${id}-description`} className={styles.description}>
+        <span id={`${id}-description`} className="text-ui-text-muted text-sm">
           {description}
         </span>
       ) : null}
       {error ? (
-        <span id={`${id}-error`} className={styles.error} role="alert">
+        <span id={`${id}-error`} className="m-0 text-ui-danger text-sm font-semibold" role="alert">
           {error}
         </span>
       ) : null}
@@ -48,18 +48,23 @@ export function TextField({
   ...props
 }: TextFieldProps) {
   return (
-    <label className={styles.field} htmlFor={id}>
-      <span className={styles.label}>
+    <label className="grid gap-2" htmlFor={id}>
+      <span
+        className={classNames(
+          "text-ui-text text-sm font-semibold",
+          required && "after:content-['*'] after:ml-0.5 after:text-ui-danger",
+        )}
+      >
         {label}
-        {required ? <span aria-hidden="true"> *</span> : null}
       </span>
       <input
         {...props}
         id={id}
         required={required}
+        aria-label={props["aria-label"] ?? label}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames(styles.control, className)}
+        className={classNames(nativeControlClassName, className)}
       />
       <FieldMessages id={id} description={description} error={error} />
     </label>
@@ -80,18 +85,23 @@ export function TextArea({
   ...props
 }: TextAreaProps) {
   return (
-    <label className={styles.field} htmlFor={id}>
-      <span className={styles.label}>
+    <label className="grid gap-2" htmlFor={id}>
+      <span
+        className={classNames(
+          "text-ui-text text-sm font-semibold",
+          required && "after:content-['*'] after:ml-0.5 after:text-ui-danger",
+        )}
+      >
         {label}
-        {required ? <span aria-hidden="true"> *</span> : null}
       </span>
       <textarea
         {...props}
         id={id}
         required={required}
+        aria-label={props["aria-label"] ?? label}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames(styles.control, className)}
+        className={classNames(nativeControlClassName, "min-h-28 resize-y", className)}
       />
       <FieldMessages id={id} description={description} error={error} />
     </label>
@@ -113,18 +123,23 @@ export function Select({
   ...props
 }: SelectProps) {
   return (
-    <label className={styles.field} htmlFor={id}>
-      <span className={styles.label}>
+    <label className="grid gap-2" htmlFor={id}>
+      <span
+        className={classNames(
+          "text-ui-text text-sm font-semibold",
+          required && "after:content-['*'] after:ml-0.5 after:text-ui-danger",
+        )}
+      >
         {label}
-        {required ? <span aria-hidden="true"> *</span> : null}
       </span>
       <select
         {...props}
         id={id}
         required={required}
+        aria-label={props["aria-label"] ?? label}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy(id, description, error)}
-        className={classNames(styles.control, className)}
+        className={classNames(nativeControlClassName, className)}
       >
         {children}
       </select>

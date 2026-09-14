@@ -89,18 +89,22 @@ export function NoteList({
 
   if (items.length === 0) {
     return (
-      <div className="ui-next-notes-page">
-        <div className="ui-next-notes-header">
-          <h2>{translate(locale, "notes.title")}</h2>
+      <div className="ui-next-notes-page flex flex-col gap-6">
+        <div className="ui-next-notes-header flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="m-0 text-xl font-bold text-ui-text">{translate(locale, "notes.title")}</h2>
           {canCreateNote && onCreateClick ? (
             <Button type="button" variant="primary" onClick={onCreateClick}>
               {translate(locale, "notes.newNote")}
             </Button>
           ) : null}
         </div>
-        <div className="ui-next-empty-state">
-          <h3>{translate(locale, "notes.emptyTitle")}</h3>
-          <p>{translate(locale, "notes.emptyDescription")}</p>
+        <div className="ui-next-empty-state flex flex-col items-center justify-center p-12 text-center bg-ui-surface border border-dashed border-ui-border rounded-lg gap-3">
+          <h3 className="m-0 text-lg font-semibold text-ui-text">
+            {translate(locale, "notes.emptyTitle")}
+          </h3>
+          <p className="m-0 text-sm text-ui-text-secondary max-w-md">
+            {translate(locale, "notes.emptyDescription")}
+          </p>
           {canCreateNote && onCreateClick ? (
             <Button type="button" variant="primary" onClick={onCreateClick}>
               {translate(locale, "notes.createFirstNote")}
@@ -112,9 +116,9 @@ export function NoteList({
   }
 
   return (
-    <div className="ui-next-notes-page">
-      <div className="ui-next-notes-header">
-        <h2>
+    <div className="ui-next-notes-page flex flex-col gap-6">
+      <div className="ui-next-notes-header flex items-center justify-between gap-4 flex-wrap">
+        <h2 className="m-0 text-xl font-bold text-ui-text">
           {translate(locale, "notes.title")} ({items.length})
         </h2>
         {canCreateNote && onCreateClick ? (
@@ -124,13 +128,21 @@ export function NoteList({
         ) : null}
       </div>
 
-      <ul className="ui-next-notes-list" role="list">
+      <ul className="ui-next-notes-list flex flex-col gap-3 list-none m-0 p-0" role="list">
         {items.map((item) => (
-          <li key={item.id} className="ui-next-notes-item">
-            <Link href={item.href} className="ui-next-notes-item__link">
-              <div className="ui-next-notes-item__top">
-                <h3 className="ui-next-notes-item__title">{item.title}</h3>
-                <div className="ui-next-notes-item__badges">
+          <li
+            key={item.id}
+            className="ui-next-notes-item bg-ui-surface border border-ui-border rounded-lg p-4 transition-all hover:border-ui-border-strong hover:shadow-sm"
+          >
+            <Link
+              href={item.href}
+              className="ui-next-notes-item__link flex flex-col gap-2 no-underline text-inherit focus-visible:outline-2 focus-visible:outline-ui-focus focus-visible:outline-offset-2 rounded"
+            >
+              <div className="ui-next-notes-item__top flex items-center justify-between gap-3 flex-wrap">
+                <h3 className="ui-next-notes-item__title m-0 text-lg font-semibold text-ui-text">
+                  {item.title}
+                </h3>
+                <div className="ui-next-notes-item__badges flex items-center gap-2 flex-wrap">
                   {item.researchPurpose ? (
                     <StatusBadge tone={purposeTones[item.researchPurpose]}>
                       {translate(locale, `notes.purpose.${item.researchPurpose}`)}
@@ -142,9 +154,13 @@ export function NoteList({
                 </div>
               </div>
 
-              {item.summary ? <p className="ui-next-notes-item__summary">{item.summary}</p> : null}
+              {item.summary ? (
+                <p className="ui-next-notes-item__summary m-0 text-ui-text-secondary text-sm leading-relaxed line-clamp-2">
+                  {item.summary}
+                </p>
+              ) : null}
 
-              <div className="ui-next-notes-item__meta">
+              <div className="ui-next-notes-item__meta flex items-center gap-4 text-xs text-ui-text-muted">
                 <span>
                   {translate(locale, "notes.inspector.version")} {item.version}
                 </span>

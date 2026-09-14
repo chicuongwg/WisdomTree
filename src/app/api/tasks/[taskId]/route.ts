@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { getTask, updateTask } from "@/modules/pm/service";
@@ -26,6 +27,8 @@ export async function PATCH(
     const actor = await requirePrincipal();
     const { taskId } = await params;
     const body = (await request.json().catch(() => null)) ?? {};
-    return NextResponse.json(await updateTask(actor, taskId, body));
+    const task = await updateTask(actor, taskId, body);
+    revalidatePath("/app/my-work");
+    return NextResponse.json(task);
   });
 }

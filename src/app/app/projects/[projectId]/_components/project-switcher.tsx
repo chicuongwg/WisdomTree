@@ -30,7 +30,7 @@ export function ProjectSwitcher({
   const router = useRouter();
 
   return (
-    <label className="ui-next-project-switcher">
+    <label className="ui-next-project-switcher max-w-xs grid gap-1 text-ui-text-secondary text-sm font-semibold">
       <span className="ui-next-visually-hidden">
         {translate(locale, "workspace.switchProject")}
       </span>

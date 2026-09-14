@@ -127,11 +127,13 @@ export function CreateDialog({
       <Button
         type="button"
         variant="primary"
-        className="ui-next-create-trigger"
+        className="ui-next-create-trigger shrink-0 whitespace-nowrap"
         aria-label={translate(locale, "shell.new")}
         onClick={openDialog}
       >
-        <span className="ui-next-create-trigger__label">{translate(locale, "shell.new")}</span>
+        <span className="ui-next-create-trigger__label max-xs:hidden">
+          {translate(locale, "shell.new")}
+        </span>
       </Button>
       <Dialog
         size="wide"
@@ -142,53 +144,68 @@ export function CreateDialog({
         closeLabel={translate(locale, "common.close")}
       >
         {!selected ? (
-          <div className="ui-next-create-dialog">
-            <h3>{translate(locale, "shell.chooseProject")}</h3>
-            <div className="ui-next-create-dialog__projects">
+          <div className="ui-next-create-dialog grid gap-4">
+            <h3 className="m-0 text-base font-semibold">
+              {translate(locale, "shell.chooseProject")}
+            </h3>
+            <div className="ui-next-create-dialog__projects grid gap-2">
               {projects.map((project) => (
                 <button
                   key={project.id}
                   type="button"
-                  className="ui-next-create-dialog__project"
+                  className="ui-next-create-dialog__project w-full flex items-center justify-between gap-4 border border-ui-border rounded p-3 bg-ui-surface text-ui-text text-start cursor-pointer hover:border-ui-border-strong active:bg-ui-surface-sunken active:border-ui-accent focus-visible:border-ui-border-strong"
                   onClick={() => setProjectId(project.id)}
                 >
-                  <span>
-                    <strong>
+                  <span className="min-w-0 grid gap-1">
+                    <strong className="text-sm font-semibold">
                       {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
                     </strong>
-                    <small>
+                    <small className="text-xs text-ui-text-muted">
                       {project.isPersonal && project.researchLens === "Personal research workspace"
                         ? translate(locale, "projects.personalWorkspace")
                         : project.researchLens}
                     </small>
                   </span>
-                  <span>
+                  <span className="flex items-center gap-2">
                     <StatusBadge tone={project.operationalMember ? "success" : "information"}>
                       {translate(
                         locale,
                         project.operationalMember ? "shell.workAccess" : "shell.researchAccess",
                       )}
                     </StatusBadge>
-                    <small>{translate(locale, `shell.projectStatus.${project.status}`)}</small>
+                    <small className="text-xs text-ui-text-muted">
+                      {translate(locale, `shell.projectStatus.${project.status}`)}
+                    </small>
                   </span>
                 </button>
               ))}
-              {!projects.length ? <p>{translate(locale, "shell.noProjects")}</p> : null}
+              {!projects.length ? (
+                <p className="m-0 text-sm text-ui-text-muted">
+                  {translate(locale, "shell.noProjects")}
+                </p>
+              ) : null}
             </div>
           </div>
         ) : creatingNote ? (
-          <Stack as="form" gap="4" onSubmit={handleCreateNote} className="ui-next-create-dialog">
+          <Stack
+            as="form"
+            gap="4"
+            onSubmit={handleCreateNote}
+            className="ui-next-create-dialog grid gap-4"
+          >
             <Button
               type="button"
               variant="ghost"
-              className="ui-next-create-dialog__back"
+              className="ui-next-create-dialog__back self-start justify-self-start"
               onClick={() => setCreatingNote(false)}
             >
               {translate(locale, "common.back")}
             </Button>
             <div>
-              <h3>{translate(locale, "notes.create.title")}</h3>
-              <p className="ui-next-muted">{projectName}</p>
+              <h3 className="m-0 text-base font-semibold">
+                {translate(locale, "notes.create.title")}
+              </h3>
+              <p className="ui-next-muted m-0 text-sm text-ui-text-muted">{projectName}</p>
             </div>
             <TextField
               id="shell-note-title"
@@ -202,7 +219,7 @@ export function CreateDialog({
               required
               error={error ?? undefined}
             />
-            <div className="ui-next-dialog-actions">
+            <div className="ui-next-dialog-actions flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setCreatingNote(false)}>
                 {translate(locale, "common.cancel")}
               </Button>
@@ -214,26 +231,35 @@ export function CreateDialog({
             </div>
           </Stack>
         ) : (
-          <div className="ui-next-create-dialog">
-            <div className="ui-next-create-dialog__context">
-              <div>
-                <p className="ui-next-muted">{translate(locale, "shell.selectedProject")}</p>
-                <strong>{projectName}</strong>
+          <div className="ui-next-create-dialog grid gap-4">
+            <div className="ui-next-create-dialog__context flex items-center justify-between gap-3 p-3 bg-ui-surface-sunken rounded">
+              <div className="min-w-0 grid gap-1 break-words">
+                <p className="ui-next-muted m-0 text-xs text-ui-text-muted">
+                  {translate(locale, "shell.selectedProject")}
+                </p>
+                <strong className="text-sm font-semibold">{projectName}</strong>
               </div>
-              <Button type="button" variant="ghost" onClick={() => setProjectId(null)}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="shrink-0 whitespace-nowrap"
+                onClick={() => setProjectId(null)}
+              >
                 {translate(locale, "shell.changeProject")}
               </Button>
             </div>
             {availableActions.length ? (
               <>
-                <h3>{translate(locale, "shell.chooseObjectType")}</h3>
-                <div className="ui-next-create-dialog__actions">
+                <h3 className="m-0 text-base font-semibold">
+                  {translate(locale, "shell.chooseObjectType")}
+                </h3>
+                <div className="ui-next-create-dialog__actions grid grid-cols-2 max-md:grid-cols-1 gap-2">
                   {availableActions.map((action) => {
                     return (
                       <button
                         key={action.labelKey}
                         type="button"
-                        className="ui-next-create-dialog__action"
+                        className="ui-next-create-dialog__action min-h-[4rem] w-full flex items-center justify-between gap-4 border border-ui-border rounded p-3 bg-ui-surface text-ui-text text-start cursor-pointer hover:border-ui-border-strong active:bg-ui-surface-sunken active:border-ui-accent"
                         aria-label={translate(locale, action.labelKey)}
                         aria-describedby={`create-purpose-${action.capability}`}
                         onClick={() => {
@@ -250,20 +276,29 @@ export function CreateDialog({
                           window.location.href = `/app/projects/${encodeURIComponent(selected.id)}/${destination}`;
                         }}
                       >
-                        <span>
-                          <strong>{translate(locale, action.labelKey)}</strong>
-                          <small id={`create-purpose-${action.capability}`}>
+                        <span className="min-w-0 grid gap-1">
+                          <strong className="text-sm font-semibold">
+                            {translate(locale, action.labelKey)}
+                          </strong>
+                          <small
+                            id={`create-purpose-${action.capability}`}
+                            className="text-xs text-ui-text-muted leading-snug"
+                          >
                             {translate(locale, action.descriptionKey)}
                           </small>
                         </span>
-                        <span aria-hidden="true">›</span>
+                        <span aria-hidden="true" className="text-sm">
+                          ›
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </>
             ) : (
-              <p>{translate(locale, "shell.noCreateActions")}</p>
+              <p className="m-0 text-sm text-ui-text-muted">
+                {translate(locale, "shell.noCreateActions")}
+              </p>
             )}
           </div>
         )}

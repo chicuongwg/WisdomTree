@@ -199,19 +199,23 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
       <Button
         type="button"
         variant="secondary"
-        className="ui-next-quick-search-trigger"
+        className="ui-next-quick-search-trigger w-full justify-between text-ui-text-secondary font-medium max-xs:w-10 max-xs:px-0 max-xs:justify-center"
         aria-label={translate(locale, "shell.quickSearch")}
         onClick={() => setOpen(true)}
       >
-        <span>{translate(locale, "shell.quickSearch")}</span>
-        <kbd>{translate(locale, "shell.quickSearchHint")}</kbd>
+        <span className="w-full flex items-center justify-between gap-3 max-xs:hidden">
+          <span className="truncate">{translate(locale, "shell.quickSearch")}</span>
+          <kbd className="border border-ui-border rounded px-1.5 py-0.5 bg-ui-surface-sunken text-ui-text-muted font-mono text-xs max-md:hidden">
+            {translate(locale, "shell.quickSearchHint")}
+          </kbd>
+        </span>
       </Button>
       <Dialog
         footer={
           <Button
             type="button"
             variant="ghost"
-            className="ui-next-quick-search__footer"
+            className="ui-next-quick-search__footer w-full border-t border-ui-border rounded-none pt-4 justify-start"
             onClick={() => {
               const href = `/app/search${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`;
               runGuardedNoteNavigation(() => {
@@ -229,7 +233,7 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
         title={translate(locale, "shell.quickSearch")}
         closeLabel={translate(locale, "common.close")}
       >
-        <div className="ui-next-quick-search">
+        <div className="ui-next-quick-search grid gap-4">
           <input
             autoFocus
             className="ui-next-control"
@@ -256,7 +260,9 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
           />
           <div
             className={
-              loading || failed ? "ui-next-quick-search__status" : "ui-next-visually-hidden"
+              loading || failed
+                ? "ui-next-quick-search__status min-h-[1.25rem] text-sm text-ui-text-secondary"
+                : "ui-next-visually-hidden"
             }
             role="status"
             aria-live="polite"
@@ -275,7 +281,7 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
               locale,
               query.trim() ? "shell.searchResults" : "shell.searchCommands",
             )}
-            className="ui-next-quick-search__results"
+            className="ui-next-quick-search__results max-h-[min(24rem,50dvh)] overflow-y-auto grid gap-1"
           >
             {choices.map((choice, index) => (
               <button
@@ -285,17 +291,21 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
                 role="option"
                 tabIndex={-1}
                 aria-selected={selected === index}
-                className="ui-next-quick-search__result"
+                className="ui-next-quick-search__result w-full flex items-center justify-between gap-4 border border-transparent rounded p-3 bg-transparent text-ui-text text-start cursor-pointer hover:border-ui-border hover:bg-ui-surface-sunken aria-selected:border-ui-border aria-selected:bg-ui-surface-sunken min-h-[2.75rem]"
                 onMouseEnter={() => setSelected(index)}
                 onClick={() => activate(choice)}
               >
-                <span>
-                  <strong>{choice.title}</strong>
-                  {choice.kind !== "command" ? <small>{choice.context}</small> : null}
+                <span className="min-w-0 grid gap-1">
+                  <strong className="text-sm font-semibold">{choice.title}</strong>
+                  {choice.kind !== "command" ? (
+                    <small className="text-xs text-ui-text-muted">{choice.context}</small>
+                  ) : null}
                 </span>
-                <span>
+                <span className="text-xs text-ui-text-muted">
                   {choice.kind === "command" ? (
-                    <span aria-hidden="true">›</span>
+                    <span aria-hidden="true" className="text-sm">
+                      ›
+                    </span>
                   ) : (
                     translate(locale, `shell.kind.${choice.kind}`)
                   )}
@@ -303,7 +313,7 @@ export function QuickSearch({ locale }: { locale: UiLocale }) {
               </button>
             ))}
             {!loading && !failed && query.trim() && !choices.length ? (
-              <p className="ui-next-quick-search__empty">
+              <p className="ui-next-quick-search__empty text-sm text-ui-text-muted">
                 {translate(locale, "shell.noSearchResults")}
               </p>
             ) : null}

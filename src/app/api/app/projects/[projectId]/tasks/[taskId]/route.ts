@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { toApplicationError, updateAppProjectTask } from "@/modules/application";
@@ -35,6 +36,7 @@ export async function PATCH(
         : {}),
       expectedVersion: body.expectedVersion,
     });
+    revalidatePath("/app/my-work");
     return NextResponse.json({ task });
   } catch (error) {
     const applicationError = toApplicationError(error);

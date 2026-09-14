@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-const css = readFileSync("src/app/components/ui-next/styles.module.css", "utf8");
+const css = readFileSync("src/app/components/ui-next/styles.css", "utf8");
 
 function tokenBlock(selector) {
   const clean = selector.replace(/\s*\{$/, "");
@@ -26,10 +26,10 @@ function contrast(first, second) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-const light = tokenBlock(".root :global(.ui-next)");
+const light = tokenBlock(".ui-next");
 const dark = {
   ...light,
-  ...tokenBlock(':global(:root[data-theme="dark"]) .root :global(.ui-next)'),
+  ...tokenBlock(':root[data-theme="dark"] .ui-next'),
 };
 const checks = [
   ["primary text/background", "--ui-color-text", "--ui-color-background", 4.5],

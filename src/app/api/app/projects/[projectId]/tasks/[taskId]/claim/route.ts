@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requirePrincipal } from "@/lib/request";
 import { claimAppProjectTask, toApplicationError } from "@/modules/application";
 
@@ -10,7 +11,9 @@ export async function POST(
   try {
     const actor = await requirePrincipal();
     const { projectId, taskId } = await params;
-    return NextResponse.json({ task: await claimAppProjectTask(actor, projectId, taskId) });
+    const task = await claimAppProjectTask(actor, projectId, taskId);
+    revalidatePath("/app/my-work");
+    return NextResponse.json({ task });
   } catch (error) {
     const applicationError = toApplicationError(error);
     return NextResponse.json(applicationError, { status: applicationError.status });

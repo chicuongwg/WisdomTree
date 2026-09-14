@@ -38,19 +38,31 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
   // absorbs that spacing.
   return (
     <>
-      <div className="record-scroll">
-        <table className="list">
+      <div className="record-scroll overflow-x-auto">
+        <table className="list min-w-[28rem] w-full border-collapse">
           <thead>
             <tr>
-              <th scope="col">{T.eventColumn}</th>
-              <th scope="col">{T.notifications}</th>
+              <th
+                scope="col"
+                className="border-b border-ui-border py-2 px-3 text-start font-semibold text-sm"
+              >
+                {T.eventColumn}
+              </th>
+              <th
+                scope="col"
+                className="border-b border-ui-border py-2 px-3 text-start font-semibold text-sm"
+              >
+                {T.notifications}
+              </th>
             </tr>
           </thead>
           <tbody>
             {prefs.map((p) => (
               <tr key={p.eventType}>
-                <td>{eventLabel(p.eventType)}</td>
-                <td>
+                <td className="border-b border-ui-border py-2 px-3 text-sm">
+                  {eventLabel(p.eventType)}
+                </td>
+                <td className="border-b border-ui-border py-2 px-3 text-sm">
                   <input
                     type="checkbox"
                     aria-label={eventLabel(p.eventType)}
@@ -67,8 +79,12 @@ export function NotificationPrefsForm({ initial }: { initial: Pref[] }) {
       {/* "Đã lưu" was .muted — the same grey as a timestamp, so the one thing
           the reader was waiting for looked like metadata. */}
       <Say error={m.error} ok={message} />
-      <div className="button-row">
-        <button onClick={save} disabled={m.busy}>
+      <div className="button-row flex flex-wrap items-center gap-2">
+        <button
+          className="inline-flex items-center min-h-[2.5rem] px-4 py-2 border border-ui-border rounded text-sm font-semibold cursor-pointer bg-ui-surface hover:bg-ui-surface-sunken"
+          onClick={save}
+          disabled={m.busy}
+        >
           {m.busy ? T.loading : T.save}
         </button>
       </div>

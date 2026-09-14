@@ -46,25 +46,41 @@ export function NotificationCenter({
   }
 
   if (!notifications.length) {
-    return <p className="ui-next-notification-empty">{translate(locale, "notifications.empty")}</p>;
+    return (
+      <p className="ui-next-notification-empty m-0 text-ui-text-secondary">
+        {translate(locale, "notifications.empty")}
+      </p>
+    );
   }
 
   return (
-    <div className="ui-next-notification-center">
-      {truncated ? <p>{translate(locale, "notifications.truncated")}</p> : null}
-      {error ? <p role="alert">{error}</p> : null}
-      <ul className="ui-next-notification-list">
+    <div className="ui-next-notification-center grid gap-3">
+      {truncated ? (
+        <p className="m-0 text-sm text-ui-text-secondary">
+          {translate(locale, "notifications.truncated")}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="m-0 text-sm text-ui-danger">
+          {error}
+        </p>
+      ) : null}
+      <ul className="ui-next-notification-list m-0 p-0 list-none divide-y divide-ui-border border-t border-ui-border">
         {notifications.map((notification) => {
           const unread = !notification.readAt;
           const content = (
             <>
-              <strong>
+              <strong className="text-ui-text break-words font-semibold">
                 {notification.eventType === "comment.created"
                   ? translate(locale, "notifications.mention")
                   : (notification.link?.label ?? eventLabel(notification.eventType))}
               </strong>
-              {notification.link?.subject ? <span>{notification.link.subject}</span> : null}
-              <small>
+              {notification.link?.subject ? (
+                <span className="text-ui-text-secondary text-sm break-words">
+                  {notification.link.subject}
+                </span>
+              ) : null}
+              <small className="text-xs text-ui-text-muted">
                 {formatUiDate(notification.createdAt, locale, {
                   dateStyle: "medium",
                   timeStyle: "short",
@@ -73,10 +89,17 @@ export function NotificationCenter({
             </>
           );
           return (
-            <li key={notification.id} data-unread={unread || undefined}>
+            <li
+              key={notification.id}
+              data-unread={unread || undefined}
+              className={`flex items-center max-sm:items-stretch max-sm:flex-col justify-between gap-4 py-3 px-4 border-b border-ui-border transition-colors ${
+                unread ? "border-l-[0.3rem] border-l-ui-accent bg-ui-surface-sunken/40" : ""
+              }`}
+            >
               {notification.link ? (
                 <Link
                   href={notification.link.href}
+                  className="min-w-0 grid gap-1 text-ui-text no-underline hover:text-ui-accent"
                   onClick={() => {
                     if (!unread) return;
                     void fetch(
@@ -96,12 +119,14 @@ export function NotificationCenter({
                   ) : null}
                 </Link>
               ) : (
-                <div>
+                <div className="min-w-0 grid gap-1 text-ui-text">
                   {content}
-                  <small>{translate(locale, "notifications.unavailable")}</small>
+                  <small className="text-xs text-ui-text-muted">
+                    {translate(locale, "notifications.unavailable")}
+                  </small>
                 </div>
               )}
-              <div className="ui-next-notification-list__state">
+              <div className="ui-next-notification-list__state grid justify-items-end max-sm:justify-items-start gap-1 shrink-0 text-ui-text-secondary text-sm">
                 <span>
                   {translate(locale, unread ? "notifications.unread" : "notifications.read")}
                 </span>

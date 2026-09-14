@@ -11,7 +11,6 @@ import {
   TextField,
   translate,
 } from "@/app/components/ui-next";
-import styles from "./research-search-view.module.css";
 
 function resultHref(result: InternalResearchSearchResult) {
   if (result.kind === "project") return `/app/projects/${result.id}`;
@@ -41,10 +40,10 @@ export function ResearchSearchView({
           title={translate(locale, "nav.search")}
           description={translate(locale, "search.description")}
         />
-        <form className={styles.form} method="get">
+        <form className="flex flex-row flex-wrap items-end gap-3" method="get">
           <TextField
             id="research-search-query"
-            className={styles.query}
+            className="flex-[1_1_18rem] min-w-0"
             label={translate(locale, "nav.search")}
             name="q"
             defaultValue={query}
@@ -97,7 +96,7 @@ export function ResearchSearchView({
                       </Link>
                     </h3>
                     {result.summary ? (
-                      <p className={styles.itemDescription} dir="auto">
+                      <p className="m-0 text-ui-text-secondary text-sm" dir="auto">
                         {result.summary}
                       </p>
                     ) : null}

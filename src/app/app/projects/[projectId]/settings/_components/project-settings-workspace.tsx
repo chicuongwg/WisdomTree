@@ -90,7 +90,7 @@ export function ProjectSettingsWorkspace({
   }
 
   return (
-    <div className="ui-next-governance">
+    <div className="ui-next-governance grid gap-6">
       <PageHeader
         headingLevel={2}
         title={translate(locale, "settings.title")}
@@ -99,10 +99,10 @@ export function ProjectSettingsWorkspace({
           personal ? "settings.personalDescription" : "settings.description",
         )}
       />
-      <Surface className="ui-next-governance__section">
-        <h3>{translate(locale, "settings.metadata")}</h3>
+      <Surface className="ui-next-governance__section grid gap-4">
+        <h3 className="m-0 text-base font-semibold">{translate(locale, "settings.metadata")}</h3>
         <form
-          className="ui-next-governance__form ui-next-governance__form--reading"
+          className="ui-next-governance__form ui-next-governance__form--reading grid grid-cols-1 max-w-[42rem] gap-4"
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
@@ -179,15 +179,19 @@ export function ProjectSettingsWorkspace({
       ) : null}
 
       {!personal ? (
-        <Surface className="ui-next-governance__section">
-          <div className="ui-next-governance__heading">
+        <Surface className="ui-next-governance__section grid gap-4">
+          <div className="ui-next-governance__heading flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h3>{translate(locale, "settings.members")}</h3>
-              <p>{translate(locale, "settings.membersDescription")}</p>
+              <h3 className="m-0 text-base font-semibold">
+                {translate(locale, "settings.members")}
+              </h3>
+              <p className="m-0 mt-1 text-sm text-ui-text-secondary">
+                {translate(locale, "settings.membersDescription")}
+              </p>
             </div>
           </div>
           <form
-            className="ui-next-governance__form ui-next-governance__form--compact"
+            className="ui-next-governance__form ui-next-governance__form--compact grid grid-cols-[minmax(0,1fr)_minmax(10rem,0.5fr)_auto] max-md:grid-cols-1 items-end gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
@@ -239,21 +243,28 @@ export function ProjectSettingsWorkspace({
               {translate(locale, "settings.addMember")}
             </Button>
           </form>
-          <ul className="ui-next-governance__rows" role="list">
+          <ul className="ui-next-governance__rows grid gap-2 list-none m-0 p-0" role="list">
             {members.map((member) => (
-              <li key={member.userId}>
+              <li
+                key={member.userId}
+                className="flex items-center max-md:flex-col max-md:items-start justify-between gap-4 py-3 border-t border-ui-border"
+              >
                 <div>
-                  <strong>{member.displayName}</strong>
-                  <span>{translate(locale, `account.role.${member.role}`)}</span>
+                  <strong className="text-ui-text text-sm font-semibold">
+                    {member.displayName}
+                  </strong>
+                  <span className="block text-xs text-ui-text-muted">
+                    {translate(locale, `account.role.${member.role}`)}
+                  </span>
                   {member.memberRole === "manager" && managerCount === 1 ? (
-                    <span className="ui-next-muted">
+                    <span className="ui-next-muted block text-xs text-ui-text-muted">
                       {translate(locale, "settings.lastManager")}
                     </span>
                   ) : null}
                 </div>
-                <div className="ui-next-governance__actions">
+                <div className="ui-next-governance__actions flex shrink-0 items-center gap-2 max-md:w-full max-md:flex-wrap">
                   <select
-                    className="ui-next-control"
+                    className="ui-next-control w-48 max-md:w-full"
                     value={member.memberRole}
                     disabled={member.memberRole === "manager" && managerCount === 1}
                     aria-label={translate(locale, "settings.memberRoleNamed", {
@@ -308,15 +319,19 @@ export function ProjectSettingsWorkspace({
       ) : null}
 
       {!personal && libraryEnabled ? (
-        <Surface className="ui-next-governance__section">
-          <div className="ui-next-governance__heading">
+        <Surface className="ui-next-governance__section grid gap-4">
+          <div className="ui-next-governance__heading flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h3>{translate(locale, "settings.libraryOperators")}</h3>
-              <p>{translate(locale, "settings.libraryOperatorsDescription")}</p>
+              <h3 className="m-0 text-base font-semibold">
+                {translate(locale, "settings.libraryOperators")}
+              </h3>
+              <p className="m-0 mt-1 text-sm text-ui-text-secondary">
+                {translate(locale, "settings.libraryOperatorsDescription")}
+              </p>
             </div>
           </div>
           <form
-            className="ui-next-governance__form ui-next-governance__form--compact"
+            className="ui-next-governance__form ui-next-governance__form--compact grid grid-cols-[minmax(0,1fr)_minmax(10rem,0.5fr)_auto] max-md:grid-cols-1 items-end gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
@@ -353,10 +368,15 @@ export function ProjectSettingsWorkspace({
               {translate(locale, "settings.grantOperator")}
             </Button>
           </form>
-          <ul className="ui-next-governance__rows" role="list">
+          <ul className="ui-next-governance__rows grid gap-2 list-none m-0 p-0" role="list">
             {operators.map((operator) => (
-              <li key={operator.userId}>
-                <strong>{operator.displayName}</strong>
+              <li
+                key={operator.userId}
+                className="flex items-center justify-between gap-4 py-3 border-t border-ui-border"
+              >
+                <strong className="text-ui-text text-sm font-semibold">
+                  {operator.displayName}
+                </strong>
                 <Button
                   type="button"
                   variant="danger"
@@ -377,7 +397,10 @@ export function ProjectSettingsWorkspace({
         </Surface>
       ) : null}
       {message ? (
-        <p className="ui-next-governance__error" role="alert">
+        <p
+          className="ui-next-governance__error m-0 text-sm text-ui-danger font-medium"
+          role="alert"
+        >
           {message}
         </p>
       ) : null}

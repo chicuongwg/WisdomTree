@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { handleApi } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
 import { claimTask } from "@/modules/pm/service";
@@ -9,6 +10,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ ta
   return handleApi(async () => {
     const actor = await requirePrincipal();
     const { taskId } = await params;
-    return NextResponse.json(await claimTask(actor, taskId));
+    const task = await claimTask(actor, taskId);
+    revalidatePath("/app/my-work");
+    return NextResponse.json(task);
   });
 }

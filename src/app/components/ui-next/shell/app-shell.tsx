@@ -27,7 +27,7 @@ export function AppShell({
   unreadNotifications?: number;
 }) {
   return (
-    <div className="ui-next-app-shell">
+    <div className="ui-next-app-shell min-h-dvh grid grid-cols-[15rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] bg-ui-bg">
       <AppHeader
         displayName={displayName}
         locale={locale}
@@ -37,7 +37,11 @@ export function AppShell({
         unreadNotifications={unreadNotifications}
       />
       <AppSidebar locale={locale} canAccessAdministration={canAccessAdministration} />
-      <main id="app-main" className="ui-next-app-main" tabIndex={-1}>
+      <main
+        id="app-main"
+        className="ui-next-app-main col-start-2 row-start-2 p-6 overflow-y-auto"
+        tabIndex={-1}
+      >
         {children}
       </main>
     </div>

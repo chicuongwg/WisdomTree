@@ -33,11 +33,13 @@ export default async function AppProjectOverviewPage({
   }
 
   return (
-    <div className="ui-next-project-overview">
-      <section aria-labelledby="project-about-title">
-        <h2 id="project-about-title">{translate(application.locale, "workspace.about")}</h2>
+    <div className="ui-next-project-overview grid grid-cols-2 max-md:grid-cols-1 gap-6">
+      <section aria-labelledby="project-about-title" className="min-w-0">
+        <h2 id="project-about-title" className="m-0 mb-3 text-lg font-bold">
+          {translate(application.locale, "workspace.about")}
+        </h2>
         <Surface>
-          <p dir="auto">
+          <p dir="auto" className="m-0 leading-relaxed break-words">
             {workspace.project.description ||
               (workspace.project.isPersonal &&
               workspace.project.researchLens === "Personal research workspace"
@@ -46,10 +48,12 @@ export default async function AppProjectOverviewPage({
           </p>
         </Surface>
       </section>
-      <section aria-labelledby="project-access-title">
-        <h2 id="project-access-title">{translate(application.locale, "workspace.access")}</h2>
+      <section aria-labelledby="project-access-title" className="min-w-0">
+        <h2 id="project-access-title" className="m-0 mb-3 text-lg font-bold">
+          {translate(application.locale, "workspace.access")}
+        </h2>
         <Surface tone="sunken">
-          <h3>
+          <h3 className="m-0 text-base font-semibold">
             {translate(
               application.locale,
               workspace.project.operationalMember
@@ -57,7 +61,7 @@ export default async function AppProjectOverviewPage({
                 : "projects.researchAccess",
             )}
           </h3>
-          <p>
+          <p className="m-0 mt-2 text-sm text-ui-text-secondary">
             {translate(
               application.locale,
               workspace.project.operationalMember
@@ -65,7 +69,7 @@ export default async function AppProjectOverviewPage({
                 : "workspace.researchAccessDescription",
             )}
           </p>
-          <ul>
+          <ul className="mt-4 space-y-1 text-sm text-ui-text-secondary pl-5 list-disc">
             <li>{translate(application.locale, "workspace.canReadResearch")}</li>
             {(
               [

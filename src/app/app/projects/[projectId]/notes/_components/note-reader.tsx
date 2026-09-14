@@ -49,11 +49,11 @@ export function NoteReader({
   onToggleFocus,
 }: NoteReaderProps) {
   return (
-    <article className="ui-next-note-reader">
-      <header className="ui-next-note-reader__header">
-        <div className="ui-next-note-reader__top-bar">
-          <div className="ui-next-note-reader__badges">
-            <span className="ui-next-muted">{projectName}</span>
+    <article className="ui-next-note-reader flex flex-col gap-6 max-w-[var(--ui-width-reading)] mx-auto w-full">
+      <header className="ui-next-note-reader__header flex flex-col gap-3 border-b border-ui-border pb-4">
+        <div className="ui-next-note-reader__top-bar flex items-center justify-between gap-4 flex-wrap">
+          <div className="ui-next-note-reader__badges flex items-center gap-2 flex-wrap">
+            <span className="ui-next-muted text-xs text-ui-text-muted">{projectName}</span>
             <StatusBadge tone="neutral">
               {translate(locale, "notes.state.official")} v{note.currentVersion}
             </StatusBadge>
@@ -67,7 +67,7 @@ export function NoteReader({
             </StatusBadge>
           </div>
 
-          <div className="ui-next-note-reader__actions">
+          <div className="ui-next-note-reader__actions flex items-center gap-2 flex-wrap">
             {canEdit ? (
               <Button type="button" variant="primary" onClick={onEditClick}>
                 {translate(locale, "notes.action.edit")}
@@ -82,12 +82,21 @@ export function NoteReader({
           </div>
         </div>
 
-        <h1 className="ui-next-note-reader__title">{note.title}</h1>
+        <h1 className="ui-next-note-reader__title m-0 text-2xl font-bold text-ui-text leading-tight">
+          {note.title}
+        </h1>
 
-        {note.summary ? <p className="ui-next-note-reader__summary">{note.summary}</p> : null}
+        {note.summary ? (
+          <p className="ui-next-note-reader__summary m-0 text-base text-ui-text-secondary leading-relaxed italic p-3 pl-4 bg-ui-surface-sunken border-l-4 border-ui-border-strong rounded-r">
+            {note.summary}
+          </p>
+        ) : null}
       </header>
 
-      <ResearchContent className="ui-next-note-reader__content" dir="auto">
+      <ResearchContent
+        className="ui-next-note-reader__content leading-relaxed text-base text-ui-text"
+        dir="auto"
+      >
         <MarkdownView content={note.contentMd} dir="auto" />
       </ResearchContent>
     </article>

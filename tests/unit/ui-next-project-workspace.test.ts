@@ -31,19 +31,22 @@ export async function run() {
   const projectContract = readFileSync("src/modules/application/projects.ts", "utf8");
   const appHeader = readFileSync("src/app/components/ui-next/shell/app-header.tsx", "utf8");
   const createDialog = readFileSync("src/app/components/ui-next/shell/create-dialog.tsx", "utf8");
-  const containerStyles = readFileSync("src/app/components/ui-next/styles.module.css", "utf8");
-  const workspaceStyles = readFileSync("src/app/components/ui-next/project-workspace.module.css", "utf8");
-  const notesStyles = readFileSync("src/app/components/ui-next/notes.module.css", "utf8");
-  const materialsStyles = readFileSync("src/app/components/ui-next/materials.module.css", "utf8");
+  const containerStyles = readFileSync("src/app/components/ui-next/styles.css", "utf8");
+  const workspaceStyles = readFileSync("src/app/components/ui-next/project-workspace.css", "utf8");
+  const notesStyles = readFileSync("src/app/components/ui-next/notes.css", "utf8");
+  const materialsStyles = readFileSync("src/app/components/ui-next/materials.css", "utf8");
   const activitiesTasksStyles = readFileSync(
-    "src/app/components/ui-next/activities-tasks.module.css",
+    "src/app/components/ui-next/activities-tasks.css",
     "utf8",
   );
   const projectPeoplePage = readFileSync(
     "src/app/app/projects/[projectId]/people/page.tsx",
     "utf8",
   );
-  const peopleDirectory = readFileSync("src/app/app/people/_components/people-directory.tsx", "utf8");
+  const peopleDirectory = readFileSync(
+    "src/app/app/people/_components/people-directory.tsx",
+    "utf8",
+  );
   const workspaceSource = `${layout}\n${context}\n${header}\n${navigation}`;
 
   assert.match(context, /cache\(async \(projectId: string\)/);
@@ -59,7 +62,10 @@ export async function run() {
   assert.match(navigation, /modules\[item\.module\]/);
   assert.match(projectContract, /activities: project\.operationalMember/);
   assert.match(projectContract, /tasks: project\.operationalMember/);
-  assert.match(projectContract, /library: project\.features\.libraryCirculation && project\.operationalMember/);
+  assert.match(
+    projectContract,
+    /library: project\.features\.libraryCirculation && project\.operationalMember/,
+  );
 
   assert.equal(
     projectSwitchHref("project-b", "/app/projects/project-a/notes"),
@@ -91,7 +97,10 @@ export async function run() {
   assert.match(createDialog, /projects\.find\(\(project\) => project\.id === defaultProjectId\)/);
 
   assert.match(containerStyles, /--ui-container-width: var\(--ui-width-standard\)/);
-  assert.match(containerStyles, /\.ui-next-container--wide(?:\)|\s)*\{\s*--ui-container-width: var\(--ui-width-wide\);/);
+  assert.match(
+    containerStyles,
+    /\.ui-next-container--wide(?:\)|\s)*\{\s*--ui-container-width: var\(--ui-width-wide\);/,
+  );
   assert.match(layout, /ui-next-project-module-frame/);
   assert.match(workspaceStyles, /\.ui-next-project-module-frame(?:\)|\s)*\{\s*min-inline-size: 0;/);
   assert.doesNotMatch(notesStyles, /max-width: 1100px/);

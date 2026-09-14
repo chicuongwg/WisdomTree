@@ -27,7 +27,7 @@ export async function run() {
     `${root}/app/projects/[projectId]/materials/_components/material-detail.tsx`,
     "utf8",
   );
-  const materialStyles = readFileSync("src/app/components/ui-next/materials.module.css", "utf8");
+  const materialStyles = readFileSync("src/app/components/ui-next/materials.css", "utf8");
   assert.match(detail, /materials\.extraction\.derivedNotice/);
   assert.match(detail, /createProjectNote/);
   assert.match(detail, /materials\.continueWorkingNote/);

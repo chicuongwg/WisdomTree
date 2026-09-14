@@ -14,6 +14,7 @@ if (!/(^|_)test(_|$)/i.test(testDatabaseName)) {
 process.env.DATABASE_URL = testDatabaseUrl;
 process.env.SESSION_SECRET ??= "wisdomtree-e2e-session-secret";
 process.env.CRON_SECRET ??= "wisdomtree-e2e-cron-secret";
+process.env.USER_RATE_LIMIT ??= "10000";
 
 const standalone = ".next/standalone";
 if (!existsSync(`${standalone}/server.js`)) {

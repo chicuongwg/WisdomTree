@@ -53,16 +53,26 @@ export function ProjectList({
     locale,
   );
   return (
-    <div className="ui-next-project-groups">
+    <div className="ui-next-project-groups space-y-6">
       {personal.length ? (
         <section aria-labelledby="my-project-heading">
-          <h2 id="my-project-heading">{translate(locale, "projects.myProject")}</h2>
+          <h2
+            id="my-project-heading"
+            className="text-sm font-semibold uppercase tracking-wider text-ui-text-muted mb-3"
+          >
+            {translate(locale, "projects.myProject")}
+          </h2>
           <ProjectCards projects={personal} locale={locale} showDescription={showDescription} />
         </section>
       ) : null}
       {shared.length ? (
         <section aria-labelledby="shared-projects-heading">
-          <h2 id="shared-projects-heading">{translate(locale, "projects.sharedProjects")}</h2>
+          <h2
+            id="shared-projects-heading"
+            className="text-sm font-semibold uppercase tracking-wider text-ui-text-muted mb-3"
+          >
+            {translate(locale, "projects.sharedProjects")}
+          </h2>
           <ProjectCards projects={shared} locale={locale} showDescription={showDescription} />
         </section>
       ) : null}
@@ -80,14 +90,20 @@ function ProjectCards({
   showDescription: boolean;
 }) {
   return (
-    <ul className="ui-next-project-list" aria-label={translate(locale, "projects.listLabel")}>
+    <ul
+      className="ui-next-project-list grid gap-3 m-0 p-0 list-none"
+      aria-label={translate(locale, "projects.listLabel")}
+    >
       {projects.map((project) => (
         <li key={project.id}>
-          <Surface className="ui-next-project-card">
-            <div className="ui-next-project-card__main">
-              <div className="ui-next-project-card__title-row">
-                <h3>
-                  <Link href={`/app/projects/${project.id}`}>
+          <Surface className="ui-next-project-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:border-ui-border-strong">
+            <div className="ui-next-project-card__main min-w-0">
+              <div className="ui-next-project-card__title-row flex items-center gap-3 flex-wrap">
+                <h3 className="m-0 font-bold text-base">
+                  <Link
+                    href={`/app/projects/${project.id}`}
+                    className="text-ui-text hover:text-ui-accent hover:underline"
+                  >
                     {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
                   </Link>
                 </h3>
@@ -95,18 +111,24 @@ function ProjectCards({
                   {translate(locale, statusMessageKey[project.status])}
                 </StatusBadge>
               </div>
-              <p className="ui-next-project-card__lens" dir="auto">
+              <p
+                className="ui-next-project-card__lens m-0 mt-1 text-sm text-ui-text-secondary"
+                dir="auto"
+              >
                 {project.isPersonal && project.researchLens === "Personal research workspace"
                   ? translate(locale, "projects.personalWorkspace")
                   : project.researchLens}
               </p>
               {showDescription && project.description ? (
-                <p className="ui-next-project-card__description" dir="auto">
+                <p
+                  className="ui-next-project-card__description m-0 mt-2 text-sm text-ui-text-muted"
+                  dir="auto"
+                >
                   {project.description}
                 </p>
               ) : null}
             </div>
-            <div className="ui-next-project-card__meta">
+            <div className="ui-next-project-card__meta flex items-center gap-2 shrink-0">
               <StatusBadge tone={project.operationalMember ? "accent" : "neutral"}>
                 {translate(
                   locale,

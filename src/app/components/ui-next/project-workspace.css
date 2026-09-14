@@ -1,20 +1,16 @@
-.root {
-  display: contents;
-}
-
-.root :global(.ui-next-project-workspace) {
+.ui-next-project-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-inline-size: 0;
   gap: var(--ui-space-6);
 }
 
-.root :global(.ui-next-project-header) {
+.ui-next-project-header {
   display: grid;
   gap: var(--ui-space-4);
 }
 
-.root :global(.ui-next-project-switcher) {
+.ui-next-project-switcher {
   max-inline-size: 20rem;
   display: grid;
   gap: var(--ui-space-1);
@@ -23,32 +19,32 @@
   font-weight: 650;
 }
 
-.root :global(.ui-next-project-header__identity > div) {
+.ui-next-project-header__identity > div {
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-project-header h1) {
+.ui-next-project-header h1 {
   margin: 0;
   font-size: var(--ui-font-size-xl);
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
-.root :global(.ui-next-project-header__identity p) {
+.ui-next-project-header__identity p {
   max-inline-size: var(--ui-width-reading);
   margin: var(--ui-space-2) 0 0;
   color: var(--ui-color-text-secondary);
   overflow-wrap: anywhere;
 }
 
-.root :global(.ui-next-project-header__badges) {
+.ui-next-project-header__badges {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--ui-space-2);
 }
 
-.root :global(.ui-next-project-navigation) {
+.ui-next-project-navigation {
   min-inline-size: 0;
   position: sticky;
   inset-block-start: 3.75rem;
@@ -57,13 +53,13 @@
   background: var(--ui-color-background);
 }
 
-.root :global(.ui-next-project-navigation__links) {
+.ui-next-project-navigation__links {
   display: flex;
   overflow-x: auto;
   scrollbar-width: thin;
 }
 
-.root :global(.ui-next-project-navigation__links a) {
+.ui-next-project-navigation__links a {
   flex: 0 0 auto;
   border-block-end: 0.1875rem solid transparent;
   padding: var(--ui-space-3) var(--ui-space-4);
@@ -72,57 +68,57 @@
   text-decoration: none;
 }
 
-.root :global(.ui-next-project-navigation__links a:hover) {
+.ui-next-project-navigation__links a:hover {
   background: var(--ui-color-surface-sunken);
   color: var(--ui-color-text);
 }
 
-.root :global(.ui-next-project-navigation__links a[aria-current="page"]) {
+.ui-next-project-navigation__links a[aria-current="page"] {
   border-block-end-color: var(--ui-color-accent);
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
 }
 
-.root :global(.ui-next-project-workspace__content),
-.root :global(.ui-next-project-module-frame),
-.root :global(.ui-next-project-overview),
-.root :global(.ui-next-project-module) {
+.ui-next-project-workspace__content,
+.ui-next-project-module-frame,
+.ui-next-project-overview,
+.ui-next-project-module {
   display: grid;
   gap: var(--ui-space-6);
 }
 
-.root :global(.ui-next-project-workspace__content),
-.root :global(.ui-next-project-module-frame) {
+.ui-next-project-workspace__content,
+.ui-next-project-module-frame {
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-project-overview) {
+.ui-next-project-overview {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.root :global(.ui-next-project-overview section),
-.root :global(.ui-next-project-module) {
+.ui-next-project-overview section,
+.ui-next-project-module {
   min-inline-size: 0;
 }
 
-.root :global(.ui-next-project-overview h2),
-.root :global(.ui-next-project-module h2) {
+.ui-next-project-overview h2,
+.ui-next-project-module h2 {
   margin: 0 0 var(--ui-space-3);
   font-size: var(--ui-font-size-lg);
 }
 
-.root :global(.ui-next-project-overview h3),
-.root :global(.ui-next-project-overview p),
-.root :global(.ui-next-project-module p) {
+.ui-next-project-overview h3,
+.ui-next-project-overview p,
+.ui-next-project-module p {
   margin: 0;
 }
 
-.root :global(.ui-next-project-overview h3 + p) {
+.ui-next-project-overview h3 + p {
   margin-block-start: var(--ui-space-2);
   color: var(--ui-color-text-secondary);
 }
 
-.root :global(.ui-next-project-module__placeholder) {
+.ui-next-project-module__placeholder {
   min-block-size: 12rem;
   display: grid;
   place-items: center;
@@ -131,75 +127,71 @@
 }
 
 @media (max-width: 44rem) {
-  .root :global(.ui-next-project-header__identity) {
+  .ui-next-project-header__identity {
     flex-direction: column;
   }
 
-  .root :global(.ui-next-project-header__badges) {
+  .ui-next-project-header__badges {
     justify-content: flex-start;
   }
 
-  .root :global(.ui-next-project-navigation) {
+  .ui-next-project-navigation {
     inset-block-start: 3.75rem;
   }
 
-  .root :global(.ui-next-project-overview) {
+  .ui-next-project-overview {
     grid-template-columns: 1fr;
   }
 }
 
-.root :global(.ui-next-project-header__identity) {
+.ui-next-project-header__identity {
   display: grid;
   grid-template-columns: minmax(8rem, 15rem) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--ui-space-4);
 }
-.root :global(.ui-next-project-header__identity > div:has(h1)) {
+.ui-next-project-header__identity > div:has(h1) {
   display: contents;
 }
-.root :global(.ui-next-project-header__lens) {
+.ui-next-project-header__lens {
   grid-column: 1 / -1;
   grid-row: 2;
 }
-.root :global(.ui-next-project-header__badges) {
+.ui-next-project-header__badges {
   grid-column: 3;
   grid-row: 1;
 }
-.root :global(.ui-next-project-navigation__links) {
+.ui-next-project-navigation__links {
   min-inline-size: 0;
   white-space: nowrap;
 }
 @media (max-width: 64rem) {
-  .root :global(.ui-next-project-header__identity) {
+  .ui-next-project-header__identity {
     grid-template-columns: minmax(0, 1fr);
   }
-  .root :global(.ui-next-project-header__lens),
-  .root :global(.ui-next-project-header__badges) {
+  .ui-next-project-header__lens,
+  .ui-next-project-header__badges {
     grid-column: 1;
     grid-row: auto;
   }
-  .root :global(.ui-next-project-header__badges) {
+  .ui-next-project-header__badges {
     justify-content: flex-start;
   }
 }
 
-.root :global(.ui-next-project-header),
-.root :global(.ui-next-project-module-frame) {
+.ui-next-project-header,
+.ui-next-project-module-frame {
   max-inline-size: var(--ui-width-wide);
 }
-.root
-  :global(
-    .ui-next-project-module-frame:has(
-      .ui-next-note-workspace,
-      .ui-next-kanban,
-      .ui-next-calendar,
-      .knowledge-map
-    )
-  ) {
+.ui-next-project-module-frame:has(
+  .ui-next-note-workspace,
+  .ui-next-kanban,
+  .ui-next-calendar,
+  .knowledge-map
+) {
   max-inline-size: none;
 }
 
-.root
-  :global(.ui-next-project-module-frame:has(.ui-next-governance:not(.ui-next-governance--admin))) {
+.ui-next-project-module-frame:has(.ui-next-governance:not(.ui-next-governance--admin)) {
   max-inline-size: var(--ui-width-standard);
 }

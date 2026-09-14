@@ -12,7 +12,6 @@ import {
   translate,
   type StatusTone,
 } from "@/app/components/ui-next";
-import styles from "./note-inspector.module.css";
 
 export interface AttachedSourceVersion {
   sourceVersionId: string;
@@ -249,13 +248,11 @@ export function NoteInspectorContent({
         </div>
 
         {evidence.snapshotStatus === "unknown" ? (
-          <p className={`ui-next-muted ${styles.evidenceMessage}`}>
+          <p className="ui-next-muted m-0 text-sm">
             {translate(locale, "notes.evidence.historyUnknown")}
           </p>
         ) : !hasEvidence ? (
-          <p className={`ui-next-muted ${styles.evidenceMessage}`}>
-            {translate(locale, "notes.evidence.empty")}
-          </p>
+          <p className="ui-next-muted m-0 text-sm">{translate(locale, "notes.evidence.empty")}</p>
         ) : (
           <div className="ui-next-note-inspector__evidence-content">
             {evidence.sourceVersions.length > 0 ? (

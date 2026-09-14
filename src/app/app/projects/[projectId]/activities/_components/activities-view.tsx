@@ -89,19 +89,28 @@ export function ActivitiesView({
         }
       />
       {activities.length ? (
-        <ul className="ui-next-work-list" role="list">
+        <ul className="ui-next-work-list flex flex-col gap-3 list-none m-0 p-0" role="list">
           {activities.map((activity) => (
-            <li key={activity.id}>
+            <li
+              key={activity.id}
+              className="bg-ui-surface border border-ui-border rounded-lg p-4 transition-all hover:border-ui-border-strong hover:shadow-sm"
+            >
               <Link
-                className="ui-next-work-list__link"
+                className="ui-next-work-list__link flex items-center justify-between gap-4 no-underline text-inherit flex-wrap focus-visible:outline-2 focus-visible:outline-ui-focus rounded"
                 href={`/app/projects/${encodeURIComponent(projectId)}/activities/${encodeURIComponent(activity.id)}`}
               >
-                <div>
-                  <h3>{activity.title}</h3>
-                  {activity.summary ? <p>{activity.summary}</p> : null}
+                <div className="flex flex-col gap-1 min-w-0">
+                  <h3 className="m-0 text-lg font-semibold text-ui-text">{activity.title}</h3>
+                  {activity.summary ? (
+                    <p className="m-0 text-sm text-ui-text-secondary line-clamp-2">
+                      {activity.summary}
+                    </p>
+                  ) : null}
                 </div>
-                <div className="ui-next-work-list__meta">
-                  {activity.type ? <span>{activity.type}</span> : null}
+                <div className="ui-next-work-list__meta flex items-center gap-3 shrink-0">
+                  {activity.type ? (
+                    <span className="text-xs text-ui-text-muted">{activity.type}</span>
+                  ) : null}
                   <StatusBadge
                     tone={
                       activity.status === "cancelled"
@@ -133,7 +142,7 @@ export function ActivitiesView({
       )}
       <Dialog
         footer={
-          <div className="ui-next-work-form__actions">
+          <div className="ui-next-work-form__actions flex items-center justify-end gap-3">
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               {translate(locale, "common.cancel")}
             </Button>
@@ -153,21 +162,42 @@ export function ActivitiesView({
         title={translate(locale, "activities.create.title")}
         closeLabel={translate(locale, "common.close")}
       >
-        <form id="create-activity" className="ui-next-work-form" onSubmit={createActivity}>
-          <label>
+        <form
+          id="create-activity"
+          className="ui-next-work-form flex flex-col gap-4"
+          onSubmit={createActivity}
+        >
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ui-text">
             <span>{translate(locale, "activities.field.title")}</span>
-            <input name="title" required maxLength={300} autoFocus />
+            <input
+              name="title"
+              required
+              maxLength={300}
+              autoFocus
+              className="min-h-[2.5rem] rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 text-sm text-ui-text outline-none focus:border-ui-focus focus:ring-1 focus:ring-ui-focus"
+            />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ui-text">
             <span>{translate(locale, "activities.field.type")}</span>
-            <input name="type" maxLength={80} />
+            <input
+              name="type"
+              maxLength={80}
+              className="min-h-[2.5rem] rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 text-sm text-ui-text outline-none focus:border-ui-focus focus:ring-1 focus:ring-ui-focus"
+            />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ui-text">
             <span>{translate(locale, "activities.field.summary")}</span>
-            <textarea name="summary" rows={4} />
+            <textarea
+              name="summary"
+              rows={4}
+              className="rounded-md border border-ui-border bg-ui-surface px-3 py-1.5 text-sm text-ui-text outline-none focus:border-ui-focus focus:ring-1 focus:ring-ui-focus"
+            />
           </label>
           {error ? (
-            <p role="alert" className="ui-next-work-form__error">
+            <p
+              role="alert"
+              className="ui-next-work-form__error m-0 text-sm text-ui-danger font-medium"
+            >
               {error}
             </p>
           ) : null}
