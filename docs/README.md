@@ -14,6 +14,11 @@ speculative system and was retired with it; it remains in git history
 4. [roadmap.md](./roadmap.md) — what is deliberately not built yet (RAG).
 5. [vocabulary-vi.md](./vocabulary-vi.md) — the Vietnamese UI term map.
 
+## Archive
+
+Historical refactor, audit, product-completion, and UI design records live in
+[archive/](./archive/).
+
 ## Conventions (standing owner decisions)
 
 - **Simple-first**: the minimal design that meets the stated need, kept
