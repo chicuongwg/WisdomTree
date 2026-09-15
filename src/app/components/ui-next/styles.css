@@ -204,6 +204,15 @@
   inline-size: 2.5rem;
   padding: var(--ui-space-2);
 }
+.ui-next-icon-button > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.ui-next-button svg {
+  display: block;
+}
 
 .ui-next-spinner {
   inline-size: 1rem;

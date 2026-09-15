@@ -659,6 +659,12 @@
     content: "⌕";
     font-size: 1.5rem;
   }
+  .ui-next-create-trigger {
+    min-inline-size: 2.5rem;
+    inline-size: 2.5rem;
+    padding-inline: 0;
+    justify-content: center;
+  }
   .ui-next-create-trigger::before {
     content: "+";
     font-size: 1.25rem;

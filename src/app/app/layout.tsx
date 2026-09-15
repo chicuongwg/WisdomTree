@@ -2,10 +2,16 @@ import type { ReactNode } from "react";
 import { AppShell, SkipLink, translate } from "../components/ui-next";
 import "../components/ui-next/styles.css";
 import "../components/ui-next/shell.css";
+import "../components/ui-next/overview-projects.css";
 import "../components/ui-next/project-workspace.css";
 import "../components/ui-next/notes.css";
 import "../components/ui-next/materials.css";
 import "../components/ui-next/activities-tasks.css";
+import "../components/ui-next/calendar.css";
+import "../components/ui-next/library.css";
+import "../components/ui-next/governance.css";
+import "../components/ui-next/account.css";
+import "../components/ui-next/collaboration.css";
 import { getAppRequestContext } from "./_lib/request-context";
 import { unreadAppNotificationCount } from "@/modules/application";
 
