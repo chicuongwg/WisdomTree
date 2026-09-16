@@ -13,6 +13,8 @@ export async function run() {
     `${root}/api/app/projects/[projectId]/tasks/[taskId]/route.ts`,
     `${root}/api/app/projects/[projectId]/tasks/[taskId]/claim/route.ts`,
     `${root}/api/app/projects/[projectId]/tasks/[taskId]/activity/route.ts`,
+    `${root}/api/app/projects/[projectId]/tasks/[taskId]/history/route.ts`,
+    `${root}/api/app/projects/[projectId]/tasks/kpi/route.ts`,
   ];
   for (const file of deliveryFiles) {
     assert.equal(existsSync(file), true, `missing target delivery route ${file}`);
@@ -35,6 +37,8 @@ export async function run() {
   assert.match(taskFacade, /listAppMyWorkTasks/);
   assert.match(taskFacade, /listAppProjectTaskAssignees/);
   assert.match(taskFacade, /claimProjectTask/);
+  assert.match(taskFacade, /getAppProjectTaskKpis/);
+  assert.match(taskFacade, /getAppTaskStatusHistory/);
   assert.match(
     taskFacade,
     /canEdit: task\.createdBy === actor\.userId \|\| task\.assignedTo === actor\.userId/,
@@ -47,6 +51,21 @@ export async function run() {
   assert.match(taskView, /ui-next-task-list__row--readonly/);
   assert.match(taskView, /ui-next-kanban/);
   assert.match(taskView, /tasks\.view\.kanban/);
+  assert.match(taskView, /tasks\.view\.table/);
+  assert.match(taskView, /tasks\.view\.sprint/);
+  assert.match(taskView, /tasks\.view\.kpis/);
+  assert.match(taskView, /UnifiedTaskDialog/);
+  assert.match(taskView, /KpiScorecardView/);
+  assert.match(taskView, /TasksTable/);
+  assert.match(taskView, /SprintView/);
+
+  const pmService = readFileSync("src/modules/pm/service.ts", "utf8");
+  assert.match(pmService, /listProjectTaskKpis/);
+  assert.match(pmService, /listTaskStatusHistory/);
+  assert.match(pmService, /completedAt/);
+  assert.match(pmService, /completedBy/);
+  assert.match(pmService, /taskStatusHistory/);
+
   const myWork = readFileSync("src/modules/application/overview.ts", "utf8");
   assert.match(myWork, /listAppMyWorkTasks/);
 
@@ -58,6 +77,20 @@ export async function run() {
     "activities.tasks",
     "tasks.title",
     "tasks.field.activity",
+    "tasks.field.notesPlaceholder",
+    "tasks.field.priority",
+    "tasks.field.kind",
+    "tasks.field.sprint",
+    "tasks.field.estimatePoints",
+    "tasks.view.table",
+    "tasks.view.sprint",
+    "tasks.view.kpis",
+    "tasks.history.title",
+    "tasks.kpi.title",
+    "tasks.kpi.completionRate",
+    "tasks.kpi.onTimeRate",
+    "tasks.kpi.recentCompleted",
+    "tasks.kpi.avgDuration",
     "myWork.description",
   ] as const) {
     assert.ok(key in viMessages, `missing Vietnamese key ${key}`);
