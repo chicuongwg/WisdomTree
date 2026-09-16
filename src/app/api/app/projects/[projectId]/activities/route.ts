@@ -1,7 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ApiError } from "@/lib/errors";
 import { requirePrincipal } from "@/lib/request";
-import { createAppProjectActivity, toApplicationError } from "@/modules/application";
+import { createAppProjectActivity, listAppProjectActivities, toApplicationError } from "@/modules/application";
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
+  try {
+    const actor = await requirePrincipal();
+    const { projectId } = await params;
+    const activities = await listAppProjectActivities(actor, projectId);
+    return NextResponse.json({ activities });
+  } catch (error) {
+    const applicationError = toApplicationError(error);
+    return NextResponse.json(applicationError, { status: applicationError.status });
+  }
+}
 
 export async function POST(
   request: NextRequest,

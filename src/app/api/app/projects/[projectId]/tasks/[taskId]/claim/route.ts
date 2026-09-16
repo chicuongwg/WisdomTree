@@ -12,7 +12,12 @@ export async function POST(
     const actor = await requirePrincipal();
     const { projectId, taskId } = await params;
     const task = await claimAppProjectTask(actor, projectId, taskId);
+    revalidatePath("/app");
     revalidatePath("/app/my-work");
+    revalidatePath("/app/calendar");
+    revalidatePath(`/app/projects/${projectId}`);
+    revalidatePath(`/app/projects/${projectId}/tasks`);
+    revalidatePath(`/app/projects/${projectId}/tasks/${taskId}`);
     return NextResponse.json({ task });
   } catch (error) {
     const applicationError = toApplicationError(error);
