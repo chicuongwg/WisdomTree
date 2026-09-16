@@ -83,6 +83,18 @@ export const tasks = pgTable(
     notes: text("notes"),
     targetType: text("target_type"), // optional link to knowledge-work object
     targetId: uuid("target_id"),
+    priority: text("priority", { enum: ["urgent", "high", "medium", "low"] })
+      .notNull()
+      .default("medium"),
+    kind: text("kind", { enum: ["task", "feature", "bug", "improvement"] })
+      .notNull()
+      .default("task"),
+    sprint: text("sprint"),
+    estimatePoints: integer("estimate_points"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    startedBy: uuid("started_by").references(() => users.id),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    completedBy: uuid("completed_by").references(() => users.id),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id),
@@ -102,6 +114,35 @@ export const tasks = pgTable(
     }).onDelete("restrict"),
     index("tasks_project_id_idx").on(table.projectId),
     index("tasks_activity_id_idx").on(table.activityId),
+    index("tasks_priority_idx").on(table.priority),
+    index("tasks_sprint_idx").on(table.sprint),
+    index("tasks_completed_at_idx").on(table.completedAt),
+  ],
+);
+
+export const taskStatusHistory = pgTable(
+  "task_status_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").references(() => projects.projectId, { onDelete: "cascade" }),
+    fromState: text("from_state", { enum: ["todo", "doing", "done", "archived"] }),
+    toState: text("to_state", { enum: ["todo", "doing", "done", "archived"] }).notNull(),
+    changedBy: uuid("changed_by")
+      .notNull()
+      .references(() => users.id),
+    assignedTo: uuid("assigned_to").references(() => users.id),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_status_history_task_id_idx").on(table.taskId),
+    index("task_status_history_project_id_idx").on(table.projectId),
+    index("task_status_history_created_at_idx").on(table.createdAt),
+    index("task_status_history_changed_by_idx").on(table.changedBy),
+    index("task_status_history_to_state_idx").on(table.toState),
   ],
 );
 

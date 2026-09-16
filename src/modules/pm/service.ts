@@ -11,7 +11,7 @@ import { activities } from "../activity/schema";
 import { projects } from "../project/schema";
 import { sources, spaceMembers, spaces } from "../storage/schema";
 import { treeNodes } from "../knowledge/schema";
-import { calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
+import { calendarTokens, deadlineLinks, deadlines, tasks, taskStatusHistory } from "./schema";
 
 // Module: pm — deadlines with reminder offsets and links, the operational
 // board (tasks), and the token-authenticated ICS feed.
@@ -21,6 +21,11 @@ import { calendarTokens, deadlineLinks, deadlines, tasks } from "./schema";
 export type DeadlineType = (typeof deadlines.$inferSelect)["type"];
 export type LinkTarget = (typeof deadlineLinks.$inferSelect)["targetType"];
 export type TaskState = (typeof tasks.$inferSelect)["state"];
+export type TaskPriority = (typeof tasks.$inferSelect)["priority"];
+export type TaskKind = (typeof tasks.$inferSelect)["kind"];
+
+export const TASK_PRIORITIES: TaskPriority[] = ["urgent", "high", "medium", "low"];
+export const TASK_KINDS: TaskKind[] = ["task", "feature", "bug", "improvement"];
 
 const DEADLINE_TYPES: DeadlineType[] = ["conference", "funding", "report", "milestone"];
 const LINK_TARGETS: LinkTarget[] = ["task", "source", "tree_node"];
@@ -304,7 +309,12 @@ export async function listBoard(actor: Principal) {
 type TaskInput = {
   title?: string;
   state?: string;
+  priority?: TaskPriority;
+  kind?: TaskKind;
+  sprint?: string | null;
+  estimatePoints?: number | null;
   assigneeId?: string | null;
+  activityId?: string | null;
   targetType?: string | null;
   targetId?: string | null;
   dueAt?: string | null;
@@ -338,6 +348,14 @@ export async function getTask(actor: Principal, taskId: string) {
       id: tasks.id,
       title: tasks.title,
       state: tasks.state,
+      priority: tasks.priority,
+      kind: tasks.kind,
+      sprint: tasks.sprint,
+      estimatePoints: tasks.estimatePoints,
+      startedAt: tasks.startedAt,
+      startedBy: tasks.startedBy,
+      completedAt: tasks.completedAt,
+      completedBy: tasks.completedBy,
       projectId: tasks.projectId,
       activityId: tasks.activityId,
       assignedTo: tasks.assignedTo,
@@ -378,6 +396,15 @@ export async function claimTask(actor: Principal, taskId: string) {
       .where(and(eq(tasks.id, taskId), isNull(tasks.assignedTo), ne(tasks.state, "archived")))
       .returning();
     if (!row) return null;
+    await tx.insert(taskStatusHistory).values({
+      taskId: row.id,
+      projectId: row.projectId,
+      fromState: row.state,
+      toState: row.state,
+      changedBy: actor.userId,
+      assignedTo: actor.userId,
+      notes: "Task claimed",
+    });
     await recordAudit(tx, actor, {
       accountability: "member",
       action: "task.claim",
@@ -415,6 +442,15 @@ export async function claimProjectTask(actor: Principal, projectId: string, task
       )
       .returning();
     if (!row) return null;
+    await tx.insert(taskStatusHistory).values({
+      taskId: row.id,
+      projectId: row.projectId,
+      fromState: row.state,
+      toState: row.state,
+      changedBy: actor.userId,
+      assignedTo: actor.userId,
+      notes: "Task claimed",
+    });
     await recordAudit(tx, actor, {
       accountability: "member",
       action: "task.claim",
@@ -451,6 +487,15 @@ export async function archiveTask(actor: Principal, taskId: string) {
       .update(tasks)
       .set({ state: "archived", updatedAt: new Date(), version: target.version + 1 })
       .where(eq(tasks.id, taskId));
+    await tx.insert(taskStatusHistory).values({
+      taskId: target.id,
+      projectId: target.projectId,
+      fromState: target.state,
+      toState: "archived",
+      changedBy: actor.userId,
+      assignedTo: target.assignedTo,
+      notes: "Task archived",
+    });
     await recordAudit(tx, actor, {
       accountability: "member",
       action: "task.archive",
@@ -602,21 +647,50 @@ export async function createTask(actor: Principal, input: TaskInput) {
   if (!TASK_STATES.includes(state as TaskState)) {
     throw new ApiError(400, "invalid_task_state", "Invalid task state.");
   }
+  const priority = input.priority ?? "medium";
+  if (!TASK_PRIORITIES.includes(priority)) {
+    throw new ApiError(400, "invalid_task_priority", "Invalid task priority.");
+  }
+  const kind = input.kind ?? "task";
+  if (!TASK_KINDS.includes(kind)) {
+    throw new ApiError(400, "invalid_task_kind", "Invalid task kind.");
+  }
+
+  const isDoing = state === "doing";
+  const isDone = state === "done";
+
   const created = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(tasks)
       .values({
         title: input.title!.trim(),
         state: state as TaskState,
+        priority,
+        kind,
+        sprint: input.sprint?.trim() || null,
+        estimatePoints: typeof input.estimatePoints === "number" ? input.estimatePoints : null,
         assignedTo: input.assigneeId ?? null,
         targetType: input.targetType ?? null,
         targetId: input.targetId ?? null,
         dueAt: parseDueAt(input.dueAt),
         startAt: parseStartAt(input.startAt),
         notes: input.notes?.trim() || null,
+        startedAt: isDoing ? new Date() : null,
+        startedBy: isDoing ? actor.userId : null,
+        completedAt: isDone ? new Date() : null,
+        completedBy: isDone ? actor.userId : null,
         createdBy: actor.userId,
       })
       .returning();
+    await tx.insert(taskStatusHistory).values({
+      taskId: row.id,
+      projectId: row.projectId,
+      fromState: null,
+      toState: row.state,
+      changedBy: actor.userId,
+      assignedTo: row.assignedTo,
+      notes: "Task created",
+    });
     await recordAudit(tx, actor, {
       accountability: "operator",
       action: "task.create",
@@ -633,6 +707,11 @@ type ProjectTaskInput = {
   projectId?: string;
   activityId?: string | null;
   title?: string;
+  state?: string;
+  priority?: TaskPriority;
+  kind?: TaskKind;
+  sprint?: string | null;
+  estimatePoints?: number | null;
   assigneeId?: string | null;
   dueAt?: string | null;
   startAt?: string | null;
@@ -659,6 +738,19 @@ export async function createProjectTask(actor: Principal, input: ProjectTaskInpu
   if (!input.title?.trim()) {
     throw new ApiError(400, "invalid_task", "Task title must not be empty.");
   }
+  const state = input.state ?? "todo";
+  if (!TASK_STATES.includes(state as TaskState)) {
+    throw new ApiError(400, "invalid_task_state", "Invalid task state.");
+  }
+  const priority = input.priority ?? "medium";
+  if (!TASK_PRIORITIES.includes(priority)) {
+    throw new ApiError(400, "invalid_task_priority", "Invalid task priority.");
+  }
+  const kind = input.kind ?? "task";
+  if (!TASK_KINDS.includes(kind)) {
+    throw new ApiError(400, "invalid_task_kind", "Invalid task kind.");
+  }
+
   if (input.activityId) {
     const [activity] = await db
       .select({ id: activities.id })
@@ -690,6 +782,9 @@ export async function createProjectTask(actor: Principal, input: ProjectTaskInpu
     }
   }
 
+  const isDoing = state === "doing";
+  const isDone = state === "done";
+
   return db.transaction(async (tx) => {
     const [row] = await tx
       .insert(tasks)
@@ -697,14 +792,31 @@ export async function createProjectTask(actor: Principal, input: ProjectTaskInpu
         projectId: project.projectId,
         activityId: input.activityId || null,
         title: input.title!.trim(),
-        state: "todo",
+        state: state as TaskState,
+        priority,
+        kind,
+        sprint: input.sprint?.trim() || null,
+        estimatePoints: typeof input.estimatePoints === "number" ? input.estimatePoints : null,
         assignedTo: input.assigneeId || null,
         dueAt: parseDueAt(input.dueAt),
         startAt: parseStartAt(input.startAt),
         notes: input.notes?.trim() || null,
+        startedAt: isDoing ? new Date() : null,
+        startedBy: isDoing ? actor.userId : null,
+        completedAt: isDone ? new Date() : null,
+        completedBy: isDone ? actor.userId : null,
         createdBy: actor.userId,
       })
       .returning();
+    await tx.insert(taskStatusHistory).values({
+      taskId: row.id,
+      projectId: row.projectId,
+      fromState: null,
+      toState: row.state,
+      changedBy: actor.userId,
+      assignedTo: row.assignedTo,
+      notes: "Task created",
+    });
     await recordAudit(tx, actor, {
       accountability: "member",
       action: "task.create",
@@ -733,10 +845,18 @@ export async function listProjectTasks(actor: Principal, projectId: string) {
       activityId: tasks.activityId,
       title: tasks.title,
       state: tasks.state,
+      priority: tasks.priority,
+      kind: tasks.kind,
+      sprint: tasks.sprint,
+      estimatePoints: tasks.estimatePoints,
+      startedAt: tasks.startedAt,
+      startedBy: tasks.startedBy,
       assignedTo: tasks.assignedTo,
       assigneeName: users.displayName,
       dueAt: tasks.dueAt,
       startAt: tasks.startAt,
+      completedAt: tasks.completedAt,
+      completedBy: tasks.completedBy,
       notes: tasks.notes,
       targetType: tasks.targetType,
       targetId: tasks.targetId,
@@ -772,7 +892,14 @@ export async function listMyAssignedProjectTasks(actor: Principal) {
       activityId: tasks.activityId,
       title: tasks.title,
       state: tasks.state,
+      priority: tasks.priority,
+      kind: tasks.kind,
+      sprint: tasks.sprint,
+      estimatePoints: tasks.estimatePoints,
+      startedAt: tasks.startedAt,
+      completedAt: tasks.completedAt,
       assignedTo: tasks.assignedTo,
+      createdBy: tasks.createdBy,
       dueAt: tasks.dueAt,
       startAt: tasks.startAt,
       notes: tasks.notes,
@@ -788,7 +915,7 @@ export async function listMyAssignedProjectTasks(actor: Principal) {
     )
     .innerJoin(spaces, eq(spaces.id, projects.projectId))
     .leftJoin(activities, eq(activities.id, tasks.activityId))
-    .where(and(eq(tasks.assignedTo, actor.userId), ne(tasks.state, "archived")))
+    .where(eq(tasks.assignedTo, actor.userId))
     .orderBy(asc(tasks.dueAt), asc(tasks.title), asc(tasks.id));
 }
 
@@ -885,6 +1012,12 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
   if (input.state !== undefined && !TASK_STATES.includes(input.state as TaskState)) {
     throw new ApiError(400, "invalid_task_state", "Invalid task state.");
   }
+  if (input.priority !== undefined && !TASK_PRIORITIES.includes(input.priority)) {
+    throw new ApiError(400, "invalid_task_priority", "Invalid task priority.");
+  }
+  if (input.kind !== undefined && !TASK_KINDS.includes(input.kind)) {
+    throw new ApiError(400, "invalid_task_kind", "Invalid task kind.");
+  }
   const expectedVersion = input.expectedVersion;
   if (typeof expectedVersion !== "number") throw versionConflict();
   if (existing.projectId && input.assigneeId) {
@@ -906,6 +1039,26 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
       );
     }
   }
+  if (existing.projectId && input.activityId) {
+    const [activity] = await db
+      .select({ id: activities.id })
+      .from(activities)
+      .where(and(eq(activities.id, input.activityId), eq(activities.projectId, existing.projectId)));
+    if (!activity) {
+      throw new ApiError(
+        400,
+        "invalid_task_activity",
+        "Task Activity must belong to the same Project.",
+      );
+    }
+  }
+
+  const isTransitioningToDoing = input.state === "doing" && existing.state !== "doing";
+  const isTransitioningToDone = input.state === "done" && existing.state !== "done";
+  const isTransitioningFromDone =
+    input.state !== undefined && input.state !== "done" && existing.state === "done";
+  const isTransitioningFromDoing =
+    input.state !== undefined && input.state === "todo" && existing.state === "doing";
 
   const updated = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -913,23 +1066,42 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
       .set({
         ...(input.title?.trim() ? { title: input.title.trim() } : {}),
         ...(input.state ? { state: input.state as TaskState } : {}),
+        ...(input.priority ? { priority: input.priority } : {}),
+        ...(input.kind ? { kind: input.kind } : {}),
+        ...(input.sprint !== undefined ? { sprint: input.sprint?.trim() || null } : {}),
+        ...(input.estimatePoints !== undefined
+          ? { estimatePoints: typeof input.estimatePoints === "number" ? input.estimatePoints : null }
+          : {}),
         ...(input.assigneeId !== undefined ? { assignedTo: input.assigneeId } : {}),
+        ...(input.activityId !== undefined ? { activityId: input.activityId || null } : {}),
         // Absent key = leave the schedule alone; explicit null = unschedule.
         ...(input.dueAt !== undefined ? { dueAt: parseDueAt(input.dueAt) } : {}),
         ...(input.startAt !== undefined ? { startAt: parseStartAt(input.startAt) } : {}),
         // Same rule for the body: absent leaves it, empty clears it.
         ...(input.notes !== undefined ? { notes: input.notes?.trim() || null } : {}),
+        ...(isTransitioningToDoing ? { startedAt: existing.startedAt || new Date(), startedBy: actor.userId } : {}),
+        ...(isTransitioningFromDoing && !existing.completedAt ? { startedAt: null, startedBy: null } : {}),
+        ...(isTransitioningToDone ? { completedAt: new Date(), completedBy: actor.userId } : {}),
+        ...(isTransitioningFromDone ? { completedAt: null, completedBy: null } : {}),
         updatedAt: new Date(),
         version: existing.version + 1,
       })
       .where(and(eq(tasks.id, taskId), eq(tasks.version, expectedVersion)))
       .returning();
     if (!row) throw versionConflict();
-    // What actually changed, not what the columns happen to hold. This used to
-    // record {from: state, to: state} on every edit, so renaming a task or
-    // writing a note produced the line {"from":"todo","to":"todo"} — an entry
-    // that proves something happened and refuses to say what. An audit log
-    // that cannot answer "what changed" is a log nobody can investigate with.
+
+    if (input.state && input.state !== existing.state) {
+      await tx.insert(taskStatusHistory).values({
+        taskId: row.id,
+        projectId: row.projectId,
+        fromState: existing.state,
+        toState: row.state,
+        changedBy: actor.userId,
+        assignedTo: row.assignedTo,
+        notes: null,
+      });
+    }
+
     const changed: Record<string, unknown> = { title: row.title };
     if (row.state !== existing.state) changed.state = { from: existing.state, to: row.state };
     if (row.assignedTo !== existing.assignedTo) {
@@ -937,9 +1109,6 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
     }
     if (row.dueAt?.getTime() !== existing.dueAt?.getTime()) changed.dueAt = row.dueAt;
     if (row.startAt?.getTime() !== existing.startAt?.getTime()) changed.startAt = row.startAt;
-    // The note's TEXT never enters the log: an audit trail is a record of who
-    // did what, and copying the body into it would quietly build a second,
-    // unreadable, undeletable copy of every note in the system.
     if (row.notes !== existing.notes) changed.notes = "edited";
     await recordAudit(tx, actor, {
       accountability: "operator",
@@ -951,6 +1120,60 @@ export async function updateTask(actor: Principal, taskId: string, input: TaskIn
     return row;
   });
   return updated;
+}
+
+export type TaskStatusHistoryItem = {
+  id: string;
+  taskId: string;
+  projectId: string | null;
+  fromState: string | null;
+  toState: string;
+  changedBy: string;
+  changedByName: string | null;
+  assignedTo: string | null;
+  assignedToName: string | null;
+  notes: string | null;
+  createdAt: Date;
+};
+
+export async function listTaskStatusHistory(
+  actor: Principal,
+  taskId: string,
+): Promise<TaskStatusHistoryItem[]> {
+  const task = await getTask(actor, taskId);
+  const rows = await db
+    .select({
+      id: taskStatusHistory.id,
+      taskId: taskStatusHistory.taskId,
+      projectId: taskStatusHistory.projectId,
+      fromState: taskStatusHistory.fromState,
+      toState: taskStatusHistory.toState,
+      changedBy: taskStatusHistory.changedBy,
+      changedByName: users.displayName,
+      assignedTo: taskStatusHistory.assignedTo,
+      notes: taskStatusHistory.notes,
+      createdAt: taskStatusHistory.createdAt,
+    })
+    .from(taskStatusHistory)
+    .leftJoin(users, eq(taskStatusHistory.changedBy, users.id))
+    .where(eq(taskStatusHistory.taskId, task.id))
+    .orderBy(asc(taskStatusHistory.createdAt), asc(taskStatusHistory.id));
+
+  const assigneeIds = Array.from(
+    new Set(rows.map((r) => r.assignedTo).filter((id): id is string => Boolean(id))),
+  );
+  const assigneeUsers = assigneeIds.length
+    ? await db
+        .select({ id: users.id, displayName: users.displayName })
+        .from(users)
+        .where(inArray(users.id, assigneeIds))
+    : [];
+  const assigneeMap = new Map(assigneeUsers.map((u) => [u.id, u.displayName]));
+
+  return rows.map((r) => ({
+    ...r,
+    assignedToName: r.assignedTo ? assigneeMap.get(r.assignedTo) ?? null : null,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -985,8 +1208,6 @@ export async function regenerateCalendarToken(actor: Principal) {
       action: "calendar.token.regenerate",
       targetType: "user",
       targetId: actor.userId,
-      // Never the token itself: the audit log must not become a place the
-      // credential can be read back from.
       details: {},
     });
   });
@@ -1016,9 +1237,6 @@ export async function renderCalendarFeed(token: string): Promise<string> {
     .where(and(eq(users.id, row.userId), isNull(users.disabledAt)));
   if (!user) throw notFound();
 
-  // A token is owned by a User, not an administrator's global capability.
-  // Personal Project workload therefore remains private even when its owner
-  // is admin_op or TMKT Core.
   const memberProjects = await db
     .select({ id: projects.projectId })
     .from(projects)
@@ -1082,3 +1300,213 @@ export async function renderCalendarFeed(token: string): Promise<string> {
   lines.push("END:VCALENDAR");
   return lines.join("\r\n") + "\r\n";
 }
+
+export type PersonTaskKpi = {
+  personId: string;
+  displayName: string;
+  totalAssigned: number;
+  completedCount: number;
+  doingCount: number;
+  todoCount: number;
+  overdueCount: number;
+  onTimeCompletedCount: number;
+  totalPoints: number;
+  completedPoints: number;
+  completionRate: number;
+  onTimeRate: number;
+  averageDurationHours: number | null;
+  recentCompletedTasks: Array<{
+    id: string;
+    title: string;
+    dueAt: Date | string | null;
+    completedAt: Date | string | null;
+    isOnTime: boolean;
+  }>;
+};
+
+export type SprintProgress = {
+  sprint: string;
+  totalTasks: number;
+  completedTasks: number;
+  totalPoints: number;
+  completedPoints: number;
+};
+
+export type RecentStatusEvent = {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  fromState: string | null;
+  toState: string;
+  changedBy: string;
+  changedByName: string | null;
+  notes: string | null;
+  createdAt: Date;
+};
+
+export type ProjectTaskKpis = {
+  totalTasks: number;
+  totalCompleted: number;
+  totalDoing: number;
+  totalTodo: number;
+  totalOverdue: number;
+  totalPoints: number;
+  completedPoints: number;
+  overallCompletionRate: number;
+  overallOnTimeRate: number;
+  personKpis: PersonTaskKpi[];
+  sprintBreakdown: SprintProgress[];
+  recentStatusEvents: RecentStatusEvent[];
+};
+
+export async function listProjectTaskKpis(actor: Principal, projectId: string): Promise<ProjectTaskKpis> {
+  const project = await requireConfirmedProject(actor, projectId);
+  authorize(actor, "pm.project_task.read", { spaceId: project.projectId, kind: "read" });
+  const [allTasks, assignees, recentEvents] = await Promise.all([
+    listProjectTasks(actor, projectId),
+    listProjectTaskAssignees(actor, projectId),
+    db
+      .select({
+        id: taskStatusHistory.id,
+        taskId: taskStatusHistory.taskId,
+        fromState: taskStatusHistory.fromState,
+        toState: taskStatusHistory.toState,
+        changedBy: taskStatusHistory.changedBy,
+        changedByName: users.displayName,
+        notes: taskStatusHistory.notes,
+        createdAt: taskStatusHistory.createdAt,
+      })
+      .from(taskStatusHistory)
+      .leftJoin(users, eq(taskStatusHistory.changedBy, users.id))
+      .where(eq(taskStatusHistory.projectId, project.projectId))
+      .orderBy(desc(taskStatusHistory.createdAt))
+      .limit(15),
+  ]);
+  const now = new Date();
+
+  const taskMap = new Map(allTasks.map((t) => [t.id, t.title]));
+  const recentStatusEvents: RecentStatusEvent[] = recentEvents.map((e) => ({
+    ...e,
+    taskTitle: taskMap.get(e.taskId) || "Untitled Task",
+  }));
+
+  const personKpis: PersonTaskKpi[] = assignees.map((person) => {
+    const tasksForPerson = allTasks.filter((t) => t.assignedTo === person.id);
+    const completedTasks = tasksForPerson.filter((t) => t.state === "done");
+    const doingTasks = tasksForPerson.filter((t) => t.state === "doing");
+    const todoTasks = tasksForPerson.filter((t) => t.state === "todo");
+    const overdueTasks = tasksForPerson.filter(
+      (t) => t.state !== "done" && t.dueAt && new Date(t.dueAt) < now,
+    );
+    const onTimeCompleted = completedTasks.filter((t) => {
+      if (!t.dueAt || !t.completedAt) return true;
+      return new Date(t.completedAt).getTime() <= new Date(t.dueAt).getTime();
+    });
+
+    const personTotalPoints = tasksForPerson.reduce((sum, t) => sum + (t.estimatePoints ?? 0), 0);
+    const personCompletedPoints = completedTasks.reduce((sum, t) => sum + (t.estimatePoints ?? 0), 0);
+
+    let totalDurationMs = 0;
+    let durationCount = 0;
+    for (const t of completedTasks) {
+      if (t.completedAt && (t.startedAt || t.createdAt)) {
+        const start = t.startedAt ? new Date(t.startedAt) : new Date(t.createdAt);
+        const diff = new Date(t.completedAt).getTime() - start.getTime();
+        if (diff > 0) {
+          totalDurationMs += diff;
+          durationCount += 1;
+        }
+      }
+    }
+    const averageDurationHours =
+      durationCount > 0 ? Math.round((totalDurationMs / durationCount / 3_600_000) * 10) / 10 : null;
+
+    const recentCompletedTasks = completedTasks.slice(0, 5).map((t) => ({
+      id: t.id,
+      title: t.title,
+      dueAt: t.dueAt,
+      completedAt: t.completedAt,
+      isOnTime: !t.dueAt || !t.completedAt || new Date(t.completedAt).getTime() <= new Date(t.dueAt).getTime(),
+    }));
+
+    const completionRate =
+      tasksForPerson.length > 0 ? Math.round((completedTasks.length / tasksForPerson.length) * 100) : 0;
+    const onTimeRate =
+      completedTasks.length > 0
+        ? Math.round((onTimeCompleted.length / completedTasks.length) * 100)
+        : 100;
+
+    return {
+      personId: person.id,
+      displayName: person.displayName,
+      totalAssigned: tasksForPerson.length,
+      completedCount: completedTasks.length,
+      doingCount: doingTasks.length,
+      todoCount: todoTasks.length,
+      overdueCount: overdueTasks.length,
+      onTimeCompletedCount: onTimeCompleted.length,
+      totalPoints: personTotalPoints,
+      completedPoints: personCompletedPoints,
+      completionRate,
+      onTimeRate,
+      averageDurationHours,
+      recentCompletedTasks,
+    };
+  });
+
+  const totalTasks = allTasks.length;
+  const totalCompleted = allTasks.filter((t) => t.state === "done").length;
+  const totalDoing = allTasks.filter((t) => t.state === "doing").length;
+  const totalTodo = allTasks.filter((t) => t.state === "todo").length;
+  const totalOverdue = allTasks.filter(
+    (t) => t.state !== "done" && t.dueAt && new Date(t.dueAt) < now,
+  ).length;
+  const totalOnTimeCompleted = allTasks.filter(
+    (t) =>
+      t.state === "done" &&
+      (!t.dueAt || !t.completedAt || new Date(t.completedAt).getTime() <= new Date(t.dueAt).getTime()),
+  ).length;
+
+  const totalPoints = allTasks.reduce((sum, t) => sum + (t.estimatePoints ?? 0), 0);
+  const completedPoints = allTasks
+    .filter((t) => t.state === "done")
+    .reduce((sum, t) => sum + (t.estimatePoints ?? 0), 0);
+
+  // Sprints breakdown
+  const sprintMap = new Map<string, { totalTasks: number; completedTasks: number; totalPoints: number; completedPoints: number }>();
+  for (const t of allTasks) {
+    const sprintName = t.sprint?.trim() || "Backlog";
+    const current = sprintMap.get(sprintName) ?? { totalTasks: 0, completedTasks: 0, totalPoints: 0, completedPoints: 0 };
+    current.totalTasks += 1;
+    current.totalPoints += (t.estimatePoints ?? 0);
+    if (t.state === "done") {
+      current.completedTasks += 1;
+      current.completedPoints += (t.estimatePoints ?? 0);
+    }
+    sprintMap.set(sprintName, current);
+  }
+  const sprintBreakdown: SprintProgress[] = Array.from(sprintMap.entries()).map(([sprint, stats]) => ({
+    sprint,
+    ...stats,
+  }));
+
+  const overallCompletionRate = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
+  const overallOnTimeRate =
+    totalCompleted > 0 ? Math.round((totalOnTimeCompleted / totalCompleted) * 100) : 100;
+
+  return {
+    totalTasks,
+    totalCompleted,
+    totalDoing,
+    totalTodo,
+    totalOverdue,
+    totalPoints,
+    completedPoints,
+    overallCompletionRate,
+    overallOnTimeRate,
+    personKpis,
+    sprintBreakdown,
+    recentStatusEvents,
+  };
+}
+

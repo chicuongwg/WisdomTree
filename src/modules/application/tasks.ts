@@ -9,9 +9,13 @@ import {
   listProjectCalendarSchedule,
   listMyAssignedProjectTasks,
   listProjectTaskAssignees,
+  listProjectTaskKpis,
   listProjectTasks,
+  listTaskStatusHistory,
   updateDeadline,
   updateTask,
+  type TaskPriority,
+  type TaskKind,
 } from "../pm/service";
 
 const taskDto = (actor: Principal, task: Awaited<ReturnType<typeof listProjectTasks>>[number]) => ({
@@ -20,10 +24,19 @@ const taskDto = (actor: Principal, task: Awaited<ReturnType<typeof listProjectTa
   activityId: task.activityId,
   title: task.title,
   state: task.state,
+  priority: task.priority,
+  kind: task.kind,
+  sprint: task.sprint,
+  estimatePoints: task.estimatePoints,
+  startedAt: task.startedAt,
+  startedBy: task.startedBy,
   assignedTo: task.assignedTo,
   assigneeName: task.assigneeName,
   startAt: task.startAt,
   dueAt: task.dueAt,
+  completedAt: task.completedAt,
+  completedBy: task.completedBy,
+  createdAt: task.createdAt,
   notes: task.notes,
   version: task.version,
   canEdit: task.createdBy === actor.userId || task.assignedTo === actor.userId,
@@ -44,10 +57,18 @@ export async function listAppMyWorkTasks(actor: Principal) {
     activityId: task.activityId,
     title: task.title,
     state: task.state,
+    priority: task.priority as TaskPriority,
+    kind: task.kind as TaskKind,
+    sprint: task.sprint,
+    estimatePoints: task.estimatePoints,
+    startedAt: task.startedAt,
+    completedAt: task.completedAt,
+    assignedTo: task.assignedTo,
     dueAt: task.dueAt,
     startAt: task.startAt,
     notes: task.notes,
     version: task.version,
+    canEdit: task.createdBy === actor.userId || task.assignedTo === actor.userId,
     project: { id: task.projectId!, name: task.projectName },
     activity:
       task.activityId && task.activityTitle
@@ -62,12 +83,21 @@ export async function getAppProjectTask(actor: Principal, projectId: string, tas
   return taskDto(actor, task);
 }
 
+export async function getAppTaskStatusHistory(actor: Principal, taskId: string) {
+  return listTaskStatusHistory(actor, taskId);
+}
+
 export async function createAppProjectTask(
   actor: Principal,
   input: {
     projectId: string;
     activityId?: string | null;
     title: string;
+    state?: string;
+    priority?: TaskPriority;
+    kind?: TaskKind;
+    sprint?: string | null;
+    estimatePoints?: number | null;
     assigneeId?: string | null;
     startAt?: string | null;
     dueAt?: string | null;
@@ -81,14 +111,27 @@ export async function createAppProjectTask(
     activityId: task.activityId,
     title: task.title,
     state: task.state,
+    priority: task.priority,
+    kind: task.kind,
+    sprint: task.sprint,
+    estimatePoints: task.estimatePoints,
+    startedAt: task.startedAt,
+    startedBy: task.startedBy,
     assignedTo: task.assignedTo,
     assigneeName: null,
     startAt: task.startAt,
     dueAt: task.dueAt,
+    completedAt: task.completedAt,
+    completedBy: task.completedBy,
+    createdAt: task.createdAt,
     notes: task.notes,
     version: task.version,
     canEdit: true,
   };
+}
+
+export async function getAppProjectTaskKpis(actor: Principal, projectId: string) {
+  return listProjectTaskKpis(actor, projectId);
 }
 
 export async function updateAppProjectTask(
@@ -122,3 +165,4 @@ export const updateAppDeadline = updateDeadline;
 
 export const attachAppTaskToActivity = attachTaskToActivity;
 export const detachAppTaskFromActivity = detachTaskFromActivity;
+
