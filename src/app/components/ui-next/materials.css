@@ -70,12 +70,14 @@
   padding: var(--ui-space-4);
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .ui-next-materials-list__item:hover,
 .ui-next-material-version:hover,
 .ui-next-material-version[data-selected] {
   border-color: var(--ui-color-border-strong);
+  box-shadow: var(--ui-shadow-subtle);
 }
 
 .ui-next-materials-list__heading h3 {
@@ -150,20 +152,20 @@
 
 .ui-next-material-detail__back {
   inline-size: fit-content;
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   text-underline-offset: 0.18em;
 }
 
 .ui-next-material-detail__continue-draft {
   inline-size: fit-content;
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   font-weight: 650;
   text-underline-offset: 0.18em;
 }
 
 .ui-next-material-detail__download {
   inline-size: fit-content;
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   font-weight: 650;
   text-underline-offset: 0.18em;
 }
@@ -197,7 +199,7 @@
 }
 
 .ui-next-material-version[data-selected] {
-  box-shadow: inset 0.25rem 0 var(--ui-color-accent);
+  box-shadow: inset 0.25rem 0 var(--ui-color-primary);
 }
 
 .ui-next-material-candidate {
@@ -229,7 +231,7 @@
 }
 
 .ui-next-material-lineage a {
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   overflow-wrap: anywhere;
 }
 

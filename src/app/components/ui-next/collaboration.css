@@ -204,7 +204,7 @@
 }
 
 .ui-next-notification-preferences {
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   text-underline-offset: 0.18em;
 }
 
@@ -228,7 +228,7 @@
 }
 
 .ui-next-notification-list > li[data-unread] {
-  border-inline-start: 0.3rem solid var(--ui-color-accent);
+  border-inline-start: 0.3rem solid var(--ui-color-primary);
 }
 
 .ui-next-notification-list > li > :first-child {

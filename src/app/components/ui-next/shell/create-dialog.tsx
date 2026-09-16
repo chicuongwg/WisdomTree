@@ -9,6 +9,7 @@ import { TextField } from "../primitives/form-controls";
 import { Stack } from "../layout/primitives";
 import { StatusBadge } from "../primitives/status-badge";
 import { translate, type UiNextMessageKey } from "../localization";
+import { UnifiedTaskDialog } from "../activities-tasks/task-dialog";
 
 type ShellProject = Pick<
   AppProjectDto,
@@ -72,6 +73,7 @@ export function CreateDialog({
     : selected?.name;
 
   const [creatingNote, setCreatingNote] = useState(false);
+  const [creatingTask, setCreatingTask] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export function CreateDialog({
     setOpen(false);
     setProjectId(null);
     setCreatingNote(false);
+    setCreatingTask(false);
     setNoteTitle("");
     setError(null);
   }
@@ -87,6 +90,7 @@ export function CreateDialog({
   function openDialog() {
     setProjectId(projects.find((project) => project.id === defaultProjectId)?.id ?? null);
     setCreatingNote(false);
+    setCreatingTask(false);
     setNoteTitle("");
     setError(null);
     setOpen(true);
@@ -267,6 +271,11 @@ export function CreateDialog({
                             setCreatingNote(true);
                             return;
                           }
+                          if (action.capability === "canCreateTask") {
+                            setOpen(false);
+                            setCreatingTask(true);
+                            return;
+                          }
                           const destination = {
                             canCreateMaterial: "materials",
                             canCreateActivity: "activities",
@@ -303,6 +312,18 @@ export function CreateDialog({
           </div>
         )}
       </Dialog>
+      <UnifiedTaskDialog
+        open={creatingTask}
+        onClose={() => setCreatingTask(false)}
+        locale={locale}
+        projects={projects.filter((p) => p.capabilities.canCreateTask)}
+        currentProjectId={selected?.id}
+        defaultProjectId={selected?.id || defaultProjectId}
+        onCreated={() => {
+          setCreatingTask(false);
+          close();
+        }}
+      />
     </>
   );
 }

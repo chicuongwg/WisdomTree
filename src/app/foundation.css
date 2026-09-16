@@ -58,58 +58,43 @@
 }
 
 :root {
-  /* --- Named palette ------------------------------------------------ */
-  /* Giấy lá — leaf-washed paper (cool, not cream) */
-  --color-paper: #f2f4ee;
-  /* Mực — green-black reading ink */
-  --color-ink: #232b26;
-  /* Tán lá — canopy green: the living tree; links, primary actions */
-  --color-canopy: #1e6b4a;
-  /* Son — seal vermilion: structural rules, the stamp, destructive acts */
-  --color-seal: #a63a22;
-  /* Chàm — indigo: keyboard focus, never decoration */
-  --color-cham: #2f5d8a;
-  /* Hổ phách — amber: caution, unverified */
-  --color-amber: #7a4f00;
+  /* --- Named palette (Archive Forest) -------------------------------- */
+  /* Warm off-white paper */
+  --color-paper: #f7f6f2;
+  /* Reading ink */
+  --color-ink: #202522;
+  /* Archive Forest green: primary actions, active navigation */
+  --color-canopy: #315c4c;
+  /* Seal vermilion / danger: structural rules, stamps, destructive acts */
+  --color-seal: #b34a45;
+  /* Indigo / info: keyboard focus, informational cues */
+  --color-cham: #4773a8;
+  /* Amber / warning: caution, unverified */
+  --color-amber: #a46b20;
 
   /* --- Semantic roles ----------------------------------------------- */
-  --color-surface: #fdfdfb; /* panels, cards, table bodies */
-  --color-surface-sunken: #e9ede5; /* wells, code, board track */
-  --color-ink-muted: #5a655d; /* metadata (5.4:1 on paper) */
-  --color-line: #d9decf; /* hairline borders */
-  --color-line-strong: #b4bcae; /* card head hairline, table rules */
-  --color-canopy-deep: #175539; /* hover, badge text on wash */
-  --color-canopy-wash: #e2eee6;
-  --color-seal-deep: #8c2b1a;
-  --color-seal-wash: #f6e7e2;
-  --color-amber-wash: #f5ecd6;
-  --color-cham-deep: #1f4468; /* badge text on chàm wash (8.4:1) */
-  --color-cham-wash: #e4ebf4;
+  --color-surface: #ffffff; /* panels, cards, table bodies */
+  --color-surface-sunken: #f0efea; /* subtle surface, wells, sidebar */
+  --color-ink-muted: #626963; /* secondary text, metadata */
+  --color-line: #dddfda; /* hairline borders */
+  --color-line-strong: #7c847d; /* card head hairline, table rules */
+  --color-canopy-deep: #284d40; /* hover on canopy */
+  --color-canopy-wash: #e5ede9; /* subtle canopy wash */
+  --color-seal-deep: #9a3833;
+  --color-seal-wash: #fbefed;
+  --color-amber-wash: #faf0de;
+  --color-cham-deep: #355f91;
+  --color-cham-wash: #eef4fa;
   --color-on-strong: #ffffff; /* text on canopy/seal solids */
   --color-focus: var(--color-cham);
   /* The focus ring, for the two surfaces that are dark ink in BOTH themes: the
-     rail and the status strip. Chàm on canopy measures 1.07:1 — a ring nobody
-     can see is not a focus indicator, and those two surfaces hold the account
-     link, the unread count and the way out. Deliberately not redefined in the
-     dark block: the strip is dark there too, so the light ring is right twice. */
-  --color-focus-on-dark: #f2f4ee;
-  /* A control's boundary is the only thing saying where a field begins, so
-     WCAG 1.4.11 asks 3:1 of it, not the 1.5:1 a decorative hairline can get
-     away with. --color-line-strong was carrying both jobs and failing this
-     one in both themes (1.92:1 light, 1.68:1 dark). Fields get their own
-     edge; hairlines between rows keep the quieter token. */
-  --color-control-edge: #848c80; /* 3.4:1 on surface */
+     rail and the status strip. */
+  --color-focus-on-dark: #f7f6f2;
+  /* Field boundary edge: >= 3:1 on surface and paper */
+  --color-control-edge: #7c847d;
 
   /* --- State tones ----------------------------------------------------
-     Five tones by MEANING, not one hue per enum value: thirty-odd states
-     collapse onto waiting / active / attention / done / stopped, so the
-     vocabulary is learnable in one sitting. src/lib/vi.ts owns the
-     state→tone table; this block owns what each tone looks like.
-
-     Every value below is a var() over the named palette and the wash
-     tokens above, all of which are already redefined in the dark block —
-     so these re-tune themselves and are deliberately NOT restated there.
-     Restating them would be a second copy to keep in sync. */
+     Five tones by MEANING, not one hue per enum value. */
   --tone-waiting-bg: var(--color-surface-sunken);
   --tone-waiting-ink: var(--color-ink-muted);
   --tone-waiting-edge: var(--color-line-strong);
@@ -128,46 +113,17 @@
   --tone-stopped-ink: var(--color-seal-deep);
   --tone-stopped-edge: color-mix(in srgb, var(--color-seal) 45%, transparent);
 
-  /* --- Map palette ---------------------------------------------------
-     A mark on the knowledge map is coloured by verification and only by
-     verification, from the state tones above — so the one colour axis the
-     map has is the one that also carries a shape.
-
-     Dimming for nodes outside the hovered neighbourhood. Stays well above
-     the 0.2 floor where faded content stops being legible. */
+  /* --- Map palette --------------------------------------------------- */
   --graph-dim: 0.28;
 
   /* --- Type roles ---------------------------------------------------- */
-  /* Display + long-form knowledge content. CDA Independence Text was designed
-     with Vietnamese diacritics as part of the typeface rather than relying on
-     per-glyph fallback. The system serif stack remains only as a load-failure
-     fallback. */
   --font-display:
     "CDA Independence Text", "Noto Serif", "Source Serif 4", "Liberation Serif", "DejaVu Serif",
     "Times New Roman", serif;
-  /* Interface: quiet sans for nav, controls, tables, badges */
   --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Utility: machine text only — code blocks, a subscription URL, a key hint.
-     NOT prose: Vietnamese stacks two marks on one vowel (ề ổ ẫ ậ), and a
-     monospace em box is too tight to hold both, so the tone mark is squashed
-     into the circumflex or clipped. Measured in Firefox on this machine across
-     the whole stack below plus JetBrainsMono Nerd Font (what `ui-monospace`
-     and the generic `monospace` keyword actually resolve to here): every one
-     of them mangles it, and Noto Sans Mono is the least bad by a wide margin.
-     That is why the editors moved to the reading serif rather than getting a
-     better monospace — see textarea.editor.
-     Coverage rule still applies to what is left: check before adding a family.
-       fc-list ':charset=1ec7' family | grep -i '<name>' */
   --font-mono: "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
 
   /* --- Rhythm -------------------------------------------------------- */
-  /* One 4px-based spacing scale. Every gap, pad and margin on the CANVAS is a
-     step on it — the page, panels, forms, tables, badges.
-     Not yet true of the shell: the rail, sidebar and status strip run on a
-     private 0.2/0.22/0.3/0.45/0.6/0.8rem scale and touch these tokens almost
-     nowhere. That is a real inconsistency, written down here rather than
-     claimed away — the block that fixes it is a re-tuning of the whole shell's
-     density, not a search and replace. */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -175,88 +131,68 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
-  /* Widths: the page canvas, and the measure for long-form reading */
+
   --page-max: 76rem;
   --reading-measure: 68ch;
 
   --radius: 6px;
   --radius-lg: 10px;
   --speed: 160ms;
-  --shadow-card: 0 1px 2px rgba(35, 43, 38, 0.06);
-  /* Two more depths, named because they were written out four times between
-     them and had already drifted into two different values for "floating over
-     the page". A card lifts off the paper; a modal sits above everything. */
+  --shadow-card: 0 1px 2px rgba(32, 37, 34, 0.06);
   --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.18);
   --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.25);
-  /* White that stays white. --color-on-strong flips to near-black in the dark
-     theme (it is "text on a canopy or seal fill", and those fills lighten),
-     but the rail and the status strip are dark ink in BOTH themes, so their
-     hover text needs a value that does not flip. It was a literal #fff in
-     three places, which is the same thing said less clearly. */
   --color-on-dark: #ffffff;
 
   /* --- Workspace shell (rail / sidebar / statusbar) ------------------ */
-  --shell-rail-bg: #1b241f; /* dark ink rail, VS Code activity bar */
-  --shell-rail-ink: #9db3a6;
-  --shell-rail-active: #f2f4ee;
-  --shell-side-bg: #eceee6; /* sidebar wash, one step off paper */
-  --shell-side-hover: #e0e4d8;
-  --shell-side-active: #d8e4dc;
-  /* The status strip's own height, named because two other things measure
-     against it: the sticky task panel, and the drop-progress bar that must
-     clear it. */
+  --shell-rail-bg: #1e2421; /* dark ink rail */
+  --shell-rail-ink: #b4bbb5;
+  --shell-rail-active: #f7f6f2;
+  --shell-side-bg: #f0efea; /* subtle sidebar wash */
+  --shell-side-hover: #e5e4de;
+  --shell-side-active: #e5ede9;
   --shell-status-h: 1.6rem;
-  --shell-status-bg: #1e6b4a; /* canopy status strip */
-  --shell-status-ink: #e2eee6;
-  --shell-veil: rgba(23, 29, 26, 0.45);
-
-  /* The twelve "legacy alias" tokens that used to close this block are gone:
-     var(--bg), var(--panel), var(--ink) and the rest had zero references left
-     anywhere in src/. What they mostly did was offer a second name for a
-     colour that already had one. */
+  --shell-status-bg: #315c4c; /* canopy status strip */
+  --shell-status-ink: #e5ede9;
+  --shell-veil: rgba(23, 27, 25, 0.45);
 }
 
 /* ============================================================
-   Dark theme — soft slate. The toggle stamps data-theme on <html>
-   before first paint; every component reads tokens only, so the
-   whole identity flips here and nowhere else.
+   Dark theme — Archive Forest Dark (charcoal, sage, muted brass)
    ============================================================ */
 :root[data-theme="dark"] {
-  --color-paper: #29343d;
-  --color-ink: #f3f2ec;
-  --color-canopy: #a8d4be;
-  --color-seal: #d0603f;
-  --color-cham: #a8d1ff;
-  --color-amber: #c9974a;
+  --color-paper: #171b19;
+  --color-ink: #ecefeb;
+  --color-canopy: #74a58e;
+  --color-seal: #f79b95;
+  --color-cham: #8cb9ec;
+  --color-amber: #f0bc68;
 
-  --color-surface: #34414b;
-  --color-surface-sunken: #253039;
-  --color-ink-muted: #c0cbd2;
-  --color-line: #647683;
-  --color-line-strong: #a4b4bf;
-  --color-canopy-deep: #c2e3d1;
-  --color-canopy-wash: #304f43;
-  --color-seal-deep: #e0764f;
-  --color-seal-wash: #39201a;
-  --color-amber-wash: #332a17;
-  --color-cham-deep: #8ab4dd;
-  --color-cham-wash: #1b2a3a;
-  --color-on-strong: #203c30;
-  --color-control-edge: #a4b4bf;
+  --color-surface: #1e2421;
+  --color-surface-sunken: #171b19;
+  --color-ink-muted: #b4bbb5;
+  --color-line: #343c37;
+  --color-line-strong: #63726a;
+  --color-canopy-deep: #88b59f;
+  --color-canopy-wash: #263b32;
+  --color-seal-deep: #f79b95;
+  --color-seal-wash: #45201e;
+  --color-amber-wash: #3d2e16;
+  --color-cham-deep: #b0d2f8;
+  --color-cham-wash: #1c2e42;
+  --color-on-strong: #171b19;
+  --color-control-edge: #63726a;
 
-  --shell-rail-bg: #29343d;
-  --shell-rail-ink: #c0cbd2;
-  --shell-rail-active: #e8eee9;
-  --shell-side-bg: #34414b;
-  --shell-side-hover: #3d4b56;
-  --shell-side-active: #304f43;
-  --shell-status-bg: #304f43;
-  --shell-status-ink: #9fc7b0;
+  --shell-rail-bg: #171b19;
+  --shell-rail-ink: #b4bbb5;
+  --shell-rail-active: #ecefeb;
+  --shell-side-bg: #1e2421;
+  --shell-side-hover: #252c28;
+  --shell-side-active: #263b32;
+  --shell-status-bg: #263b32;
+  --shell-status-ink: #74a58e;
   --shell-veil: rgba(0, 0, 0, 0.55);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  /* --graph-dim is deliberately NOT redefined here: it is a plain opacity,
-     not a colour, so it needs no dark-mode value of its own. */
 }
 
 html {

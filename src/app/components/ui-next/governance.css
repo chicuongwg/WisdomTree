@@ -1,12 +1,16 @@
 .ui-next-governance {
   display: grid;
   gap: var(--ui-space-6);
+  inline-size: 100%;
+  max-inline-size: var(--ui-width-standard);
+  margin-inline: auto;
 }
 
 .ui-next-governance--admin {
   align-items: start;
   inline-size: 100%;
   max-inline-size: 90rem;
+  margin-inline: auto;
 }
 
 .ui-next-governance--admin .ui-next-governance__section {

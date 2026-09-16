@@ -73,7 +73,7 @@
 }
 
 .ui-next-library__holding[aria-pressed="true"] {
-  border-color: var(--ui-color-accent);
+  border-color: var(--ui-color-primary);
   background: var(--ui-color-surface-sunken);
 }
 
@@ -121,7 +121,7 @@
 }
 
 .ui-next-library__detail-actions a {
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   font-weight: 650;
 }
 

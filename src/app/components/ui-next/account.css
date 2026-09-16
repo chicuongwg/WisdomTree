@@ -27,8 +27,8 @@
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
-  background: var(--ui-color-accent);
-  color: var(--ui-color-on-accent);
+  background: var(--ui-color-primary);
+  color: var(--ui-color-on-primary);
   font-weight: 750;
   object-fit: cover;
 }
@@ -77,6 +77,21 @@
   font: inherit;
   font-weight: 650;
   cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.ui-next-account-settings .button-row > button:hover,
+.ui-next-account-settings .file-field .button:hover {
+  background: var(--ui-color-surface-sunken);
+  border-color: var(--ui-color-primary);
+}
+
+.ui-next-account-settings .button-row > button:active,
+.ui-next-account-settings .file-field .button:active {
+  transform: scale(0.985);
 }
 
 .ui-next-account-settings__calendar-link {
@@ -118,5 +133,5 @@
 }
 
 .ui-next-account-settings form {
-  max-inline-size: 42rem;
+  max-inline-size: 100%;
 }

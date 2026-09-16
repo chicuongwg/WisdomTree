@@ -15,3 +15,7 @@ export * from "./primitives/visually-hidden";
 export * from "./shell/app-shell";
 export * from "./typography/research-content";
 export * from "./typography/markdown-view";
+export * from "./activities-tasks/task-dialog";
+export * from "./activities-tasks/task-kpis";
+
+

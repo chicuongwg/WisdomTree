@@ -49,6 +49,7 @@
 .ui-next-task-list {
   display: grid;
   gap: var(--ui-space-3);
+  max-inline-size: var(--ui-width-wide);
 }
 .ui-next-work-list__link,
 .ui-next-task-list__row {
@@ -64,13 +65,18 @@
   text-align: start;
   text-decoration: none;
   font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 .ui-next-work-list__link:hover,
-.ui-next-task-list__row:hover {
+.ui-next-task-list__row:not(.ui-next-task-list__row--readonly):hover {
   background: var(--ui-color-surface-sunken);
+  border-color: var(--ui-color-border-strong);
 }
-.ui-next-task-list__row--readonly:hover {
-  background: var(--ui-color-surface);
+.ui-next-task-list__row--readonly {
+  cursor: default;
 }
 .ui-next-work-list h3,
 .ui-next-task-list strong {
@@ -185,9 +191,18 @@
 .ui-next-activity-context li small {
   color: var(--ui-color-text-muted);
 }
-.ui-next-activity-detail > .ui-next-collaboration {
-  max-inline-size: min(48rem, 100%);
-  margin-inline: 0;
+.ui-next-activity-detail > .ui-next-collaboration,
+.ui-next-work-page > .ui-next-collaboration {
+  max-inline-size: var(--ui-width-reading);
+  margin-inline: auto;
+}
+.ui-next-work-page {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+.ui-next-my-work-page {
+  inline-size: 100%;
+  max-inline-size: 100%;
 }
 .ui-next-my-work {
   display: grid;
@@ -200,23 +215,53 @@
 
 .ui-next-task-views {
   display: flex;
-  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-1);
   margin-block-end: var(--ui-space-4);
+  padding: var(--ui-space-1);
+  background: var(--ui-color-surface-sunken);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  width: fit-content;
+  max-width: 100%;
 }
 
-.ui-next-task-views a {
-  border: 1px solid var(--ui-color-border);
+.ui-next-task-views a,
+.ui-next-task-views button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  border: 1px solid transparent;
   border-radius: var(--ui-radius-sm);
   color: var(--ui-color-text-secondary);
-  padding: var(--ui-space-2) var(--ui-space-3);
+  background: transparent;
+  padding: var(--ui-space-1) var(--ui-space-3);
   text-decoration: none;
+  font-size: var(--ui-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+  white-space: nowrap;
 }
 
-.ui-next-task-views a[aria-current="page"] {
-  border-color: var(--ui-color-accent);
-  background: var(--ui-color-success-bg);
-  color: var(--ui-color-accent);
+.ui-next-task-views a:hover,
+.ui-next-task-views button:hover {
+  color: var(--ui-color-text);
+  background: var(--ui-color-surface);
+}
+
+.ui-next-task-views :is(a, button)[aria-current="page"],
+.ui-next-task-views :is(a, button)[aria-current="true"] {
+  border-color: var(--ui-color-border);
+  background: var(--ui-color-surface-raised);
+  color: var(--ui-color-text);
   font-weight: 650;
+  box-shadow: var(--ui-shadow-subtle);
 }
 
 .ui-next-kanban {
@@ -225,10 +270,108 @@
   gap: var(--ui-space-4);
   overflow-x: auto;
   padding-block-end: var(--ui-space-2);
+  inline-size: 100%;
 }
 
 .ui-next-my-work-kanban {
-  grid-template-columns: repeat(4, minmax(15rem, 1fr));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(16rem, 1fr));
+  gap: var(--ui-space-4);
+  inline-size: 100%;
+  overflow-x: auto;
+  padding-block-end: var(--ui-space-2);
+}
+
+@media (min-width: 1200px) {
+  .ui-next-kanban {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .ui-next-my-work-kanban {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.ui-next-my-work-card {
+  display: grid;
+  gap: var(--ui-space-2);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+  padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-2);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+  width: 100%;
+}
+
+.ui-next-my-work-card:hover {
+  border-color: var(--ui-color-border-strong);
+  box-shadow: var(--ui-shadow-subtle);
+  transform: translateY(-1px);
+}
+
+.ui-next-my-work-card__title {
+  font-size: var(--ui-font-size-md);
+  font-weight: 650;
+  color: var(--ui-color-text);
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding-block: 0.15rem;
+  line-height: 1.45;
+}
+
+.ui-next-my-work-card__project {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-primary);
+  background: var(--ui-color-success-bg);
+  padding: 0.125rem var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  font-weight: 600;
+  max-inline-size: fit-content;
+}
+
+.ui-next-my-work-card__title-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.ui-next-my-work-card__title-btn:hover .ui-next-my-work-card__title {
+  color: var(--ui-color-primary);
+  text-decoration: underline;
+}
+
+.ui-next-my-work-card__activity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-my-work-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin-block-start: var(--ui-space-1);
+}
+
+.ui-next-my-work-card__due {
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-muted);
 }
 
 .ui-next-my-work-kanban__context {
@@ -243,11 +386,14 @@
 }
 
 .ui-next-kanban__lane {
-  min-inline-size: 15rem;
+  min-inline-size: 16rem;
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-md);
   background: var(--ui-color-surface-sunken);
   padding: var(--ui-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
 }
 
 .ui-next-kanban__lane > header,
@@ -259,14 +405,28 @@
 
 .ui-next-kanban__lane > header {
   justify-content: space-between;
+  min-inline-size: 0;
 }
 
-.ui-next-kanban__lane :is(h2, h3),
+.ui-next-kanban__lane :is(h2, h3) {
+  margin: 0;
+  font-size: var(--ui-font-size-md);
+  font-weight: 650;
+  color: var(--ui-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-inline-size: 0;
+  padding-block: 0.15rem;
+  line-height: 1.45;
+}
+
 .ui-next-kanban__lane p {
   margin: 0;
 }
 
 .ui-next-kanban__lane > header > span {
+  flex-shrink: 0;
   border-radius: 999px;
   background: var(--ui-color-neutral-bg);
   color: var(--ui-color-text-secondary);
@@ -285,21 +445,102 @@
 
 .ui-next-kanban__card {
   display: grid;
-  gap: var(--ui-space-3);
+  gap: var(--ui-space-2);
   border: 1px solid var(--ui-color-border);
-  border-radius: var(--ui-radius-sm);
+  border-radius: var(--ui-radius-md);
   background: var(--ui-color-surface);
   padding: var(--ui-space-3);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
 }
 
-.ui-next-kanban__card > a {
+.ui-next-kanban__card:hover {
+  border-color: var(--ui-color-border-strong);
+  box-shadow: var(--ui-shadow-raised);
+  transform: translateY(-1px);
+}
+
+.ui-next-kanban__card > a,
+.ui-next-kanban__card-title {
   color: var(--ui-color-text);
   font-weight: 700;
   overflow-wrap: anywhere;
+  text-decoration: none;
+  font-size: var(--ui-font-size-sm);
+  line-height: 1.4;
+}
+
+.ui-next-kanban__card > a:hover,
+.ui-next-kanban__card-title:hover {
+  color: var(--ui-color-primary);
 }
 
 .ui-next-kanban__card > :is(span, .ui-next-status-badge) {
   min-inline-size: 0;
+}
+
+.ui-next-kanban__card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  margin-block-start: var(--ui-space-2);
+  padding-block-start: var(--ui-space-2);
+  border-block-start: 1px solid var(--ui-color-border);
+}
+
+.ui-next-kanban__quick-status-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.ui-next-kanban__quick-status {
+  font: inherit;
+  font-size: var(--ui-font-size-xs);
+  font-weight: 600;
+  color: var(--ui-color-text-secondary);
+  background: var(--ui-color-surface-sunken);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  cursor: pointer;
+  max-inline-size: 100%;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.ui-next-kanban__quick-status:hover,
+.ui-next-kanban__quick-status:focus-visible {
+  color: var(--ui-color-text);
+  border-color: var(--ui-color-border-strong);
+}
+
+.ui-next-kanban__claim-btn,
+.ui-next-kanban__edit-btn {
+  font: inherit;
+  font-size: var(--ui-font-size-xs);
+  font-weight: 600;
+  color: var(--ui-color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.ui-next-kanban__claim-btn:hover,
+.ui-next-kanban__edit-btn:hover {
+  background: var(--ui-color-neutral-bg);
+  color: var(--ui-color-text);
 }
 
 .ui-next-kanban__actions {
@@ -342,4 +583,863 @@
   .ui-next-task-summary__meta {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ==========================================================================
+   Notion-Style Task Dialog
+   ========================================================================== */
+
+.ui-next-notion-task {
+  display: grid;
+  gap: var(--ui-space-4);
+  font-family: var(--ui-font-interface);
+  container-type: inline-size;
+}
+
+.ui-next-notion-task__title-row {
+  margin-block-end: var(--ui-space-1);
+}
+
+/* Override foundation.css `input[type="text"]` base styles that would otherwise
+   override this input's frameless heading appearance. */
+.ui-next-notion-task .ui-next-notion-task__title-input,
+.ui-next-notion-task input.ui-next-notion-task__title-input {
+  inline-size: 100%;
+  min-height: unset;
+  font-size: var(--ui-font-size-xl);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ui-color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-2) var(--ui-space-2);
+  outline: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.ui-next-notion-task .ui-next-notion-task__title-input::placeholder,
+.ui-next-notion-task input.ui-next-notion-task__title-input::placeholder {
+  color: var(--ui-color-text-muted);
+  opacity: 0.6;
+}
+
+.ui-next-notion-task .ui-next-notion-task__title-input:hover,
+.ui-next-notion-task input.ui-next-notion-task__title-input:hover {
+  background: var(--ui-color-surface-sunken);
+  border-color: var(--ui-color-border);
+}
+
+.ui-next-notion-task .ui-next-notion-task__title-input:focus,
+.ui-next-notion-task input.ui-next-notion-task__title-input:focus {
+  background: var(--ui-color-surface-sunken);
+  border-color: var(--ui-color-primary);
+  box-shadow: 0 0 0 2px var(--ui-color-success-bg);
+}
+
+.ui-next-notion-task__properties {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  overflow: hidden;
+}
+
+@container (min-width: 30rem) {
+  .ui-next-notion-task__properties {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ui-next-notion-property--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.ui-next-notion-property {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: center;
+  min-block-size: 2.5rem;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-block-end: 1px solid var(--ui-color-border);
+  transition: background-color 150ms ease;
+}
+
+/* Remove the bottom border of the last standard (non-full) property */
+.ui-next-notion-property:last-child {
+  border-block-end: 0;
+}
+
+/* Full-width rows also span both columns */
+.ui-next-notion-property--full {
+  grid-column: 1 / -1;
+}
+
+/* Right column cells in 2-col grid need a left border to create column dividers */
+@container (min-width: 30rem) {
+  .ui-next-notion-property:not(.ui-next-notion-property--full):nth-child(even) {
+    border-inline-start: 1px solid var(--ui-color-border);
+  }
+}
+
+.ui-next-notion-property:hover {
+  background: var(--ui-color-surface-sunken);
+}
+
+.ui-next-notion-property__label {
+  display: flex;
+  align-items: center;
+  padding-inline-end: var(--ui-space-2);
+  gap: var(--ui-space-2);
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ui-next-notion-property__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  color: var(--ui-color-text-muted);
+  flex-shrink: 0;
+}
+
+.ui-next-notion-property__value {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-inline-size: 0;
+  overflow: hidden;
+}
+
+.ui-next-notion-property__static-value {
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Override foundation.css input/select base styles inside notion controls */
+.ui-next-notion-task .ui-next-notion-control,
+.ui-next-notion-task :is(input, select).ui-next-notion-control {
+  inline-size: 100%;
+  min-height: unset;
+  max-inline-size: none;
+  font: inherit;
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-color-text);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  outline: none;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.ui-next-notion-task .ui-next-notion-control:hover,
+.ui-next-notion-task .ui-next-notion-control:focus,
+.ui-next-notion-task :is(input, select).ui-next-notion-control:hover,
+.ui-next-notion-task :is(input, select).ui-next-notion-control:focus {
+  background: var(--ui-color-surface-sunken);
+  outline: none;
+  box-shadow: none;
+  border: none;
+}
+
+.ui-next-notion-control--static {
+  cursor: default;
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-next-notion-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: 0.2rem var(--ui-space-3);
+  border-radius: 999px;
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.ui-next-notion-status-pill__dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ui-next-notion-task__divider {
+  border: 0;
+  border-block-start: 1px solid var(--ui-color-border);
+  margin: var(--ui-space-2) 0 var(--ui-space-1);
+}
+
+.ui-next-notion-task__notes-section {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+.ui-next-notion-task__notes-label {
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  color: var(--ui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* Override foundation.css textarea base styles for notes */
+.ui-next-notion-task .ui-next-notion-task__notes-input,
+.ui-next-notion-task textarea.ui-next-notion-task__notes-input {
+  inline-size: 100%;
+  min-height: unset;
+  min-block-size: 6rem;
+  font: inherit;
+  font-size: var(--ui-font-size-md);
+  line-height: 1.6;
+  color: var(--ui-color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-sm);
+  padding: var(--ui-space-2);
+  outline: none;
+  resize: vertical;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.ui-next-notion-task .ui-next-notion-task__notes-input::placeholder,
+.ui-next-notion-task textarea.ui-next-notion-task__notes-input::placeholder {
+  color: var(--ui-color-text-muted);
+  opacity: 0.65;
+}
+
+.ui-next-notion-task .ui-next-notion-task__notes-input:hover,
+.ui-next-notion-task textarea.ui-next-notion-task__notes-input:hover {
+  background: var(--ui-color-surface-sunken);
+  border-color: var(--ui-color-border);
+}
+
+.ui-next-notion-task .ui-next-notion-task__notes-input:focus,
+.ui-next-notion-task textarea.ui-next-notion-task__notes-input:focus {
+  background: var(--ui-color-surface-sunken);
+  border-color: var(--ui-color-primary);
+  box-shadow: 0 0 0 2px var(--ui-color-success-bg);
+  outline: none;
+}
+
+.ui-next-notion-task__collaboration {
+  border-block-start: 1px solid var(--ui-color-border);
+  padding-block-start: var(--ui-space-4);
+  margin-block-start: var(--ui-space-2);
+  padding-block-end: var(--ui-space-4);
+}
+
+/* The dialog footer already has a top border; don't double it */
+.ui-next-notion-task__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ui-space-3);
+}
+
+@media (max-width: 44rem) {
+  .ui-next-notion-task__properties {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-next-notion-property {
+    grid-template-columns: 6rem minmax(0, 1fr);
+    min-block-size: 2.25rem;
+  }
+
+  .ui-next-notion-property--full {
+    grid-column: 1;
+  }
+}
+
+/* ==========================================================================
+   KPIs & Performance Scorecard View
+   ========================================================================== */
+
+.ui-next-kpi-view {
+  display: grid;
+  gap: var(--ui-space-6);
+}
+
+.ui-next-kpi-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--ui-space-4);
+}
+
+.ui-next-kpi-card {
+  display: grid;
+  gap: var(--ui-space-1);
+  background: var(--ui-color-surface);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-4);
+  transition: border-color 150ms ease;
+}
+
+.ui-next-kpi-card:hover {
+  border-color: var(--ui-color-border-strong);
+}
+
+.ui-next-kpi-card__label {
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  color: var(--ui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ui-next-kpi-card__value {
+  font-size: var(--ui-font-size-xl);
+  font-weight: 700;
+  color: var(--ui-color-text);
+  line-height: 1.2;
+}
+
+.ui-next-kpi-card__subtext {
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-kpi-roster {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+
+.ui-next-kpi-roster h3 {
+  margin: 0;
+  font-size: var(--ui-font-size-lg);
+  color: var(--ui-color-text);
+}
+
+.ui-next-kpi-person-card {
+  display: grid;
+  gap: var(--ui-space-3);
+  background: var(--ui-color-surface);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  padding: var(--ui-space-4);
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.ui-next-kpi-person-card:hover {
+  border-color: var(--ui-color-border-strong);
+}
+
+.ui-next-kpi-person-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  flex-wrap: wrap;
+}
+
+.ui-next-kpi-person-card__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+
+.ui-next-kpi-person-card__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 50%;
+  background: var(--ui-color-surface-sunken);
+  color: var(--ui-color-text-secondary);
+  font-weight: 650;
+  font-size: var(--ui-font-size-sm);
+  border: 1px solid var(--ui-color-border);
+}
+
+.ui-next-kpi-person-card__name {
+  margin: 0;
+  font-size: var(--ui-font-size-md);
+  font-weight: 650;
+}
+
+.ui-next-kpi-person-card__pills {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+}
+
+.ui-next-kpi-progress {
+  display: grid;
+  gap: var(--ui-space-1);
+}
+
+.ui-next-kpi-progress__track {
+  inline-size: 100%;
+  block-size: 0.5rem;
+  background: var(--ui-color-neutral-bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ui-next-kpi-progress__fill {
+  block-size: 100%;
+  background: var(--ui-color-primary);
+  border-radius: 999px;
+  transition: inline-size 300ms ease;
+}
+
+.ui-next-kpi-person-card__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-4);
+  flex-wrap: wrap;
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-kpi-person-card__recent {
+  margin-block-start: var(--ui-space-2);
+  border-block-start: 1px solid var(--ui-color-border);
+  padding-block-start: var(--ui-space-2);
+}
+
+.ui-next-kpi-person-card__recent summary {
+  cursor: pointer;
+  color: var(--ui-color-primary);
+  font-size: var(--ui-font-size-xs);
+  font-weight: 600;
+  user-select: none;
+}
+
+.ui-next-kpi-person-card__recent-list {
+  margin: var(--ui-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+.ui-next-kpi-person-card__recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-font-size-xs);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  background: var(--ui-color-surface-sunken);
+  border-radius: var(--ui-radius-sm);
+}
+
+/* ==========================================================================
+   Ticket Properties: Priority, Kind, Points & History Timeline
+   ========================================================================== */
+
+.ui-next-priority-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  padding: 0.125rem var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.ui-next-priority-pill--urgent {
+  background: var(--ui-color-danger-bg);
+  color: var(--ui-color-danger);
+  border: 1px solid var(--ui-color-danger);
+}
+
+.ui-next-priority-pill--high {
+  background: var(--ui-color-warning-bg);
+  color: var(--ui-color-warning);
+  border: 1px solid var(--ui-color-warning);
+}
+
+.ui-next-priority-pill--medium {
+  background: var(--ui-color-information-bg);
+  color: var(--ui-color-information);
+  border: 1px solid var(--ui-color-border);
+}
+
+.ui-next-priority-pill--low {
+  background: var(--ui-color-neutral-bg);
+  color: var(--ui-color-text-secondary);
+  border: 1px solid var(--ui-color-border);
+}
+
+.ui-next-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  padding: 0.15rem var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-font-size-xs);
+  font-weight: 600;
+  color: var(--ui-color-text-secondary);
+  background: var(--ui-color-surface-sunken);
+  border: 1px solid var(--ui-color-border);
+  text-transform: capitalize;
+}
+
+.ui-next-points-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem var(--ui-space-2);
+  border-radius: 999px;
+  background: var(--ui-color-surface-sunken);
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  border: 1px solid var(--ui-color-border);
+}
+
+/* ==========================================================================
+   Notion Table View
+   ========================================================================== */
+
+.ui-next-tasks-table-wrapper {
+  inline-size: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+}
+
+.ui-next-tasks-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--ui-font-size-sm);
+}
+
+.ui-next-tasks-table th {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  background: var(--ui-color-surface-sunken);
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-block-end: 1px solid var(--ui-color-border);
+  white-space: nowrap;
+}
+
+.ui-next-tasks-table td {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-block-end: 1px solid var(--ui-color-border);
+  color: var(--ui-color-text);
+  vertical-align: middle;
+}
+
+.ui-next-tasks-table tbody tr {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.ui-next-tasks-table tbody tr:hover {
+  background: var(--ui-color-surface-sunken);
+}
+
+.ui-next-tasks-table tbody tr:last-child td {
+  border-block-end: none;
+}
+
+.ui-next-tasks-table__title {
+  font-weight: 600;
+  color: var(--ui-color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+/* ==========================================================================
+   Sprint View
+   ========================================================================== */
+
+.ui-next-sprint-container {
+  display: grid;
+  gap: var(--ui-space-6);
+}
+
+.ui-next-sprint-card {
+  background: var(--ui-color-surface);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  overflow: hidden;
+}
+
+.ui-next-sprint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-4);
+  background: var(--ui-color-surface-sunken);
+  border-block-end: 1px solid var(--ui-color-border);
+  flex-wrap: wrap;
+}
+
+.ui-next-sprint-header__info {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+
+.ui-next-sprint-header__title {
+  font-size: var(--ui-font-size-md);
+  font-weight: 700;
+  margin: 0;
+  color: var(--ui-color-text);
+}
+
+.ui-next-sprint-header__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-secondary);
+}
+
+/* ==========================================================================
+   Status & Activity History Timeline
+   ========================================================================== */
+
+.ui-next-task-history {
+  display: grid;
+  gap: var(--ui-space-3);
+  padding-block: var(--ui-space-2);
+}
+
+.ui-next-task-history__empty {
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-muted);
+  margin: 0;
+  padding-block: var(--ui-space-2);
+}
+
+.ui-next-task-history__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-3);
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-secondary);
+  position: relative;
+  padding-inline-start: var(--ui-space-2);
+}
+
+.ui-next-task-history__dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--ui-color-primary);
+  margin-block-start: 0.35rem;
+  flex-shrink: 0;
+}
+
+.ui-next-task-history__content {
+  display: grid;
+  gap: var(--ui-space-1);
+}
+
+.ui-next-task-history__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+}
+
+.ui-next-task-history__actor {
+  font-weight: 650;
+  color: var(--ui-color-text);
+}
+
+.ui-next-task-history__time {
+  color: var(--ui-color-text-muted);
+}
+
+.ui-next-task-history__note {
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-muted);
+  font-style: italic;
+}
+
+.ui-next-tab-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  border-block-end: 1px solid var(--ui-color-border);
+  margin-block-end: var(--ui-space-4);
+  overflow-x: auto;
+}
+
+.ui-next-tab-btn {
+  background: transparent;
+  border: none;
+  border-block-end: 2px solid transparent;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  font-size: var(--ui-font-size-sm);
+  font-weight: 600;
+  color: var(--ui-color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.ui-next-tab-btn:hover {
+  color: var(--ui-color-text);
+}
+
+.ui-next-tab-btn--active {
+  color: var(--ui-color-primary);
+  border-block-end-color: var(--ui-color-primary);
+}
+
+.ui-next-tasks-table__sub {
+  display: block;
+  font-size: var(--ui-font-size-xs);
+  color: var(--ui-color-text-secondary);
+}
+
+.ui-next-my-work-list-main {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.ui-next-my-work-list-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-next-my-work-list-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Standalone Task Detail Page
+   ========================================================================== */
+
+.ui-next-task-detail__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  margin-block: var(--ui-space-4);
+}
+
+.ui-next-task-detail__title {
+  margin: 0;
+  font-size: var(--ui-font-size-xl);
+  font-weight: 700;
+  color: var(--ui-color-text);
+  line-height: 1.25;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.ui-next-task-detail__props {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  overflow: hidden;
+  margin-block-end: var(--ui-space-6);
+}
+
+.ui-next-task-detail__prop {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  min-block-size: 2.5rem;
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border-block-end: 1px solid var(--ui-color-border);
+  gap: var(--ui-space-2);
+}
+
+.ui-next-task-detail__prop:last-child {
+  border-block-end: 0;
+}
+
+.ui-next-task-detail__prop-label {
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  color: var(--ui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-next-task-detail__prop-value {
+  font-size: var(--ui-font-size-sm);
+  color: var(--ui-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-next-task-detail__notes {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-4);
+  background: var(--ui-color-surface-sunken);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+  margin-block-end: var(--ui-space-6);
+}
+
+.ui-next-task-detail__notes-label {
+  font-size: var(--ui-font-size-xs);
+  font-weight: 650;
+  color: var(--ui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ui-next-task-detail__notes-body {
+  margin: 0;
+  font-size: var(--ui-font-size-md);
+  line-height: 1.65;
+  color: var(--ui-color-text);
+  white-space: pre-wrap;
 }

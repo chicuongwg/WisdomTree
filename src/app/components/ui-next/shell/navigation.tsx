@@ -141,7 +141,7 @@ export function GlobalNavigation({
             href={destination.href}
             className={`ui-next-global-nav__link relative min-h-[2.75rem] flex items-center gap-3 border rounded px-3 py-2 text-sm font-semibold transition-colors ${
               current
-                ? "border-ui-border bg-ui-surface text-ui-text shadow-[inset_0.25rem_0_var(--ui-color-accent)]"
+                ? "border-ui-border bg-ui-surface text-ui-text shadow-[inset_0.25rem_0_var(--ui-color-primary)]"
                 : "border-transparent text-ui-text-secondary hover:bg-ui-surface hover:text-ui-text"
             }`}
             aria-current={current ? "page" : undefined}

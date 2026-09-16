@@ -29,6 +29,11 @@
   display: none;
   margin-block-start: auto;
   align-self: flex-end;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .ui-next-app-sidebar__brand {
@@ -47,8 +52,8 @@
   display: inline-grid;
   place-items: center;
   border-radius: var(--ui-radius-sm);
-  background: var(--ui-color-accent);
-  color: var(--ui-color-on-accent);
+  background: var(--ui-color-primary);
+  color: var(--ui-color-on-primary);
   font-size: var(--ui-font-size-xs);
 }
 
@@ -69,6 +74,12 @@
   color: var(--ui-color-text-secondary);
   text-decoration: none;
   font-weight: 620;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .ui-next-global-nav__link:hover {
@@ -80,7 +91,7 @@
   border-color: var(--ui-color-border);
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
-  box-shadow: inset 0.25rem 0 var(--ui-color-accent);
+  box-shadow: inset 0.25rem 0 var(--ui-color-primary);
 }
 
 .ui-next-global-nav__icon {
@@ -123,6 +134,10 @@
     padding-inline: var(--ui-space-2);
   }
 
+  :root[data-sidebar="collapsed"] .ui-next-app-sidebar__toggle {
+    align-self: center;
+  }
+
   :root[data-sidebar="collapsed"] .ui-next-global-nav__link:hover::after,
   :root[data-sidebar="collapsed"] .ui-next-global-nav__link:focus-visible::after {
     content: attr(data-label);
@@ -150,7 +165,7 @@
   align-items: center;
   gap: var(--ui-space-4);
   border-block-end: 1px solid var(--ui-color-border);
-  padding: var(--ui-space-2) var(--ui-space-6);
+  padding: var(--ui-space-2) var(--ui-page-gutter);
   background: var(--ui-color-surface);
 }
 
@@ -170,6 +185,12 @@
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-radius-sm);
   color: var(--ui-color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .ui-next-notification-bell:hover {
@@ -195,13 +216,17 @@
   inset-block-start: -0.35rem;
   inset-inline-end: -0.4rem;
   min-inline-size: 1.15rem;
-  padding-inline: 0.15rem;
+  block-size: 1.15rem;
+  padding-inline: 0.2rem;
   border-radius: 999px;
   background: var(--ui-color-danger);
   color: var(--ui-color-on-danger);
   font-size: 0.65rem;
   font-weight: 750;
-  line-height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   text-align: center;
 }
 
@@ -294,6 +319,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.4;
+  padding-block: 0.1rem;
 }
 
 .ui-next-account-menu__panel {
@@ -352,6 +379,11 @@
   padding-inline: var(--ui-space-3);
   border: 1px solid var(--ui-color-border);
   text-decoration: none;
+  font-weight: 600;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .ui-next-account-menu__link:hover,
@@ -403,6 +435,10 @@
   font: inherit;
   text-align: start;
   cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .ui-next-quick-search__result:hover,
@@ -505,7 +541,7 @@
 
 .ui-next-create-dialog__action:active {
   background: var(--ui-color-surface-sunken);
-  border-color: var(--ui-color-accent);
+  border-color: var(--ui-color-primary);
 }
 
 .ui-next-create-dialog__project {
@@ -521,7 +557,7 @@
 .ui-next-quick-search__result:active,
 .ui-next-create-dialog__project:active {
   background: var(--ui-color-surface-sunken);
-  border-color: var(--ui-color-accent);
+  border-color: var(--ui-color-primary);
 }
 
 .ui-next-shell-placeholder {

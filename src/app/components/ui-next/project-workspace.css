@@ -66,6 +66,11 @@
   color: var(--ui-color-text-secondary);
   font-weight: 650;
   text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .ui-next-project-navigation__links a:hover {
@@ -74,7 +79,7 @@
 }
 
 .ui-next-project-navigation__links a[aria-current="page"] {
-  border-block-end-color: var(--ui-color-accent);
+  border-block-end-color: var(--ui-color-primary);
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
 }
@@ -181,17 +186,10 @@
 
 .ui-next-project-header,
 .ui-next-project-module-frame {
-  max-inline-size: var(--ui-width-wide);
+  min-inline-size: 0;
+  inline-size: 100%;
 }
-.ui-next-project-module-frame:has(
-  .ui-next-note-workspace,
-  .ui-next-kanban,
-  .ui-next-calendar,
-  .knowledge-map
-) {
-  max-inline-size: none;
+.ui-next-project-overview p {
+  max-inline-size: var(--ui-width-reading);
 }
-
-.ui-next-project-module-frame:has(.ui-next-governance:not(.ui-next-governance--admin)) {
-  max-inline-size: var(--ui-width-standard);
-}
+/* Governance max-width is now managed by .ui-next-governance in governance.css */

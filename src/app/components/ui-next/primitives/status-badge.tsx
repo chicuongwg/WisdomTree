@@ -1,7 +1,17 @@
 import type { HTMLAttributes } from "react";
 import { classNames } from "../shared";
 
-export type StatusTone = "neutral" | "accent" | "success" | "warning" | "danger" | "information";
+export type StatusTone =
+  | "neutral"
+  | "accent"
+  | "success"
+  | "warning"
+  | "danger"
+  | "information"
+  | "evidence"
+  | "synthesis"
+  | "draft"
+  | "published";
 
 export interface StatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: StatusTone;

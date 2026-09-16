@@ -25,7 +25,7 @@
 .ui-next-section-heading a,
 .ui-next-continue-research a,
 .ui-next-project-card a {
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   font-weight: 650;
   text-underline-offset: 0.18em;
 }
@@ -107,7 +107,7 @@
 
 .ui-next-people-list__row a,
 .ui-next-people-next-step a {
-  color: var(--ui-color-accent);
+  color: var(--ui-color-primary);
   text-underline-offset: 0.18em;
 }
 
@@ -116,7 +116,7 @@
   flex-wrap: wrap;
   gap: var(--ui-space-3) var(--ui-space-6);
   padding: var(--ui-space-4);
-  border-inline-start: 3px solid var(--ui-color-accent);
+  border-inline-start: 3px solid var(--ui-color-primary);
   background: var(--ui-color-surface);
 }
 
@@ -150,6 +150,16 @@
   border-color: var(--ui-color-border);
   padding: var(--ui-space-4);
   background: var(--ui-color-surface);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.ui-next-project-card:hover {
+  background: var(--ui-color-surface-sunken);
+  box-shadow: var(--ui-shadow-subtle);
 }
 
 .ui-next-project-list > li:first-child .ui-next-project-card {

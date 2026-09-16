@@ -14,6 +14,7 @@ export interface DialogProps {
   placement?: "center" | "end";
   size?: "standard" | "wide";
   footer?: ReactNode;
+  headerActions?: ReactNode;
 }
 
 export function Dialog({
@@ -26,6 +27,7 @@ export function Dialog({
   placement = "center",
   size = "standard",
   footer,
+  headerActions,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -60,6 +62,11 @@ export function Dialog({
       )}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) {
+          handleClose();
+        }
+      }}
       onCancel={(event) => {
         event.preventDefault();
         handleClose();
@@ -74,9 +81,12 @@ export function Dialog({
           <h2 id={titleId}>{title}</h2>
           {description ? <p id={descriptionId}>{description}</p> : null}
         </div>
-        <Button type="button" variant="ghost" onClick={handleClose}>
-          {closeLabel}
-        </Button>
+        <div className="ui-next-dialog__header-actions">
+          {headerActions}
+          <Button type="button" variant="ghost" onClick={handleClose}>
+            {closeLabel}
+          </Button>
+        </div>
       </div>
       <div className="ui-next-dialog__body">{children}</div>
       {footer ? <div className="ui-next-dialog__footer">{footer}</div> : null}
