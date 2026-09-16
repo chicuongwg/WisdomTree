@@ -29,14 +29,14 @@ export interface NoteReaderProps {
 
 const publicationTones: Record<NotePublicationStatus["state"], StatusTone> = {
   never_published: "neutral",
-  published_current: "success",
+  published_current: "published",
   published_with_changes: "warning",
   unpublished: "danger",
 };
 
 const purposeTones: Record<"evidence" | "synthesis", StatusTone> = {
-  evidence: "information",
-  synthesis: "success",
+  evidence: "evidence",
+  synthesis: "synthesis",
 };
 
 export function NoteReader({

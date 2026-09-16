@@ -1,4 +1,5 @@
 import {
+  getAppProjectTaskKpis,
   listAppProjectActivities,
   listAppProjectTaskAssignees,
   listAppProjectTasks,
@@ -16,10 +17,11 @@ export default async function ProjectTasksPage({
   const { projectId } = await params;
   const { view, task } = await searchParams;
   const { actor, application, workspace } = await requireProjectModule(projectId, "tasks");
-  const [tasks, activities, assignees] = await Promise.all([
+  const [tasks, activities, assignees, kpis] = await Promise.all([
     listAppProjectTasks(actor, projectId),
     listAppProjectActivities(actor, projectId),
     listAppProjectTaskAssignees(actor, projectId),
+    getAppProjectTaskKpis(actor, projectId),
   ]);
   return (
     <TasksView
@@ -28,10 +30,21 @@ export default async function ProjectTasksPage({
       tasks={tasks}
       activities={activities}
       assignees={assignees}
+      kpis={kpis}
       canCreate={workspace.project.capabilities.canCreateTask}
       canManageActivity={workspace.project.capabilities.canCreateActivity}
       canClaim={workspace.project.operationalMember}
-      view={view === "kanban" ? "kanban" : "list"}
+      view={
+        view === "kpis"
+          ? "kpis"
+          : view === "kanban"
+            ? "kanban"
+            : view === "table"
+              ? "table"
+              : view === "sprint"
+                ? "sprint"
+                : "list"
+      }
       initialTaskId={task}
     />
   );

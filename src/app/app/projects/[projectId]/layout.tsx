@@ -15,7 +15,7 @@ export default async function ProjectWorkspaceLayout({
   const { application, projects, workspace } = await getProjectWorkspaceContext(projectId);
 
   return (
-    <PageContainer width="full">
+    <PageContainer width="wide">
       <div className="ui-next-project-workspace grid grid-cols-[minmax(0,1fr)] min-w-0 gap-6">
         <ProjectHeader
           project={workspace.project}
@@ -29,9 +29,7 @@ export default async function ProjectWorkspaceLayout({
           canEditProject={workspace.project.capabilities.canEditProject}
         />
         <div className="ui-next-project-workspace__content grid gap-6 min-w-0">
-          <div className="ui-next-project-module-frame grid gap-6 min-w-0 max-w-[var(--ui-width-wide)]">
-            {children}
-          </div>
+          <div className="ui-next-project-module-frame grid gap-6 min-w-0">{children}</div>
         </div>
       </div>
     </PageContainer>

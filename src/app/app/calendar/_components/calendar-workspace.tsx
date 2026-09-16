@@ -2,10 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fromAppInput, toAppClock, toAppInput } from "@/lib/time";
 import type { UiLocale } from "@/modules/auth/profile";
-import { Button, Dialog, PageHeader, Select, TextField, translate } from "@/app/components/ui-next";
+import {
+  Button,
+  Dialog,
+  Select,
+  TextField,
+  UnifiedTaskDialog,
+  type TaskItem,
+  translate,
+} from "@/app/components/ui-next";
 
 type Project = { id: string; name: string; isPersonal: boolean; canEditDeadline: boolean };
 type Task = {
@@ -98,6 +106,55 @@ export function CalendarWorkspace({
   const [editing, setEditing] = useState<Deadline | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const [taskDueAt, setTaskDueAt] = useState<Date | string | null>(null);
+
+  useEffect(() => {
+    const onTaskSync = () => {
+      router.refresh();
+    };
+    window.addEventListener("wisdomtree:task-created", onTaskSync);
+    window.addEventListener("wisdomtree:task-updated", onTaskSync);
+    return () => {
+      window.removeEventListener("wisdomtree:task-created", onTaskSync);
+      window.removeEventListener("wisdomtree:task-updated", onTaskSync);
+    };
+  }, [router]);
+
+  async function openTaskInDialog(task: Task) {
+    try {
+      const res = await fetch(`/api/app/projects/${encodeURIComponent(task.projectId)}/tasks`);
+      if (res.ok) {
+        const data = await res.json();
+        const full = (data.tasks as TaskItem[]).find((t) => t.id === task.id);
+        if (full) {
+          setSelectedTask(full);
+          setTaskDueAt(null);
+          setTaskDialogOpen(true);
+          return;
+        }
+      }
+    } catch {
+      // fallback below
+    }
+    setSelectedTask({
+      id: task.id,
+      projectId: task.projectId,
+      activityId: task.activityId,
+      title: task.title,
+      state: task.state,
+      assignedTo: null,
+      assigneeName: task.assigneeName,
+      dueAt: task.dueAt,
+      notes: null,
+      version: 1,
+      canEdit: true,
+    });
+    setTaskDueAt(null);
+    setTaskDialogOpen(true);
+  }
+
   const editableProjects = projects.filter((project) => project.canEditDeadline);
   const weekdayLabels =
     locale === "en"
@@ -111,6 +168,7 @@ export function CalendarWorkspace({
   const base = new URLSearchParams();
   base.set("view", view);
   if (selectedProjectId) base.set("projectId", selectedProjectId);
+
   const setMonth = (target: Date) => {
     const params = new URLSearchParams(base);
     params.set(
@@ -163,16 +221,13 @@ export function CalendarWorkspace({
   function taskEntry(task: Task) {
     return (
       <li key={`task-${task.id}`}>
-        <Link
-          href={`/app/projects/${encodeURIComponent(task.projectId)}/tasks/${encodeURIComponent(task.id)}`}
-          className="grid w-full gap-0.5 rounded px-2 py-1 bg-ui-information-bg text-ui-information no-underline text-start break-words hover:opacity-90"
+        <button
+          type="button"
+          onClick={() => openTaskInDialog(task)}
+          className="ui-next-cal-chip ui-next-cal-chip--task"
         >
-          <span className="line-clamp-2 text-xs font-semibold">{task.title}</span>
-          <small className="line-clamp-2 text-[0.65rem] opacity-85">
-            {translate(locale, `tasks.state.${task.state}`)} · {task.projectName}
-            {task.activityTitle ? ` · ${task.activityTitle}` : ""}
-          </small>
-        </Link>
+          <span className="ui-next-cal-chip__title">{task.title}</span>
+        </button>
       </li>
     );
   }
@@ -182,19 +237,16 @@ export function CalendarWorkspace({
       <li key={`deadline-${deadline.id}`} className="ui-next-calendar__deadline">
         <Link
           href={`/app/calendar/deadlines/${encodeURIComponent(deadline.id)}`}
-          className="grid w-full gap-0.5 rounded px-2 py-1 bg-ui-warning-bg text-ui-warning no-underline text-start break-words hover:opacity-90"
+          className="ui-next-cal-chip ui-next-cal-chip--deadline"
         >
-          <span className="line-clamp-2 text-xs font-semibold">{deadline.title}</span>
-          <small className="line-clamp-2 text-[0.65rem] opacity-85">
-            {translate(locale, `calendar.type.${deadline.type}`)} · {deadline.projectName}
-          </small>
+          <span className="ui-next-cal-chip__title">{deadline.title}</span>
         </Link>
         {projects.some(
           (project) => project.id === deadline.projectId && project.canEditDeadline,
         ) ? (
           <button
             type="button"
-            className="text-xs text-ui-text-muted hover:text-ui-text underline mt-0.5 text-start cursor-pointer"
+            className="ui-next-cal-chip__edit"
             onClick={() => {
               setEditing(deadline);
               setError(null);
@@ -208,129 +260,111 @@ export function CalendarWorkspace({
     );
   }
 
+  const prevHref =
+    view === "week"
+      ? setWeek(new Date(Date.UTC(year, month, weekDay - 7)))
+      : setMonth(new Date(Date.UTC(year, month - 1, 1)));
+  const nextHref =
+    view === "week"
+      ? setWeek(new Date(Date.UTC(year, month, weekDay + 7)))
+      : setMonth(new Date(Date.UTC(year, month + 1, 1)));
+  const todayHref = `/app/calendar?${base}`;
+
   return (
-    <section className="ui-next-calendar grid gap-6" aria-labelledby="calendar-title">
-      <PageHeader
-        titleId="calendar-title"
-        title={translate(locale, "calendar.title")}
-        description={translate(locale, "calendar.description")}
-        actions={
-          editableProjects.length ? (
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => {
-                setEditing(null);
-                setError(null);
-                setOpen(true);
-              }}
-            >
-              {translate(locale, "calendar.createDeadline")}
-            </Button>
-          ) : null
-        }
-      />
-      <div className="ui-next-calendar__controls flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-start">
-        <nav
-          aria-label={translate(locale, "calendar.views")}
-          className="flex items-center gap-3 font-semibold text-sm"
-        >
+    <section className="ui-next-calendar" aria-labelledby="calendar-title">
+      {/* ── Compact top toolbar ─────────────────────────────────── */}
+      <div className="ui-next-cal-toolbar">
+        <nav className="ui-next-cal-tabs" aria-label={translate(locale, "calendar.views")}>
           <Link
             href={`/app/calendar?${new URLSearchParams(selectedProjectId ? { projectId: selectedProjectId } : {}).toString()}`}
-            className="text-ui-accent underline-offset-[0.18em] aria-current:text-ui-text aria-current:underline"
+            className="ui-next-cal-tab"
             aria-current={view === "month" ? "page" : undefined}
           >
             {translate(locale, "calendar.month")}
           </Link>
           <Link
             href={`/app/calendar?view=week${selectedProjectId ? `&projectId=${encodeURIComponent(selectedProjectId)}` : ""}`}
-            className="text-ui-accent underline-offset-[0.18em] aria-current:text-ui-text aria-current:underline"
+            className="ui-next-cal-tab"
             aria-current={view === "week" ? "page" : undefined}
           >
             {translate(locale, "calendar.week")}
           </Link>
         </nav>
-        <form
-          method="get"
-          className="ui-next-inline ui-next-calendar__filter flex flex-wrap items-center gap-3"
-        >
-          <input type="hidden" name="view" value={view} />
-          <input
-            type="hidden"
-            name={view === "week" ? "w" : "m"}
-            value={
-              view === "week"
-                ? `${year}-${String(month + 1).padStart(2, "0")}-${String(weekDay).padStart(2, "0")}`
-                : `${year}-${String(month + 1).padStart(2, "0")}`
-            }
-          />
-          <label className="grid gap-1 text-ui-text-secondary text-sm font-semibold">
-            <span>{translate(locale, "calendar.filterProject")}</span>
-            <select
-              className="ui-next-control min-w-[14rem] max-sm:min-w-full"
-              name="projectId"
-              defaultValue={selectedProjectId ?? ""}
-            >
-              <option value="">{translate(locale, "calendar.allProjects")}</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Button type="submit" variant="secondary">
-            {translate(locale, "calendar.apply")}
-          </Button>
-        </form>
-      </div>
-      <section
-        className="ui-next-calendar__frame min-w-0 overflow-x-auto border border-ui-border rounded-lg bg-ui-surface p-4"
-        aria-label={monthLabel(locale, year, month)}
-      >
-        <header className="ui-next-calendar__heading flex items-center justify-between gap-3 mb-4 max-sm:flex-col max-sm:items-start">
-          <h2 className="m-0 text-lg font-bold">{monthLabel(locale, year, month)}</h2>
-          <div className="flex items-center gap-3 text-sm font-semibold">
-            <Link
-              href={
-                view === "week"
-                  ? setWeek(new Date(Date.UTC(year, month, weekDay - 7)))
-                  : setMonth(new Date(Date.UTC(year, month - 1, 1)))
-              }
-              className="text-ui-accent underline-offset-[0.18em] hover:underline"
-            >
-              {translate(locale, "calendar.previous")}
+
+        <div className="ui-next-cal-toolbar__spacer" />
+
+        <div className="ui-next-cal-toolbar__end">
+          {projects.length > 1 && (
+            <form method="get" className="ui-next-cal-toolbar__filter">
+              <input type="hidden" name="view" value={view} />
+              <input
+                type="hidden"
+                name={view === "week" ? "w" : "m"}
+                value={
+                  view === "week"
+                    ? `${year}-${String(month + 1).padStart(2, "0")}-${String(weekDay).padStart(2, "0")}`
+                    : `${year}-${String(month + 1).padStart(2, "0")}`
+                }
+              />
+              <select
+                className="ui-next-cal-toolbar__select"
+                name="projectId"
+                defaultValue={selectedProjectId ?? ""}
+                onChange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
+              >
+                <option value="">{translate(locale, "calendar.allProjects")}</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.isPersonal ? translate(locale, "projects.myProject") : project.name}
+                  </option>
+                ))}
+              </select>
+            </form>
+          )}
+
+          <nav className="ui-next-cal-nav" aria-label={translate(locale, "calendar.views")}>
+            <Link href={prevHref} className="ui-next-cal-nav__arrow" aria-label={translate(locale, "calendar.previous")}>
+              ‹
             </Link>
-            <Link
-              href={`/app/calendar?${base}`}
-              className="text-ui-accent underline-offset-[0.18em] hover:underline"
-            >
+            <Link href={todayHref} className="ui-next-cal-nav__today">
               {translate(locale, "calendar.today")}
             </Link>
-            <Link
-              href={
-                view === "week"
-                  ? setWeek(new Date(Date.UTC(year, month, weekDay + 7)))
-                  : setMonth(new Date(Date.UTC(year, month + 1, 1)))
-              }
-              className="text-ui-accent underline-offset-[0.18em] hover:underline"
-            >
-              {translate(locale, "calendar.next")}
+            <Link href={nextHref} className="ui-next-cal-nav__arrow" aria-label={translate(locale, "calendar.next")}>
+              ›
             </Link>
-          </div>
+          </nav>
+
+          {editableProjects.length ? (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                setSelectedTask(null);
+                setTaskDueAt(null);
+                setTaskDialogOpen(true);
+              }}
+            >
+              {translate(locale, "tasks.new")}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Calendar frame ──────────────────────────────────────── */}
+      <section className="ui-next-calendar__frame" aria-label={monthLabel(locale, year, month)}>
+        <header className="ui-next-calendar__heading">
+          <h2 id="calendar-title">{monthLabel(locale, year, month)}</h2>
         </header>
+
         <div
           className={
             view === "week"
-              ? "ui-next-calendar__grid ui-next-calendar__grid--week grid grid-cols-7 min-w-[63rem] max-sm:min-w-[31.5rem] overflow-hidden border-t border-l border-ui-border min-h-[25rem]"
-              : "ui-next-calendar__grid grid grid-cols-7 min-w-[63rem] max-sm:min-w-[31.5rem] overflow-hidden border-t border-l border-ui-border"
+              ? "ui-next-calendar__grid ui-next-calendar__grid--week"
+              : "ui-next-calendar__grid"
           }
         >
           {weekdayLabels.map((label) => (
-            <div
-              className="ui-next-calendar__weekday bg-ui-surface-sunken text-ui-text-secondary text-sm font-bold p-2.5 border-b border-r border-ui-border"
-              key={label}
-            >
+            <div className="ui-next-calendar__weekday" key={label}>
               {label}
             </div>
           ))}
@@ -350,35 +384,62 @@ export function CalendarWorkspace({
               })),
             ].sort((left, right) => left.at - right.at);
             const previewCount = view === "week" ? 6 : 3;
+            const isOutside = day.getUTCMonth() !== month && view !== "week";
+            const isToday = key === nowKey;
             return (
               <div
-                className={`ui-next-calendar__day grid content-start gap-2 min-h-[9rem] p-2 border-b border-r border-ui-border${day.getUTCMonth() === month || view === "week" ? "" : " ui-next-calendar__day--outside bg-ui-surface-sunken/60 text-ui-text-muted"}${key === nowKey ? " ui-next-calendar__day--today ring-2 ring-inset ring-ui-focus" : ""}`}
+                className={[
+                  "ui-next-calendar__day",
+                  isOutside && "ui-next-calendar__day--outside",
+                  isToday && "ui-next-calendar__day--today",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 key={key}
               >
-                <header className="flex items-baseline justify-between gap-2">
-                  <span className="font-bold text-sm">{day.getUTCDate()}</span>
-                  {dayTasks.length ? (
-                    <small className="text-xs text-ui-text-muted">
-                      {translate(locale, "calendar.workload", { count: dayTasks.length })}
-                    </small>
+                <header>
+                  <div className="ui-next-cal-day-header">
+                    <span className={isToday ? "ui-next-cal-today-badge" : undefined}>
+                      {day.getUTCDate()}
+                    </span>
+                    {editableProjects.length ? (
+                      <button
+                        type="button"
+                        className="ui-next-calendar__quick-add"
+                        title={translate(locale, "tasks.new")}
+                        aria-label={translate(locale, "tasks.new")}
+                        onClick={() => {
+                          setSelectedTask(null);
+                          const dateIso = new Date(
+                            Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 17, 0, 0),
+                          ).toISOString();
+                          setTaskDueAt(dateIso);
+                          setTaskDialogOpen(true);
+                        }}
+                      >
+                        +
+                      </button>
+                    ) : null}
+                  </div>
+                  {overdue ? (
+                    <span className="ui-next-calendar__overdue">
+                      {translate(locale, "calendar.overdue")}
+                    </span>
                   ) : null}
                 </header>
-                {overdue ? (
-                  <strong className="ui-next-calendar__overdue text-xs text-ui-danger font-semibold">
-                    {translate(locale, "calendar.overdue")}
-                  </strong>
-                ) : null}
-                <ul role="list" className="grid gap-1 m-0 p-0 list-none">
+
+                <ul role="list" className="ui-next-cal-entries">
                   {entries.slice(0, previewCount).map((entry) => entry.content)}
                 </ul>
+
                 {entries.length > previewCount ? (
                   <details className="ui-next-calendar__overflow">
-                    <summary className="list-item min-h-[2.75rem] py-2 text-ui-accent text-sm cursor-pointer">
+                    <summary>
                       {translate(locale, "calendar.moreEntries", {
                         count: entries.length - previewCount,
                       })}
                     </summary>
-                    <ul role="list" className="grid gap-1 m-0 p-0 list-none">
+                    <ul role="list" className="ui-next-cal-entries">
                       {entries.slice(previewCount).map((entry) => entry.content)}
                     </ul>
                   </details>
@@ -387,12 +448,15 @@ export function CalendarWorkspace({
             );
           })}
         </div>
+
         {!tasks.length && !deadlines.length ? (
-          <p className="ui-next-calendar__empty mt-4 m-0 text-ui-text-secondary text-sm">
+          <p className="ui-next-calendar__empty">
             {translate(locale, "calendar.noEntries")}
           </p>
         ) : null}
       </section>
+
+      {/* ── Deadline dialog ─────────────────────────────────────── */}
       <Dialog
         open={open}
         onClose={() => {
@@ -480,6 +544,27 @@ export function CalendarWorkspace({
           </div>
         </form>
       </Dialog>
+
+      {/* ── Task side panel ─────────────────────────────────────── */}
+      <UnifiedTaskDialog
+        open={taskDialogOpen}
+        placement="end"
+        onClose={() => {
+          setTaskDialogOpen(false);
+          setSelectedTask(null);
+        }}
+        locale={locale}
+        task={selectedTask}
+        projects={projects}
+        defaultProjectId={selectedProjectId || projects[0]?.id}
+        defaultDueAt={taskDueAt}
+        onCreated={() => {
+          router.refresh();
+        }}
+        onUpdated={() => {
+          router.refresh();
+        }}
+      />
     </section>
   );
 }

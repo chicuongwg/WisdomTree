@@ -2,26 +2,39 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { UiLocale } from "@/modules/auth/profile";
+import type { ProjectTaskKpis } from "@/modules/pm/service";
 import {
   Button,
-  Dialog,
   EmptyState,
+  KpiScorecardView,
   PageHeader,
   StatusBadge,
+  UnifiedTaskDialog,
   formatUiDate,
   translate,
 } from "@/app/components/ui-next";
 
 type Task = {
   id: string;
+  projectId: string;
   title: string;
   state: "todo" | "doing" | "done" | "archived";
+  priority?: "urgent" | "high" | "medium" | "low";
+  kind?: "task" | "feature" | "bug" | "improvement";
+  sprint?: string | null;
+  estimatePoints?: number | null;
+  startedAt?: Date | string | null;
+  startedBy?: string | null;
   assignedTo: string | null;
   assigneeName: string | null;
   activityId: string | null;
   dueAt: Date | string | null;
+  startAt?: Date | string | null;
+  completedAt?: Date | string | null;
+  completedBy?: string | null;
+  createdAt?: Date | string | null;
   notes: string | null;
   version: number;
   canEdit: boolean;
@@ -35,6 +48,7 @@ export function TasksView({
   tasks: serverTasks,
   activities,
   assignees,
+  kpis,
   canCreate,
   canManageActivity,
   canClaim,
@@ -46,10 +60,11 @@ export function TasksView({
   tasks: Task[];
   activities: Activity[];
   assignees: Assignee[];
+  kpis?: ProjectTaskKpis;
   canCreate: boolean;
   canManageActivity: boolean;
   canClaim: boolean;
-  view?: "list" | "kanban";
+  view?: "list" | "kanban" | "table" | "sprint" | "kpis";
   initialTaskId?: string;
 }) {
   const router = useRouter();
@@ -79,6 +94,33 @@ export function TasksView({
       setEditing(task);
     }
   }, [initialTaskId, tasks]);
+
+  useEffect(() => {
+    function onCreated(e: Event) {
+      const custom = e as CustomEvent<{ task: Task; projectId: string }>;
+      if (custom.detail?.projectId === projectId && custom.detail.task) {
+        setCreatedTasks((prev) => [
+          custom.detail.task,
+          ...prev.filter((t) => t.id !== custom.detail.task.id),
+        ]);
+      }
+    }
+    function onUpdated(e: Event) {
+      const custom = e as CustomEvent<{ task: Task; projectId: string }>;
+      if (custom.detail?.projectId === projectId && custom.detail.task) {
+        setCreatedTasks((prev) => [
+          custom.detail.task,
+          ...prev.filter((t) => t.id !== custom.detail.task.id),
+        ]);
+      }
+    }
+    window.addEventListener("wisdomtree:task-created", onCreated);
+    window.addEventListener("wisdomtree:task-updated", onUpdated);
+    return () => {
+      window.removeEventListener("wisdomtree:task-created", onCreated);
+      window.removeEventListener("wisdomtree:task-updated", onUpdated);
+    };
+  }, [projectId]);
   async function call(path: string, init: RequestInit) {
     const response = await fetch(path, init);
     if (!response.ok)
@@ -89,81 +131,7 @@ export function TasksView({
     router.refresh();
     return response;
   }
-  async function create(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setError(null);
-    const form = new FormData(event.currentTarget);
-    try {
-      const response = await call(`/api/app/projects/${encodeURIComponent(projectId)}/tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.get("title"),
-          assigneeId: form.get("assigneeId") || null,
-          activityId: form.get("activityId") || null,
-          dueAt: toIso(form.get("dueAt")),
-          notes: form.get("notes"),
-        }),
-      });
-      const { task } = (await response.json()) as { task: Task };
-      setCreatedTasks((current) => [
-        {
-          ...task,
-          assigneeName:
-            assignees.find((person) => person.id === task.assignedTo)?.displayName ?? null,
-        },
-        ...current,
-      ]);
-      setOpen(false);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : translate(locale, "error.internal.title"));
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function update(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!editing) return;
-    setSaving(true);
-    setError(null);
-    const form = new FormData(event.currentTarget);
-    try {
-      await call(
-        `/api/app/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(editing.id)}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: form.get("title"),
-            state: form.get("state"),
-            assigneeId: form.get("assigneeId") || null,
-            dueAt: toIso(form.get("dueAt")),
-            notes: form.get("notes"),
-            expectedVersion: editing.version,
-          }),
-        },
-      );
-      const activityId = String(form.get("activityId") || "");
-      if (canManageActivity && activityId !== (editing.activityId || "")) {
-        await call(
-          `/api/app/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(editing.id)}/activity${activityId ? "" : `?expectedVersion=${editing.version + 1}`}`,
-          activityId
-            ? {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ activityId, expectedVersion: editing.version + 1 }),
-              }
-            : { method: "DELETE" },
-        );
-      }
-      setEditing(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : translate(locale, "error.internal.title"));
-    } finally {
-      setSaving(false);
-    }
-  }
+
   async function transition(task: Task, state: Task["state"]) {
     setSaving(true);
     setError(null);
@@ -231,11 +199,31 @@ export function TasksView({
         >
           {translate(locale, "tasks.view.kanban")}
         </Link>
+        <Link
+          href={`/app/projects/${encodeURIComponent(projectId)}/tasks?view=table`}
+          aria-current={view === "table" ? "page" : undefined}
+        >
+          {translate(locale, "tasks.view.table")}
+        </Link>
+        <Link
+          href={`/app/projects/${encodeURIComponent(projectId)}/tasks?view=sprint`}
+          aria-current={view === "sprint" ? "page" : undefined}
+        >
+          {translate(locale, "tasks.view.sprint")}
+        </Link>
+        <Link
+          href={`/app/projects/${encodeURIComponent(projectId)}/tasks?view=kpis`}
+          aria-current={view === "kpis" ? "page" : undefined}
+        >
+          {translate(locale, "tasks.view.kpis")}
+        </Link>
         <Link href={`/app/calendar?projectId=${encodeURIComponent(projectId)}`}>
-          {translate(locale, "nav.calendar")}
+          {translate(locale, "tasks.view.calendar")}
         </Link>
       </nav>
-      {view === "kanban" ? (
+      {view === "kpis" ? (
+        <KpiScorecardView locale={locale} kpis={kpis} />
+      ) : view === "kanban" ? (
         <Kanban
           projectId={projectId}
           locale={locale}
@@ -245,6 +233,22 @@ export function TasksView({
           saving={saving}
           onTransition={transition}
           onClaim={claim}
+          onOpen={setEditing}
+        />
+      ) : view === "table" ? (
+        <TasksTable
+          projectId={projectId}
+          locale={locale}
+          tasks={tasks}
+          activities={activities}
+          onOpen={setEditing}
+        />
+      ) : view === "sprint" ? (
+        <SprintView
+          projectId={projectId}
+          locale={locale}
+          tasks={tasks}
+          activities={activities}
           onOpen={setEditing}
         />
       ) : tasks.length ? (
@@ -285,34 +289,291 @@ export function TasksView({
           {error}
         </p>
       ) : null}
-      <TaskDialog
-        open={open}
-        onClose={() => setOpen(false)}
+      <UnifiedTaskDialog
+        open={open || Boolean(editing)}
+        onClose={() => {
+          setOpen(false);
+          setEditing(null);
+        }}
         locale={locale}
-        title={translate(locale, "tasks.create.title")}
-        activities={activities}
-        assignees={assignees}
-        canManageActivity={canManageActivity}
-        saving={saving}
-        error={error}
-        submitLabel={translate(locale, "tasks.create.submit")}
-        onSubmit={create}
-      />
-      <TaskDialog
-        open={Boolean(editing)}
-        onClose={() => setEditing(null)}
-        locale={locale}
-        title={translate(locale, "tasks.edit.title")}
-        activities={activities}
-        assignees={assignees}
-        canManageActivity={canManageActivity}
         task={editing}
-        saving={saving}
-        error={error}
-        submitLabel={translate(locale, "common.save")}
-        onSubmit={update}
+        currentProjectId={projectId}
+        activities={activities}
+        assignees={assignees}
+        canManageActivity={canManageActivity}
+        onCreated={(created) => {
+          const newTask: Task = {
+            id: created.id,
+            projectId: created.projectId,
+            title: created.title,
+            state: created.state,
+            priority: created.priority,
+            kind: created.kind,
+            sprint: created.sprint,
+            estimatePoints: created.estimatePoints,
+            startedAt: created.startedAt,
+            startedBy: created.startedBy,
+            assignedTo: created.assignedTo,
+            assigneeName:
+              assignees.find((p) => p.id === created.assignedTo)?.displayName ??
+              created.assigneeName ??
+              null,
+            activityId: created.activityId,
+            dueAt: created.dueAt,
+            startAt: created.startAt,
+            completedAt: created.completedAt,
+            completedBy: created.completedBy,
+            createdAt: created.createdAt,
+            notes: created.notes,
+            version: created.version,
+            canEdit: true,
+          };
+          setCreatedTasks((current) => [newTask, ...current]);
+        }}
+        onUpdated={(updated) => {
+          const updatedTask: Task = {
+            id: updated.id,
+            projectId: updated.projectId,
+            title: updated.title,
+            state: updated.state,
+            priority: updated.priority,
+            kind: updated.kind,
+            sprint: updated.sprint,
+            estimatePoints: updated.estimatePoints,
+            startedAt: updated.startedAt,
+            startedBy: updated.startedBy,
+            assignedTo: updated.assignedTo,
+            assigneeName:
+              assignees.find((p) => p.id === updated.assignedTo)?.displayName ??
+              updated.assigneeName ??
+              null,
+            activityId: updated.activityId,
+            dueAt: updated.dueAt,
+            startAt: updated.startAt,
+            completedAt: updated.completedAt,
+            completedBy: updated.completedBy,
+            createdAt: updated.createdAt,
+            notes: updated.notes,
+            version: updated.version,
+            canEdit: editing?.canEdit ?? true,
+          };
+          setCreatedTasks((current) => [
+            updatedTask,
+            ...current.filter((t) => t.id !== updated.id),
+          ]);
+        }}
       />
     </section>
+  );
+}
+
+function TasksTable({
+  projectId: _projectId,
+  locale,
+  tasks,
+  activities: _activities,
+  onOpen,
+}: {
+  projectId: string;
+  locale: UiLocale;
+  tasks: Task[];
+  activities: Activity[];
+  onOpen: (task: Task) => void;
+}) {
+  if (tasks.length === 0) {
+    return <p className="ui-next-empty">{translate(locale, "tasks.empty")}</p>;
+  }
+
+  return (
+    <div className="ui-next-tasks-table-wrapper" role="region" aria-label={translate(locale, "tasks.view.table")}>
+      <table className="ui-next-tasks-table">
+        <thead>
+          <tr>
+            <th>{translate(locale, "tasks.title")}</th>
+            <th>{translate(locale, "tasks.field.state")}</th>
+            <th>{translate(locale, "tasks.field.priority")}</th>
+            <th>{translate(locale, "tasks.field.kind")}</th>
+            <th>{translate(locale, "tasks.field.assignee")}</th>
+            <th>{translate(locale, "tasks.field.sprint")}</th>
+            <th>{translate(locale, "tasks.field.estimatePoints")}</th>
+            <th>{translate(locale, "tasks.field.dueAt")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map((task) => (
+            <tr key={task.id} onClick={() => onOpen(task)}>
+              <td className="ui-next-tasks-table__title">
+                <strong>{task.title}</strong>
+              </td>
+              <td>
+                <StatusBadge
+                  tone={
+                    task.state === "done"
+                      ? "success"
+                      : task.state === "doing"
+                        ? "information"
+                        : "neutral"
+                  }
+                >
+                  {translate(locale, `tasks.state.${task.state}`)}
+                </StatusBadge>
+              </td>
+              <td>
+                <span className={`ui-next-priority-pill ui-next-priority-pill--${task.priority || "medium"}`}>
+                  {translate(locale, `tasks.priority.${task.priority || "medium"}`)}
+                </span>
+              </td>
+              <td>
+                <span className="ui-next-kind-badge">
+                  {translate(locale, `tasks.kind.${task.kind || "task"}`)}
+                </span>
+              </td>
+              <td>
+                <span className="text-xs text-ui-text-secondary">
+                  {task.assigneeName || translate(locale, "tasks.unassigned")}
+                </span>
+              </td>
+              <td>
+                <span className="text-xs text-ui-text-muted">
+                  {task.sprint || "—"}
+                </span>
+              </td>
+              <td>
+                {task.estimatePoints != null ? (
+                  <span className="ui-next-points-pill">{task.estimatePoints} pts</span>
+                ) : (
+                  <span className="text-xs text-ui-text-muted">—</span>
+                )}
+              </td>
+              <td>
+                <span className="text-xs text-ui-text-muted">
+                  {task.dueAt ? formatUiDate(task.dueAt, locale, { dateStyle: "short" }) : "—"}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SprintView({
+  projectId: _projectId,
+  locale,
+  tasks,
+  activities: _activities,
+  onOpen,
+}: {
+  projectId: string;
+  locale: UiLocale;
+  tasks: Task[];
+  activities: Activity[];
+  onOpen: (task: Task) => void;
+}) {
+  const sprintMap = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    for (const task of tasks) {
+      const name = task.sprint?.trim() || translate(locale, "tasks.sprint.backlog");
+      const list = map.get(name) || [];
+      list.push(task);
+      map.set(name, list);
+    }
+    return map;
+  }, [tasks, locale]);
+
+  const sprintGroups = Array.from(sprintMap.entries());
+
+  if (tasks.length === 0) {
+    return <p className="ui-next-empty">{translate(locale, "tasks.empty")}</p>;
+  }
+
+  return (
+    <div className="ui-next-sprint-container">
+      {sprintGroups.map(([sprintName, sprintTasks]) => {
+        const totalPoints = sprintTasks.reduce((sum, t) => sum + (t.estimatePoints ?? 0), 0);
+        const completedPoints = sprintTasks
+          .filter((t) => t.state === "done")
+          .reduce((sum, t) => sum + (t.estimatePoints ?? 0), 0);
+        const completedCount = sprintTasks.filter((t) => t.state === "done").length;
+        const percent =
+          totalPoints > 0
+            ? Math.round((completedPoints / totalPoints) * 100)
+            : sprintTasks.length > 0
+              ? Math.round((completedCount / sprintTasks.length) * 100)
+              : 0;
+
+        return (
+          <div key={sprintName} className="ui-next-sprint-card">
+            <header className="ui-next-sprint-header">
+              <div className="ui-next-sprint-header__info">
+                <h3 className="ui-next-sprint-header__title">{sprintName}</h3>
+                <span className="ui-next-points-pill">
+                  {completedCount}/{sprintTasks.length} {translate(locale, "tasks.completed").toLowerCase()}
+                </span>
+              </div>
+              <div className="ui-next-sprint-header__stats">
+                <span>
+                  {translate(locale, "tasks.sprint.points", {
+                    completed: String(completedPoints),
+                    total: String(totalPoints),
+                  })}
+                </span>
+                <span className="font-bold text-ui-accent">{percent}%</span>
+              </div>
+            </header>
+            <div className="ui-next-tasks-table-wrapper">
+              <table className="ui-next-tasks-table">
+                <tbody>
+                  {sprintTasks.map((task) => (
+                    <tr key={task.id} onClick={() => onOpen(task)}>
+                      <td className="ui-next-tasks-table__title">
+                        <strong>{task.title}</strong>
+                      </td>
+                      <td>
+                        <StatusBadge
+                          tone={
+                            task.state === "done"
+                              ? "success"
+                              : task.state === "doing"
+                                ? "information"
+                                : "neutral"
+                          }
+                        >
+                          {translate(locale, `tasks.state.${task.state}`)}
+                        </StatusBadge>
+                      </td>
+                      <td>
+                        <span className={`ui-next-priority-pill ui-next-priority-pill--${task.priority || "medium"}`}>
+                          {translate(locale, `tasks.priority.${task.priority || "medium"}`)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-xs text-ui-text-secondary">
+                          {task.assigneeName || translate(locale, "tasks.unassigned")}
+                        </span>
+                      </td>
+                      <td>
+                        {task.estimatePoints != null ? (
+                          <span className="ui-next-points-pill">{task.estimatePoints} pts</span>
+                        ) : (
+                          <span className="text-xs text-ui-text-muted">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="text-xs text-ui-text-muted">
+                          {task.dueAt ? formatUiDate(task.dueAt, locale, { dateStyle: "short" }) : "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -357,6 +618,7 @@ function Kanban({
                 {laneTasks.map((task) => (
                   <li className="ui-next-kanban__card" key={task.id}>
                     <Link
+                      className="ui-next-kanban__card-title"
                       href={`/app/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(task.id)}`}
                     >
                       {task.title}
@@ -367,38 +629,48 @@ function Kanban({
                       locale={locale}
                       showTitle={false}
                     />
-                    <div className="ui-next-kanban__actions">
+                    <div className="ui-next-kanban__card-footer">
                       {task.assignedTo === null && canClaim ? (
-                        <Button
+                        <button
                           type="button"
-                          variant="secondary"
+                          className="ui-next-kanban__claim-btn"
                           disabled={saving}
                           onClick={() => void onClaim(task)}
                         >
                           {translate(locale, "tasks.claim")}
-                        </Button>
+                        </button>
                       ) : null}
-                      {task.canEdit
-                        ? states
-                            .filter((nextState) => nextState !== task.state)
-                            .map((nextState) => (
-                              <Button
-                                key={nextState}
-                                type="button"
-                                variant="secondary"
-                                disabled={saving}
-                                onClick={() => void onTransition(task, nextState)}
-                              >
-                                {translate(locale, "tasks.moveTo", {
-                                  status: translate(locale, `tasks.state.${nextState}`),
-                                })}
-                              </Button>
-                            ))
-                        : null}
                       {task.canEdit ? (
-                        <Button type="button" variant="ghost" onClick={() => onOpen(task)}>
+                        <label className="ui-next-kanban__quick-status-wrap">
+                          <span className="ui-next-visually-hidden">
+                            {translate(locale, "tasks.field.state")}
+                          </span>
+                          <select
+                            className="ui-next-kanban__quick-status"
+                            value={task.state}
+                            disabled={saving}
+                            aria-label={translate(locale, "tasks.field.state")}
+                            onChange={(e) =>
+                              void onTransition(task, e.target.value as (typeof states)[number])
+                            }
+                          >
+                            {states.map((s) => (
+                              <option key={s} value={s}>
+                                {translate(locale, `tasks.state.${s}`)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                      {task.canEdit ? (
+                        <button
+                          type="button"
+                          className="ui-next-kanban__edit-btn"
+                          aria-label={translate(locale, "common.edit")}
+                          onClick={() => onOpen(task)}
+                        >
                           {translate(locale, "common.edit")}
-                        </Button>
+                        </button>
                       ) : null}
                     </div>
                   </li>
@@ -413,6 +685,7 @@ function Kanban({
     </div>
   );
 }
+
 function TaskSummary({
   task,
   activities,
@@ -433,6 +706,14 @@ function TaskSummary({
       <span className="ui-next-task-summary">
         {showTitle ? <strong>{task.title}</strong> : null}
         <span className="ui-next-task-summary__meta">
+          {task.priority ? (
+            <span className={`ui-next-priority-pill ui-next-priority-pill--${task.priority}`}>
+              {translate(locale, `tasks.priority.${task.priority}`)}
+            </span>
+          ) : null}
+          {task.estimatePoints != null ? (
+            <span className="ui-next-points-pill">{task.estimatePoints} pts</span>
+          ) : null}
           <span>
             <small>{translate(locale, "tasks.meta.assignee")}</small>
             {task.assigneeName || translate(locale, "tasks.unassigned")}
@@ -461,122 +742,4 @@ function TaskSummary({
     </>
   );
 }
-function TaskDialog({
-  open,
-  onClose,
-  locale,
-  title,
-  activities,
-  assignees,
-  canManageActivity,
-  task,
-  saving,
-  error,
-  submitLabel,
-  onSubmit,
-}: {
-  open: boolean;
-  onClose: () => void;
-  locale: UiLocale;
-  title: string;
-  activities: Activity[];
-  assignees: Assignee[];
-  canManageActivity: boolean;
-  task?: Task | null;
-  saving: boolean;
-  error: string | null;
-  submitLabel: string;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-}) {
-  const formId = useId();
-  return (
-    <Dialog
-      footer={
-        <div className="ui-next-work-form__actions">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            {translate(locale, "common.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            variant="primary"
-            loading={saving}
-            loadingLabel={translate(locale, "common.loading")}
-          >
-            {submitLabel}
-          </Button>
-        </div>
-      }
-      open={open}
-      onClose={onClose}
-      title={title}
-      closeLabel={translate(locale, "common.close")}
-    >
-      <form id={formId} className="ui-next-work-form" onSubmit={onSubmit}>
-        <label>
-          <span>{translate(locale, "tasks.field.title")}</span>
-          <input name="title" defaultValue={task?.title || ""} required maxLength={300} autoFocus />
-        </label>
-        <label>
-          <span>{translate(locale, "tasks.field.assignee")}</span>
-          <select name="assigneeId" defaultValue={task?.assignedTo || ""}>
-            <option value="">{translate(locale, "tasks.unassigned")}</option>
-            {assignees.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.displayName}
-              </option>
-            ))}
-          </select>
-        </label>
-        {canManageActivity ? (
-          <label>
-            <span>{translate(locale, "tasks.field.activity")}</span>
-            <select name="activityId" defaultValue={task?.activityId || ""}>
-              <option value="">{translate(locale, "tasks.noActivity")}</option>
-              {activities.map((activity) => (
-                <option key={activity.id} value={activity.id}>
-                  {activity.title}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        <label>
-          <span>{translate(locale, "tasks.field.dueAt")}</span>
-          <input name="dueAt" type="datetime-local" defaultValue={toLocalDateTime(task?.dueAt)} />
-        </label>
-        {task ? (
-          <label>
-            <span>{translate(locale, "tasks.field.state")}</span>
-            <select name="state" defaultValue={task.state}>
-              {(["todo", "doing", "done", "archived"] as const).map((state) => (
-                <option key={state} value={state}>
-                  {translate(locale, `tasks.state.${state}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        <label>
-          <span>{translate(locale, "tasks.field.notes")}</span>
-          <textarea name="notes" rows={3} defaultValue={task?.notes || ""} />
-        </label>
-        {error ? (
-          <p className="ui-next-work-form__error" role="alert">
-            {error}
-          </p>
-        ) : null}
-      </form>
-    </Dialog>
-  );
-}
-function toIso(value: FormDataEntryValue | null) {
-  return typeof value === "string" && value ? new Date(value).toISOString() : null;
-}
-function toLocalDateTime(value: Date | string | null | undefined) {
-  if (!value) return "";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? ""
-    : new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
+

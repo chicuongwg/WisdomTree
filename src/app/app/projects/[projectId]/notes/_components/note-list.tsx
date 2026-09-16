@@ -23,12 +23,12 @@ export interface NoteListItemData {
 const stateTones: Record<NoteListItemData["state"], StatusTone> = {
   official: "neutral",
   draft_changes: "warning",
-  new_draft: "information",
+  new_draft: "draft",
 };
 
 const purposeTones: Record<"evidence" | "synthesis", StatusTone> = {
-  evidence: "information",
-  synthesis: "success",
+  evidence: "evidence",
+  synthesis: "synthesis",
 };
 
 export function NoteList({
